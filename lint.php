@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-/** Syntax and style check for the PHP we ship.
+/** Syntax and style checks for the PHP and CSS we ship.
 *
 * Run through the frankenphp we already download, so QA needs nothing installed:
 *   ./bin/frankenphp php-cli lint.php
@@ -90,5 +90,36 @@ foreach ($filenames as $filename) {
 	}
 }
 
-echo ($errors ? "$errors problem(s)\n" : "php ok\n");
+// CSS we author (not the vendored gallery designs) keeps one declaration per line: diffs
+// then show which property changed instead of a whole reflowed rule, and a stray or
+// duplicated property is obvious. Checked here rather than with stylelint, which would
+// need the node install this repo deliberately does not have.
+$css = array_merge(
+	(array) glob(__DIR__ . "/app/styles/css/*.css"),
+	(array) glob(__DIR__ . "/app/settings/theme/designs/adminer-desktop/*.css")
+);
+foreach ($css as $filename) {
+	$short = str_replace(__DIR__ . "/", "", $filename);
+	// Blank out block comments but keep their newlines, so reported line numbers stay
+	// right and a semicolon inside a comment is not counted as a declaration.
+	// ponytail: no string/data-URI awareness — a `;` inside a value (a base64 data URI)
+	// would false-positive. None exist in our CSS; add a scanner if that changes.
+	$stripped = preg_replace_callback('~/\*.*?\*/~s', function ($m) {
+		return str_repeat("\n", substr_count($m[0], "\n"));
+	}, (string) file_get_contents($filename));
+	foreach (explode("\n", $stripped) as $i => $line) {
+		$n = $i + 1;
+		$semicolons = substr_count($line, ";");
+		$brace = strpos($line, "{") !== false || strpos($line, "}") !== false;
+		if ($semicolons > 1) {
+			fwrite(STDERR, "$short:$n: more than one declaration on a line\n");
+			$errors++;
+		} elseif ($semicolons === 1 && $brace) {
+			fwrite(STDERR, "$short:$n: declaration shares a line with a brace\n");
+			$errors++;
+		}
+	}
+}
+
+echo ($errors ? "$errors problem(s)\n" : "lint ok\n");
 exit($errors ? 1 : 0);

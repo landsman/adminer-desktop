@@ -1,11 +1,17 @@
 
 !/app/adminer-plugins/.gitkeep
 /.cache/
+/.idea/
+/.playwright-mcp/
 /app/adminer-plugins/*
 /app/adminer.php
 /app/editor.php
 /app/settings/plugins/available/
-/app/settings/theme/designs/
+# The gallery designs are fetched, but adminer-desktop/ is our own theme — keep it. The
+# /* form ignores each fetched design individually so the one exception can be negated;
+# a blanket designs/ would stop git descending and the negation could not take effect.
+/app/settings/theme/designs/*
+!/app/settings/theme/designs/adminer-desktop/
 /bin/
 /build/
 # Checked-in checksums are what make it reproducible — the bytes don't belong in git.

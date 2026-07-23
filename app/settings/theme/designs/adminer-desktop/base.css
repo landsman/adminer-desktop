@@ -1,0 +1,101 @@
+/* Document-wide element styling: type, links, headings, focus and the message boxes.
+ * Area-specific rules (tables, forms, the sidebar) live in their own files. */
+
+body {
+	font-family: var(--ad-font);
+	font-size: 13.5px;
+	line-height: var(--ad-line);
+}
+
+code,
+pre,
+textarea,
+.sqlarea,
+kbd,
+.jush {
+	font-family: var(--ad-mono);
+}
+
+/* macOS renders system-ui (San Francisco) best antialiased; Windows and Linux stay on
+   the OS default, where forcing this only thins the text. .os-* comes from bodyClass. */
+.os-mac body {
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Links. */
+a,
+a:visited {
+	color: var(--ad-accent);
+}
+
+a:link:hover,
+a:visited:hover {
+	color: color-mix(in srgb, var(--ad-accent) 72%, var(--fg));
+}
+
+/* Headings — calmer than Adminer's default heavy fills. */
+h1 {
+	background: var(--ad-menu-bg);
+	color: color-mix(in srgb, var(--fg) 62%, transparent);
+	border-bottom: 1px solid var(--ad-border);
+	font-weight: 600;
+	font-size: 128%;
+}
+
+h2 {
+	background: transparent;
+	color: var(--fg);
+	border-bottom: 1px solid var(--ad-border);
+	font-weight: 600;
+	font-size: 138%;
+}
+
+h3 {
+	color: var(--fg);
+	font-weight: 600;
+}
+
+code {
+	background: var(--dim);
+	border-radius: 4px;
+}
+
+/* A visible accent ring everywhere the keyboard lands. */
+a:focus-visible,
+[tabindex]:focus-visible {
+	outline: 2px solid var(--ad-accent);
+	outline-offset: 2px;
+	border-radius: var(--ad-radius-sm);
+}
+
+/* Messages. Written against tokens so one rule serves both schemes. */
+.error,
+.message {
+	border-radius: var(--ad-radius-sm);
+	border: 1px solid transparent;
+	padding: .5em .8em;
+}
+
+.error {
+	color: var(--ad-danger);
+	background: var(--ad-danger-bg);
+	border-color: color-mix(in srgb, var(--ad-danger) 26%, transparent);
+}
+
+.error b {
+	background: transparent;
+}
+
+.message {
+	color: var(--ad-ok);
+	background: var(--ad-ok-bg);
+	border-color: color-mix(in srgb, var(--ad-ok) 26%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	a,
+	#tables a,
+	#logins a {
+		transition: background-color .12s ease, color .12s ease;
+	}
+}

@@ -1,0 +1,55 @@
+/* Our settings dialog, themed.
+ *
+ * The dialog's structural styling (layout, tabs, the actions row) lives in
+ * app/styles/css/settings.css and loads for every design. This refines it so the gear,
+ * the active tab and the primary button use the Adminer Desktop accent instead of the OS
+ * AccentColor — one consistent indigo across the login button, the table accents and this
+ * dialog. It loads after the base sheet (it is one of this theme's @imports), so it wins;
+ * the id selectors match the base ones exactly so nothing is left half-restyled. */
+
+#desktop-gear {
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
+	border: 1px solid transparent;
+	border-radius: var(--ad-radius);
+}
+
+#desktop-gear:hover {
+	background: color-mix(in srgb, var(--ad-accent) 88%, #000);
+}
+
+#desktop-settings {
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+	background: var(--bg);
+	color: var(--fg);
+}
+
+/* Accent the active tab and its focus ring (base uses currentColor). */
+#desktop-tabs input:checked + label {
+	border-bottom-color: var(--ad-accent);
+	color: var(--ad-accent);
+}
+
+#desktop-tabs input:focus-visible + label {
+	outline-color: var(--ad-accent);
+}
+
+/* Primary action: our accent, not the OS AccentColor, so it matches the rest of the theme. */
+#desktop-save {
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
+	border-color: transparent;
+}
+
+#desktop-save:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-accent) 88%, #000);
+}
+
+#desktop-save:active:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-accent) 76%, #000);
+}
+
+#desktop-actions button:focus-visible {
+	outline-color: var(--ad-accent);
+}

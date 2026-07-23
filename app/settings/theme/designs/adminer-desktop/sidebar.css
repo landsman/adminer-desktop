@@ -1,0 +1,79 @@
+/* The left sidebar and the top breadcrumb — the app's navigation chrome. Treated as a
+ * quiet native panel: its own surface, hairline separators, the accent reserved for the
+ * active database and table. */
+
+#menu {
+	background: var(--ad-menu-bg);
+	border-right: 1px solid var(--ad-border);
+}
+
+#menu p,
+#logins,
+#tables {
+	border-bottom: 1px solid var(--ad-border);
+}
+
+#h1,
+.version {
+	color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+#h1 {
+	font-style: normal;
+	font-weight: 600;
+}
+
+#logins a,
+#tables a,
+#tables span {
+	background: transparent;
+}
+
+#tables a:hover,
+#logins a:hover {
+	background: var(--ad-accent-quiet);
+	border-radius: var(--ad-radius-sm);
+}
+
+#tables a.active,
+#tables a.select.active {
+	color: var(--ad-accent);
+	font-weight: 600;
+}
+
+#menu .active {
+	color: var(--ad-accent);
+}
+
+/* Top strip: breadcrumb, logout and the language switch. Kept quiet so the data below is
+   the focus. The breadcrumb loses Adminer's grey fill and reads as a plain path; logout
+   becomes a ghost button instead of a loud filled one in the corner. */
+#breadcrumb {
+	background: transparent;
+	color: color-mix(in srgb, var(--fg) 55%, transparent);
+	font-size: 92%;
+}
+
+#breadcrumb a {
+	color: color-mix(in srgb, var(--ad-accent) 80%, var(--fg));
+}
+
+#logout {
+	background: transparent;
+	color: var(--ad-accent);
+	border: 1px solid var(--ad-border-strong);
+	font-weight: 500;
+}
+
+#logout:hover {
+	background: var(--ad-accent-quiet);
+	border-color: var(--ad-accent);
+}
+
+#version {
+	color: color-mix(in srgb, var(--fg) 45%, transparent);
+}
+
+:target {
+	background: var(--lit);
+}

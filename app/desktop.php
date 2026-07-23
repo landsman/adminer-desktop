@@ -114,6 +114,18 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $this->theme->cssMap();
 	}
 
+	/** Tag <body> with the host OS and the chosen row density, for the theme to key off.
+	* Adminer dispatches this hook to every plugin and to its own base (which echoes
+	* " adminer"), concatenating whatever each echoes — so this adds classes rather than
+	* replacing them. PHP_OS_FAMILY is the real OS because frankenphp runs on the machine;
+	* no launcher env var is needed for it.
+	*/
+	function bodyClass() {
+		$os = array("Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux");
+		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
+		$this->theme->bodyClass();
+	}
+
 	function navigation($missing) {
 		$this->dialog->render();
 	}
@@ -139,14 +151,17 @@ class AdminerDesktop extends Adminer\Plugin {
 			'Available plugins' => 'Dostupné pluginy',
 			'The plugins folder is read-only.' => 'Složka s pluginy je jen pro čtení.',
 			'Save' => 'Uložit',
-			'(built-in)' => '(vestavěný)',
 			'Light' => 'Světlý',
 			'Dark' => 'Tmavý',
 			'Design' => 'Vzhled',
 			'Preview' => 'Náhled',
+			'Row density' => 'Hustota řádků',
+			'Compact' => 'Kompaktní',
+			'Cozy' => 'Střední',
+			'Comfortable' => 'Vzdušný',
+			'Adminer Desktop follows the system light and dark automatically. Override either side with a design below.' => 'Adminer Desktop se automaticky řídí světlým a tmavým režimem systému. Kteroukoli stranu můžete níže přepsat vlastním vzhledem.',
 			'Plugin' => 'Plugin',
 			'What it does' => 'Co dělá',
-			'Pick one of each; the system setting decides which applies.' => 'Vyberte jeden z každého; který se použije, rozhodne nastavení systému.',
 			'Settings' => 'Nastavení',
 			'Theme' => 'Vzhled',
 			'Plugins' => 'Pluginy',
@@ -154,7 +169,6 @@ class AdminerDesktop extends Adminer\Plugin {
 			// {n}, not %d: lang() runs the string through sprintf, which would replace %d with 0
 			// before the browser ever sees it.
 			'Unsaved changes: {n}. Close anyway?' => 'Neuložené změny: {n}. Přesto zavřít?',
-			'Leave both on (built-in) to follow the system theme.' => 'Nechte obojí na (vestavěný), aby se vzhled řídil systémem.',
 		),
 	);
 }
