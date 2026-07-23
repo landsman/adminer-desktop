@@ -1,0 +1,95 @@
+/* Islands layout.
+ *
+ * The sidebar and the content each become a panel that scrolls within itself, so the
+ * sidebar stays put and the content's header stays in view while its body scrolls — the
+ * "islands" of a JetBrains IDE. Adminer lays everything out with absolute positioning off
+ * a scrolling page; this rebuilds it as two flex columns and turns the absolute chrome
+ * (breadcrumb, language, logout) into a sticky header and pinned corners.
+ *
+ * Structure it works against: <body> holds #content and #foot (which wraps #menu); the
+ * breadcrumb sits inside #content, and the language switch and logout are their own forms.
+ */
+
+html {
+	height: 100%;
+}
+
+body {
+	box-sizing: border-box;
+	height: 100vh;
+	margin: 0;
+	overflow: hidden;
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.5rem;
+	/* the gutter around and between the panels */
+	background: var(--ad-menu-bg);
+}
+
+/* Left panel: #menu lives inside #foot. */
+#foot {
+	order: -1;
+	position: static;
+	display: flex;
+	flex: 0 0 19em;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--bg);
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+}
+
+#menu {
+	position: static;
+	inset: auto;
+	width: auto;
+	height: auto;
+	max-height: none;
+	margin: 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+/* Right panel: the content. */
+#content {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+	margin: 0;
+	padding: 0 1.2rem 1.2rem;
+	overflow-y: auto;
+	background: var(--bg);
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+}
+
+/* Breadcrumb becomes the content panel's sticky header, always in view. */
+#content #breadcrumb {
+	position: sticky;
+	inset: 0 auto auto 0;
+	width: auto;
+	margin: 0 -1.2rem 0.6rem;
+	padding: 0.55rem 1.2rem;
+	background: var(--bg);
+	border-bottom: 1px solid var(--ad-border);
+	z-index: 3;
+}
+
+/* Language switch and logout are their own forms; pin them to the window corners so they
+   stay reachable and never become stray columns. */
+#lang {
+	position: fixed;
+	inset: auto auto 0.5rem 0.75rem;
+}
+
+.logout {
+	position: fixed;
+	inset: 0.6rem 0.75rem auto auto;
+	z-index: 6;
+}
+
+/* The hover tooltip floats; keep it out of the flex flow. */
+#help {
+	position: fixed;
+}
