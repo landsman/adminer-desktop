@@ -199,6 +199,7 @@ func main() {
 	// need it.
 	installJSDialogs(w.Window())
 	installMouseNav(w.Window())
+	installReloadShortcut(w.Window())
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
 		if enableInspector(w.Window()) {

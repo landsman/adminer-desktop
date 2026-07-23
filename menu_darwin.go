@@ -97,6 +97,13 @@ func installMouseNav(window unsafe.Pointer) {
 	C.installMouseNav(window)
 }
 
+// installReloadShortcut reloads the page on Cmd+R and F5. WKWebView leaves both unbound on
+// macOS and the page never sees the keystroke, so it is caught natively; shortcuts.js
+// covers the other platforms, where the WebViews do deliver it to the page.
+func installReloadShortcut(window unsafe.Pointer) {
+	C.installReloadShortcut(window)
+}
+
 func installMenu(navigate func(string), baseURL, logDir string) {
 	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)

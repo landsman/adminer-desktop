@@ -10,6 +10,9 @@ int installJSDialogs(void *nsWindow); // 1 when the UI delegate was attached
 // Route the mouse's back/forward side buttons to the webview's history.
 int installMouseNav(void *nsWindow); // 1 when the monitor was attached
 
+// Reload the page on Cmd+R and F5, which WKWebView otherwise ignores.
+int installReloadShortcut(void *nsWindow); // 1 when the monitor was attached
+
 const char *describeUIDelegate(void *nsWindow);
 int enableInspector(void *nsWindow); // 1 if the web inspector was turned on
 

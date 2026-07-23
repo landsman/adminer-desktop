@@ -21,6 +21,10 @@ func installJSDialogs(window unsafe.Pointer) {}
 // Built when that platform actually ships, the way the menu is — this stub is the seam.
 func installMouseNav(window unsafe.Pointer) {}
 
+// The reload shortcut is handled in the page by shortcuts.js off macOS, where the WebViews
+// deliver the keystroke to it, so nothing native is needed.
+func installReloadShortcut(window unsafe.Pointer) {}
+
 func enableInspector(window unsafe.Pointer) bool { return false }
 
 func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }
