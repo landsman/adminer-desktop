@@ -12,6 +12,7 @@ parameters:
     # "unknown function" and the real findings drown.
     scanFiles:
         - app/adminer.php
+        - phpstan-stubs.php
 
     # Adminer silences undefined-key warnings on purpose (include/errors.inc.php) and its
     # own style is bare $_POST["x"], which this repo follows so the plugin reads like the

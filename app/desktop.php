@@ -126,20 +126,36 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $return;
 	}
 
-	/** Get the one-line description each plugin carries in its opening doc-comment.
-	* Read straight out of the file rather than by instantiating the plugin and calling
-	* description(): loading 51 plugins to render a settings dialog would run all their
-	* constructors and register all their hooks, for a page that only wants their names.
-	* Only the head of each file is read, since the comment is always at the top.
-	* ponytail: English only. The localised text lives in each plugin's $translations and
-	* getting at it does require instantiating them.
+	/** Get each plugin's one-line description, in the interface language where it has one.
+	*
+	* Every shipped plugin carries its own translations, so this needs no network and
+	* cannot go stale against the bundled version — all 51 have Czech, and most have
+	* German, Polish, Croatian and Japanese.
+	*
+	* The files are included but nothing is instantiated: reflection reads the default
+	* value of $translations off the class. Including is safe here because adminer builds
+	* its plugin list in Plugins::__construct, which has long since run by the time a page
+	* renders, so a class declared now is not picked up and enabled.
 	* @return array<string, string>
 	*/
 	private function descriptions(): array {
 		$return = array();
 		foreach ($this->available() as $name => $filename) {
-			$head = (string) file_get_contents($filename, false, null, 0, 400);
-			$return[$name] = (preg_match('~/\*\*\s*(.+)~', $head, $match) ? trim($match[1]) : "");
+			$before = get_declared_classes();
+			@include_once $filename;
+			$description = "";
+			foreach (array_diff(get_declared_classes(), $before) as $class) {
+				$defaults = (new \ReflectionClass($class))->getDefaultProperties();
+				$translations = (isset($defaults["translations"]) ? (array) $defaults["translations"] : array());
+				$description = (string) ($translations[Adminer\LANG][""] ?? "");
+			}
+			if ($description === "") {
+				// English fallback: the opening doc-comment, which every plugin has even
+				// when it has no translation for this language.
+				$head = (string) file_get_contents($filename, false, null, 0, 400);
+				$description = (preg_match('~/\*\*\s*\**\s*(.+)~', $head, $match) ? trim($match[1]) : "");
+			}
+			$return[$name] = $description;
 		}
 		return $return;
 	}
