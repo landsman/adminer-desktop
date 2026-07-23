@@ -26,6 +26,12 @@
 	max-width: 92vw;
 	max-height: 88vh;
 	padding: 1.2em;
+}
+
+/* Only when open. A bare `display: flex` here overrides the `display: none` the browser
+   gives a closed <dialog>, which leaves it on screen permanently and makes close() look
+   broken. */
+#desktop-settings[open] {
 	display: flex;
 	flex-direction: column;
 }
