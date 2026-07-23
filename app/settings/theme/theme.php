@@ -136,6 +136,10 @@ class Theme {
 					// the endpoint serves a placeholder rather than failing when offline.
 					echo "<img src='settings/theme/screenshot.php?design=" . urlencode(basename(dirname($path)))
 						. "' alt='' loading='lazy' width='160' height='100'>";
+				} else {
+					// Our own default has no adminer.org screenshot; the placeholder gives its
+					// row the same height as the gallery rows.
+					echo "<img src='settings/theme/placeholder.svg' alt='' width='160' height='100'>";
 				}
 				echo "</label>\n";
 			}
