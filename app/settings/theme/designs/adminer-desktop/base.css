@@ -3,7 +3,7 @@
 
 body {
 	font-family: var(--ad-font);
-	font-size: 13.5px;
+	font-size: calc(13.5px * var(--ad-scale, 1));
 	line-height: var(--ad-line);
 }
 

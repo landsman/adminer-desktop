@@ -122,9 +122,14 @@ class Theme {
 				$checked = ($_SESSION["design_$mode"] == $path ? " checked" : "");
 				// Every cell's content is a <label for> the row's input, so clicking the name
 				// or the preview selects it, not just the radio itself.
+				// The whole first cell is one <label> around the radio and the name, so
+				// clicking anywhere in it selects the design; the second cell wraps the
+				// preview the same way. #desktop-panels td label is display:block.
 				echo "<tr><td style='white-space: nowrap'>"
-					. "<input type='radio' name='design_$mode' value='" . \Adminer\h($path) . "' id='$id'$checked>"
-					. "<label for='$id' style='display: inline-block'> " . \Adminer\h($design) . "</label>"
+					. "<label for='$id'>"
+					. "<input type='radio' name='design_$mode' value='" . \Adminer\h($path) . "' id='$id'$checked> "
+					. \Adminer\h($design)
+					. "</label>"
 					. "<td><label for='$id'>";
 				if ($path) {
 					// loading=lazy so opening the dialog does not fire 26 requests at once;

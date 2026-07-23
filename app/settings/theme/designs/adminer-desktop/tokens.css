@@ -39,6 +39,9 @@ html {
 	--ad-row-px: 0.58em;
 	--ad-line: 1.5;
 
+	/* UI scale (100%) — overridden by the scale-* body classes below. */
+	--ad-scale: 1;
+
 	color-scheme: light;
 	accent-color: var(--ad-accent);
 }
@@ -63,25 +66,26 @@ html {
 	--ad-line: 1.66;
 }
 
-/* Scaling. zoom (not transform: scale) so the layout reflows to fit instead of
-   overflowing; every webview we ship supports it. The select in the settings dialog
-   offers these steps. */
+/* Scaling. A font-size multiplier, not zoom: it scales the type and the em-based layout
+   while leaving vh/vw alone, so the settings modal's caps still fit the window — zoom
+   inflates vh and pushes the modal's header and footer off-screen. body reads --ad-scale
+   (base.css); these classes set it. */
 .scale-100 {
-	zoom: 1;
+	--ad-scale: 1;
 }
 
 .scale-125 {
-	zoom: 1.25;
+	--ad-scale: 1.25;
 }
 
 .scale-150 {
-	zoom: 1.5;
+	--ad-scale: 1.5;
 }
 
 .scale-175 {
-	zoom: 1.75;
+	--ad-scale: 1.75;
 }
 
 .scale-200 {
-	zoom: 2;
+	--ad-scale: 2;
 }
