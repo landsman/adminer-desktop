@@ -84,6 +84,13 @@
 	font-weight: 500;
 	font-size: 0.85em;
 	padding: 0.2em 0.6em;
+	/* A gap from the username text beside it. */
+	margin-left: 0.5rem;
+}
+
+/* The username sitting next to the logout button. */
+.logout span {
+	font-size: 0.7rem;
 }
 
 #logout:hover {
