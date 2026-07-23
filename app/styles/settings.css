@@ -60,6 +60,10 @@ body:has(#desktop-settings[open]) {
 	pointer-events: none;
 }
 
+#desktop-tabs {
+	margin-bottom: .5em;
+}
+
 #desktop-tabs label {
 	display: inline-block;
 	padding: .4em 1em;
@@ -81,7 +85,8 @@ body:has(#desktop-settings[open]) {
 	overflow: auto;
 	min-height: 0;
 	flex: 1;
-	padding-top: .5em;
+	/* No padding-top: the sticky header sticks to the top of the scrollport, and any
+	   padding above it is scrollable area where rows show through above the header. */
 }
 
 #desktop-panels > div {
@@ -93,8 +98,56 @@ body:has(#desktop-settings[open]) {
 	display: block;
 }
 
+/* --- Buttons ------------------------------------------------------------------ */
+
+/* Deliberately not Adminer's button styling. This is a dialog in a desktop app, so it
+   follows the platform's dialog conventions instead: actions bottom right, cancel then
+   confirm, and the primary action filled with the user's own accent colour. */
+
 #desktop-actions {
-	padding-top: .8em;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: .6em;
+	padding-top: 1em;
+}
+
+#desktop-actions button {
+	font: inherit;
+	line-height: 1.2;
+	padding: .45em 1.2em;
+	border-radius: 6px;
+	border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+	background: var(--bg);
+	color: var(--fg);
+	cursor: pointer;
+}
+
+#desktop-actions button:hover:not(:disabled) {
+	background: var(--dim);
+}
+
+/* AccentColor is whatever the user picked in System Settings, so the confirm button
+   matches the rest of their desktop rather than a colour chosen here. */
+#desktop-save {
+	background: AccentColor;
+	color: AccentColorText;
+	border-color: transparent;
+	font-weight: 500;
+}
+
+#desktop-save:hover:not(:disabled) {
+	filter: brightness(1.08);
+}
+
+#desktop-actions button:disabled {
+	opacity: .5;
+	cursor: not-allowed;
+}
+
+#desktop-actions button:focus-visible {
+	outline: 2px solid AccentColor;
+	outline-offset: 2px;
 }
 
 /* --- Tables ------------------------------------------------------------------- */
@@ -104,6 +157,12 @@ body:has(#desktop-settings[open]) {
 
 #desktop-panels table {
 	width: 100%;
+}
+
+/* Adminer makes thead sticky but gives it no stacking order, so scrolling rows paint
+   over the header instead of under it. */
+#desktop-panels thead {
+	z-index: 1;
 }
 
 #desktop-panels td {

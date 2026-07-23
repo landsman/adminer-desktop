@@ -302,10 +302,13 @@ class AdminerDesktop extends Adminer\Plugin {
 
 		echo Adminer\input_hidden("desktop_settings", 1);
 		echo Adminer\input_token();
-		echo "<div id='desktop-actions'><input type='submit' value='" . Adminer\h($this->lang('Save')) . "'"
-			. ($writable ? "" : " disabled") . ">\n";
-		echo "<button type='button' id='desktop-close'>" . Adminer\h($this->lang('Cancel')) . "</button>\n";
+		// Cancel first, primary action last: that is the order every mac dialog uses, and
+		// muscle memory puts the confirm button in the bottom right corner.
+		echo "<div id='desktop-actions'>";
+		echo "<button type='button' id='desktop-close'>" . Adminer\h($this->lang('Cancel')) . "</button>";
 		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').close(); };");
+		echo "<button type='submit' id='desktop-save'" . ($writable ? "" : " disabled") . ">"
+			. Adminer\h($this->lang('Save')) . "</button>\n";
 		echo "</div>\n</form>\n</dialog>\n";
 	}
 
@@ -318,6 +321,11 @@ class AdminerDesktop extends Adminer\Plugin {
 			'(built-in)' => '(vestavěný)',
 			'Light' => 'Světlý',
 			'Dark' => 'Tmavý',
+			'Design' => 'Vzhled',
+			'Preview' => 'Náhled',
+			'Plugin' => 'Plugin',
+			'What it does' => 'Co dělá',
+			'Pick one of each; the system setting decides which applies.' => 'Vyberte jeden z každého; který se použije, rozhodne nastavení systému.',
 			'Settings' => 'Nastavení',
 			'Theme' => 'Vzhled',
 			'Plugins' => 'Pluginy',
