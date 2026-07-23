@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Shown when a design has no screenshot upstream, or when there is no network to
+     fetch one. screenshot.php redirects here rather than inlining the markup, so every
+     missing preview shares one cacheable URL instead of re-fetching its own copy. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" width="160" height="100">
+	<rect width="160" height="100" rx="6" fill="#8883"/>
+	<path d="M52 62l18-20 14 16 10-10 14 14v10H52z" fill="#8886"/>
+	<circle cx="60" cy="40" r="7" fill="#8886"/>
+</svg>

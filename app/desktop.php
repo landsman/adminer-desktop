@@ -1,10 +1,51 @@
 <?php
+declare(strict_types=1);
 
-/** Adapt Adminer's defaults to running as a desktop app
-* @author adminer-desktop
+/** Adapt Adminer's defaults to running as a desktop app.
+*
+* This file is the plugin adminer sees: the hooks, and the strings. The work behind them
+* lives in settings/, one file per concern, so that this stays a map of what is hooked
+* rather than a pile of everything.
+*
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
+
+require_once __DIR__ . "/styles/styles.php";
+require_once __DIR__ . "/settings/theme/theme.php";
+require_once __DIR__ . "/settings/plugins/plugins.php";
+require_once __DIR__ . "/settings/dialog.php";
+
 class AdminerDesktop extends Adminer\Plugin {
+	/** @var Desktop\Styles */ private $styles;
+	/** @var Desktop\Theme */ private $theme;
+	/** @var Desktop\PluginList */ private $plugins;
+	/** @var Desktop\Dialog */ private $dialog;
+
+	function __construct() {
+		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
+		$this->theme = new Desktop\Theme($this);
+		$this->plugins = new Desktop\PluginList($this);
+		$this->dialog = new Desktop\Dialog($this, $this->theme, $this->plugins);
+	}
+
+	/** Translate. lang() is protected on Plugin, and the classes in settings/ need it;
+	* keeping every string in one $translations below is also one file for a translator.
+	* @param literal-string $idf
+	*/
+	function t(string $idf): string {
+		return $this->lang($idf);
+	}
+
+	/** Get this directory with forward slashes.
+	* __DIR__ is backslash-separated on Windows, and glob() treats a backslash as an
+	* escape character there, so a pattern built from raw __DIR__ silently matches
+	* nothing — no designs, no plugins, and no error to say why. PHP accepts forward
+	* slashes on every platform.
+	*/
+	function dir(): string {
+		return str_replace('\\', '/', __DIR__);
+	}
+
 	function loginFormField($name, $heading, $value) {
 		// Adminer ships the Server field empty, which means "connect over a Unix socket".
 		// That is right for a server deployment and wrong for a desktop one: here the
@@ -58,91 +99,20 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $return;
 	}
 
-	/** Get this directory with forward slashes.
-	* __DIR__ is backslash-separated on Windows, and glob() treats a backslash as an
-	* escape character there, so a pattern built from raw __DIR__ silently matches
-	* nothing — no designs, no plugins, and no error to say why. PHP accepts forward
-	* slashes on every platform.
-	*/
-	private function dir(): string {
-		return str_replace('\\', '/', __DIR__);
-	}
-
-	/** Get shipped designs for one side of the light/dark split, path => label
-	* @param string $mode "light" or "dark"
-	* @return array<string, string>
-	*/
-	function designs(string $mode): array {
-		$return = array("" => $this->lang('(built-in)'));
-		foreach (glob($this->dir() . "/designs/*/*.css") as $filename) {
-			$dir = basename(dirname($filename));
-			$path = "designs/$dir/" . basename($filename);
-			// Match -dark anywhere in the path, not just the filename, which is what
-			// upstream plugins/designs.php:30 does. rmsoft_blue-dark is the case that
-			// proves it: the folder is marked dark but its file is a plain adminer.css,
-			// so matching the basename alone lands a dark theme in the light list.
-			$is_dark = (bool) preg_match('~-dark~', $path);
-			if ($is_dark == ($mode == "dark")) {
-				$return[$path] = $dir;
-			}
-		}
-		asort($return);
-		return $return;
+	function head($dark = null) {
+		$this->styles->link();
+		return null; // let adminer's own head() run; it prints the favicon
 	}
 
 	function css() {
-		// PHP cannot know the OS theme — only a CSS media query can. So "auto" means
-		// handing adminer both stylesheets and letting the browser choose: when css()
-		// returns a light one and a dark one, design.inc.php:53 tags each with the
-		// matching prefers-color-scheme query.
-		$return = array();
-		foreach (array("light", "dark") as $mode) {
-			$design = $_SESSION["design_$mode"];
-			// array_key_exists, not truthiness: guards against a stale session pointing at
-			// a design that a later adminer release no longer ships.
-			if ($design && array_key_exists($design, $this->designs($mode))) {
-				$return[$design] = $mode;
-			}
-		}
-		// null, not an empty array: css() short-circuits on the first non-null, and we
-		// want adminer's own built-in theme (which already auto-switches) when neither
-		// side is set.
-		return $return ?: null;
+		return $this->theme->cssMap();
 	}
 
-	/** Get shipped plugins, name => path. The enabled ones are whatever is symlinked into
-	* adminer-plugins/, so the filesystem is the only state there is — which means dragging
-	* a downloaded plugin into that folder behaves exactly like ticking a box here.
-	* @return array<string, string>
-	*/
-	private function available(): array {
-		$return = array();
-		// Top level only: plugins-available/drivers/ are database drivers, which need a
-		// server we cannot assume exists, not a checkbox.
-		foreach (glob($this->dir() . "/plugins-available/*.php") as $filename) {
-			$return[basename($filename, ".php")] = $filename;
-		}
-		ksort($return);
-		return $return;
+	function navigation($missing) {
+		$this->dialog->render();
 	}
 
-	private function link(string $name): string {
-		return $this->dir() . "/adminer-plugins/$name.php";
-	}
-
-	/** Is this enabled plugin one we put there, and therefore ours to remove?
-	* A symlink always is. A copy counts only while it still matches what we ship —
-	* so a .php the user dropped in by hand is never deleted by a checkbox, even if it
-	* happens to share a name with a bundled plugin.
-	*/
-	private function isOurs(string $link, string $filename): bool {
-		if (is_link($link)) {
-			return true;
-		}
-		return file_exists($link) && file_get_contents($link) === file_get_contents($filename);
-	}
-
-	/** Apply settings posted from the modal. Called from adminer-plugins.php rather than
+	/** Apply settings posted from the dialog. Called from adminer-plugins.php rather than
 	* from a hook: it runs after session_start() and before any output, which is what both
 	* the session write and the redirect need. afterConnect() would only fire once you are
 	* connected, so nothing here would work on the login screen.
@@ -152,74 +122,9 @@ class AdminerDesktop extends Adminer\Plugin {
 			return;
 		}
 		Adminer\restart_session();
-		foreach (array("light", "dark") as $mode) {
-			$_SESSION["design_$mode"] = $_POST["design_$mode"];
-		}
-		// Whitelist by construction — we iterate what we ship and only look the POSTed
-		// names up in it, so nothing user-supplied ever reaches a filesystem path.
-		$wanted = array_flip((array) $_POST["plugins"]);
-		foreach ($this->available() as $name => $filename) {
-			$link = $this->link($name);
-			if (isset($wanted[$name])) {
-				if (!file_exists($link)) {
-					// Relative target, so it survives app/ being moved into a .app bundle.
-					// Windows only allows symlinks with elevated rights or developer mode
-					// on, so fall back to a copy there rather than failing silently.
-					@symlink("../plugins-available/$name.php", $link) || @copy($filename, $link);
-				}
-			} elseif ($this->isOurs($link, $filename)) {
-				@unlink($link);
-			}
-		}
+		$this->theme->apply();
+		$this->plugins->apply();
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
-	}
-
-	function navigation($missing) {
-		$writable = is_writable(dirname($this->link("x")));
-		// <dialog> rather than a hand-rolled overlay: it brings the backdrop, focus
-		// trapping, top-layer stacking and escape-to-close with it, and needs no library.
-		echo "<button type='button' id='desktop-gear' title='" . Adminer\h($this->lang('Settings'))
-			. "' style='position: fixed; bottom: .5em; right: .5em; font-size: 1.2em; line-height: 1; padding: .3em .5em; cursor: pointer'>&#9881;</button>";
-		// Adminer sets a CSP nonce on its scripts, so behaviour is attached via its own
-		// script()/qsl() helpers; an inline onclick attribute would be blocked.
-		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').showModal(); };");
-
-		echo "<dialog id='desktop-settings' style='max-width: 40em; padding: 1em'>\n";
-		echo "<form action='' method='post'>\n";
-
-		echo "<h3>" . Adminer\h($this->lang('Theme')) . "</h3>\n";
-		// Two selects because no design upstream ships both variants: each is either
-		// light-only or dark-only, and auto-switching needs one of each.
-		foreach (array("light" => $this->lang('Light'), "dark" => $this->lang('Dark')) as $mode => $label) {
-			echo "<label style='margin-right: 1em'>" . Adminer\h($label) . " "
-				. Adminer\html_select("design_$mode", $this->designs($mode), $_SESSION["design_$mode"])
-				. "</label>\n";
-		}
-		echo "<p class='message'>" . Adminer\h($this->lang('Leave both on (built-in) to follow the system theme.')) . "\n";
-
-		$available = $this->available();
-		if ($available) {
-			echo "<h3>" . Adminer\h($this->lang('Plugins')) . "</h3>\n";
-			if (!$writable) {
-				echo "<p class='error'>" . Adminer\h($this->lang('The plugins folder is read-only.')) . "\n";
-			}
-			echo "<ul style='columns: 2; list-style: none; padding: 0; max-height: 22em; overflow: auto'>\n";
-			foreach ($available as $name => $filename) {
-				// ponytail: names only, no descriptions. Rendering those means including all
-				// 51 files on every page load to read their doc-comments, and the names
-				// (dump-json, login-ip, table-structure) already say what they do.
-				echo "<li>" . Adminer\checkbox("plugins[]", $name, file_exists($this->link($name)), $name) . "\n";
-			}
-			echo "</ul>\n";
-		}
-
-		echo Adminer\input_hidden("desktop_settings", 1);
-		echo Adminer\input_token();
-		echo "<p><input type='submit' value='" . Adminer\h($this->lang('Save')) . "'"
-			. ($writable ? "" : " disabled") . ">\n";
-		echo "<button type='button' id='desktop-close'>" . Adminer\h($this->lang('Cancel')) . "</button>\n";
-		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').close(); };");
-		echo "</form>\n</dialog>\n";
 	}
 
 	protected $translations = array(
@@ -231,10 +136,18 @@ class AdminerDesktop extends Adminer\Plugin {
 			'(built-in)' => '(vestavěný)',
 			'Light' => 'Světlý',
 			'Dark' => 'Tmavý',
+			'Design' => 'Vzhled',
+			'Preview' => 'Náhled',
+			'Plugin' => 'Plugin',
+			'What it does' => 'Co dělá',
+			'Pick one of each; the system setting decides which applies.' => 'Vyberte jeden z každého; který se použije, rozhodne nastavení systému.',
 			'Settings' => 'Nastavení',
 			'Theme' => 'Vzhled',
 			'Plugins' => 'Pluginy',
 			'Cancel' => 'Zavřít',
+			// {n}, not %d: lang() runs the string through sprintf, which would replace %d with 0
+			// before the browser ever sees it.
+			'Unsaved changes: {n}. Close anyway?' => 'Neuložené změny: {n}. Přesto zavřít?',
 			'Leave both on (built-in) to follow the system theme.' => 'Nechte obojí na (vestavěný), aby se vzhled řídil systémem.',
 		),
 	);

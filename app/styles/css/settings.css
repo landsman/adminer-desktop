@@ -1,0 +1,205 @@
+/* Settings dialog. Tokens live in tokens.css; both are pulled in by index.css. */
+
+/* --- Trigger ------------------------------------------------------------------ */
+
+#desktop-gear {
+	position: fixed;
+	bottom: .5em;
+	right: .5em;
+	font-size: 1.2em;
+	line-height: 1;
+	padding: var(--ad-cell-padding);
+	cursor: pointer;
+}
+
+/* --- Dialog ------------------------------------------------------------------- */
+
+#desktop-settings {
+	width: var(--ad-dialog-width);
+	max-width: var(--ad-dialog-max-width);
+	max-height: var(--ad-dialog-max-height);
+	padding: var(--ad-dialog-padding);
+}
+
+/* Only when open. A bare `display: flex` here overrides the `display: none` the browser
+   gives a closed <dialog>, which leaves it on screen permanently and makes close() look
+   broken. */
+#desktop-settings[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+#desktop-settings form {
+	display: flex;
+	flex-direction: column;
+	min-height: 0; /* or the panel below cannot shrink and the dialog overflows */
+}
+
+/* Lock the page behind the dialog. CSS rather than JS toggling a class: <dialog> closes
+   on escape and on form submission as well as from the Cancel button, and a handler on
+   the button would miss both, leaving the page unscrollable with nothing to explain it. */
+body:has(#desktop-settings[open]) {
+	overflow: hidden;
+}
+
+/* --- Tabs --------------------------------------------------------------------- */
+
+/* No JS: hidden radios drive the panels through :has(). A checked radio is also the
+   state, so nothing has to be re-applied when the dialog is reopened. */
+
+#desktop-tabs input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+#desktop-tabs {
+	margin-bottom: var(--ad-gap);
+}
+
+#desktop-tabs label {
+	display: inline-block;
+	padding: .4em var(--ad-gap-lg);
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+}
+
+#desktop-tabs input:checked + label {
+	border-bottom-color: currentColor;
+	font-weight: bold;
+}
+
+#desktop-tabs input:focus-visible + label {
+	outline: 2px solid currentColor;
+	outline-offset: -2px;
+}
+
+#desktop-panels {
+	overflow: auto;
+	min-height: 0;
+	flex: 1;
+	/* No padding-top: the sticky header sticks to the top of the scrollport, and any
+	   padding above it is scrollable area where rows show through above the header. */
+}
+
+#desktop-panels > div {
+	display: none;
+}
+
+#desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
+#desktop-settings:has(#desktop-tab-themes:checked) #desktop-panel-themes {
+	display: block;
+}
+
+/* --- Buttons ------------------------------------------------------------------ */
+
+/* Deliberately not Adminer's button styling. This is a dialog in a desktop app, so it
+   follows the platform's dialog conventions instead: actions bottom right, cancel then
+   confirm, and the primary action filled with the user's own accent colour. */
+
+#desktop-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: var(--ad-gap);
+	padding-top: var(--ad-gap-lg);
+}
+
+#desktop-actions button {
+	font: inherit;
+	line-height: 1.2;
+	padding: var(--ad-button-padding);
+	border-radius: var(--ad-radius);
+	border: 1px solid var(--ad-border);
+	background: var(--bg);
+	color: var(--fg);
+	cursor: pointer;
+}
+
+#desktop-actions button:hover:not(:disabled) {
+	background: var(--dim);
+}
+
+/* AccentColor is whatever the user picked in System Settings, so the confirm button
+   matches the rest of their desktop rather than a colour chosen here. */
+#desktop-save {
+	background: AccentColor;
+	color: AccentColorText;
+	border-color: transparent;
+	font-weight: 500;
+}
+
+/* Darken on hover and further on press, which is how a filled button behaves on macOS.
+   brightness() was wrong in both directions: it washed out a light accent colour and
+   barely moved a dark one. */
+#desktop-save:hover:not(:disabled) {
+	background: color-mix(in srgb, AccentColor 88%, black);
+}
+
+#desktop-save:active:not(:disabled) {
+	background: color-mix(in srgb, AccentColor 76%, black);
+}
+
+#desktop-actions button:disabled {
+	opacity: .5;
+	cursor: not-allowed;
+}
+
+#desktop-actions button:focus-visible {
+	outline: 2px solid AccentColor;
+	outline-offset: 2px;
+}
+
+/* --- Tables ------------------------------------------------------------------- */
+
+/* Striping is Adminer's own .odds class, which dark.css overrides, so rows follow the
+   active design rather than colours picked here. */
+
+#desktop-panels table {
+	width: 100%;
+}
+
+/* Adminer makes thead sticky but gives it no stacking order, so scrolling rows paint
+   over the header instead of under it. */
+#desktop-panels thead {
+	z-index: 1;
+}
+
+#desktop-panels td {
+	padding: 0;
+}
+
+/* Each cell's content is a <label for> the row's input, so the whole row is a hit
+   target - clicking the name, the description or the preview all select it. */
+#desktop-panels td label {
+	display: block;
+	padding: var(--ad-cell-padding);
+	cursor: pointer;
+}
+
+#desktop-panels tbody tr:hover {
+	background: var(--dim);
+}
+
+#desktop-panels img {
+	border-radius: var(--ad-radius-sm);
+	object-fit: cover;
+	object-position: top;
+}
+
+/* --- Unsaved rows ------------------------------------------------------------- */
+
+/* [checked] is the attribute as the server rendered it, :checked is what the box is
+   now, so the two disagreeing is exactly an edit that has not been saved - no JS and no
+   bookkeeping.
+
+   Checkboxes count in both directions: unticking a plugin is as much a change as
+   ticking one. Radios only count when turned on. Picking a design necessarily turns the
+   previous one off, and highlighting the row you just left as "changed" is noise - it
+   marked (built-in) as edited whenever you chose any design. */
+
+#desktop-panels tbody tr:has(input[type=checkbox][checked]:not(:checked)),
+#desktop-panels tbody tr:has(input[type=checkbox]:not([checked]):checked),
+#desktop-panels tbody tr:has(input[type=radio]:not([checked]):checked) {
+	background: var(--ad-unsaved);
+}

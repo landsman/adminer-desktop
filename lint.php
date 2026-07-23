@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /** Syntax and style check for the PHP we ship.
 *
 * Run through the frankenphp we already download, so QA needs nothing installed:
@@ -12,16 +13,30 @@
 * growing rules instead of catching bugs.
 */
 
-// adminer.php and editor.php are downloaded release artifacts, not ours: linting them
-// would report upstream's choices as our problems, and they are checksum-verified anyway.
-$vendored = array("adminer.php", "editor.php");
+// Shipped verbatim from the adminer release, not ours: linting them would report
+// upstream's choices as our problems, and they are checksum-verified anyway.
+$vendored = array(
+	"app/adminer.php",
+	"app/editor.php",
+	"/settings/plugins/available/",
+	// Whatever the user has enabled is a copy of one of those, or a file they dropped in
+	// themselves. Either way it is not ours to have opinions about.
+	"/adminer-plugins/",
+	"/settings/theme/designs/",
+);
 
 $errors = 0;
-foreach (array_merge(glob(__DIR__ . "/app/*.php"), array(__FILE__)) as $filename) {
-	$short = basename($filename);
-	if (in_array($short, $vendored)) {
-		continue;
-	}
+// Required, not autoloaded: this is the linter, so it has to work before anything else
+// does. Desktop\Files is app code because app code will want it too.
+require_once __DIR__ . "/app/files.php";
+
+$filenames = array_merge(
+	Desktop\Files::find(__DIR__ . "/app", "php", $vendored),
+	array(__FILE__)
+);
+
+foreach ($filenames as $filename) {
+	$short = str_replace(__DIR__ . "/", "", $filename);
 	$source = file_get_contents($filename);
 
 	// TOKEN_PARSE makes the tokenizer validate, so this is `php -l` without executing
@@ -57,6 +72,13 @@ foreach (array_merge(glob(__DIR__ . "/app/*.php"), array(__FILE__)) as $filename
 		fwrite(STDERR, "$short: no newline at end of file\n");
 		$errors++;
 	}
+	// Enforced rather than remembered: strict_types only applies to the file that
+	// declares it, so one file missing it is a silent hole rather than an error.
+	if (!preg_match('~^<\?php\s*\ndeclare\(strict_types=1\);~', $source)) {
+		fwrite(STDERR, "$short: missing declare(strict_types=1) on the line after <?php\n");
+		$errors++;
+	}
+
 	// That superglobal is banned outright in adminer: it merges GET, POST and COOKIE, so it
 	// silently accepts a value from a source the code did not intend.
 	// Needle split, in the message too, so this file does not match its own rule — it

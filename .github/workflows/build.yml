@@ -4,12 +4,23 @@ on:
   push:
     branches: [master]
   pull_request:
+    # ready_for_review is not in the default set, so marking a draft ready would
+    # otherwise never trigger anything and the checks would sit there as skipped.
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+    inputs:
+      build:
+        description: Also build and package all three platforms
+        type: boolean
+        default: false
 
 jobs:
   # Kept separate from build so a lint failure reads as a lint failure rather than as a
   # broken build, and so it reports in ~2 minutes instead of waiting on the matrix.
+  # A draft PR is work in progress and says so; running the checks on every push to one
+  # spends minutes to tell you about code you already know is unfinished.
   quality:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -49,7 +60,11 @@ jobs:
       # needs nothing installed.
       - run: make security
 
+  # Manual only. Three platforms per commit is minutes spent to learn that a one-line PHP
+  # change is still fine, and macOS runners bill at 10x. Run it from the Actions tab with
+  # the build box ticked when you actually want artifacts.
   build:
+    if: github.event_name == 'workflow_dispatch' && inputs.build
     strategy:
       # One red platform should not hide the state of the other two.
       fail-fast: false

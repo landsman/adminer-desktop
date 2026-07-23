@@ -2,6 +2,8 @@
 
 package main
 
+import "unsafe"
+
 // ponytail: no menu bar off macOS. Windows and Linux put menus inside the window rather
 // than in a system bar, so there is nothing to mirror — it would be a new widget, drawn
 // by us, in a webview that is already showing a full UI. The two things the mac menu
@@ -10,3 +12,9 @@ package main
 //
 // Build this out when someone actually asks; installMenu is already the seam.
 func installMenu(navigate func(string), baseURL, logDir string) {}
+
+func installJSDialogs(window unsafe.Pointer) {}
+
+func enableInspector(window unsafe.Pointer) bool { return false }
+
+func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }

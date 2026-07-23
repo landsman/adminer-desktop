@@ -103,6 +103,7 @@ var (
 
 func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
+	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
 	headless := flag.Bool("headless", false, "start the server, verify it serves, exit (used by `make check-app`)")
 	flag.Parse()
 
@@ -138,8 +139,12 @@ func main() {
 	// Adminer's permanent login needs somewhere durable to keep its key. Passing the
 	// path in means the per-OS logic stays in os.UserConfigDir and never gets restated
 	// in PHP.
+	// PHP_INI_SCAN_DIR: frankenphp logs nothing on a PHP fatal error by default -- it
+	// goes to the page and no further, so the log file a user is pointed at never sees
+	// the one thing they went looking for. app/php/desktop.ini turns log_errors on.
+	srv.Env = append(os.Environ(), "PHP_INI_SCAN_DIR="+filepath.Join(root, "php"))
 	if dir, err := dataDir(); err == nil {
-		srv.Env = append(os.Environ(), "ADMINER_DESKTOP_DATA="+dir)
+		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
@@ -185,6 +190,15 @@ func main() {
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
 	// need it.
+	installJSDialogs(w.Window())
+	if *debug {
+		log.Print("webview ", describeUIDelegate(w.Window()))
+		if enableInspector(w.Window()) {
+			log.Print("web inspector on: Safari > Develop > this machine > Adminer Desktop")
+		} else {
+			log.Print("web inspector unavailable")
+		}
+	}
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
 	w.Navigate(url)

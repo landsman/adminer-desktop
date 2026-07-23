@@ -1,16 +1,25 @@
 parameters:
-    # Only what we wrote. app/adminer.php and app/editor.php are downloaded release
-    # artifacts, checksum-verified, and not ours to report on.
+    # Only what we wrote; everything excluded below ships verbatim from the adminer
+    # release and is not ours to report on.
+    # Directories, not a list of files: a list is something to forget to update, and the
+    # things that must not be analysed are stable while our own files are not.
     paths:
-        - app/desktop.php
-        - app/adminer-plugins.php
+        - app
         - lint.php
+
+    excludePaths:
+        - app/adminer.php
+        - app/editor.php
+        - app/settings/plugins/available
+        - app/settings/theme/designs
+
 
     # Not analysed, only read for symbols: this is where Adminer\Plugin, Adminer\h(),
     # verify_token() and the rest are defined. Without it every adminer call is an
     # "unknown function" and the real findings drown.
     scanFiles:
         - app/adminer.php
+        - phpstan-stubs.php
 
     # Adminer silences undefined-key warnings on purpose (include/errors.inc.php) and its
     # own style is bare $_POST["x"], which this repo follows so the plugin reads like the
@@ -19,12 +28,7 @@ parameters:
 
     # phpstan's workers shell out to a `php` binary, and there is deliberately no PHP
     # installed here — we run it through the frankenphp we already download. One process
-    # keeps it in-process. There are three files to analyse; parallelism buys nothing.
+    # keeps it in-process, and there are too few files for parallelism to buy anything.
     parallel:
         maximumNumberOfProcesses: 1
 
-    ignoreErrors:
-        # The hooks are declared without types upstream so plugins stay PHP 5 compatible
-        # (include/plugin.inc.php:4), so overriding them cannot add types either.
-        - identifier: missingType.parameter
-        - identifier: missingType.return

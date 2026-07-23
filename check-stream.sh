@@ -53,12 +53,12 @@ JAR=$(mktemp)
 OUT=/tmp/adminer-desktop-design.html
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o "$OUT" \
-	-d "desktop_settings=1" -d "design_light=designs/brade/adminer.css" \
-	-d "design_dark=designs/dracula/adminer-dark.css" \
+	-d "desktop_settings=1" -d "design_light=settings/theme/designs/brade/adminer.css" \
+	-d "design_dark=settings/theme/designs/dracula/adminer-dark.css" \
 	-d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
 # Both must come back media-gated, which is what makes the OS theme pick the design.
-grep -q "media='(prefers-color-scheme: light)' href='designs/brade/adminer.css'" "$OUT" || {
+grep -q "media='(prefers-color-scheme: light)' href='settings/theme/designs/brade/adminer.css'" "$OUT" || {
 	echo "FAIL: light design not applied, or not gated on prefers-color-scheme"
 	# Say why. Chasing this blind across CI runs costs more than printing it here does.
 	echo "--- php diagnostics from the response:"
@@ -73,7 +73,7 @@ grep -q "media='(prefers-color-scheme: light)' href='designs/brade/adminer.css'"
 	tail -5 /tmp/adminer-desktop-check.log
 	exit 1
 }
-grep -q "media='(prefers-color-scheme: dark)' href='designs/dracula/adminer-dark.css'" "$OUT" || {
+grep -q "media='(prefers-color-scheme: dark)' href='settings/theme/designs/dracula/adminer-dark.css'" "$OUT" || {
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
 

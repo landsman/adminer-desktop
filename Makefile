@@ -20,9 +20,9 @@ else
 	EXE = .exe
 endif
 
-.PHONY: fetch verify qa phpstan golangci security check check-app build run editor bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: fetch verify qa phpstan golangci security check check-app build run editor debug bundle zip dist tarball winzip logs serve clean checksums
 
-fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp$(EXE)
+fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
 app/adminer.php:
 	@mkdir -p app
@@ -49,13 +49,15 @@ app/editor.php:
 
 # Shipped but NOT loaded. Everything in adminer-plugins/ is auto-enabled by
 # adminer (include/plugins.inc.php:17-19), so "available" has to live elsewhere.
-app/plugins-available: .cache/adminer-src
-	@mkdir -p app
+app/settings/plugins/available: .cache/adminer-src
+	@mkdir -p app/settings/plugins
 	rm -rf $@ && cp -R .cache/adminer-src/plugins $@
-	@mkdir -p app/adminer-plugins   # user's drop folder; empty by default
+	# adminer-plugins/ stays at the document root: adminer looks for it there and
+	# nowhere else (include/plugins.inc.php:18). Only the catalogue is ours to place.
+	@mkdir -p app/adminer-plugins
 
-app/designs: .cache/adminer-src
-	@mkdir -p app
+app/settings/theme/designs: .cache/adminer-src
+	@mkdir -p app/settings/theme
 	rm -rf $@ && cp -R .cache/adminer-src/designs $@
 
 bin/frankenphp$(EXE):
@@ -106,11 +108,15 @@ golangci:
 
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
+# Pinned like everything else: on :latest a new rule turns a green build red with no
+# change of ours, which is the one thing pinning exists to prevent.
+SEMGREP_VERSION = 1.171.0
+
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
-	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep semgrep \
+	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep:$(SEMGREP_VERSION) semgrep \
 		--config=p/php --config=p/golang --config=p/secrets \
-		--exclude=adminer.php --exclude=editor.php --exclude=plugins-available \
+		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
@@ -119,6 +125,12 @@ qa: bin/frankenphp$(EXE)
 	./bin/frankenphp$(EXE) php-cli lint.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
+	@# Every darwin-only function needs a stub in menu_other.go, or the build breaks on
+	@# linux and windows only -- a CI round trip away rather than a compile away.
+	@for f in $$(grep -oE '^func [a-zA-Z]+' menu_darwin.go | cut -d' ' -f2); do \
+		grep -q "$$f(" main.go || continue; \
+		grep -q "func $$f(" menu_other.go || { echo "menu_other.go: missing stub for $$f(), used by main.go"; exit 1; }; \
+	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
 		&& { shellcheck check-stream.sh && echo "shellcheck ok"; } \
 		|| { sh -n check-stream.sh && echo "sh ok (shellcheck not installed)"; }
@@ -145,6 +157,12 @@ run: build
 
 editor: build
 	./build/adminer-desktop$(EXE) -editor
+
+# Turns on Safari's Web Inspector against the app's page: Develop > this machine >
+# Adminer Desktop. There is no console in the app otherwise, which is how a confirm()
+# that never fired stayed invisible for as long as it did.
+debug: build
+	./build/adminer-desktop$(EXE) -debug
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build

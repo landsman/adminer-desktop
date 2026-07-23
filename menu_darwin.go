@@ -2,13 +2,14 @@ package main
 
 /*
 #cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Cocoa
+#cgo LDFLAGS: -framework Cocoa -framework WebKit
 #include <stdlib.h>
 #include "menu_darwin.h"
 */
 import "C"
 
 import (
+	"log"
 	"os/exec"
 	"unsafe"
 )
@@ -60,6 +61,27 @@ func goMenuIssues() { openURL(issuesURL) }
 
 // installMenu replaces the default menu webview gives an unbundled binary. Must run on
 // the main thread, after webview has created NSApp and before Run().
+// installJSDialogs teaches webview's WKUIDelegate to show alert, confirm and prompt.
+// Without it confirm() returns false, which silently cancels every adminer action that
+// asks "Are you sure?" -- dropping a table, deleting rows, truncating.
+// describeUIDelegate reports which class is serving as the webview's UI delegate.
+func describeUIDelegate(window unsafe.Pointer) string {
+	c := C.describeUIDelegate(window)
+	defer C.free(unsafe.Pointer(c))
+	return C.GoString(c)
+}
+
+// enableInspector turns on Safari's Web Inspector for the app's page.
+func enableInspector(window unsafe.Pointer) bool {
+	return C.enableInspector(window) == 1
+}
+
+func installJSDialogs(window unsafe.Pointer) {
+	if C.installJSDialogs(window) != 1 {
+		log.Print("js dialogs: could not attach a UI delegate - alert, confirm, prompt and file upload will not work")
+	}
+}
+
 func installMenu(navigate func(string), baseURL, logDir string) {
 	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)

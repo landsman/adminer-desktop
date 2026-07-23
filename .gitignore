@@ -3,9 +3,9 @@
 /.cache/
 /app/adminer-plugins/*
 /app/adminer.php
-/app/designs/
 /app/editor.php
-/app/plugins-available/
+/app/settings/plugins/available/
+/app/settings/theme/designs/
 /bin/
 /build/
 # Checked-in checksums are what make it reproducible — the bytes don't belong in git.
