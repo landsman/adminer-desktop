@@ -53,7 +53,7 @@ func openLog() (*os.File, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	dir := filepath.Join(home, "Library", "Logs", "Adminer")
+	dir := filepath.Join(home, "Library", "Logs", "Adminer Desktop")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, "", err
 	}
@@ -159,7 +159,7 @@ func main() {
 
 	w := webview.New(false)
 	defer w.Destroy()
-	w.SetTitle("Adminer")
+	w.SetTitle("Adminer Desktop")
 	w.SetSize(1280, 900, webview.HintNone)
 
 	// The menu is how logs stay reachable when login fails — a link inside adminer would

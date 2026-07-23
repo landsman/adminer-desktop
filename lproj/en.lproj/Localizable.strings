@@ -1,9 +1,9 @@
 /* Menu bar. Keys are the English strings, so a missing translation degrades to
    English rather than to a key name. Adminer and Editor are product names and are
    deliberately not listed. */
-"About Adminer" = "About Adminer";
+"About Adminer Desktop" = "About Adminer Desktop";
 "Open Logs" = "Open Logs";
-"Quit Adminer" = "Quit Adminer";
+"Quit Adminer Desktop" = "Quit Adminer Desktop";
 "Help" = "Help";
 "Adminer Website" = "Adminer Website";
 "adminer-desktop on GitHub" = "adminer-desktop on GitHub";

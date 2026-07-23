@@ -37,7 +37,7 @@ static NSString *aboutCredits = nil;
 - (void)openAbout:(id)sender {
 	[NSApp activateIgnoringOtherApps:YES];
 	[NSApp orderFrontStandardAboutPanelWithOptions:@{
-		@"ApplicationName": @"Adminer",
+		@"ApplicationName": @"Adminer Desktop",
 		@"ApplicationVersion": aboutVersion,
 		// Blank, or the panel appends its own build number after ours.
 		@"Version": @"",
@@ -81,7 +81,7 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	// macOS titles the application menu from the process name, not from any NSMenu title
 	// we set. Unbundled that name is the executable, so the menu would read
 	// "adminer-desktop". Setting it here fixes the bundle and `make run` alike.
-	[[NSProcessInfo processInfo] setProcessName:@"Adminer"];
+	[[NSProcessInfo processInfo] setProcessName:@"Adminer Desktop"];
 
 	menuTarget = [[AdminerMenuTarget alloc] init];
 
@@ -89,9 +89,9 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 
 	NSMenuItem *appItem = [[NSMenuItem alloc] init];
 	[bar addItem:appItem];
-	NSMenu *appMenu = [[NSMenu alloc] initWithTitle:@"Adminer"];
+	NSMenu *appMenu = [[NSMenu alloc] initWithTitle:@"Adminer Desktop"];
 	// Also in the app menu, because that is where mac users reflexively look for it.
-	addItem(appMenu, NSLocalizedString(@"About Adminer", nil), @selector(openAbout:), @"", menuTarget);
+	addItem(appMenu, NSLocalizedString(@"About Adminer Desktop", nil), @selector(openAbout:), @"", menuTarget);
 	[appMenu addItem:[NSMenuItem separatorItem]];
 	addItem(appMenu, @"Adminer", @selector(openAdminer:), @"1", menuTarget);
 	addItem(appMenu, @"Editor", @selector(openEditor:), @"2", menuTarget);
@@ -100,13 +100,13 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	[appMenu addItem:[NSMenuItem separatorItem]];
 	// nil target: Quit travels the responder chain to NSApp, which is what makes Cmd-Q
 	// behave like every other mac app.
-	addItem(appMenu, NSLocalizedString(@"Quit Adminer", nil), @selector(terminate:), @"q", nil);
+	addItem(appMenu, NSLocalizedString(@"Quit Adminer Desktop", nil), @selector(terminate:), @"q", nil);
 	[appItem setSubmenu:appMenu];
 
 	NSMenuItem *helpItem = [[NSMenuItem alloc] init];
 	[bar addItem:helpItem];
 	NSMenu *helpMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Help", nil)];
-	addItem(helpMenu, NSLocalizedString(@"About Adminer", nil), @selector(openAbout:), @"", menuTarget);
+	addItem(helpMenu, NSLocalizedString(@"About Adminer Desktop", nil), @selector(openAbout:), @"", menuTarget);
 	[helpMenu addItem:[NSMenuItem separatorItem]];
 	addItem(helpMenu, NSLocalizedString(@"Adminer Website", nil), @selector(openAdminerSite:), @"", menuTarget);
 	addItem(helpMenu, NSLocalizedString(@"adminer-desktop on GitHub", nil), @selector(openRepo:), @"", menuTarget);

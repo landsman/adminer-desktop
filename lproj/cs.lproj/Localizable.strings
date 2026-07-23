@@ -1,7 +1,7 @@
 /* Czech. Adminer and Editor are product names and stay untranslated. */
-"About Adminer" = "O aplikaci Adminer";
+"About Adminer Desktop" = "O aplikaci Adminer Desktop";
 "Open Logs" = "Otevřít logy";
-"Quit Adminer" = "Ukončit Adminer";
+"Quit Adminer Desktop" = "Ukončit Adminer Desktop";
 "Help" = "Nápověda";
 "Adminer Website" = "Web Admineru";
 "adminer-desktop on GitHub" = "adminer-desktop na GitHubu";

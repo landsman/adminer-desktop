@@ -74,8 +74,8 @@ editor: build
 check-app: build
 	./build/adminer-desktop -headless
 
-APP = build/Adminer.app
-ICON = build/Adminer.icns
+APP = build/Adminer Desktop.app
+ICON = build/AdminerDesktop.icns
 
 # sips and iconutil ship with macOS, so the icon needs no image tooling installed.
 # ponytail: the source is adminer's own 57px pictogram, the largest that exists —
@@ -94,28 +94,28 @@ $(ICON): assets/logo.png
 # A .app is just a directory, which is why none of this needs go:embed or a static
 # single-binary build: the runtime and app/ are simply files inside it.
 bundle: build $(ICON)
-	rm -rf $(APP)
-	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
-	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > $(APP)/Contents/Info.plist
-	cp build/adminer-desktop $(APP)/Contents/MacOS/
-	cp bin/frankenphp $(APP)/Contents/MacOS/
+	rm -rf "$(APP)"
+	mkdir -p "$(APP)"/Contents/MacOS "$(APP)"/Contents/Resources
+	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > "$(APP)"/Contents/Info.plist
+	cp build/adminer-desktop "$(APP)"/Contents/MacOS/
+	cp bin/frankenphp "$(APP)"/Contents/MacOS/
 	# Everything except the M0 probe and the plugins the user has not enabled.
-	rsync -a --exclude '_stream.php' app/ $(APP)/Contents/Resources/app/
+	rsync -a --exclude '_stream.php' app/ "$(APP)"/Contents/Resources/app/
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
-	cp -R lproj/*.lproj $(APP)/Contents/Resources/
-	cp $(ICON) $(APP)/Contents/Resources/
-	@echo "built $(APP) -- $$(du -sh $(APP) | cut -f1)"
+	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
+	cp $(ICON) "$(APP)"/Contents/Resources/
+	@echo "built "$(APP)" -- $$(du -sh "$(APP)" | cut -f1)"
 
 # Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
 zip: bundle
-	cd build && rm -f Adminer.zip && zip -qry Adminer.zip Adminer.app
-	@echo "built build/Adminer.zip -- $$(du -sh build/Adminer.zip | cut -f1)"
+	cd build && rm -f "Adminer Desktop.zip" && zip -qry "Adminer Desktop.zip" "Adminer Desktop.app"
+	@echo "built build/Adminer Desktop.zip -- $$(du -sh build/Adminer Desktop.zip | cut -f1)"
 
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.
 logs:
-	open ~/Library/Logs/Adminer
+	open ~/Library/Logs/"Adminer Desktop"
 
 # Just the server, no window. Handy for poking at it with curl.
 serve: fetch

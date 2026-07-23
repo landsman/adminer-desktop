@@ -61,6 +61,11 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	function navigation($missing) {
+		// Bottom right, which is where upstream plugins/designs.php puts its own switcher.
+		// Not moved up next to the language selector: #lang lives inside adminer's <form>
+		// and HTML forms cannot nest, so getting there needs either absolute positioning
+		// or JS that relocates the controls and submits through a synthesised form —
+		// neither worth it for a theme picker.
 		echo "<form action='' method='post' style='position: fixed; bottom: .5em; right: .5em'>\n";
 		foreach (array("light" => $this->lang('Light'), "dark" => $this->lang('Dark')) as $mode => $label) {
 			echo "<label style='margin-left: .5em'>" . Adminer\h($label) . " "
