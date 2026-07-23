@@ -77,20 +77,22 @@ grep -q "media='(prefers-color-scheme: dark)' href='designs/dracula/adminer-dark
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
 
-# Enabling a plugin is a symlink into adminer-plugins/, so the filesystem is the state.
+# Enabling a plugin puts it in adminer-plugins/, so the filesystem is the state.
 JAR=$(mktemp)
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
 	-d "desktop_settings=1" -d "plugins[]=dark-switcher" -d "token=$TOKEN" "$BASE/adminer.php"
-[ -L app/adminer-plugins/dark-switcher.php ] || {
-	echo "FAIL: ticking a plugin did not create the symlink"; rm -f "$JAR"; exit 1; }
+# -e not -L: windows cannot make symlinks without elevated rights, so enabling copies
+# the file there instead.
+[ -e app/adminer-plugins/dark-switcher.php ] || {
+	echo "FAIL: ticking a plugin did not enable it"; rm -f "$JAR"; exit 1; }
 # ...and unticking must remove it again, which is the half that silently rots.
 TOKEN=$(curl -s -b "$JAR" -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
 	-d "desktop_settings=1" -d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
 [ ! -e app/adminer-plugins/dark-switcher.php ] || {
-	echo "FAIL: unticking a plugin did not remove the symlink"; exit 1; }
+	echo "FAIL: unticking a plugin did not disable it"; exit 1; }
 echo "ok: plugins toggle on and off"
 
 echo "streaming $N lines over ~${TOTAL}s ..."

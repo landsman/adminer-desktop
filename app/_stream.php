@@ -10,7 +10,9 @@ set_time_limit(0);
 
 // ?probe=1 reports what the app actually sees on disk. Lives here rather than in its own
 // file because this one is already excluded from every package.
-if ($_GET["probe"]) {
+// isset, not a bare read: this file runs without adminer's error handler, so an
+// undefined-key warning would be printed straight into the response body.
+if (isset($_GET["probe"])) {
 	header("Content-Type: text/plain");
 	$dir = str_replace('\\', '/', __DIR__);
 	$glob = glob("$dir/designs/*/*.css");
@@ -23,8 +25,8 @@ if ($_GET["probe"]) {
 	exit;
 }
 
-$n = (int) ($_GET["n"] ?: 24);
-$s = (int) ($_GET["s"] ?: 5);
+$n = (int) ($_GET["n"] ?? 24);
+$s = (int) ($_GET["s"] ?? 5);
 header("Content-Type: text/plain");
 for ($i = 0; $i < $n; $i++) {
 	echo $i . "\n";
