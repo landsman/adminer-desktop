@@ -31,6 +31,8 @@ a:visited {
 a:link:hover,
 a:visited:hover {
 	color: color-mix(in srgb, var(--ad-accent) 72%, var(--fg));
+	/* Hover reads through colour and the row highlight; drop Adminer's underline. */
+	text-decoration: none;
 }
 
 /* Headings — calmer than Adminer's default heavy fills. */

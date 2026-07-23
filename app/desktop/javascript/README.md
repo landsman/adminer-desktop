@@ -1,9 +1,13 @@
 # Desktop JavaScript
 
-Adminer runs here inside a native WebView, not a browser tab — so the conveniences a
-browser gives for free are simply absent: no reload shortcut (`shortcuts.js`), a
-right-click menu on links full of items that make no sense in an app (`context-menu.js`),
-dead mouse back/forward buttons (`mouse-nav.js`). Each file in this folder restores one.
+Adminer runs here inside a native WebView, not a browser tab, and this is the small layer
+of page scripts that make it feel like an app: restore the reload shortcut
+(`shortcuts.js`), drop the link context menu whose items make no sense here
+(`context-menu.js`), open a table's data on a double-click of its name, DataGrip-style
+(`table-nav.js`). Each file does one thing.
+
+Some gaps can't be closed from the page — the mouse's back/forward buttons never reach it,
+so those are wired in the native shell (`dialogs_darwin.m`) instead.
 
 They run **in the page**, not in the native shell, so a single file covers macOS, Windows
 and Linux at once instead of one accelerator per platform. `Desktop\Javascript` loads them

@@ -29,15 +29,31 @@
 	background: transparent;
 }
 
-#tables a:hover,
 #logins a:hover {
 	background: var(--ad-accent-quiet);
 	border-radius: var(--ad-radius-sm);
 }
 
-#tables a.active,
-#tables a.select.active {
-	color: var(--ad-accent);
+/* DataGrip-style table list: the per-row "Select data" link ("vypsat") is hidden, and a
+   double-click on a table name opens its data instead (desktop/javascript/table-nav.js).
+   Each name is a full-width row; the active table gets a full-width rounded highlight. */
+#tables a.select {
+	display: none;
+}
+
+#tables li > a {
+	display: block;
+	padding: 0.2em 0.6em;
+	border-radius: var(--ad-radius-sm);
+}
+
+#tables li > a:hover {
+	background: var(--ad-accent-quiet);
+}
+
+#tables li:has(a.select.active) > a {
+	background: var(--lit);
+	color: var(--fg);
 	font-weight: 600;
 }
 
