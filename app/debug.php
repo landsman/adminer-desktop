@@ -28,4 +28,15 @@ function debug(): void {
 		@mkdir($log, 0700, true);
 	}
 	\Tracy\Debugger::enable(\Tracy\Debugger::Development, $log);
+
+	// Adminer's style is a bare $_POST["x"], and it silences the warning that follows in
+	// include/errors.inc.php. Enabling Tracy replaces that handler, so every one of them
+	// comes back and buries whatever was worth reading under a page of noise. Same rule,
+	// same messages as upstream; everything else goes on to Tracy.
+	$tracy = set_error_handler(function ($severity, $message, $file = '', $line = 0) use (&$tracy) {
+		if (($severity & (E_WARNING | E_NOTICE)) && preg_match('~^Undefined (array key|offset|index)~', $message)) {
+			return true;
+		}
+		return $tracy($severity, $message, $file, $line);
+	});
 }
