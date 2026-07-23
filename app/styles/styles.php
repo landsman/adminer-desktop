@@ -3,8 +3,9 @@ namespace Desktop;
 
 /** Loads the stylesheet adminer-desktop adds on top of Adminer's own.
 *
-* Lives beside the CSS it loads rather than under settings/, because the styles are the
-* app's, not the settings dialog's -- the dialog is just the only thing using them yet.
+* Lives here rather than under settings/, because the styles are the app's, not the
+* settings dialog's -- the dialog is just the only thing using them yet. The CSS sits in
+* css/ beside this file so the stylesheets are not interleaved with the code loading them.
 */
 class Styles {
 	/** @var string */ private $dir;
@@ -17,7 +18,7 @@ class Styles {
 	* mid-body where a stylesheet would still work but has no business being.
 	*/
 	function link(): void {
-		echo "<link rel='stylesheet' href='styles/desktop.css?v=" . $this->version() . "'>\n";
+		echo "<link rel='stylesheet' href='styles/css/desktop.css?v=" . $this->version() . "'>\n";
 	}
 
 	/** Cache-buster: the newest mtime across every stylesheet.

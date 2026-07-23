@@ -21,7 +21,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	/** @var Desktop\Dialog */ private $dialog;
 
 	function __construct() {
-		$this->styles = new Desktop\Styles(__DIR__ . "/styles");
+		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
 		$this->theme = new Desktop\Theme($this);
 		$this->plugins = new Desktop\PluginList($this);
 		$this->dialog = new Desktop\Dialog($this, $this->theme, $this->plugins);
