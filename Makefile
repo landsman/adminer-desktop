@@ -119,7 +119,7 @@ bundle: build $(ICON)
 # Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
 zip: bundle
 	cd build && rm -f "Adminer Desktop.zip" && zip -qry "Adminer Desktop.zip" "Adminer Desktop.app"
-	@echo "built build/Adminer Desktop.zip -- $$(du -sh build/Adminer Desktop.zip | cut -f1)"
+	@echo "built build/Adminer Desktop.zip -- $$(du -sh "build/Adminer Desktop.zip" | cut -f1)"
 
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.

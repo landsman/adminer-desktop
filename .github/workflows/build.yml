@@ -1,0 +1,56 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # macos-15 runners are Apple Silicon, which is what FRANKEN_ASSET pins. On an Intel
+    # runner the downloaded frankenphp would be the wrong architecture and every step
+    # after `make fetch` would fail.
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: go.sum
+
+      # frankenphp is a 178 MB download and the adminer source zip another 2 MB. Both are
+      # pinned, so the cache key is just the checksums file: it changes exactly when the
+      # pinned versions do, and never otherwise.
+      - name: Cache pinned downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            bin
+            .cache
+          key: pinned-${{ hashFiles('checksums.txt') }}
+
+      - run: make fetch
+
+      # Before anything else: a mismatch means the release was re-uploaded or the
+      # download was tampered with, and neither should reach a build.
+      - run: make verify
+
+      - run: make qa
+
+      # ~2 minutes, and deliberately not shortened. The point is to outlast the ordinary
+      # 60s server write timeout, so a faster run would stop proving the thing it exists
+      # to prove.
+      - run: make check
+
+      - run: make zip
+
+      # Unsigned and un-notarized, so a first launch needs right-click > Open. Signing
+      # needs an Apple Developer certificate as a repository secret.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adminer-desktop-macos-arm64
+          path: build/Adminer Desktop.zip
+          if-no-files-found: error

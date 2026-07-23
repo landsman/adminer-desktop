@@ -60,12 +60,15 @@ class AdminerDesktop extends Adminer\Plugin {
 	function designs(string $mode): array {
 		$return = array("" => $this->lang('(built-in)'));
 		foreach (glob(__DIR__ . "/designs/*/*.css") as $filename) {
-			// The whole convention is the filename: designs/<name>/adminer-dark.css is the
-			// dark one, adminer.css the light one. No design ships both.
-			$is_dark = (bool) preg_match('~-dark~', basename($filename));
+			$dir = basename(dirname($filename));
+			$path = "designs/$dir/" . basename($filename);
+			// Match -dark anywhere in the path, not just the filename, which is what
+			// upstream plugins/designs.php:30 does. rmsoft_blue-dark is the case that
+			// proves it: the folder is marked dark but its file is a plain adminer.css,
+			// so matching the basename alone lands a dark theme in the light list.
+			$is_dark = (bool) preg_match('~-dark~', $path);
 			if ($is_dark == ($mode == "dark")) {
-				$dir = basename(dirname($filename));
-				$return["designs/$dir/" . basename($filename)] = $dir;
+				$return[$path] = $dir;
 			}
 		}
 		asort($return);
