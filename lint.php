@@ -27,7 +27,13 @@ foreach (array_merge(glob(__DIR__ . "/app/*.php"), array(__FILE__)) as $filename
 	// TOKEN_PARSE makes the tokenizer validate, so this is `php -l` without executing
 	// the file — which matters, since including these would need adminer loaded first.
 	try {
-		token_get_all($source, TOKEN_PARSE);
+		// The ParseError is the point, but the token list is checked too so the call is
+		// visibly doing something: any PHP file has at least an open tag to tokenize.
+		if (!token_get_all($source, TOKEN_PARSE)) {
+			fwrite(STDERR, "$short: no PHP tokens\n");
+			$errors++;
+			continue;
+		}
 	} catch (ParseError $e) {
 		fwrite(STDERR, "$short: syntax: " . $e->getMessage() . "\n");
 		$errors++;

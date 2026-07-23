@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: fetch verify qa check check-app build run editor bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: fetch verify qa phpstan golangci security check check-app build run editor bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp$(EXE)
 
@@ -76,14 +76,46 @@ verify: fetch
 checksums:
 	$(SHA256) app/adminer.php app/editor.php > checksums.txt
 
+# Analysis tools are pinned like everything else, so a green build stays green for a
+# reason rather than because a linter happened not to ship a new rule today.
+GOLANGCI_VERSION = v2.12.2
+PHPSTAN_VERSION  = 2.2.5
+
+.cache/phpstan.phar:
+	@mkdir -p .cache
+	curl -fsSL -o $@ https://github.com/phpstan/phpstan/releases/download/$(PHPSTAN_VERSION)/phpstan.phar
+
+# --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
+# and there deliberately is none here -- we run it through the frankenphp we download.
+# 2G because adminer.php is 500 KB of minified source on very long lines.
+phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php
+	./bin/frankenphp$(EXE) php-cli .cache/phpstan.phar analyse -c phpstan.neon \
+		--no-progress --debug --memory-limit=2G
+
+golangci:
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
+
+# Security scan. Docker rather than an install, and skipped rather than failed when
+# docker is not running, so `make security` is safe to chain locally.
+security:
+	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
+	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep semgrep \
+		--config=p/php --config=p/golang --config=p/secrets \
+		--exclude=adminer.php --exclude=editor.php --exclude=plugins-available \
+		--exclude=designs --metrics=off --error
+
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
 qa: bin/frankenphp$(EXE)
 	./bin/frankenphp$(EXE) php-cli lint.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
-	@sh -n check-stream.sh && echo "sh ok"
+	@command -v shellcheck >/dev/null \
+		&& { shellcheck check-stream.sh && echo "shellcheck ok"; } \
+		|| { sh -n check-stream.sh && echo "sh ok (shellcheck not installed)"; }
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok" || echo "plists skipped (macOS only)"
+	@$(MAKE) --no-print-directory phpstan
+	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
 
 # M0: does FrankenPHP survive a 120s progressively-flushed response?
 check: fetch

@@ -72,7 +72,7 @@ func freePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer l.Close() //nolint:errcheck // closing a probe listener; the port is the result
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
@@ -83,7 +83,7 @@ func waitReady(url string, timeout time.Duration) error {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(url)
 		if err == nil {
-			resp.Body.Close()
+			resp.Body.Close() //nolint:errcheck // readiness poll, body is never read
 			if resp.StatusCode == http.StatusOK {
 				return nil
 			}
@@ -120,7 +120,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer logFile.Close()
+	defer logFile.Close() //nolint:errcheck // process is exiting anyway
 	fmt.Printf("logging to %s\n", logPath)
 
 	// --no-compress: adminer/file.inc.php:14 already sets zlib.output_compression.

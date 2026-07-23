@@ -12,7 +12,7 @@ S=${1:-5}
 N=24
 TOTAL=$((S * N))
 PORT=${ADMINER_PORT:-18000}
-export ADMINER_PORT=$PORT
+export ADMINER_PORT="$PORT"
 BASE="http://127.0.0.1:$PORT"
 URL="$BASE/_stream.php?n=$N&s=$S"
 

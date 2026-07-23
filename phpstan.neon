@@ -1,0 +1,30 @@
+parameters:
+    # Only what we wrote. app/adminer.php and app/editor.php are downloaded release
+    # artifacts, checksum-verified, and not ours to report on.
+    paths:
+        - app/desktop.php
+        - app/adminer-plugins.php
+        - lint.php
+
+    # Not analysed, only read for symbols: this is where Adminer\Plugin, Adminer\h(),
+    # verify_token() and the rest are defined. Without it every adminer call is an
+    # "unknown function" and the real findings drown.
+    scanFiles:
+        - app/adminer.php
+
+    # Adminer silences undefined-key warnings on purpose (include/errors.inc.php) and its
+    # own style is bare $_POST["x"], which this repo follows so the plugin reads like the
+    # code it plugs into. Level 5 keeps the type checking and skips arguing about that.
+    level: 5
+
+    # phpstan's workers shell out to a `php` binary, and there is deliberately no PHP
+    # installed here — we run it through the frankenphp we already download. One process
+    # keeps it in-process. There are three files to analyse; parallelism buys nothing.
+    parallel:
+        maximumNumberOfProcesses: 1
+
+    ignoreErrors:
+        # The hooks are declared without types upstream so plugins stay PHP 5 compatible
+        # (include/plugin.inc.php:4), so overriding them cannot add types either.
+        - identifier: missingType.parameter
+        - identifier: missingType.return

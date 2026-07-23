@@ -7,6 +7,48 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Kept separate from build so a lint failure reads as a lint failure rather than as a
+  # broken build, and so it reports in ~2 minutes instead of waiting on the matrix.
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: go.sum
+
+      # golangci-lint type-checks, so it needs what the package needs to compile.
+      - name: Install webview build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+          printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
+            | sudo tee /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
+
+      - name: Cache pinned downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            bin
+            .cache
+          key: pinned-frankenphp-linux-x86_64-${{ hashFiles('Makefile') }}
+
+      # phpstan reads app/adminer.php for adminer's own symbols, so the downloads have
+      # to be in place before it can say anything useful.
+      - run: make fetch FRANKEN_ASSET=frankenphp-linux-x86_64
+
+      # php syntax and style, phpstan, golangci-lint, gofmt, go vet, shell syntax.
+      - run: make qa FRANKEN_ASSET=frankenphp-linux-x86_64
+
+      # shellcheck is already on the runner and says far more than `sh -n` does.
+      - run: shellcheck check-stream.sh
+
+      # Security rules for php, go and leaked secrets. Docker is on the runner, so this
+      # needs nothing installed.
+      - run: make security
+
   build:
     strategy:
       # One red platform should not hide the state of the other two.
