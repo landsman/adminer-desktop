@@ -12,5 +12,8 @@
             "dg/composer-cleaner": true
         },
         "sort-packages": true
+    },
+    "require": {
+        "latte/latte": "^3.1"
     }
 }

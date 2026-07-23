@@ -222,6 +222,8 @@ bundle: build $(ICON)
 	cp bin/frankenphp "$(APP)"/Contents/MacOS/
 	# Everything except the M0 probe and the plugins the user has not enabled.
 	rsync -a --exclude '_stream.php' app/ "$(APP)"/Contents/Resources/app/
+	# Latte renders our own markup, so composer's vendor/ has to travel with app/.
+	rsync -a vendor/ "$(APP)"/Contents/Resources/app/vendor/
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
@@ -248,6 +250,7 @@ dist: build
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
 	cp -R app $(DIST)/app
+	cp -R vendor $(DIST)/app/vendor   # Latte renders our own markup
 	rm -f $(DIST)/app/_stream.php   # M0 probe, not part of the product
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
