@@ -159,6 +159,7 @@ class AdminerDesktop extends Adminer\Plugin {
 			'Compact' => 'Kompaktní',
 			'Cozy' => 'Střední',
 			'Comfortable' => 'Vzdušný',
+			'Scaling' => 'Měřítko',
 			'Adminer Desktop follows the system light and dark automatically. Override either side with a design below.' => 'Adminer Desktop se automaticky řídí světlým a tmavým režimem systému. Kteroukoli stranu můžete níže přepsat vlastním vzhledem.',
 			'Plugin' => 'Plugin',
 			'What it does' => 'Co dělá',

@@ -96,6 +96,16 @@ class Theme {
 		}
 		echo "\n";
 
+		// Scaling zooms the whole UI. Like density it only affects the Adminer Desktop theme.
+		$scaling = $_SESSION["scaling"] ?? "100";
+		echo "<h4>" . \Adminer\h($this->desktop->t('Scaling')) . "</h4>\n<p>";
+		echo "<select name='scaling'>";
+		foreach (self::SCALINGS as $value) {
+			$selected = ($scaling == $value ? " selected" : "");
+			echo "<option value='$value'$selected>$value%</option>";
+		}
+		echo "</select>\n";
+
 		// A design is either light or dark -- none upstream ships both -- so it belongs to
 		// exactly one of these tables, and the radio group it sits in is what makes it the
 		// light choice or the dark one.
@@ -133,16 +143,22 @@ class Theme {
 		foreach (array("light", "dark") as $mode) {
 			$_SESSION["design_$mode"] = $_POST["design_$mode"];
 		}
-		// Whitelisted: this value is echoed into a body class, so never store raw input.
+		// Whitelisted: these values are echoed into body classes, so never store raw input.
 		$density = $_POST["density"] ?? "cozy";
 		$_SESSION["density"] = in_array($density, self::DENSITIES, true) ? $density : "cozy";
+		$scaling = $_POST["scaling"] ?? "100";
+		$_SESSION["scaling"] = in_array($scaling, self::SCALINGS, true) ? $scaling : "100";
 	}
 
-	/** The density class for <body>, added next to the OS class in AdminerDesktop. */
+	/** The density and scaling classes for <body>, added next to the OS class in
+	* AdminerDesktop. */
 	function bodyClass(): void {
 		$density = $_SESSION["density"] ?? "cozy";
 		echo " density-" . (in_array($density, self::DENSITIES, true) ? $density : "cozy");
+		$scaling = $_SESSION["scaling"] ?? "100";
+		echo " scale-" . (in_array($scaling, self::SCALINGS, true) ? $scaling : "100");
 	}
 
 	/** @var list<string> */ private const DENSITIES = array("compact", "cozy", "comfortable");
+	/** @var list<string> */ private const SCALINGS = array("100", "125", "150", "175", "200");
 }

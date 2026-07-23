@@ -66,6 +66,11 @@ class Dialog {
 			n++;
 		}
 	}
+	for (var select of qsa('#desktop-panels select')) {
+		if (!select.options[select.selectedIndex].defaultSelected) {
+			n++;
+		}
+	}
 	if (!n || confirm('" . \Adminer\js_escape($this->desktop->t('Unsaved changes: {n}. Close anyway?')) . "'.replace('{n}', n))) {
 		qs('#desktop-settings').close();
 		this.form.reset();

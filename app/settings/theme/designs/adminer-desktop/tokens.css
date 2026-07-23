@@ -62,3 +62,26 @@ html {
 	--ad-row-px: 0.78em;
 	--ad-line: 1.66;
 }
+
+/* Scaling. zoom (not transform: scale) so the layout reflows to fit instead of
+   overflowing; every webview we ship supports it. The select in the settings dialog
+   offers these steps. */
+.scale-100 {
+	zoom: 1;
+}
+
+.scale-125 {
+	zoom: 1.25;
+}
+
+.scale-150 {
+	zoom: 1.5;
+}
+
+.scale-175 {
+	zoom: 1.75;
+}
+
+.scale-200 {
+	zoom: 2;
+}
