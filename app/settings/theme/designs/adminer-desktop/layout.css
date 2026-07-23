@@ -19,6 +19,10 @@ body {
 	height: 100vh;
 	margin: 0;
 	overflow: hidden;
+	/* Adminer's own min-width is fit-content (default.css), which sizes the flex row to
+	   its widest line rather than to the window: one long statement then makes the whole
+	   layout that wide, and nothing inside it has a width worth wrapping against. */
+	min-width: 0;
 	display: flex;
 	gap: 0.5rem;
 	padding: 0.5rem;
@@ -60,7 +64,10 @@ body {
 	min-height: 0;
 	margin: 0;
 	padding: 0 1.2rem 1.2rem;
-	overflow-y: auto;
+	/* Both axes: a wide result table or a long line of SQL scrolls inside the panel.
+	   With overflow-y alone it spills out of the panel and the window scrolls instead,
+	   taking the sidebar with it. */
+	overflow: auto;
 	background: var(--bg);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius);
