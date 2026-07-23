@@ -17,7 +17,9 @@
 $vendored = array("adminer.php", "editor.php");
 
 $errors = 0;
-foreach (array_merge(glob(__DIR__ . "/app/*.php"), array(__FILE__)) as $filename) {
+// Recursive: the plugin is split across app/settings/ now, and a linter that only
+// looks at the top level is a linter that stops noticing.
+foreach (array_merge(glob(__DIR__ . "/app/*.php"), glob(__DIR__ . "/app/settings/*.php"), glob(__DIR__ . "/app/settings/*/*.php"), array(__FILE__)) as $filename) {
 	$short = basename($filename);
 	if (in_array($short, $vendored)) {
 		continue;
