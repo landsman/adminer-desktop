@@ -9,9 +9,9 @@ namespace Desktop;
 * what stays here is the behaviour behind the two buttons.
 */
 class Dialog {
-	/** @var \AdminerDesktop */ private $desktop;
-	/** @var Theme */ private $theme;
-	/** @var PluginList */ private $plugins;
+	private \AdminerDesktop $desktop;
+	private Theme $theme;
+	private PluginList $plugins;
 
 	function __construct(\AdminerDesktop $desktop, Theme $theme, PluginList $plugins) {
 		$this->desktop = $desktop;
