@@ -91,4 +91,18 @@ foreach ($filenames as $filename) {
 }
 
 echo ($errors ? "$errors problem(s)\n" : "php ok\n");
+
+// The templates, through the same engine the app builds — so the linter knows the
+// functions registered on it and does not report them as unknown. Skipped rather than
+// failed when the deps are not installed, like the JS tooling in the Makefile: this file
+// is also what a fresh clone runs before `mise run install`.
+if (file_exists(__DIR__ . "/vendor/autoload.php")) {
+	require_once __DIR__ . "/app/latte.php";
+	if (!(new Latte\Tools\Linter(Desktop\latte()))->scanDirectory(__DIR__ . "/app")) {
+		$errors++;
+	}
+} else {
+	echo "latte skipped (run `mise run install`)\n";
+}
+
 exit($errors ? 1 : 0);

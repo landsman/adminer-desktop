@@ -21,8 +21,10 @@ function latte(): \Latte\Engine {
 		// Adminer's helpers are plain functions in its own namespace, and a fully qualified
 		// call inside a template is something an editor reads as a class name. Registered,
 		// they are {input_token()} — and the list is also what a template may reach for.
-		$latte->addFunction("input_hidden", \Adminer\input_hidden(...));
-		$latte->addFunction("input_token", \Adminer\input_token(...));
+		// Wrapped rather than passed as first-class callables, which would have to exist
+		// already: the linter builds this engine with no adminer loaded at all.
+		$latte->addFunction("input_hidden", fn(string $name, $value = 1) => \Adminer\input_hidden($name, $value));
+		$latte->addFunction("input_token", fn() => \Adminer\input_token());
 		// Without a cache directory Latte compiles into memory on every request — correct,
 		// just slower, which is what we get when the app is served without a data dir.
 		$dir = getenv("ADMINER_DESKTOP_DATA");
