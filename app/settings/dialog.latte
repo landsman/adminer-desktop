@@ -2,14 +2,15 @@
 
 	<dialog> rather than a hand-rolled overlay: it brings the backdrop, focus trapping,
 	top-layer stacking and escape-to-close with it, and needs no library.
-
-	@param \AdminerDesktop $desktop
-	@param \Desktop\Theme $theme
-	@param \Desktop\PluginList $plugins
-	@param bool $writable
-	@param string $openScript
-	@param string $closeScript
 *}
+{parameters
+	\AdminerDesktop $desktop,
+	\Desktop\Theme $theme,
+	\Desktop\PluginList $plugins,
+	bool $writable,
+	string $openScript,
+	string $closeScript
+}
 <button type="button" id="desktop-gear" title="{$desktop->t('Settings')}">&#9881;</button>
 {$openScript|noescape}
 
