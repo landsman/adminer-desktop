@@ -1,0 +1,91 @@
+/* The variable system. Everything else in the theme is written against these, so a
+ * reskin or a scheme change happens here, not scattered through the rules.
+ *
+ * The four unprefixed names are Adminer's own structural tokens — overriding them is what
+ * reskins its whole UI. The --ad-* names are ours, prefixed so they can never collide.
+ */
+
+html {
+	/* Adminer's structural tokens. */
+	--bg: #ffffff;
+	--fg: #1d2127;
+	--dim: #f1f3f6;
+	--lit: #e9edfb;
+
+	/* Ours. */
+	--ad-accent: #4b5bd4;
+	--ad-accent-fg: #ffffff;
+	--ad-accent-quiet: color-mix(in srgb, var(--ad-accent) 12%, transparent);
+	--ad-border: color-mix(in srgb, var(--fg) 13%, transparent);
+	--ad-border-strong: color-mix(in srgb, var(--fg) 24%, transparent);
+	--ad-radius: 7px;
+	--ad-radius-sm: 5px;
+	--ad-menu-bg: #f7f8fa;
+	--ad-zebra: color-mix(in srgb, var(--fg) 3%, transparent);
+	--ad-danger: #b42318;
+	--ad-danger-bg: #fef3f2;
+	--ad-ok: #067647;
+	--ad-ok-bg: #ecfdf3;
+
+	/* The OS UI font, resolved by the browser: San Francisco on macOS, Segoe UI on
+	   Windows, the desktop's own font on Linux. system-ui is enough on its own in the
+	   webviews we ship (WebKit and Chromium both support it); sans-serif is the last-ditch
+	   fallback. Likewise ui-monospace for code. */
+	--ad-font: system-ui, sans-serif;
+	--ad-mono: ui-monospace, monospace;
+
+	/* Density (cozy is the default) — overridden by the body classes below. */
+	--ad-row-py: 0.32em;
+	--ad-row-px: 0.58em;
+	--ad-line: 1.5;
+
+	/* UI scale (100%) — overridden by the scale-* body classes below. */
+	--ad-scale: 1;
+
+	color-scheme: light;
+	accent-color: var(--ad-accent);
+}
+
+/* Row density. These set variables only; padding and line-height read them from
+   tables.css and base.css, so the whole grid retightens from one class on <body>. */
+.density-compact {
+	--ad-row-py: 0.12em;
+	--ad-row-px: 0.46em;
+	--ad-line: 1.28;
+}
+
+.density-cozy {
+	--ad-row-py: 0.32em;
+	--ad-row-px: 0.58em;
+	--ad-line: 1.5;
+}
+
+.density-comfortable {
+	--ad-row-py: 0.55em;
+	--ad-row-px: 0.78em;
+	--ad-line: 1.66;
+}
+
+/* Scaling. A font-size multiplier, not zoom: it scales the type and the em-based layout
+   while leaving vh/vw alone, so the settings modal's caps still fit the window — zoom
+   inflates vh and pushes the modal's header and footer off-screen. body reads --ad-scale
+   (base.css); these classes set it. */
+.scale-100 {
+	--ad-scale: 1;
+}
+
+.scale-125 {
+	--ad-scale: 1.25;
+}
+
+.scale-150 {
+	--ad-scale: 1.5;
+}
+
+.scale-175 {
+	--ad-scale: 1.75;
+}
+
+.scale-200 {
+	--ad-scale: 2;
+}

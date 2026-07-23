@@ -4,8 +4,10 @@
 
 #desktop-gear {
 	position: fixed;
-	bottom: .5em;
-	right: .5em;
+	bottom: 0.5em;
+	right: 0.5em;
+	/* Above the content panel, which the islands layout gives its own stacking context. */
+	z-index: 10;
 	font-size: 1.2em;
 	line-height: 1;
 	padding: var(--ad-cell-padding);
@@ -21,12 +23,57 @@
 	padding: var(--ad-dialog-padding);
 }
 
+/* Dim the page behind the dialog well past the browser's faint default, so the modal
+   reads clearly as the foreground. */
+#desktop-settings::backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+
 /* Only when open. A bare `display: flex` here overrides the `display: none` the browser
    gives a closed <dialog>, which leaves it on screen permanently and makes close() look
    broken. */
 #desktop-settings[open] {
 	display: flex;
 	flex-direction: column;
+}
+
+/* Open/close animation. @starting-style is the entry keyframe; transitioning display and
+   overlay with allow-discrete keeps the dialog in the top layer while it fades back out on
+   close. Modern webviews only — older ones just snap, which is fine. */
+@media (prefers-reduced-motion: no-preference) {
+	#desktop-settings,
+	#desktop-settings::backdrop {
+		transition:
+			opacity 0.18s ease,
+			transform 0.18s ease,
+			overlay 0.18s allow-discrete,
+			display 0.18s allow-discrete;
+	}
+
+	#desktop-settings {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.98);
+	}
+	#desktop-settings[open] {
+		opacity: 1;
+		transform: none;
+	}
+	#desktop-settings::backdrop {
+		opacity: 0;
+	}
+	#desktop-settings[open]::backdrop {
+		opacity: 1;
+	}
+
+	@starting-style {
+		#desktop-settings[open] {
+			opacity: 0;
+			transform: translateY(-8px) scale(0.98);
+		}
+		#desktop-settings[open]::backdrop {
+			opacity: 0;
+		}
+	}
 }
 
 #desktop-settings form {
@@ -59,7 +106,7 @@ body:has(#desktop-settings[open]) {
 
 #desktop-tabs label {
 	display: inline-block;
-	padding: .4em var(--ad-gap-lg);
+	padding: 0.4em var(--ad-gap-lg);
 	cursor: pointer;
 	border-bottom: 2px solid transparent;
 }
@@ -69,15 +116,19 @@ body:has(#desktop-settings[open]) {
 	font-weight: bold;
 }
 
+/* No focus ring on the tabs: opening the dialog moves focus onto the checked tab, so the
+   ring flashed on every open. The checked tab already shows its state (underline + weight),
+   so keyboard users still see where they are. */
 #desktop-tabs input:focus-visible + label {
-	outline: 2px solid currentColor;
-	outline-offset: -2px;
+	outline: none;
 }
 
 #desktop-panels {
 	overflow: auto;
 	min-height: 0;
 	flex: 1;
+	/* A little larger than the app text — em, so it still follows the theme's scaling. */
+	font-size: 1.05em;
 	/* No padding-top: the sticky header sticks to the top of the scrollport, and any
 	   padding above it is scrollable area where rows show through above the header. */
 }
@@ -141,7 +192,7 @@ body:has(#desktop-settings[open]) {
 }
 
 #desktop-actions button:disabled {
-	opacity: .5;
+	opacity: 0.5;
 	cursor: not-allowed;
 }
 
@@ -173,7 +224,7 @@ body:has(#desktop-settings[open]) {
    target - clicking the name, the description or the preview all select it. */
 #desktop-panels td label {
 	display: block;
-	padding: var(--ad-cell-padding);
+	padding: 0.5em 0.75em;
 	cursor: pointer;
 }
 
@@ -198,8 +249,8 @@ body:has(#desktop-settings[open]) {
    previous one off, and highlighting the row you just left as "changed" is noise - it
    marked (built-in) as edited whenever you chose any design. */
 
-#desktop-panels tbody tr:has(input[type=checkbox][checked]:not(:checked)),
-#desktop-panels tbody tr:has(input[type=checkbox]:not([checked]):checked),
-#desktop-panels tbody tr:has(input[type=radio]:not([checked]):checked) {
+#desktop-panels tbody tr:has(input[type="checkbox"][checked]:not(:checked)),
+#desktop-panels tbody tr:has(input[type="checkbox"]:not([checked]):checked),
+#desktop-panels tbody tr:has(input[type="radio"]:not([checked]):checked) {
 	background: var(--ad-unsaved);
 }

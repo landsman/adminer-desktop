@@ -1,0 +1,107 @@
+/* The left sidebar and the top breadcrumb — the app's navigation chrome. Treated as a
+ * quiet native panel: its own surface, hairline separators, the accent reserved for the
+ * active database and table. */
+
+#menu {
+	background: var(--ad-menu-bg);
+}
+
+#menu p,
+#logins,
+#tables {
+	border-bottom: 1px solid var(--ad-border);
+}
+
+#h1,
+.version {
+	color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+#h1 {
+	font-style: normal;
+	font-weight: 600;
+}
+
+#logins a,
+#tables a,
+#tables span {
+	background: transparent;
+}
+
+#logins a:hover {
+	background: var(--ad-accent-quiet);
+	border-radius: var(--ad-radius-sm);
+}
+
+/* DataGrip-style table list: the per-row "Select data" link ("vypsat") is hidden, and a
+   double-click on a table name opens its data instead (desktop/javascript/table-nav.js).
+   Each name is a full-width row; the active table gets a full-width rounded highlight. */
+#tables a.select {
+	display: none;
+}
+
+#tables li > a {
+	display: block;
+	padding: 0.2em 0.6em;
+	border-radius: var(--ad-radius-sm);
+}
+
+#tables li > a:hover {
+	background: var(--ad-accent-quiet);
+}
+
+/* Active table — a background highlight like the hover, in the normal text colour, never
+   an accent one. It is class "active" on the name when a table is open as structure, and
+   "select active" on the hidden select link when open as data; cover both. */
+#tables li:has(a.active) > a:not(.select),
+#tables li:has(a.select.active) > a:not(.select) {
+	background: var(--lit);
+	color: var(--fg);
+	font-weight: 600;
+}
+
+#menu .active {
+	color: var(--ad-accent);
+}
+
+/* Top strip: breadcrumb, logout and the language switch. Kept quiet so the data below is
+   the focus. The breadcrumb loses Adminer's grey fill and reads as a plain path; logout
+   becomes a ghost button instead of a loud filled one in the corner. */
+#breadcrumb {
+	background: transparent;
+	color: color-mix(in srgb, var(--fg) 55%, transparent);
+	font-size: 92%;
+}
+
+#breadcrumb a {
+	color: color-mix(in srgb, var(--ad-accent) 80%, var(--fg));
+}
+
+#logout {
+	background: transparent;
+	color: var(--ad-accent);
+	border: 1px solid var(--ad-border-strong);
+	font-weight: 500;
+	font-size: 0.85em;
+	padding: 0.2em 0.6em;
+	/* A gap from the username text beside it. */
+	margin-left: 0.5rem;
+}
+
+/* The username sitting next to the logout button. */
+.logout span {
+	font-size: 0.7rem;
+}
+
+#logout:hover {
+	background: var(--ad-accent-quiet);
+	border-color: var(--ad-accent);
+}
+
+#version {
+	color: color-mix(in srgb, var(--fg) 45%, transparent);
+}
+
+:target {
+	background: var(--lit);
+}

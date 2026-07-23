@@ -76,10 +76,32 @@ func enableInspector(window unsafe.Pointer) bool {
 	return C.enableInspector(window) == 1
 }
 
+// defaultWindowSize is 60% of the main screen's usable area, from AppKit. It returns
+// 0, 0 when no screen is available, so the caller falls back to a fixed size.
+func defaultWindowSize() (int, int) {
+	var w, h C.int
+	C.defaultWindowSize(&w, &h)
+	return int(w), int(h)
+}
+
 func installJSDialogs(window unsafe.Pointer) {
 	if C.installJSDialogs(window) != 1 {
 		log.Print("js dialogs: could not attach a UI delegate - alert, confirm, prompt and file upload will not work")
 	}
+}
+
+// installMouseNav routes the mouse's back/forward side buttons to the webview's history,
+// which WKWebView otherwise ignores. Best-effort: the back button just stays dead if the
+// monitor cannot attach.
+func installMouseNav(window unsafe.Pointer) {
+	C.installMouseNav(window)
+}
+
+// installReloadShortcut reloads the page on Cmd+R and F5. WKWebView leaves both unbound on
+// macOS and the page never sees the keystroke, so it is caught natively; shortcuts.js
+// covers the other platforms, where the WebViews do deliver it to the page.
+func installReloadShortcut(window unsafe.Pointer) {
+	C.installReloadShortcut(window)
 }
 
 func installMenu(navigate func(string), baseURL, logDir string) {

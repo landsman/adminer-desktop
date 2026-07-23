@@ -34,10 +34,10 @@ class Dialog {
 		// Tabs are hidden radios plus :has() in the stylesheet: no JS, and a checked radio
 		// is also the state, so nothing has to be restored when the dialog reopens.
 		echo "<div id='desktop-tabs'>\n";
-		echo "<input type='radio' name='desktop_tab' id='desktop-tab-plugins' checked>"
-			. "<label for='desktop-tab-plugins'>" . \Adminer\h($this->desktop->t('Plugins')) . "</label>\n";
-		echo "<input type='radio' name='desktop_tab' id='desktop-tab-themes'>"
+		echo "<input type='radio' name='desktop_tab' id='desktop-tab-themes' checked>"
 			. "<label for='desktop-tab-themes'>" . \Adminer\h($this->desktop->t('Theme')) . "</label>\n";
+		echo "<input type='radio' name='desktop_tab' id='desktop-tab-plugins'>"
+			. "<label for='desktop-tab-plugins'>" . \Adminer\h($this->desktop->t('Plugins')) . "</label>\n";
 		echo "</div>\n";
 
 		echo "<div id='desktop-panels'>\n";
@@ -63,6 +63,11 @@ class Dialog {
 	var n = 0;
 	for (var input of qsa('#desktop-panels input')) {
 		if (input.type == 'checkbox' ? input.checked != input.defaultChecked : input.checked && !input.defaultChecked) {
+			n++;
+		}
+	}
+	for (var select of qsa('#desktop-panels select')) {
+		if (!select.options[select.selectedIndex].defaultSelected) {
 			n++;
 		}
 	}

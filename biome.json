@@ -1,0 +1,25 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"css": {
+		"formatter": { "enabled": true }
+	},
+	"linter": {
+		"rules": {
+			"style": {
+				"noDescendingSpecificity": "off"
+			}
+		}
+	},
+	"files": {
+		"includes": [
+			"app/settings/theme/designs/adminer-desktop/**/*.css",
+			"app/styles/css/**/*.css",
+			"app/desktop/javascript/**/*.js",
+			"tests/**/*.js"
+		]
+	}
+}

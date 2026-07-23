@@ -1,0 +1,59 @@
+/* The data grid — the surface you spend the day in. Hairline borders, a sticky header
+ * with a solid divider, quiet zebra striping and an accent-tinted hover.
+ *
+ * Row padding and line-height read from --ad-row-* / --ad-line, which body.density-*
+ * swaps, so the whole grid retightens without touching a selector here. */
+
+table,
+td,
+th,
+.js .column {
+	border-color: var(--ad-border);
+}
+
+td,
+th {
+	padding: var(--ad-row-py) var(--ad-row-px);
+}
+
+th {
+	background: var(--dim);
+	font-weight: 600;
+	color: color-mix(in srgb, var(--fg) 82%, transparent);
+}
+
+/* thead is position:sticky in Adminer; the strong bottom hairline keeps rows from
+   appearing to paint over it as they scroll under. */
+thead td,
+thead th {
+	background: var(--dim);
+	border-bottom: 1px solid var(--ad-border-strong);
+	font-weight: 600;
+	color: color-mix(in srgb, var(--fg) 88%, transparent);
+}
+
+/* Column headers are sort links; Adminer's dark.css paints them olive, which reads as a
+   different colour from the plain header cells. Inherit the cell colour so the whole
+   header row is one tone. */
+thead td a,
+thead th a {
+	color: inherit;
+}
+
+tbody tr:hover td,
+tbody tr:hover th {
+	background: var(--ad-accent-quiet);
+}
+
+.odds tbody tr {
+	background: var(--bg);
+}
+
+.odds tbody tr:nth-child(2n) {
+	background: var(--ad-zebra);
+}
+
+.js .checkable .checked td,
+.js .checkable .checked th {
+	background: var(--lit);
+}

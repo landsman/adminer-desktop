@@ -15,6 +15,19 @@ func installMenu(navigate func(string), baseURL, logDir string) {}
 
 func installJSDialogs(window unsafe.Pointer) {}
 
+// The mouse's back/forward buttons, off macOS: Windows' WebView2 is Chromium-based and
+// already navigates on them, so nothing is needed there; Linux's WebKitGTK does not, and
+// will want its own handler (a GTK button-press on buttons 8/9 -> webkit_web_view_go_back).
+// Built when that platform actually ships, the way the menu is — this stub is the seam.
+func installMouseNav(window unsafe.Pointer) {}
+
+// The reload shortcut is handled in the page by shortcuts.js off macOS, where the WebViews
+// deliver the keystroke to it, so nothing native is needed.
+func installReloadShortcut(window unsafe.Pointer) {}
+
 func enableInspector(window unsafe.Pointer) bool { return false }
 
 func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }
+
+// No screen query off macOS yet; the caller falls back to a fixed window size.
+func defaultWindowSize() (int, int) { return 0, 0 }

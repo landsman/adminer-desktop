@@ -1,0 +1,114 @@
+/* Inputs and buttons.
+ *
+ * Every field carries a visible border, a radius and an accent focus ring — including the
+ * ones Adminer renders inside table cells (the login form and the column filters are
+ * layout tables, so a field must never lose its outline just for sitting in a <td>).
+ * Interactive controls get cursor:pointer so they read as clickable. */
+
+input,
+select,
+textarea {
+	/* Inherit the (scaled) page font: native controls default to their own fixed font, so
+	   without this their text stays small while everything around it grows. */
+	font: inherit;
+	border: 1px solid var(--ad-border-strong);
+	border-radius: var(--ad-radius-sm);
+	background: var(--bg);
+	color: var(--fg);
+	padding: 0.34em 0.55em;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+	padding: 0;
+	/* Native controls keep a fixed pixel size regardless of font, so tie them to the scale
+	   directly or they stay tiny while the text around them grows. */
+	width: calc(13px * var(--ad-scale, 1));
+	height: calc(13px * var(--ad-scale, 1));
+	/* Centre them on the text line rather than the baseline, so a radio and its label read
+	   as one row. */
+	vertical-align: middle;
+}
+
+textarea,
+.sqlarea {
+	padding: 0.5em 0.65em;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+	border-color: var(--fg);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	border-color: var(--ad-accent);
+	outline: 2px solid var(--ad-accent-quiet);
+	outline-offset: 0;
+}
+
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+button,
+[type="image"],
+summary {
+	cursor: pointer;
+}
+
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+button {
+	font: inherit;
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
+	border: 1px solid transparent;
+	border-radius: var(--ad-radius-sm);
+	padding: 0.38em 1em;
+	font-weight: 500;
+}
+
+input[type="submit"]:hover,
+input[type="button"]:hover,
+input[type="reset"]:hover,
+button:hover {
+	background: color-mix(in srgb, var(--ad-accent) 88%, #000);
+}
+
+input[type="submit"]:focus-visible,
+button:focus-visible {
+	outline: 2px solid var(--ad-accent);
+	outline-offset: 2px;
+}
+
+input.default {
+	box-shadow: none;
+	font-weight: 600;
+}
+
+fieldset {
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+}
+
+legend {
+	color: color-mix(in srgb, var(--fg) 62%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	input,
+	select,
+	textarea,
+	input[type="submit"],
+	button {
+		transition:
+			background-color 0.12s ease,
+			border-color 0.12s ease;
+	}
+}

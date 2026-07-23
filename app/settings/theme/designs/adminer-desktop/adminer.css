@@ -1,0 +1,23 @@
+/* Adminer Desktop — the app's own default theme (entry point).
+ *
+ * Split into components and pulled in with native @import, in cascade order: tokens
+ * first, then the element/area layers, dark last so it overrides. Adminer's css() hook
+ * loads only this file (Theme::cssMap); the @import URLs resolve next to it. The extra
+ * requests are one localhost round-trip each in a desktop app — negligible — and every
+ * file stays one cohesive concern.
+ *
+ * The reskin works through Adminer's own --bg/--fg/--dim/--lit tokens (its default.css is
+ * built on them) plus our --ad-* additions. Adminer's default.css (light) and dark.css
+ * (dark) still load alongside this, so the JUSH syntax-highlight palette comes for free
+ * and is not restated here.
+ *
+ * @import must precede all other rules, so nothing but imports and comments belongs here.
+ */
+@import url("tokens.css");
+@import url("layout.css");
+@import url("base.css");
+@import url("tables.css");
+@import url("forms.css");
+@import url("sidebar.css");
+@import url("settings.css");
+@import url("dark.css");

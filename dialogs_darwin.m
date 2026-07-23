@@ -105,6 +105,64 @@ int installJSDialogs(void *nsWindow) {
 	return 1;
 }
 
+/* Back and forward on a mouse's side buttons. They arrive as otherMouseUp with
+ * buttonNumber 3 (back) and 4 (forward), and WKWebView hands them to no web handler -- a
+ * JS mouseup listener never sees them -- so watch for them here and drive the view's own
+ * history. A local monitor sees the events app-wide; we act on those two buttons only and
+ * pass everything else through. */
+int installMouseNav(void *nsWindow) {
+	WKWebView *webView = findWebView([(NSWindow *) nsWindow contentView]);
+	if (!webView) {
+		return 0;
+	}
+	// The trackpad swipe and, on most mice, the back/forward side buttons arrive as
+	// navigation gestures. This is exactly what Safari turns on to act on them -- WKWebView
+	// leaves it off by default, which is why nothing happened.
+	[webView setAllowsBackForwardNavigationGestures:YES];
+	// Belt and suspenders for mice whose side buttons come through as discrete otherMouse
+	// events (buttonNumber 3 = back, 4 = forward) rather than gestures.
+	[NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskOtherMouseUp
+			handler:^NSEvent *(NSEvent *event) {
+		if ([event buttonNumber] == 3) {
+			if ([webView canGoBack]) {
+				[webView goBack];
+			}
+			return nil;
+		}
+		if ([event buttonNumber] == 4) {
+			if ([webView canGoForward]) {
+				[webView goForward];
+			}
+			return nil;
+		}
+		return event;
+	}];
+	return 1;
+}
+
+/* Reload on Cmd+R and F5. Same story as the mouse buttons: WKWebView binds neither, and
+ * the page's own keydown handler (shortcuts.js) never sees the keystroke here, so catch it
+ * and reload the view. Consuming the event keeps it from being handled twice; off macOS,
+ * where this stub does nothing, shortcuts.js is what runs instead. */
+int installReloadShortcut(void *nsWindow) {
+	WKWebView *webView = findWebView([(NSWindow *) nsWindow contentView]);
+	if (!webView) {
+		return 0;
+	}
+	[NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown
+			handler:^NSEvent *(NSEvent *event) {
+		BOOL cmdR = ([event modifierFlags] & NSEventModifierFlagCommand)
+			&& [[event charactersIgnoringModifiers] isEqualToString:@"r"];
+		BOOL f5 = [event keyCode] == 96;
+		if (cmdR || f5) {
+			[webView reload];
+			return nil;
+		}
+		return event;
+	}];
+	return 1;
+}
+
 /* Safari's Web Inspector against the app's page: Develop > <machine> > Adminer Desktop.
  * Without it there is no console and no way to see a JavaScript error, which is how a
  * confirm() that never fired stayed invisible for as long as it did.

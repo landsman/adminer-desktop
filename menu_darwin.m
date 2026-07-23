@@ -104,3 +104,17 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 
 	[NSApp setMainMenu:bar];
 }
+
+// 60% of the main screen's usable area (excludes the menu bar and Dock), so the app opens
+// large on a big display but never bigger than the screen it lands on.
+void defaultWindowSize(int *width, int *height) {
+	NSScreen *screen = [NSScreen mainScreen];
+	if (!screen) {
+		*width = 0;
+		*height = 0;
+		return;
+	}
+	NSRect frame = [screen visibleFrame];
+	*width = (int)(frame.size.width * 0.6);
+	*height = (int)(frame.size.height * 0.6);
+}

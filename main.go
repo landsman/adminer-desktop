@@ -105,6 +105,7 @@ func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
 	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
 	headless := flag.Bool("headless", false, "start the server, verify it serves, exit (used by `make check-app`)")
+	dev := flag.Bool("dev", false, "reload the window whenever a file under app/ changes")
 	flag.Parse()
 
 	php, root, err := resolve()
@@ -146,6 +147,12 @@ func main() {
 	if dir, err := dataDir(); err == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 	}
+	// -debug reaches the page too: the plugin tags <body> with it, and the desktop scripts
+	// that smooth over the WebView (the link context-menu block) stand down so the inspector's
+	// own right-click menu, Inspect Element and the rest are all there.
+	if *debug {
+		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DEBUG=1")
+	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
 	setProcessGroup(srv)
@@ -185,12 +192,20 @@ func main() {
 	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle("Adminer Desktop")
-	w.SetSize(1280, 900, webview.HintNone)
+	// Open at 60% of the screen where a screen size is available (macOS), otherwise a fixed
+	// default. HintNone leaves the window freely resizable after that.
+	winW, winH := 1280, 900
+	if sw, sh := defaultWindowSize(); sw > 0 && sh > 0 {
+		winW, winH = sw, sh
+	}
+	w.SetSize(winW, winH, webview.HintNone)
 
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
 	// need it.
 	installJSDialogs(w.Window())
+	installMouseNav(w.Window())
+	installReloadShortcut(w.Window())
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
 		if enableInspector(w.Window()) {
@@ -202,5 +217,31 @@ func main() {
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
 	w.Navigate(url)
+	if *dev {
+		go watchAndReload(root, w)
+	}
 	w.Run()
+}
+
+// watchAndReload reloads the window whenever a file under dir changes. Dev only, and a
+// coarse mtime poll rather than an OS file-watch: it needs no dependency and is plenty for
+// editing PHP and CSS by hand, since frankenphp serves the tree live and a reload is all
+// it takes for a change to show.
+func watchAndReload(dir string, w webview.WebView) {
+	newest := func() (t time.Time) {
+		_ = filepath.Walk(dir, func(_ string, info os.FileInfo, err error) error {
+			if err == nil && info.ModTime().After(t) {
+				t = info.ModTime()
+			}
+			return nil
+		})
+		return
+	}
+	last := newest()
+	for range time.Tick(400 * time.Millisecond) {
+		if t := newest(); t.After(last) {
+			last = t
+			w.Dispatch(func() { w.Eval("location.reload()") })
+		}
+	}
 }

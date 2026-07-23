@@ -20,7 +20,12 @@ else
 	EXE = .exe
 endif
 
-.PHONY: fetch verify qa phpstan golangci security check check-app build run editor debug bundle zip dist tarball winzip logs serve clean checksums
+# composer installs PHP deps into vendor/, which is also Go's vendoring directory — with
+# it present Go switches to vendor mode and every go command fails ("inconsistent
+# vendoring"). We do not vendor Go deps, so force module mode for all of them.
+export GOFLAGS := -mod=readonly
+
+.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run dev editor debug bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
@@ -106,6 +111,20 @@ phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php
 golangci:
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
+# Format-check and lint CSS and JS with Biome. Run `mise run install` once to fetch it.
+# Prefer the installed binary directly (it needs only node on PATH); fall back to mise,
+# which puts node on PATH, when node is not there itself; skip with a note if neither is
+# set up, so `make qa` is not blocked on a machine that has not installed the JS tooling.
+# Bare `mise` is not assumed to be on PATH — in a plain make shell it often is not.
+biome:
+	@if [ -x node_modules/.bin/biome ] && command -v node >/dev/null 2>&1; then \
+		node_modules/.bin/biome check . ; \
+	elif command -v mise >/dev/null 2>&1; then \
+		mise run lint ; \
+	else \
+		echo "biome skipped (run 'mise run install', or put node on PATH)" ; \
+	fi
+
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
 # Pinned like everything else: on :latest a new rule turns a green build red with no
@@ -137,6 +156,7 @@ qa: bin/frankenphp$(EXE)
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok" || echo "plists skipped (macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
+	@$(MAKE) --no-print-directory biome && echo "biome ok"
 
 # M0: does FrankenPHP survive a 120s progressively-flushed response?
 check: fetch
@@ -154,6 +174,11 @@ build: fetch
 # The app itself: opens a window.
 run: build
 	./build/adminer-desktop$(EXE)
+
+# Like run, but reloads the window whenever a file under app/ changes — edit PHP or CSS
+# and see it without a rebuild (frankenphp serves the tree live; the window just reloads).
+dev: build
+	./build/adminer-desktop$(EXE) -dev
 
 editor: build
 	./build/adminer-desktop$(EXE) -editor
@@ -241,6 +266,13 @@ logs:
 # Just the server, no window. Handy for poking at it with curl.
 serve: fetch
 	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
+
+# Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
+# writes screenshots to tests/e2e/screenshots/. Needs docker (a throwaway postgres) and
+# the Playwright browser from `mise run install`. Kept out of `qa` because it is slow and
+# needs docker; run it on its own.
+e2e: fetch
+	mise run e2e
 
 clean:
 	rm -rf app bin .cache
