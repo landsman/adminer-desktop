@@ -160,6 +160,7 @@ class AdminerDesktop extends Adminer\Plugin {
 			'Dark' => 'Tmavý',
 			'Design' => 'Vzhled',
 			'Preview' => 'Náhled',
+			'Language' => 'Jazyk',
 			'Row density' => 'Hustota řádků',
 			'Compact' => 'Kompaktní',
 			'Cozy' => 'Střední',

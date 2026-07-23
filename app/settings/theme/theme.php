@@ -77,6 +77,11 @@ class Theme {
 	function panel(): void {
 		echo "<p class='message'>" . \Adminer\h($this->desktop->t('Adminer Desktop follows the system light and dark automatically. Override either side with a design below.')) . "\n";
 
+		// Adminer's own language <select> is relocated into this slot by
+		// desktop/javascript/language.js, so the switch lives with the other preferences
+		// rather than loose in the corner of every page.
+		echo "<h4>" . \Adminer\h($this->desktop->t('Language')) . "</h4>\n<p id='desktop-lang-slot'></p>\n";
+
 		// Row density applies to the Adminer Desktop theme (it drives our --ad-row-*); a
 		// gallery design brings its own spacing, so this has no effect while one is chosen.
 		$density = $_SESSION["density"] ?? "cozy";
