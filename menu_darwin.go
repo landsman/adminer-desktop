@@ -2,7 +2,7 @@ package main
 
 /*
 #cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Cocoa
+#cgo LDFLAGS: -framework Cocoa -framework WebKit
 #include <stdlib.h>
 #include "menu_darwin.h"
 */
@@ -60,6 +60,11 @@ func goMenuIssues() { openURL(issuesURL) }
 
 // installMenu replaces the default menu webview gives an unbundled binary. Must run on
 // the main thread, after webview has created NSApp and before Run().
+// installJSDialogs teaches webview's WKUIDelegate to show alert, confirm and prompt.
+// Without it confirm() returns false, which silently cancels every adminer action that
+// asks "Are you sure?" -- dropping a table, deleting rows, truncating.
+func installJSDialogs() { C.installJSDialogs() }
+
 func installMenu(navigate func(string), baseURL, logDir string) {
 	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)

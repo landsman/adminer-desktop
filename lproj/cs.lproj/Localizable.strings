@@ -9,3 +9,7 @@
 
 /* Kredity v okně O aplikaci. %1$@ verze Admineru, %2$@ verze FrankenPHP, %3$@ verze aplikace. */
 "credits.format" = "Adminer %1$@ — Jakub Vrána a přispěvatelé\nApache-2.0 / GPL-2.0 · https://www.adminer.org\n\nBěhové prostředí: FrankenPHP %2$@ (Caddy + PHP)\nMIT · https://frankenphp.dev\n\nadminer-desktop %3$@ — MIT\nhttps://github.com/landsman/adminer-desktop\n\nTato aplikace Adminer nijak neupravuje. Stáhne oficiální vydání v pevně dané verzi, ověří jeho kontrolní součet a spustí ho v nativním okně.";
+
+/* Tlačítka v panelech pro JavaScript alert/confirm/prompt. */
+"OK" = "OK";
+"Cancel" = "Zrušit";

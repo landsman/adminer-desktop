@@ -3,3 +3,6 @@
 // duplicated at link time.
 void installMenu(const char *version, const char *adminerVersion, const char *frankenphpVersion);
 
+
+// JavaScript alert/confirm/prompt, which webview's own delegate leaves unimplemented.
+void installJSDialogs(void);

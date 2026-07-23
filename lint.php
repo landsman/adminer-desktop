@@ -18,6 +18,9 @@ $vendored = array(
 	"app/adminer.php",
 	"app/editor.php",
 	"/settings/plugins/available/",
+	// Whatever the user has enabled is a copy of one of those, or a file they dropped in
+	// themselves. Either way it is not ours to have opinions about.
+	"/adminer-plugins/",
 	"/settings/theme/designs/",
 );
 

@@ -185,6 +185,7 @@ func main() {
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
 	// need it.
+	installJSDialogs()
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
 	w.Navigate(url)

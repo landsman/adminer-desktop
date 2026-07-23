@@ -10,3 +10,5 @@ package main
 //
 // Build this out when someone actually asks; installMenu is already the seam.
 func installMenu(navigate func(string), baseURL, logDir string) {}
+
+func installJSDialogs() {}
