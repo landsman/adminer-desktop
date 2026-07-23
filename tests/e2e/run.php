@@ -133,6 +133,17 @@ try {
 		if ($isDark !== ($scheme === 'dark')) {
 			$failures[] = "$scheme: prefers-color-scheme was not emulated";
 		}
+		// The gear sits in the sidebar's scroll flow, by the logo. position: fixed would
+		// leave it hanging over the panel while everything it belongs to scrolls away.
+		$moved = $page->evaluate("() => {
+			const menu = document.querySelector('#menu'), gear = document.querySelector('#desktop-gear');
+			const top = gear.getBoundingClientRect().top;
+			menu.scrollTop = 200;
+			return top - gear.getBoundingClientRect().top;
+		}");
+		if ($moved < 150) {
+			$failures[] = "$scheme: the settings gear did not scroll with the sidebar (moved {$moved}px)";
+		}
 
 		$context->close();
 	}
