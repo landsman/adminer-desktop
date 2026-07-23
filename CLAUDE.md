@@ -69,6 +69,7 @@ app/settings/dialog.php      the settings dialog shell
 app/settings/theme/          designs, previews, the screenshot endpoint
 app/settings/plugins/        the catalogue and the enable/disable logic
 app/styles/styles.php        loads the CSS in app/styles/css/
+app/desktop/javascript.php   loads app/desktop/javascript/ - JS that closes WebView/browser gaps
 ```
 
 Everything downloaded — `adminer.php`, `editor.php`, the catalogue, the designs — is

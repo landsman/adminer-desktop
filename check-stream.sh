@@ -46,6 +46,15 @@ curl -s "$BASE/adminer.php" | grep -q 'name="auth\[server\]" value="127.0.0.1"' 
 	echo "FAIL: login form does not prefill Server with 127.0.0.1"; exit 1; }
 echo "ok: Server field prefilled"
 
+# The refresh shortcut is a script we inject. curl cannot press F5 — that it reloads is
+# browser behaviour — but it can prove the two things that silently regress: the tag is
+# emitted with the CSP nonce it needs under strict-dynamic, and the file actually serves.
+curl -s "$BASE/adminer.php" | grep -q "desktop/javascript/shortcuts.js?v=[0-9]*' nonce=" || {
+	echo "FAIL: refresh-shortcut script not emitted with a nonce"; exit 1; }
+[ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/desktop/javascript/shortcuts.js")" = "200" ] || {
+	echo "FAIL: shortcuts.js does not serve"; exit 1; }
+echo "ok: refresh shortcut wired and served"
+
 # Switching design must work before you log in. Upstream only handles it in
 # afterConnect(), so without our override adminer answers "the action will be performed
 # after successful login" and nothing changes.

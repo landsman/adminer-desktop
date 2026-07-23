@@ -11,18 +11,23 @@ declare(strict_types=1);
 */
 
 require_once __DIR__ . "/styles/styles.php";
+require_once __DIR__ . "/desktop/javascript.php";
 require_once __DIR__ . "/settings/theme/theme.php";
 require_once __DIR__ . "/settings/plugins/plugins.php";
 require_once __DIR__ . "/settings/dialog.php";
 
 class AdminerDesktop extends Adminer\Plugin {
 	/** @var Desktop\Styles */ private $styles;
+	/** @var Desktop\Javascript */ private $javascript;
 	/** @var Desktop\Theme */ private $theme;
 	/** @var Desktop\PluginList */ private $plugins;
 	/** @var Desktop\Dialog */ private $dialog;
 
 	function __construct() {
 		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
+		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
+		// backslashes in a Windows __DIR__ as escapes, matching nothing.
+		$this->javascript = new Desktop\Javascript($this->dir() . "/desktop/javascript");
 		$this->theme = new Desktop\Theme($this);
 		$this->plugins = new Desktop\PluginList($this);
 		$this->dialog = new Desktop\Dialog($this, $this->theme, $this->plugins);
@@ -101,6 +106,7 @@ class AdminerDesktop extends Adminer\Plugin {
 
 	function head($dark = null) {
 		$this->styles->link();
+		$this->javascript->link();
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
