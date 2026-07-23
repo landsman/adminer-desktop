@@ -5,8 +5,9 @@ namespace Desktop;
 /** The settings dialog itself: the trigger, the tab shell and the actions row.
 *
 * It owns no settings of its own — the panels come from Theme and PluginList, and this
-* only decides where they sit and what the buttons do. The markup lives in
-* settings-dialog.latte; what stays here is the behaviour behind the two buttons.
+* only decides where they sit. The markup is settings-dialog.latte and the behaviour is
+* desktop/javascript/settings-dialog.js, so what is left here is handing one the other's
+* translated strings.
 */
 class Dialog {
 	private \AdminerDesktop $desktop;
@@ -25,46 +26,9 @@ class Dialog {
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
 			"writable" => $this->plugins->writable(),
-			"openScript" => $this->openScript(),
-			"closeScript" => $this->closeScript(),
+			// {n}, not %d: lang() runs the string through sprintf, which would replace %d
+			// with 0 before the browser ever saw it. The script fills it in.
+			"unsaved" => $this->desktop->t('Unsaved changes: {n}. Close anyway?'),
 		]);
-	}
-
-	/** The gear opens the dialog.
-	* Adminer sets a CSP nonce on its scripts, so behaviour is attached via its own
-	* script()/qsl() helpers; an inline onclick attribute would be blocked. qsl() binds the
-	* last matching element in the whole document, which is why the template prints each
-	* script straight after its button. The JS stays in PHP because it is behaviour, and
-	* because it needs adminer's js_escape() around a translated string.
-	*/
-	private function openScript(): string {
-		return \Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').showModal(); };");
-	}
-
-	/** Cancel closes the dialog, after asking about edits that would be thrown away.
-	* Same rule the stylesheet highlights rows by: defaultChecked is the attribute as
-	* rendered, checked is what it is now. Radios only count when turned on, since choosing
-	* a design necessarily turns the previous one off.
-	* reset() before closing, or the discarded edits are still sitting there next time the
-	* dialog opens, looking like they were kept.
-	*/
-	private function closeScript(): string {
-		return \Adminer\script("qsl('button').onclick = function () {
-	var n = 0;
-	for (var input of qsa('#desktop-panels input')) {
-		if (input.type == 'checkbox' ? input.checked != input.defaultChecked : input.checked && !input.defaultChecked) {
-			n++;
-		}
-	}
-	for (var select of qsa('#desktop-panels select')) {
-		if (!select.options[select.selectedIndex].defaultSelected) {
-			n++;
-		}
-	}
-	if (!n || confirm('" . \Adminer\js_escape($this->desktop->t('Unsaved changes: {n}. Close anyway?')) . "'.replace('{n}', n))) {
-		qs('#desktop-settings').close();
-		this.form.reset();
-	}
-};");
 	}
 }

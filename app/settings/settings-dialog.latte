@@ -1,18 +1,17 @@
 {* The settings dialog itself: the trigger, the tab shell and the actions row.
 
 	<dialog> rather than a hand-rolled overlay: it brings the backdrop, focus trapping,
-	top-layer stacking and escape-to-close with it, and needs no library.
+	top-layer stacking and escape-to-close with it, and needs no library. The buttons are
+	wired up by desktop/javascript/settings-dialog.js.
 *}
 {parameters
 	\AdminerDesktop $desktop,
 	\Desktop\Theme $theme,
 	\Desktop\PluginList $plugins,
 	bool $writable,
-	string $openScript,
-	string $closeScript
+	string $unsaved
 }
 <button type="button" id="desktop-gear" title="{$desktop->t('Settings')}">&#9881;</button>
-{$openScript|noescape}
 
 <dialog id="desktop-settings">
 <form action="" method="post">
@@ -38,8 +37,9 @@
 	{* Cancel first, primary action last: that is the order every mac dialog uses, and
 		muscle memory puts the confirm button in the bottom right corner. *}
 	<div id="desktop-actions">
-		<button type="button" id="desktop-close">{$desktop->t('Cancel')}</button>
-		{$closeScript|noescape}
+		{* The question the script asks before discarding edits, translated here because
+			this is where the translations are. *}
+		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('Cancel')}</button>
 		<button type="submit" id="desktop-save" n:attr="disabled: !$writable">{$desktop->t('Save')}</button>
 	</div>
 </form>
