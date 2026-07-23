@@ -4,7 +4,6 @@
 
 #menu {
 	background: var(--ad-menu-bg);
-	border-right: 1px solid var(--ad-border);
 }
 
 #menu p,
@@ -51,7 +50,11 @@
 	background: var(--ad-accent-quiet);
 }
 
-#tables li:has(a.select.active) > a {
+/* Active table — a background highlight like the hover, in the normal text colour, never
+   an accent one. It is class "active" on the name when a table is open as structure, and
+   "select active" on the hidden select link when open as data; cover both. */
+#tables li:has(a.active) > a:not(.select),
+#tables li:has(a.select.active) > a:not(.select) {
 	background: var(--lit);
 	color: var(--fg);
 	font-weight: 600;
@@ -79,6 +82,8 @@
 	color: var(--ad-accent);
 	border: 1px solid var(--ad-border-strong);
 	font-weight: 500;
+	font-size: 0.85em;
+	padding: 0.2em 0.6em;
 }
 
 #logout:hover {

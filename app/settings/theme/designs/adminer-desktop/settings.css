@@ -7,16 +7,7 @@
  * dialog. It loads after the base sheet (it is one of this theme's @imports), so it wins;
  * the id selectors match the base ones exactly so nothing is left half-restyled. */
 
-#desktop-gear {
-	background: var(--ad-accent);
-	color: var(--ad-accent-fg);
-	border: 1px solid transparent;
-	border-radius: var(--ad-radius);
-}
-
-#desktop-gear:hover {
-	background: color-mix(in srgb, var(--ad-accent) 88%, #000);
-}
+/* The gear is styled by layout.css, which parks it in the sidebar header as a quiet icon. */
 
 #desktop-settings {
 	border: 1px solid var(--ad-border);

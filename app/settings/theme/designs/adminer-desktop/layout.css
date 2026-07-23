@@ -76,17 +76,31 @@ body {
 	z-index: 3;
 }
 
-/* Language switch and logout are their own forms; pin them to the window corners so they
-   stay reachable and never become stray columns. */
-#lang {
-	position: fixed;
-	inset: auto auto 0.5rem 0.75rem;
-}
-
+/* Logout is its own form; pin it to the window's top-right corner so it stays in the
+   content panel's header rather than becoming a stray column. (The language switch is moved
+   into the settings dialog by desktop/javascript/language.js, so it is gone from here.) */
 .logout {
 	position: fixed;
-	inset: 0.6rem 0.75rem auto auto;
+	inset: 0.7rem 0rem auto auto;
 	z-index: 6;
+	/* Adminer haloes it to mask the page scrolling under; in a panel header it just smudges. */
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Settings gear: at the sidebar's top-right, by the Adminer logo, as a quiet icon rather
+   than a filled button floating over the content panel (where it also caught its clicks). */
+#desktop-gear {
+	inset: 1.5rem auto auto 14.2rem;
+	padding: 0.15rem 0.4rem;
+	background: transparent;
+	border: 1px solid transparent;
+	color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+#desktop-gear:hover {
+	background: var(--ad-accent-quiet);
+	color: var(--fg);
 }
 
 /* The hover tooltip floats; keep it out of the flex flow. */
