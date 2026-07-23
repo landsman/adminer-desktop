@@ -77,6 +77,24 @@ code {
 	border-radius: 4px;
 }
 
+/* Import echoes every statement it runs into a <pre>, and one row of a dump is easily a
+   few thousand characters. Unwrapped that is a single line as wide as the data, which
+   drags the window sideways until the sidebar is off screen. Wrap it, and break inside
+   the run of text when there is no space to break at -- dump rows have few of those. */
+pre {
+	max-width: 100%;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+/* jush, the highlighter, sets white-space: pre on the span it wraps the whole statement
+   in (default.css). A class beats what the <pre> passes down, so without this the rule
+   above changes nothing at all. */
+pre .jush,
+pre.jush {
+	white-space: pre-wrap;
+}
+
 /* A visible accent ring everywhere the keyboard lands. */
 a:focus-visible,
 [tabindex]:focus-visible {
