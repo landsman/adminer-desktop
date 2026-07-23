@@ -40,6 +40,17 @@ $check("a dump with nothing to escape comes back as it was", Desktop\Import::esc
 $csv = "COPY t (a) FROM stdin WITH (FORMAT csv);\nit's csv\n\\.\n";
 $check("a CSV block is left alone", Desktop\Import::escapeCopy($csv) === $csv);
 
+// The driver gate: $_GET carries the connection adminer is working against, so a MySQL
+// or SQLite import never reaches any of this.
+$pasted = "COPY t (a) FROM stdin;\nit's postgres\n\\.\n";
+$_GET = array("server" => "localhost");
+$_POST = array("query" => $pasted);
+Desktop\Import::defuse();
+$check("another driver's import is left alone", $_POST["query"] === $pasted);
+$_GET = array("pgsql" => "127.0.0.1");
+Desktop\Import::defuse();
+$check("a postgres import is escaped", $_POST["query"] !== $pasted && strpos($_POST["query"], '\047') !== false);
+
 // adminer/sql.inc.php:76-92, splitting an import into statements.
 $copyStatement = function (string $sql): string {
 	$line_comment = '--';

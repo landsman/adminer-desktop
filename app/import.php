@@ -32,6 +32,13 @@ class Import {
 
 	/** Rewrite the import that is being posted, before adminer parses it. */
 	static function defuse(): void {
+		// Postgres only. This is how adminer decides it too (drivers/pgsql.inc.php:6):
+		// the driver is the query string key, and DRIVER is defined off it. The constant
+		// would say the same thing, but only for postgres -- every other driver defines
+		// it after plugins are loaded, which is where this runs from.
+		if (!isset($_GET["pgsql"])) {
+			return;
+		}
 		if (isset($_POST["query"]) && is_string($_POST["query"])) {
 			$_POST["query"] = self::escapeCopy($_POST["query"]);
 		}
