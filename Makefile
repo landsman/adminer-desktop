@@ -142,6 +142,8 @@ security:
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
 qa: bin/frankenphp$(EXE)
 	./bin/frankenphp$(EXE) php-cli lint.php
+	@# No database and no browser: it replays adminer's own parser over a dump.
+	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
 	@# Every darwin-only function needs a stub in menu_other.go, or the build breaks on

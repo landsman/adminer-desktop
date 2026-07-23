@@ -10,6 +10,7 @@ declare(strict_types=1);
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
 
+require_once __DIR__ . "/import.php";
 require_once __DIR__ . "/styles/styles.php";
 require_once __DIR__ . "/desktop/javascript.php";
 require_once __DIR__ . "/settings/theme/theme.php";
@@ -24,6 +25,9 @@ class AdminerDesktop extends Adminer\Plugin {
 	/** @var Desktop\Dialog */ private $dialog;
 
 	function __construct() {
+		// Before anything reads the request: sql.inc.php parses the import as soon as it
+		// is included, and there is no hook between the two. See Desktop\Import.
+		Desktop\Import::defuse();
 		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
 		// backslashes in a Windows __DIR__ as escapes, matching nothing.
