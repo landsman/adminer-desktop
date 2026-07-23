@@ -1,0 +1,36 @@
+/* Design tokens for everything adminer-desktop adds to Adminer's UI.
+ *
+ * Prefixed --ad- so they cannot collide with Adminer's own variables (--bg, --fg,
+ * --dim, --lit), which are deliberately reused rather than redefined: the dialog should
+ * follow whichever design the user picked, not fight it.
+ */
+
+:root {
+	/* Shape */
+	--ad-radius: 6px;
+	--ad-radius-sm: 4px;
+
+	/* Spacing */
+	--ad-gap: .5em;
+	--ad-gap-lg: 1em;
+	--ad-cell-padding: .3em .5em;
+	--ad-button-padding: .45em 1.2em;
+
+	/* Dialog */
+	--ad-dialog-width: 56em;
+	--ad-dialog-max-width: 92vw;
+	--ad-dialog-max-height: 88vh;
+	--ad-dialog-padding: 1.2em;
+
+	/* Derived from Adminer's --fg so borders stay legible on any design */
+	--ad-border: color-mix(in srgb, var(--fg) 25%, transparent);
+
+	/* Row with an edit that has not been saved yet */
+	--ad-unsaved: #fdf6ba;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--ad-unsaved: #4a3f12;
+	}
+}

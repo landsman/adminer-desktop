@@ -1,0 +1,10 @@
+/* Entry point for adminer-desktop's own styles. Adminer's stylesheet loads first and is
+ * left alone; everything here is additive.
+ *
+ * Split across files and pulled together with @import. Each import is a separate
+ * request, which would matter over a network and does not here -- these are served from
+ * the same machine by the server this app started.
+ */
+
+@import "tokens.css";
+@import "settings.css";

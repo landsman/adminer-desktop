@@ -212,8 +212,13 @@ class AdminerDesktop extends Adminer\Plugin {
 		// Everything this plugin adds to adminer's UI is in its own stylesheet rather than
 		// inline <style>, so it can be read and diffed as CSS. filemtime busts the cache on
 		// edit without a build step.
-		$file = $this->dir() . "/styles/settings.css";
-		echo "<link rel='stylesheet' href='styles/settings.css?v=" . (int) @filemtime($file) . "'>\n";
+		// index.css only imports, so its own mtime says nothing about whether the styles
+		// changed; the newest of them all is what has to bust the cache.
+		$mtime = 0;
+		foreach (glob($this->dir() . "/styles/*.css") as $file) {
+			$mtime = max($mtime, (int) @filemtime($file));
+		}
+		echo "<link rel='stylesheet' href='styles/index.css?v=$mtime'>\n";
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
@@ -306,7 +311,23 @@ class AdminerDesktop extends Adminer\Plugin {
 		// muscle memory puts the confirm button in the bottom right corner.
 		echo "<div id='desktop-actions'>";
 		echo "<button type='button' id='desktop-close'>" . Adminer\h($this->lang('Cancel')) . "</button>";
-		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').close(); };");
+		// Same rule the stylesheet highlights rows by: defaultChecked is the attribute as
+		// rendered, checked is what it is now. Radios only count when turned on, since
+		// choosing a design necessarily turns the previous one off.
+		// reset() before closing, or the discarded edits are still sitting there next time
+		// the dialog opens, looking like they were kept.
+		echo Adminer\script("qsl('button').onclick = function () {
+	var n = 0;
+	for (var input of qsa('#desktop-panels input')) {
+		if (input.type == 'checkbox' ? input.checked != input.defaultChecked : input.checked && !input.defaultChecked) {
+			n++;
+		}
+	}
+	if (!n || confirm('" . Adminer\js_escape($this->lang('Unsaved changes: {n}. Close anyway?')) . "'.replace('{n}', n))) {
+		qs('#desktop-settings').close();
+		this.form.reset();
+	}
+};");
 		echo "<button type='submit' id='desktop-save'" . ($writable ? "" : " disabled") . ">"
 			. Adminer\h($this->lang('Save')) . "</button>\n";
 		echo "</div>\n</form>\n</dialog>\n";
@@ -330,6 +351,9 @@ class AdminerDesktop extends Adminer\Plugin {
 			'Theme' => 'Vzhled',
 			'Plugins' => 'Pluginy',
 			'Cancel' => 'Zavřít',
+			// {n}, not %d: lang() runs the string through sprintf, which would replace %d with 0
+			// before the browser ever sees it.
+			'Unsaved changes: {n}. Close anyway?' => 'Neuložené změny: {n}. Přesto zavřít?',
 			'Leave both on (built-in) to follow the system theme.' => 'Nechte obojí na (vestavěný), aby se vzhled řídil systémem.',
 		),
 	);
