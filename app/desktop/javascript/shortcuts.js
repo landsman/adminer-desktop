@@ -13,10 +13,13 @@
  * @param {KeyboardEvent} e
  */
 function reloadShortcut(e) {
-	if (e.key === 'F5' || ((e.metaKey || e.ctrlKey) && (e.key === 'r' || e.key === 'R'))) {
+	if (
+		e.key === "F5" ||
+		((e.metaKey || e.ctrlKey) && (e.key === "r" || e.key === "R"))
+	) {
 		e.preventDefault();
 		location.reload();
 	}
 }
 
-addEventListener('keydown', reloadShortcut);
+addEventListener("keydown", reloadShortcut);

@@ -1,8 +1,9 @@
 # Desktop JavaScript
 
 Adminer runs here inside a native WebView, not a browser tab — so the conveniences a
-browser gives for free are simply absent: no reload shortcut, and other small gaps like
-it. Each file in this folder restores one of them.
+browser gives for free are simply absent: no reload shortcut (`shortcuts.js`), a
+right-click menu on links full of items that make no sense in an app (`context-menu.js`),
+dead mouse back/forward buttons (`mouse-nav.js`). Each file in this folder restores one.
 
 They run **in the page**, not in the native shell, so a single file covers macOS, Windows
 and Linux at once instead of one accelerator per platform. `Desktop\Javascript` loads them

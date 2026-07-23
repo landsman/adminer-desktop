@@ -11,8 +11,8 @@
 		"includes": [
 			"app/settings/theme/designs/adminer-desktop/**/*.css",
 			"app/styles/css/**/*.css",
-			"tests/**/*.js",
-			"dev/**/*.js"
+			"app/desktop/javascript/**/*.js",
+			"tests/**/*.js"
 		]
 	}
 }
