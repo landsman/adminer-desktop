@@ -21,6 +21,12 @@
 	padding: var(--ad-dialog-padding);
 }
 
+/* Dim the page behind the dialog more than the browser's faint default, so the modal
+   reads as the foreground. */
+#desktop-settings::backdrop {
+	background: rgba(0, 0, 0, 0.45);
+}
+
 /* Only when open. A bare `display: flex` here overrides the `display: none` the browser
    gives a closed <dialog>, which leaves it on screen permanently and makes close() look
    broken. */
