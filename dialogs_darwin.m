@@ -105,6 +105,35 @@ int installJSDialogs(void *nsWindow) {
 	return 1;
 }
 
+/* Back and forward on a mouse's side buttons. They arrive as otherMouseUp with
+ * buttonNumber 3 (back) and 4 (forward), and WKWebView hands them to no web handler -- a
+ * JS mouseup listener never sees them -- so watch for them here and drive the view's own
+ * history. A local monitor sees the events app-wide; we act on those two buttons only and
+ * pass everything else through. */
+int installMouseNav(void *nsWindow) {
+	WKWebView *webView = findWebView([(NSWindow *) nsWindow contentView]);
+	if (!webView) {
+		return 0;
+	}
+	[NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskOtherMouseUp
+			handler:^NSEvent *(NSEvent *event) {
+		if ([event buttonNumber] == 3) {
+			if ([webView canGoBack]) {
+				[webView goBack];
+			}
+			return nil;
+		}
+		if ([event buttonNumber] == 4) {
+			if ([webView canGoForward]) {
+				[webView goForward];
+			}
+			return nil;
+		}
+		return event;
+	}];
+	return 1;
+}
+
 /* Safari's Web Inspector against the app's page: Develop > <machine> > Adminer Desktop.
  * Without it there is no console and no way to see a JavaScript error, which is how a
  * confirm() that never fired stayed invisible for as long as it did.

@@ -90,6 +90,13 @@ func installJSDialogs(window unsafe.Pointer) {
 	}
 }
 
+// installMouseNav routes the mouse's back/forward side buttons to the webview's history,
+// which WKWebView otherwise ignores. Best-effort: the back button just stays dead if the
+// monitor cannot attach.
+func installMouseNav(window unsafe.Pointer) {
+	C.installMouseNav(window)
+}
+
 func installMenu(navigate func(string), baseURL, logDir string) {
 	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)

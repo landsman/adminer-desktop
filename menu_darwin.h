@@ -7,6 +7,9 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 // JavaScript alert/confirm/prompt, which webview's own delegate leaves unimplemented.
 int installJSDialogs(void *nsWindow); // 1 when the UI delegate was attached
 
+// Route the mouse's back/forward side buttons to the webview's history.
+int installMouseNav(void *nsWindow); // 1 when the monitor was attached
+
 const char *describeUIDelegate(void *nsWindow);
 int enableInspector(void *nsWindow); // 1 if the web inspector was turned on
 

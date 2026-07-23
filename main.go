@@ -198,6 +198,7 @@ func main() {
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
 	// need it.
 	installJSDialogs(w.Window())
+	installMouseNav(w.Window())
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
 		if enableInspector(w.Window()) {
