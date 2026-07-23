@@ -81,30 +81,28 @@ class PluginList {
 		return file_exists($link) && file_get_contents($link) === file_get_contents($filename);
 	}
 
-	/** Render the plugin panel. */
+	/** Render the plugin panel. The markup is panel.latte. */
 	function panel(): void {
 		$available = $this->available();
 		if (!$available) {
 			return;
 		}
 		$descriptions = $this->descriptions();
-		if (!$this->writable()) {
-			echo "<p class='error'>" . \Adminer\h($this->desktop->t('The plugins folder is read-only.')) . "\n";
-		}
-		// One per row with what it actually does: 51 bare names is a list you have to
-		// already know your way around. The descriptions are the plugins' own.
-		echo "<table class='odds'>\n";
-		echo "<thead><tr><th>" . \Adminer\h($this->desktop->t('Plugin')) . "<th>" . \Adminer\h($this->desktop->t('What it does')) . "</thead>\n";
-		echo "<tbody>\n";
+		$plugins = [];
 		foreach ($available as $name => $filename) {
-			$id = "desktop-plugin-" . preg_replace('~[^\w-]~', "-", $name);
-			$checked = (file_exists($this->link($name)) ? " checked" : "");
-			echo "<tr><td style='white-space: nowrap'>"
-				. "<input type='checkbox' name='plugins[]' value='" . \Adminer\h($name) . "' id='$id'$checked>"
-				. "<label for='$id' style='display: inline-block'> " . \Adminer\h($name) . "</label>"
-				. "<td><label for='$id'>" . \Adminer\h($descriptions[$name]) . "</label>\n";
+			$plugins[$name] = [
+				// A plugin name is a filename, and an id has to be usable in a selector.
+				"id" => "desktop-plugin-" . preg_replace('~[^\w-]~', "-", $name),
+				// The filesystem is the state: enabled means it is in adminer-plugins/.
+				"enabled" => file_exists($this->link($name)),
+				"description" => $descriptions[$name],
+			];
 		}
-		echo "</tbody>\n</table>\n";
+		latte()->render(__DIR__ . "/panel.latte", [
+			"desktop" => $this->desktop,
+			"plugins" => $plugins,
+			"writable" => $this->writable(),
+		]);
 	}
 
 	/** Can we enable and disable at all? The bundle is writable on macOS, but a copy in a

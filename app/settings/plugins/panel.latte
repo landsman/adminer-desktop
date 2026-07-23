@@ -1,0 +1,30 @@
+{* The plugin panel: one row per shipped plugin, with what it actually does.
+
+	51 bare names is a list you have to already know your way around; the descriptions are
+	the plugins' own, so they need no network and cannot go stale against the version we
+	bundle.
+*}
+{parameters
+	\AdminerDesktop $desktop,
+	array $plugins,
+	bool $writable
+}
+{* Closed, unlike adminer's own <p>: an n:attribute needs the element it sits on to end
+	somewhere, and latte says so rather than guessing. *}
+<p n:if="!$writable" class="error">{$desktop->t('The plugins folder is read-only.')}</p>
+
+{* class=odds is adminer's own zebra striping, and it is overridden in dark.css, so the
+	rows follow whichever design is active instead of us picking colours. *}
+<table class="odds">
+	<thead><tr><th>{$desktop->t('Plugin')}<th>{$desktop->t('What it does')}</thead>
+	<tbody>
+		{foreach $plugins as $name => $plugin}
+			<tr>
+				<td style="white-space: nowrap">
+					<input type="checkbox" name="plugins[]" value="{$name}" id="{$plugin['id']}" n:attr="checked: $plugin['enabled']">
+					<label for="{$plugin['id']}" style="display: inline-block"> {$name}</label>
+				<td>
+					<label for="{$plugin['id']}">{$plugin['description']}</label>
+		{/foreach}
+	</tbody>
+</table>
