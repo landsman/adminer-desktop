@@ -67,6 +67,8 @@ grep -q "media='(prefers-color-scheme: light)' href='designs/brade/adminer.css'"
 	grep -o "value=\"designs/[^\"]*\"" "$OUT" | head -3 || echo "  (none — glob found no designs)"
 	echo "--- stylesheets emitted:"
 	grep -o "<link rel='stylesheet'[^>]*>" "$OUT" | head -5 || true
+	echo "--- what the app sees on disk:"
+	curl -s "$BASE/_stream.php?probe=1"
 	echo "--- server log:"
 	tail -5 /tmp/adminer-desktop-check.log
 	exit 1
