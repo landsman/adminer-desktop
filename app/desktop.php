@@ -126,6 +126,24 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $return;
 	}
 
+	/** Get the one-line description each plugin carries in its opening doc-comment.
+	* Read straight out of the file rather than by instantiating the plugin and calling
+	* description(): loading 51 plugins to render a settings dialog would run all their
+	* constructors and register all their hooks, for a page that only wants their names.
+	* Only the head of each file is read, since the comment is always at the top.
+	* ponytail: English only. The localised text lives in each plugin's $translations and
+	* getting at it does require instantiating them.
+	* @return array<string, string>
+	*/
+	private function descriptions(): array {
+		$return = array();
+		foreach ($this->available() as $name => $filename) {
+			$head = (string) file_get_contents($filename, false, null, 0, 400);
+			$return[$name] = (preg_match('~/\*\*\s*(.+)~', $head, $match) ? trim($match[1]) : "");
+		}
+		return $return;
+	}
+
 	private function link(string $name): string {
 		return $this->dir() . "/adminer-plugins/$name.php";
 	}
@@ -176,6 +194,11 @@ class AdminerDesktop extends Adminer\Plugin {
 
 	function navigation($missing) {
 		$writable = is_writable(dirname($this->link("x")));
+		// Lock the page behind the dialog. CSS rather than JS toggling a class: <dialog>
+		// can be closed by escape and by form submission as well as by the Cancel button,
+		// and a handler hung on the button would miss both — leaving the page unscrollable
+		// with nothing on screen to explain why.
+		echo "<style>body:has(#desktop-settings[open]) { overflow: hidden }</style>\n";
 		// <dialog> rather than a hand-rolled overlay: it brings the backdrop, focus
 		// trapping, top-layer stacking and escape-to-close with it, and needs no library.
 		echo "<button type='button' id='desktop-gear' title='" . Adminer\h($this->lang('Settings'))
@@ -184,33 +207,53 @@ class AdminerDesktop extends Adminer\Plugin {
 		// script()/qsl() helpers; an inline onclick attribute would be blocked.
 		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').showModal(); };");
 
-		echo "<dialog id='desktop-settings' style='max-width: 40em; padding: 1em'>\n";
+		// Wide enough for a plugin name and its description side by side, and roomy enough
+		// that the next thing added here does not need the size revisited.
+		echo "<dialog id='desktop-settings' style='width: 56em; max-width: 92vw; max-height: 88vh; padding: 1.2em'>\n";
 		echo "<form action='' method='post'>\n";
 
 		echo "<h3>" . Adminer\h($this->lang('Theme')) . "</h3>\n";
-		// Two selects because no design upstream ships both variants: each is either
-		// light-only or dark-only, and auto-switching needs one of each.
+		echo "<p class='message'>" . Adminer\h($this->lang('Pick one of each; the system setting decides which applies.')) . "\n";
+		// A design is either light or dark -- none upstream ships both -- so it belongs to
+		// exactly one of these tables, and the radio group it sits in is what makes it the
+		// light choice or the dark one.
 		foreach (array("light" => $this->lang('Light'), "dark" => $this->lang('Dark')) as $mode => $label) {
-			echo "<label style='margin-right: 1em'>" . Adminer\h($label) . " "
-				. Adminer\html_select("design_$mode", $this->designs($mode), $_SESSION["design_$mode"])
-				. "</label>\n";
+			echo "<h4>" . Adminer\h($label) . "</h4>\n";
+			echo "<div style='max-height: 20em; overflow: auto'>\n<table>\n";
+			foreach ($this->designs($mode) as $path => $design) {
+				$checked = ($_SESSION["design_$mode"] == $path ? " checked" : "");
+				echo "<tr><td style='white-space: nowrap'><label>"
+					. "<input type='radio' name='design_$mode' value='" . Adminer\h($path) . "'$checked> "
+					. Adminer\h($design) . "</label>"
+					. "<td>";
+				if ($path) {
+					// loading=lazy so opening the dialog does not fire 26 requests at once;
+					// the endpoint serves a placeholder rather than failing when offline.
+					echo "<img src='screenshot.php?design=" . urlencode(basename(dirname($path)))
+						. "' alt='' loading='lazy' width='160' height='100'"
+						. " style='border-radius: 4px; object-fit: cover; object-position: top'>";
+				}
+				echo "\n";
+			}
+			echo "</table>\n</div>\n";
 		}
-		echo "<p class='message'>" . Adminer\h($this->lang('Leave both on (built-in) to follow the system theme.')) . "\n";
 
 		$available = $this->available();
 		if ($available) {
+			$descriptions = $this->descriptions();
 			echo "<h3>" . Adminer\h($this->lang('Plugins')) . "</h3>\n";
 			if (!$writable) {
 				echo "<p class='error'>" . Adminer\h($this->lang('The plugins folder is read-only.')) . "\n";
 			}
-			echo "<ul style='columns: 2; list-style: none; padding: 0; max-height: 22em; overflow: auto'>\n";
+			// One per row with what it actually does: 51 bare names is a list you have to
+			// already know your way around. The descriptions are the plugins' own.
+			echo "<div style='max-height: 26em; overflow: auto'>\n<table>\n";
 			foreach ($available as $name => $filename) {
-				// ponytail: names only, no descriptions. Rendering those means including all
-				// 51 files on every page load to read their doc-comments, and the names
-				// (dump-json, login-ip, table-structure) already say what they do.
-				echo "<li>" . Adminer\checkbox("plugins[]", $name, file_exists($this->link($name)), $name) . "\n";
+				echo "<tr><td style='white-space: nowrap'>"
+					. Adminer\checkbox("plugins[]", $name, file_exists($this->link($name)), $name)
+					. "<td>" . Adminer\h($descriptions[$name]) . "\n";
 			}
-			echo "</ul>\n";
+			echo "</table>\n</div>\n";
 		}
 
 		echo Adminer\input_hidden("desktop_settings", 1);

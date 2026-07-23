@@ -4,6 +4,7 @@ parameters:
     paths:
         - app/desktop.php
         - app/adminer-plugins.php
+        - app/screenshot.php
         - lint.php
 
     # Not analysed, only read for symbols: this is where Adminer\Plugin, Adminer\h(),
