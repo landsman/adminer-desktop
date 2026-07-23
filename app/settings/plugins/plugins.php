@@ -81,7 +81,7 @@ class PluginList {
 		return file_exists($link) && file_get_contents($link) === file_get_contents($filename);
 	}
 
-	/** Render the plugin panel. The markup is panel.latte. */
+	/** Render the plugin panel. The markup is plugins-panel.latte. */
 	function panel(): void {
 		$available = $this->available();
 		if (!$available) {
@@ -98,7 +98,7 @@ class PluginList {
 				"description" => $descriptions[$name],
 			];
 		}
-		latte()->render(__DIR__ . "/panel.latte", [
+		latte()->render(__DIR__ . "/plugins-panel.latte", [
 			"desktop" => $this->desktop,
 			"plugins" => $plugins,
 			"writable" => $this->writable(),

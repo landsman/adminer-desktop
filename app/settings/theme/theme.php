@@ -74,12 +74,12 @@ class Theme {
 	}
 
 	/** Render the theme panel: the preferences, then one table per light/dark side.
-	* The markup is panel.latte; what is prepared here is what a template cannot say —
+	* The markup is theme-panel.latte; what is prepared here is what a template cannot say —
 	* t() takes literal strings (it runs them through lang()), so every label has to be
 	* spelled out rather than translated from a loop variable.
 	*/
 	function panel(): void {
-		latte()->render(__DIR__ . "/panel.latte", [
+		latte()->render(__DIR__ . "/theme-panel.latte", [
 			"desktop" => $this->desktop,
 			"densities" => [
 				"compact" => $this->desktop->t('Compact'),

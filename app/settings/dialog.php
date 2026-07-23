@@ -5,8 +5,8 @@ namespace Desktop;
 /** The settings dialog itself: the trigger, the tab shell and the actions row.
 *
 * It owns no settings of its own — the panels come from Theme and PluginList, and this
-* only decides where they sit and what the buttons do. The markup lives in dialog.latte;
-* what stays here is the behaviour behind the two buttons.
+* only decides where they sit and what the buttons do. The markup lives in
+* settings-dialog.latte; what stays here is the behaviour behind the two buttons.
 */
 class Dialog {
 	private \AdminerDesktop $desktop;
@@ -20,7 +20,7 @@ class Dialog {
 	}
 
 	function render(): void {
-		latte()->render(__DIR__ . "/dialog.latte", [
+		latte()->render(__DIR__ . "/settings-dialog.latte", [
 			"desktop" => $this->desktop,
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
