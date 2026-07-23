@@ -12,7 +12,7 @@ declare(strict_types=1);
  * real server is the other half, and that one needs postgres — see the PR.
  */
 
-require_once dirname(__DIR__, 2) . "/app/import.php";
+require_once dirname(__DIR__, 3) . "/app/import.php";
 
 $fails = 0;
 $check = function (string $name, bool $ok) use (&$fails): void {
