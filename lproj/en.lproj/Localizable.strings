@@ -4,6 +4,13 @@
 "About Adminer Desktop" = "About Adminer Desktop";
 "Open Logs" = "Open Logs";
 "Quit Adminer Desktop" = "Quit Adminer Desktop";
+"Edit" = "Edit";
+"Undo" = "Undo";
+"Redo" = "Redo";
+"Cut" = "Cut";
+"Copy" = "Copy";
+"Paste" = "Paste";
+"Select All" = "Select All";
 "Help" = "Help";
 "Adminer Website" = "Adminer Website";
 "adminer-desktop on GitHub" = "adminer-desktop on GitHub";
