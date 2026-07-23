@@ -33,12 +33,14 @@ GitHub Actions is billed on this private repo and macOS runners cost 10x, so CI 
 test harness to iterate against. The three-platform build only runs on manual dispatch.
 
 ```sh
-make qa      # php lint, phpstan, golangci-lint, shellcheck, gofmt, go vet
-make check   # asserts the transport, and that settings apply before login (~2 min)
+mise run install   # once: node deps, composer deps, and the e2e browser
+make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
+make check         # asserts the transport, and that settings apply before login (~2 min)
+make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
 ```
 
-Both pass locally before a push. Tools not installed here — shellcheck, semgrep — run
-through Docker rather than being skipped.
+`qa` and `check` pass locally before a push. Tools not installed here — shellcheck,
+semgrep — run through Docker rather than being skipped.
 
 ## Things that will bite
 
@@ -60,6 +62,39 @@ script. Inline scripts must follow the element they bind to.
 classes like `.odds`; `dark.css` overrides them, so anything built on them follows the
 design the user picked. Our own tokens are prefixed `--ad-`.
 
+**composer's `vendor/` collides with Go's vendoring directory.** With it present every go
+command fails with "inconsistent vendoring"; the Makefile exports `GOFLAGS=-mod=readonly`
+to force module mode. We do not vendor Go deps.
+
+## The Adminer Desktop theme
+
+`app/settings/theme/designs/adminer-desktop/` is the app's own default look, not one of
+the downloaded gallery designs. `Theme::cssMap()` hands it to Adminer with no media query,
+so its internal `@media (prefers-color-scheme)` does the light/dark itself — one file,
+both schemes. `Theme::designs()` keeps it out of the gallery; empty (the "Adminer Desktop"
+row) on each side means "use it".
+
+It reskins through Adminer's own `--bg/--fg/--dim/--lit` plus our `--ad-*`, and is split
+into components pulled in by `@import`: `tokens`, `base`, `tables`, `forms`, `sidebar`,
+`settings`, `dark` (last, so it wins). `system-ui` gives the native OS font with no
+branching; the `os-mac`/`os-windows`/`os-linux` and `density-compact`/`-cozy`/
+`-comfortable` body classes come from `AdminerDesktop::bodyClass()` and are the hooks for
+per-OS and per-density tweaks. Biome owns the formatting — one declaration per line.
+
+## The dev toolchain and e2e
+
+mise pins node and orchestrates the tooling; run `mise run install` once. There is no
+second PHP — composer and the e2e run on the bundled frankenphp (`./bin/frankenphp
+php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `composer.json` and
+`package.json` with their lockfiles are the source of truth; `vendor/` and `node_modules/`
+are built, not committed, and `dg/composer-cleaner` slims `vendor/` for a production build.
+
+`tests/e2e/run.php` is the browser end-to-end check, on playwright-php. It owns its whole
+fixture — a throwaway postgres in docker, the app served with a data dir so Adminer's
+passwordless block is satisfied — logs in, and asserts the theme applied and the scheme
+emulated in light and dark, leaving screenshots in `tests/e2e/screenshots/`. `make e2e`
+runs it; it stays out of `qa` because it is slow and needs docker.
+
 ## Layout
 
 ```
@@ -67,14 +102,19 @@ app/desktop.php              the plugin adminer sees: hooks and all translations
 app/files.php                Desktop\Files - recursive file finding
 app/settings/dialog.php      the settings dialog shell
 app/settings/theme/          designs, previews, the screenshot endpoint
+app/settings/theme/designs/adminer-desktop/   our default theme (@import components)
 app/settings/plugins/        the catalogue and the enable/disable logic
 app/styles/styles.php        loads the CSS in app/styles/css/
 app/desktop/javascript.php   loads app/desktop/javascript/ - JS that closes WebView/browser gaps
+tests/e2e/run.php            playwright-php browser check + seed.sql
+mise.toml                    node, and the install/format/lint/e2e tasks
 ```
 
-Everything downloaded — `adminer.php`, `editor.php`, the catalogue, the designs — is
-pinned in the `Makefile` and checksum-verified. Nothing resolves "latest", and those
-files are never edited: behaviour changes go in the plugin.
+Everything downloaded — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
+is pinned in the `Makefile` and checksum-verified. Nothing resolves "latest", and those
+files are never edited: behaviour changes go in the plugin. The `adminer-desktop` theme
+under `settings/theme/designs/` is the exception — it is ours, and the `.gitignore` negates
+the designs-are-downloaded rule to keep it.
 
 ## Conventions
 

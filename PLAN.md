@@ -142,9 +142,11 @@ opens Adminer by default and a native menu item switches to Editor.
 
 ### Designs (26 of them)
 
-Also in the same pinned zip. The `designs` plugin already **is** the theme picker —
-a session-persisted dropdown, dark/light aware (`plugins/designs.php`). We ship the
-CSS and instantiate that plugin with a glob. No theme UI gets written.
+Also in the same pinned zip. The 26 downloaded designs are the gallery; upstream's
+`designs` plugin showed the idea. This has since grown its own theme UI — the settings
+dialog (`app/settings/theme/`) with a light/dark picker and a row-density control — and a
+default theme of ours, `adminer-desktop`, that ships alongside the gallery and is what you
+get out of the box. See CLAUDE.md, "The Adminer Desktop theme".
 
 Not downloaded on demand. Downloading later means writing fetch code, cache
 invalidation, and network error handling — strictly more work than shipping a few
