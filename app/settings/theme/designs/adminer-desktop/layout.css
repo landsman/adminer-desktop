@@ -40,7 +40,9 @@ body {
 }
 
 #menu {
-	position: static;
+	/* relative, not static: it is the containing block for the gear, which has to scroll
+	   with the sidebar rather than stay pinned to the viewport. */
+	position: relative;
 	inset: auto;
 	width: auto;
 	height: auto;
@@ -91,7 +93,10 @@ body {
 /* Settings gear: at the sidebar's top-right, by the Adminer logo, as a quiet icon rather
    than a filled button floating over the content panel (where it also caught its clicks). */
 #desktop-gear {
-	inset: 1.5rem auto auto 14.2rem;
+	/* absolute inside #menu, so it scrolls away with the logo instead of hanging over the
+	   sidebar; right-anchored so it follows the panel's width rather than a magic offset. */
+	position: absolute;
+	inset: 1rem 0.6rem auto auto;
 	padding: 0.15rem 0.4rem;
 	background: transparent;
 	border: 1px solid transparent;
