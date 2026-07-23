@@ -29,12 +29,17 @@ function debug(): void {
 	}
 	\Tracy\Debugger::enable(\Tracy\Debugger::Development, $log);
 
-	// Adminer's style is a bare $_POST["x"], and it silences the warning that follows in
-	// include/errors.inc.php. Enabling Tracy replaces that handler, so every one of them
-	// comes back and buries whatever was worth reading under a page of noise. Same rule,
-	// same messages as upstream; everything else goes on to Tracy.
+	// Enabling Tracy replaces adminer's own error handler, and with it the two things
+	// include/errors.inc.php deliberately turns off: E_DEPRECATED (it targets older PHP
+	// than we bundle) and the warning behind its bare $_GET["q"] style. Both come back as
+	// a page of noise that buries whatever was worth reading.
+	// Restored here for the files that ship verbatim from the adminer release only — in
+	// our own, a missing key or a deprecation is ours to look at.
 	$tracy = set_error_handler(function ($severity, $message, $file = '', $line = 0) use (&$tracy) {
-		if (($severity & (E_WARNING | E_NOTICE)) && preg_match('~^Undefined (array key|offset|index)~', $message)) {
+		if (preg_match('~/(adminer|editor)\.php$|/adminer-plugins/~', str_replace('\\', '/', $file))
+			&& ($severity == E_DEPRECATED
+				|| (($severity & (E_WARNING | E_NOTICE)) && preg_match('~^Undefined (array key|offset|index)~', $message)))
+		) {
 			return true;
 		}
 		return $tracy($severity, $message, $file, $line);
