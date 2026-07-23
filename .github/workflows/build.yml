@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
     # ready_for_review is not in the default set, so marking a draft ready would
     # otherwise never trigger anything and the checks would sit there as skipped.
