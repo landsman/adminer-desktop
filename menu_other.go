@@ -16,3 +16,5 @@ func installMenu(navigate func(string), baseURL, logDir string) {}
 func installJSDialogs(window unsafe.Pointer) {}
 
 func enableInspector(window unsafe.Pointer) bool { return false }
+
+func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }

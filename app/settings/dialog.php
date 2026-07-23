@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Desktop;
 
 /** The settings dialog itself: the trigger, the tab shell and the actions row.

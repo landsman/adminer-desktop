@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /** Serve a design's preview image, fetched once from adminer.org and cached on disk.
 *
 * Served directly by the web server, not through adminer: it is an image endpoint and

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /** Syntax and style check for the PHP we ship.
 *
 * Run through the frankenphp we already download, so QA needs nothing installed:
@@ -71,6 +72,13 @@ foreach ($filenames as $filename) {
 		fwrite(STDERR, "$short: no newline at end of file\n");
 		$errors++;
 	}
+	// Enforced rather than remembered: strict_types only applies to the file that
+	// declares it, so one file missing it is a silent hole rather than an error.
+	if (!preg_match('~^<\?php\s*\ndeclare\(strict_types=1\);~', $source)) {
+		fwrite(STDERR, "$short: missing declare(strict_types=1) on the line after <?php\n");
+		$errors++;
+	}
+
 	// That superglobal is banned outright in adminer: it merges GET, POST and COOKIE, so it
 	// silently accepts a value from a source the code did not intend.
 	// Needle split, in the message too, so this file does not match its own rule — it

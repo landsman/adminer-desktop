@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Plugins that need constructor arguments must be instantiated here; everything the
 // user drops into adminer-plugins/ is picked up automatically (and auto-enabled) by
 // adminer itself — see include/plugins.inc.php:17.

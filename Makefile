@@ -121,6 +121,12 @@ qa: bin/frankenphp$(EXE)
 	./bin/frankenphp$(EXE) php-cli lint.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
+	@# Every darwin-only function needs a stub in menu_other.go, or the build breaks on
+	@# linux and windows only -- a CI round trip away rather than a compile away.
+	@for f in $$(grep -oE '^func [a-zA-Z]+' menu_darwin.go | cut -d' ' -f2); do \
+		grep -q "$$f(" main.go || continue; \
+		grep -q "func $$f(" menu_other.go || { echo "menu_other.go: missing stub for $$f(), used by main.go"; exit 1; }; \
+	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
 		&& { shellcheck check-stream.sh && echo "shellcheck ok"; } \
 		|| { sh -n check-stream.sh && echo "sh ok (shellcheck not installed)"; }

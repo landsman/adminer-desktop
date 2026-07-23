@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /** Adapt Adminer's defaults to running as a desktop app.
 *

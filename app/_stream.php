@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // M0 probe. Mimics how adminer streams: echo, ob_flush(), flush(), repeat.
 // See adminer/sql.inc.php:132, adminer/dump.inc.php:121, adminer/include/functions.inc.php:667.
 // Delete once M0 passes and the launcher embeds the app for real.

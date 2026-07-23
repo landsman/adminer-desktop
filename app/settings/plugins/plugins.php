@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Desktop;
 
 /** The plugin half of the settings dialog: what is shipped, what is enabled, and the
