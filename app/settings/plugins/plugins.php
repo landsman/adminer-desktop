@@ -118,7 +118,9 @@ class PluginList {
 	function apply(): void {
 		// Whitelist by construction -- we iterate what we ship and only look the POSTed
 		// names up in it, so nothing user-supplied ever reaches a filesystem path.
-		$wanted = array_flip((array) $_POST["plugins"]);
+		// ?? []: unticking the last plugin posts no plugins[] at all, which is the case that
+		// has to disable them, not warn.
+		$wanted = array_flip((array) ($_POST["plugins"] ?? []));
 		foreach ($this->available() as $name => $filename) {
 			$link = $this->link($name);
 			if (isset($wanted[$name])) {

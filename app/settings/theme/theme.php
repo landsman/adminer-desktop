@@ -124,7 +124,9 @@ class Theme {
 			$i = 0;
 			foreach ($this->designs($mode) as $path => $design) {
 				$id = "desktop-design-$mode-" . $i++;
-				$checked = ($_SESSION["design_$mode"] == $path ? " checked" : "");
+				// ?? "", like cssMap() above: nothing is stored until a design is picked, and
+				// the panel is drawn on every page — that is a warning per row per load.
+				$checked = (($_SESSION["design_$mode"] ?? "") == $path ? " checked" : "");
 				// Every cell's content is a <label for> the row's input, so clicking the name
 				// or the preview selects it, not just the radio itself.
 				// The whole first cell is one <label> around the radio and the name, so
@@ -155,7 +157,7 @@ class Theme {
 	/** Store the chosen designs and density. */
 	function apply(): void {
 		foreach (array("light", "dark") as $mode) {
-			$_SESSION["design_$mode"] = $_POST["design_$mode"];
+			$_SESSION["design_$mode"] = $_POST["design_$mode"] ?? "";
 		}
 		// Whitelisted: these values are echoed into body classes, so never store raw input.
 		$density = $_POST["density"] ?? "cozy";
