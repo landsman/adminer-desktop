@@ -25,7 +25,7 @@ endif
 # vendoring"). We do not vendor Go deps, so force module mode for all of them.
 export GOFLAGS := -mod=readonly
 
-.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run editor debug bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run dev editor debug bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
@@ -165,6 +165,9 @@ build: fetch
 # The app itself: opens a window.
 run: build
 	./build/adminer-desktop$(EXE)
+
+# Alias for run.
+dev: run
 
 editor: build
 	./build/adminer-desktop$(EXE) -editor
