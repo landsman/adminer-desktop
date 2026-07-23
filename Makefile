@@ -53,7 +53,10 @@ bin/frankenphp$(EXE):
 	@mkdir -p bin .cache
 ifeq ($(suffix $(FRANKEN_ASSET)),.zip)
 	curl -fsSL -o .cache/frankenphp.zip $(FRANKEN_URL)/$(FRANKEN_ASSET)
-	unzip -qojd bin .cache/frankenphp.zip '*frankenphp.exe'
+	# The whole tree, not just the exe: the windows build is a real php install, with
+	# ~30 DLLs beside the binary and ext/ and lib/ next to it. Taking only frankenphp.exe
+	# got 0xC0000135, STATUS_DLL_NOT_FOUND, the moment it ran.
+	unzip -qo .cache/frankenphp.zip -d bin
 else
 	curl -fsSL -o $@ $(FRANKEN_URL)/$(FRANKEN_ASSET)
 endif
@@ -154,8 +157,12 @@ DIST = build/pkg/adminer-desktop
 
 dist: build
 	rm -rf $(DIST) && mkdir -p $(DIST)
-	cp build/adminer-desktop$(EXE) bin/frankenphp$(EXE) $(DIST)/
-	rsync -a --exclude '_stream.php' app/ $(DIST)/app/
+	cp build/adminer-desktop$(EXE) $(DIST)/
+	# All of bin/, because on windows that is the php runtime's DLLs and ext/ as well as
+	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
+	cp -R bin/. $(DIST)/
+	cp -R app $(DIST)/app
+	rm -f $(DIST)/app/_stream.php   # M0 probe, not part of the product
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.
