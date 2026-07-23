@@ -20,11 +20,11 @@ function latte(): \Latte\Engine {
 		// they are {input_token()} — and the list is also what a template may reach for.
 		$latte->addFunction("input_hidden", \Adminer\input_hidden(...));
 		$latte->addFunction("input_token", \Adminer\input_token(...));
-		// Without a temp directory Latte compiles into memory on every request — correct,
+		// Without a cache directory Latte compiles into memory on every request — correct,
 		// just slower, which is what we get when the app is served without a data dir.
 		$dir = getenv("ADMINER_DESKTOP_DATA");
 		if ($dir && (is_dir("$dir/latte") || @mkdir("$dir/latte", 0700, true))) {
-			$latte->setTempDirectory("$dir/latte");
+			$latte->setCacheDirectory("$dir/latte");
 		}
 	}
 	return $latte;

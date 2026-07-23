@@ -20,14 +20,14 @@ class Dialog {
 	}
 
 	function render(): void {
-		latte()->render(__DIR__ . "/dialog.latte", array(
+		latte()->render(__DIR__ . "/dialog.latte", [
 			"desktop" => $this->desktop,
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
 			"writable" => $this->plugins->writable(),
 			"openScript" => $this->openScript(),
 			"closeScript" => $this->closeScript(),
-		));
+		]);
 	}
 
 	/** The gear opens the dialog.
