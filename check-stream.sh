@@ -23,7 +23,7 @@ if curl -s -o /dev/null --max-time 2 "$BASE/"; then
 	exit 1
 fi
 
-./vendor/frankenphp php-server --root app --listen "127.0.0.1:$PORT" --no-compress \
+./bin/frankenphp php-server --root app --listen "127.0.0.1:$PORT" --no-compress \
 	2>/tmp/adminer-desktop-check.log &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null' EXIT
@@ -39,6 +39,12 @@ done
 # Body, not headers: it is the thing only _stream.php can produce.
 [ "$(curl -s "$BASE/_stream.php?n=1&s=0")" = "0" ] || {
 	echo "FAIL: $PORT answered, but not with our _stream.php output"; exit 1; }
+
+# The desktop plugin must prefill Server, or a Docker/remote database fails to connect
+# with a confusing Unix-socket error. Checked end to end against the real login page.
+curl -s "$BASE/adminer.php" | grep -q 'name="auth\[server\]" value="127.0.0.1"' || {
+	echo "FAIL: login form does not prefill Server with 127.0.0.1"; exit 1; }
+echo "ok: Server field prefilled"
 
 echo "streaming $N lines over ~${TOTAL}s ..."
 START=$(date +%s)

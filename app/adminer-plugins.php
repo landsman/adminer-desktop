@@ -3,6 +3,10 @@
 // user drops into adminer-plugins/ is picked up automatically (and auto-enabled) by
 // adminer itself — see include/plugins.inc.php:17.
 
+// Ours, always on — it is app behaviour, not an optional plugin, so it lives here
+// rather than in adminer-plugins/ which is the user's own enabled set.
+require_once __DIR__ . "/desktop.php";
+
 require_once __DIR__ . "/plugins-available/designs.php";
 
 $designs = array();
@@ -18,5 +22,6 @@ foreach (glob(__DIR__ . "/designs/*/*.css") as $filename) {
 ksort($designs);
 
 return array(
+	new AdminerDesktop(),
 	new AdminerDesigns($designs),
 );

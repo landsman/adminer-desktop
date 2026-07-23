@@ -109,8 +109,10 @@ No app code. Answers "does FrankenPHP break Adminer?" before anything is built o
 **Status: PASS.** `got 24/24 lines in 120s, first byte at 0s`. Adminer and Editor both
 return 200 on PHP 8.5.8 with no deprecation output, and the designs dropdown renders.
 
-Still outstanding for M0: run a genuinely slow query against a real DB and confirm the
-kill button works. The thread count makes it very likely, but likely is not verified.
+**Deferred:** run a genuinely slow query against a real DB and confirm the kill button
+works. Needs a live MySQL, so it can't live in `make check`. Deferred rather than
+dropped because the measured 36 threads make failure unlikely, and if it does fail the
+fix is a thread-count flag — not an architecture change. Nothing in M1 depends on it.
 
 ## M1 — the app
 
@@ -180,6 +182,13 @@ is for M2; revisit only if it bites in practice.
 
 Skip the login screen, open a `.sqlite` path from `argv`, remember connections.
 Same mechanism — one plugin of ours, zero changes to `adminer.php`.
+
+**Prefill Server with `127.0.0.1`.** Adminer leaves it empty, which means "connect over
+a Unix socket". On a desktop Mac the database is nearly always in Docker or remote, and
+Docker publishes TCP only — it never creates a socket. So the stock default fails with
+`connection to server on socket "/tmp/.s.PGSQL.5432" failed: No such file or directory`
+while the server is running perfectly well on `127.0.0.1:5432`. Hit during M1 testing.
+Correct default for a server deployment, wrong one for a desktop app.
 
 **Done when:** plugins toggle on and off from the UI, the design dropdown works,
 Editor is reachable, and launching with a `.sqlite` argument opens that database.

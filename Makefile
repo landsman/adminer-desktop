@@ -8,9 +8,9 @@ FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_
 # ponytail: mac-arm64 only until someone needs to build elsewhere. M3 adds the matrix.
 FRANKEN_ASSET = frankenphp-mac-arm64
 
-.PHONY: fetch verify check serve clean checksums
+.PHONY: fetch verify check check-app build run editor serve clean checksums
 
-fetch: app/adminer.php app/editor.php app/plugins-available app/designs vendor/frankenphp
+fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp
 
 app/adminer.php:
 	@mkdir -p app
@@ -37,8 +37,8 @@ app/designs: .cache/adminer-src.zip
 	unzip -qo $< 'adminer-$(ADMINER_VERSION)/designs/*' -d .cache
 	@mkdir -p app && rm -rf $@ && mv .cache/adminer-$(ADMINER_VERSION)/designs $@
 
-vendor/frankenphp:
-	@mkdir -p vendor
+bin/frankenphp:
+	@mkdir -p bin
 	curl -fsSL -o $@ $(FRANKEN_URL)/$(FRANKEN_ASSET)
 	chmod +x $@
 
@@ -48,16 +48,29 @@ verify: fetch
 
 # Regenerate after a deliberate version bump. Review the diff.
 checksums:
-	shasum -a 256 app/adminer.php app/editor.php vendor/frankenphp > checksums.txt
+	shasum -a 256 app/adminer.php app/editor.php bin/frankenphp > checksums.txt
 
 # M0: does FrankenPHP survive a 120s progressively-flushed response?
 check: fetch
 	./check-stream.sh
 
-SERVE_FLAGS = --root app --listen 127.0.0.1:18000 --no-compress
+build: fetch
+	go build -o build/adminer-desktop .
 
+# The app itself: opens a window.
+run: build
+	./build/adminer-desktop
+
+editor: build
+	./build/adminer-desktop -editor
+
+# Same startup path as `run`, minus the window — so it works over ssh and in CI.
+check-app: build
+	./build/adminer-desktop -headless
+
+# Just the server, no window. Handy for poking at it with curl.
 serve: fetch
-	./vendor/frankenphp php-server $(SERVE_FLAGS)
+	./bin/frankenphp php-server --root app --listen 127.0.0.1:18000 --no-compress
 
 clean:
-	rm -rf app vendor .cache
+	rm -rf app bin .cache
