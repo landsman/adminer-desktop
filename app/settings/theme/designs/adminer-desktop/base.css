@@ -1,6 +1,21 @@
 /* Document-wide element styling: type, links, headings, focus and the message boxes.
  * Area-specific rules (tables, forms, the sidebar) live in their own files. */
 
+/* Smooth cross-document navigation. Adminer reloads the whole page on every click; clicking
+   quickly flashes that rebuild — the sidebar streams in, the content reflows. The browser
+   snapshots the old page and cross-fades to the new one, hiding the rebuild behind the
+   transition. Same-origin only; every page opts in just by carrying this rule, so it needs no
+   script. Unsupported browsers fall back to a plain reload; reduced motion turns it off. */
+@view-transition {
+	navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	@view-transition {
+		navigation: none;
+	}
+}
+
 body {
 	font-family: var(--ad-font);
 	font-size: calc(13.5px * var(--ad-scale, 1));
