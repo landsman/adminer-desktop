@@ -11,10 +11,10 @@
 	--ad-radius-sm: 4px;
 
 	/* Spacing */
-	--ad-gap: .5em;
+	--ad-gap: 0.5em;
 	--ad-gap-lg: 1em;
-	--ad-cell-padding: .3em .5em;
-	--ad-button-padding: .45em 1.2em;
+	--ad-cell-padding: 0.3em 0.5em;
+	--ad-button-padding: 0.45em 1.2em;
 
 	/* Dialog */
 	--ad-dialog-width: 56em;

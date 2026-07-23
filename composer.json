@@ -1,0 +1,16 @@
+{
+    "name": "landsman/adminer-desktop",
+    "description": "Adminer as a desktop app.",
+    "license": "Apache-2.0",
+    "type": "project",
+    "require-dev": {
+        "dg/composer-cleaner": "^2.2",
+        "playwright-php/playwright": "^1.2"
+    },
+    "config": {
+        "allow-plugins": {
+            "dg/composer-cleaner": true
+        },
+        "sort-packages": true
+    }
+}

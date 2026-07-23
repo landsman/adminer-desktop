@@ -3,6 +3,10 @@
 /.cache/
 /.idea/
 /.playwright-mcp/
+# Installed dependencies — composer.json/lock and package.json/lock are the source of
+# truth; the trees themselves are built by `mise run install`, not committed.
+/node_modules/
+/vendor/
 /app/adminer-plugins/*
 /app/adminer.php
 /app/editor.php

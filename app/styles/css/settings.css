@@ -4,8 +4,8 @@
 
 #desktop-gear {
 	position: fixed;
-	bottom: .5em;
-	right: .5em;
+	bottom: 0.5em;
+	right: 0.5em;
 	font-size: 1.2em;
 	line-height: 1;
 	padding: var(--ad-cell-padding);
@@ -59,7 +59,7 @@ body:has(#desktop-settings[open]) {
 
 #desktop-tabs label {
 	display: inline-block;
-	padding: .4em var(--ad-gap-lg);
+	padding: 0.4em var(--ad-gap-lg);
 	cursor: pointer;
 	border-bottom: 2px solid transparent;
 }
@@ -141,7 +141,7 @@ body:has(#desktop-settings[open]) {
 }
 
 #desktop-actions button:disabled {
-	opacity: .5;
+	opacity: 0.5;
 	cursor: not-allowed;
 }
 
@@ -198,8 +198,8 @@ body:has(#desktop-settings[open]) {
    previous one off, and highlighting the row you just left as "changed" is noise - it
    marked (built-in) as edited whenever you chose any design. */
 
-#desktop-panels tbody tr:has(input[type=checkbox][checked]:not(:checked)),
-#desktop-panels tbody tr:has(input[type=checkbox]:not([checked]):checked),
-#desktop-panels tbody tr:has(input[type=radio]:not([checked]):checked) {
+#desktop-panels tbody tr:has(input[type="checkbox"][checked]:not(:checked)),
+#desktop-panels tbody tr:has(input[type="checkbox"]:not([checked]):checked),
+#desktop-panels tbody tr:has(input[type="radio"]:not([checked]):checked) {
 	background: var(--ad-unsaved);
 }

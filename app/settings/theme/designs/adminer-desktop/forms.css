@@ -12,7 +12,7 @@ textarea {
 	border-radius: var(--ad-radius-sm);
 	background: var(--bg);
 	color: var(--fg);
-	padding: .34em .55em;
+	padding: 0.34em 0.55em;
 }
 
 input[type="checkbox"],
@@ -22,7 +22,7 @@ input[type="radio"] {
 
 textarea,
 .sqlarea {
-	padding: .5em .65em;
+	padding: 0.5em 0.65em;
 }
 
 input:hover,
@@ -59,7 +59,7 @@ button {
 	color: var(--ad-accent-fg);
 	border: 1px solid transparent;
 	border-radius: var(--ad-radius-sm);
-	padding: .38em 1em;
+	padding: 0.38em 1em;
 	font-weight: 500;
 }
 
@@ -96,6 +96,8 @@ legend {
 	textarea,
 	input[type="submit"],
 	button {
-		transition: background-color .12s ease, border-color .12s ease;
+		transition:
+			background-color 0.12s ease,
+			border-color 0.12s ease;
 	}
 }

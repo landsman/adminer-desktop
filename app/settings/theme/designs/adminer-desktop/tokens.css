@@ -35,8 +35,8 @@ html {
 	--ad-mono: ui-monospace, monospace;
 
 	/* Density (cozy is the default) — overridden by the body classes below. */
-	--ad-row-py: .32em;
-	--ad-row-px: .58em;
+	--ad-row-py: 0.32em;
+	--ad-row-px: 0.58em;
 	--ad-line: 1.5;
 
 	color-scheme: light;
@@ -46,19 +46,19 @@ html {
 /* Row density. These set variables only; padding and line-height read them from
    tables.css and base.css, so the whole grid retightens from one class on <body>. */
 .density-compact {
-	--ad-row-py: .12em;
-	--ad-row-px: .46em;
+	--ad-row-py: 0.12em;
+	--ad-row-px: 0.46em;
 	--ad-line: 1.28;
 }
 
 .density-cozy {
-	--ad-row-py: .32em;
-	--ad-row-px: .58em;
+	--ad-row-py: 0.32em;
+	--ad-row-px: 0.58em;
 	--ad-line: 1.5;
 }
 
 .density-comfortable {
-	--ad-row-py: .55em;
-	--ad-row-px: .78em;
+	--ad-row-py: 0.55em;
+	--ad-row-px: 0.78em;
 	--ad-line: 1.66;
 }

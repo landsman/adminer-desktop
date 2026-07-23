@@ -1,0 +1,30 @@
+# Dev toolchain, orchestrated by mise.
+#
+# The runtime PHP is frankenphp (bundled — see Makefile), so mise does not build a second
+# one: composer and the PHP e2e tests run through `./bin/frankenphp php-cli`. mise pins
+# node — needed for Biome and for the browser the Playwright e2e driver launches — and the
+# tasks below are the single entry point for install / format / lint / e2e.
+
+[tools]
+node = "22"
+
+[tasks.install]
+description = "Fetch composer, install PHP + JS deps, and the e2e browser"
+run = [
+	"test -f .cache/composer.phar || (mkdir -p .cache && curl -fsSL -o .cache/composer.phar https://getcomposer.org/download/2.10.2/composer.phar)",
+	"./bin/frankenphp php-cli .cache/composer.phar install --no-interaction",
+	"npm install --no-audit --no-fund",
+	"./bin/frankenphp php-cli vendor/bin/playwright-install --browsers",
+]
+
+[tasks.format]
+description = "Format CSS and JS with Biome"
+run = "npx --no-install @biomejs/biome format --write ."
+
+[tasks.lint]
+description = "Check formatting and lint with Biome"
+run = "npx --no-install @biomejs/biome check ."
+
+[tasks.e2e]
+description = "Run the browser end-to-end tests"
+run = "./bin/frankenphp php-cli tests/e2e/run.php"

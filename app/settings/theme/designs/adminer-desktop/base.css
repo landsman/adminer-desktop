@@ -73,7 +73,7 @@ a:focus-visible,
 .message {
 	border-radius: var(--ad-radius-sm);
 	border: 1px solid transparent;
-	padding: .5em .8em;
+	padding: 0.5em 0.8em;
 }
 
 .error {
@@ -96,6 +96,8 @@ a:focus-visible,
 	a,
 	#tables a,
 	#logins a {
-		transition: background-color .12s ease, color .12s ease;
+		transition:
+			background-color 0.12s ease,
+			color 0.12s ease;
 	}
 }
