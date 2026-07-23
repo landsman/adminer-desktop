@@ -3,12 +3,14 @@ package main
 /*
 #cgo CFLAGS: -x objective-c
 #cgo LDFLAGS: -framework Cocoa
+#include <stdlib.h>
 #include "menu_darwin.h"
 */
 import "C"
 
 import (
 	"os/exec"
+	"unsafe"
 )
 
 // Set by main before the menu can be clicked. The menu only exists while the webview is
@@ -18,6 +20,22 @@ var (
 	menuBaseURL  string
 	menuLogDir   string
 )
+
+// Injected at build time by the Makefile from the same version pins the downloads use,
+// so About can never disagree with what is actually bundled.
+var (
+	version           = "dev"
+	adminerVersion    = "unknown"
+	frankenphpVersion = "unknown"
+)
+
+const (
+	adminerSiteURL = "https://www.adminer.org"
+	repoURL        = "https://github.com/landsman/adminer-desktop"
+	issuesURL      = repoURL + "/issues"
+)
+
+func openURL(url string) { _ = exec.Command("open", url).Start() }
 
 //export goMenuAdminer
 func goMenuAdminer() { menuNavigate(menuBaseURL + "/adminer.php") }
@@ -32,6 +50,21 @@ func goMenuLogs() {
 	_ = exec.Command("open", menuLogDir).Start()
 }
 
+//export goMenuAdminerSite
+func goMenuAdminerSite() { openURL(adminerSiteURL) }
+
+//export goMenuRepo
+func goMenuRepo() { openURL(repoURL) }
+
+//export goMenuIssues
+func goMenuIssues() { openURL(issuesURL) }
+
 // installMenu replaces the default menu webview gives an unbundled binary. Must run on
 // the main thread, after webview has created NSApp and before Run().
-func installMenu() { C.installMenu() }
+func installMenu() {
+	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)
+	defer C.free(unsafe.Pointer(v))
+	defer C.free(unsafe.Pointer(a))
+	defer C.free(unsafe.Pointer(f))
+	C.installMenu(v, a, f)
+}

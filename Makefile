@@ -8,7 +8,7 @@ FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_
 # ponytail: mac-arm64 only until someone needs to build elsewhere. M3 adds the matrix.
 FRANKEN_ASSET = frankenphp-mac-arm64
 
-.PHONY: fetch verify check check-app build run editor logs serve clean checksums
+.PHONY: fetch verify check check-app build run editor bundle zip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp
 
@@ -54,8 +54,14 @@ checksums:
 check: fetch
 	./check-stream.sh
 
+# About reads these, so it can never disagree with what is actually bundled.
+VERSION = $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS = -X main.version=$(VERSION) \
+	-X main.adminerVersion=$(ADMINER_VERSION) \
+	-X main.frankenphpVersion=$(FRANKENPHP_VERSION)
+
 build: fetch
-	go build -o build/adminer-desktop .
+	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop .
 
 # The app itself: opens a window.
 run: build
@@ -67,6 +73,28 @@ editor: build
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
 	./build/adminer-desktop -headless
+
+APP = build/Adminer.app
+
+# A .app is just a directory, which is why none of this needs go:embed or a static
+# single-binary build: the runtime and app/ are simply files inside it.
+bundle: build
+	rm -rf $(APP)
+	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
+	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > $(APP)/Contents/Info.plist
+	cp build/adminer-desktop $(APP)/Contents/MacOS/
+	cp bin/frankenphp $(APP)/Contents/MacOS/
+	# Everything except the M0 probe and the plugins the user has not enabled.
+	rsync -a --exclude '_stream.php' app/ $(APP)/Contents/Resources/app/
+	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
+	# sit directly in Resources. macOS then picks the language itself.
+	cp -R lproj/*.lproj $(APP)/Contents/Resources/
+	@echo "built $(APP) -- $$(du -sh $(APP) | cut -f1)"
+
+# Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
+zip: bundle
+	cd build && rm -f Adminer.zip && zip -qry Adminer.zip Adminer.app
+	@echo "built build/Adminer.zip -- $$(du -sh build/Adminer.zip | cut -f1)"
 
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.

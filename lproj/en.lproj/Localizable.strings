@@ -1,0 +1,13 @@
+/* Menu bar. Keys are the English strings, so a missing translation degrades to
+   English rather than to a key name. Adminer and Editor are product names and are
+   deliberately not listed. */
+"About Adminer" = "About Adminer";
+"Open Logs" = "Open Logs";
+"Quit Adminer" = "Quit Adminer";
+"Help" = "Help";
+"Adminer Website" = "Adminer Website";
+"adminer-desktop on GitHub" = "adminer-desktop on GitHub";
+"Report an Issue" = "Report an Issue";
+
+/* About panel credits. %1$@ adminer version, %2$@ frankenphp version, %3$@ app version. */
+"credits.format" = "Adminer %1$@ — by Jakub Vrana and contributors\nApache-2.0 / GPL-2.0 · https://www.adminer.org\n\nRuntime: FrankenPHP %2$@ (Caddy + PHP)\nMIT · https://frankenphp.dev\n\nadminer-desktop %3$@ — MIT\nhttps://github.com/landsman/adminer-desktop\n\nThis app does not modify Adminer. It downloads the official release at a pinned version, verifies its checksum, and runs it in a native window.";
