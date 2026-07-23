@@ -58,13 +58,23 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $return;
 	}
 
+	/** Get this directory with forward slashes.
+	* __DIR__ is backslash-separated on Windows, and glob() treats a backslash as an
+	* escape character there, so a pattern built from raw __DIR__ silently matches
+	* nothing — no designs, no plugins, and no error to say why. PHP accepts forward
+	* slashes on every platform.
+	*/
+	private function dir(): string {
+		return str_replace('\\', '/', __DIR__);
+	}
+
 	/** Get shipped designs for one side of the light/dark split, path => label
 	* @param string $mode "light" or "dark"
 	* @return array<string, string>
 	*/
 	function designs(string $mode): array {
 		$return = array("" => $this->lang('(built-in)'));
-		foreach (glob(__DIR__ . "/designs/*/*.css") as $filename) {
+		foreach (glob($this->dir() . "/designs/*/*.css") as $filename) {
 			$dir = basename(dirname($filename));
 			$path = "designs/$dir/" . basename($filename);
 			// Match -dark anywhere in the path, not just the filename, which is what
@@ -109,7 +119,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		$return = array();
 		// Top level only: plugins-available/drivers/ are database drivers, which need a
 		// server we cannot assume exists, not a checkbox.
-		foreach (glob(__DIR__ . "/plugins-available/*.php") as $filename) {
+		foreach (glob($this->dir() . "/plugins-available/*.php") as $filename) {
 			$return[basename($filename, ".php")] = $filename;
 		}
 		ksort($return);
@@ -117,7 +127,19 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	private function link(string $name): string {
-		return __DIR__ . "/adminer-plugins/$name.php";
+		return $this->dir() . "/adminer-plugins/$name.php";
+	}
+
+	/** Is this enabled plugin one we put there, and therefore ours to remove?
+	* A symlink always is. A copy counts only while it still matches what we ship —
+	* so a .php the user dropped in by hand is never deleted by a checkbox, even if it
+	* happens to share a name with a bundled plugin.
+	*/
+	private function isOurs(string $link, string $filename): bool {
+		if (is_link($link)) {
+			return true;
+		}
+		return file_exists($link) && file_get_contents($link) === file_get_contents($filename);
 	}
 
 	/** Apply settings posted from the modal. Called from adminer-plugins.php rather than
@@ -141,11 +163,11 @@ class AdminerDesktop extends Adminer\Plugin {
 			if (isset($wanted[$name])) {
 				if (!file_exists($link)) {
 					// Relative target, so it survives app/ being moved into a .app bundle.
-					@symlink("../plugins-available/$name.php", $link);
+					// Windows only allows symlinks with elevated rights or developer mode
+					// on, so fall back to a copy there rather than failing silently.
+					@symlink("../plugins-available/$name.php", $link) || @copy($filename, $link);
 				}
-			} elseif (is_link($link)) {
-				// is_link, never file_exists: a real .php the user dropped in by hand is
-				// theirs, and must not be deletable by a checkbox that never listed it.
+			} elseif ($this->isOurs($link, $filename)) {
 				@unlink($link);
 			}
 		}
