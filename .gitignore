@@ -7,6 +7,8 @@
 # truth; the trees themselves are built by `mise run install`, not committed.
 /node_modules/
 /vendor/
+# e2e artifacts: screenshots the browser check writes.
+/tests/e2e/screenshots/
 /app/adminer-plugins/*
 /app/adminer.php
 /app/editor.php

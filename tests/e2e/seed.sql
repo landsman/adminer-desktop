@@ -1,8 +1,8 @@
--- Demo data for the theme preview (dev/preview.sh, `make preview`).
+-- Demo data for the e2e run (tests/e2e/run.php, `mise run e2e`).
 --
--- Idempotent: preview.sh applies it on every start, so editing this file and re-running
--- `make preview` reseeds without recreating the container. Add tables here as the theme
--- grows more surfaces to look at — keep the drops in dependency order (children first).
+-- Idempotent: run.php applies it on every start, so editing this file and re-running the
+-- e2e reseeds without recreating the container. Add tables here as the theme grows more
+-- surfaces to test — keep the drops in dependency order (children first).
 
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS users;

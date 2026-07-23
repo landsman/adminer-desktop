@@ -20,7 +20,12 @@ else
 	EXE = .exe
 endif
 
-.PHONY: fetch verify qa phpstan golangci security check check-app build run editor debug bundle zip dist tarball winzip logs serve clean checksums
+# composer installs PHP deps into vendor/, which is also Go's vendoring directory — with
+# it present Go switches to vendor mode and every go command fails ("inconsistent
+# vendoring"). We do not vendor Go deps, so force module mode for all of them.
+export GOFLAGS := -mod=readonly
+
+.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run editor debug bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
@@ -106,6 +111,11 @@ phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php
 golangci:
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
+# Format-check and lint CSS and JS with Biome, through mise (which provides node). Run
+# `mise run install` once first to fetch Biome; CI does the same before `make qa`.
+biome:
+	mise run lint
+
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
 # Pinned like everything else: on :latest a new rule turns a green build red with no
@@ -137,6 +147,7 @@ qa: bin/frankenphp$(EXE)
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok" || echo "plists skipped (macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
+	@$(MAKE) --no-print-directory biome && echo "biome ok"
 
 # M0: does FrankenPHP survive a 120s progressively-flushed response?
 check: fetch
@@ -242,11 +253,12 @@ logs:
 serve: fetch
 	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
 
-# Serve with a demo database and a data dir, so you can actually log in and eyeball the
-# theme in a browser (Adminer refuses passwordless login; the app opens SQLite via argv).
-# Needs docker for the throwaway postgres. See dev/preview.login.js to drive it.
-preview: fetch
-	./dev/preview.sh
+# Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
+# writes screenshots to tests/e2e/screenshots/. Needs docker (a throwaway postgres) and
+# the Playwright browser from `mise run install`. Kept out of `qa` because it is slow and
+# needs docker; run it on its own.
+e2e: fetch
+	mise run e2e
 
 clean:
 	rm -rf app bin .cache
