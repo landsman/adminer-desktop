@@ -92,6 +92,23 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	addItem(appMenu, NSLocalizedString(@"Quit Adminer Desktop", nil), @selector(terminate:), @"q", nil);
 	[appItem setSubmenu:appMenu];
 
+	// Cmd-V in a WKWebView is not the system doing it: AppKit only delivers cut/copy/paste
+	// because these menu items carry the key equivalents, and dispatches them down the
+	// responder chain to the web view. No Edit menu, no clipboard in any form field.
+	// nil target for the same reason Quit uses one — the chain finds the first responder.
+	NSMenuItem *editItem = [[NSMenuItem alloc] init];
+	[bar addItem:editItem];
+	NSMenu *editMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Edit", nil)];
+	addItem(editMenu, NSLocalizedString(@"Undo", nil), @selector(undo:), @"z", nil);
+	// Uppercase key equivalent: AppKit reads that as Shift-Cmd-Z on its own.
+	addItem(editMenu, NSLocalizedString(@"Redo", nil), @selector(redo:), @"Z", nil);
+	[editMenu addItem:[NSMenuItem separatorItem]];
+	addItem(editMenu, NSLocalizedString(@"Cut", nil), @selector(cut:), @"x", nil);
+	addItem(editMenu, NSLocalizedString(@"Copy", nil), @selector(copy:), @"c", nil);
+	addItem(editMenu, NSLocalizedString(@"Paste", nil), @selector(paste:), @"v", nil);
+	addItem(editMenu, NSLocalizedString(@"Select All", nil), @selector(selectAll:), @"a", nil);
+	[editItem setSubmenu:editMenu];
+
 	NSMenuItem *helpItem = [[NSMenuItem alloc] init];
 	[bar addItem:helpItem];
 	NSMenu *helpMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Help", nil)];
