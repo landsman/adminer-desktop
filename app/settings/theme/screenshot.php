@@ -8,19 +8,17 @@
 * failure ends at the same placeholder, so the table never renders a broken-image icon.
 */
 
-$root = str_replace('\\', '/', __DIR__);
+// Two levels up: this lives in app/settings/theme/, the designs in app/designs/.
+$root = str_replace('\\', '/', dirname(__DIR__, 2));
 $name = (string) ($_GET["design"] ?? "");
 
 function placeholder(): void {
-	// Inline SVG, no file to ship and nothing else to fetch — a placeholder that itself
-	// depends on the network would be no placeholder at all.
-	header("Content-Type: image/svg+xml");
+	// Redirect to the shared file rather than emitting the markup here: every design
+	// without a preview then points at one URL the browser caches once, instead of each
+	// fetching its own identical copy. The redirect itself is deliberately not cached,
+	// so a design gets a real screenshot as soon as one becomes reachable.
 	header("Cache-Control: no-store");
-	echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" width="160" height="100">'
-		. '<rect width="160" height="100" rx="6" fill="#8883"/>'
-		. '<path d="M52 62l18-20 14 16 10-10 14 14v10H52z" fill="#8886"/>'
-		. '<circle cx="60" cy="40" r="7" fill="#8886"/>'
-		. '</svg>';
+	header("Location: placeholder.svg", true, 302);
 	exit;
 }
 

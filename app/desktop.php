@@ -218,7 +218,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		foreach (glob($this->dir() . "/styles/*.css") as $file) {
 			$mtime = max($mtime, (int) @filemtime($file));
 		}
-		echo "<link rel='stylesheet' href='styles/index.css?v=$mtime'>\n";
+		echo "<link rel='stylesheet' href='styles/desktop.css?v=$mtime'>\n";
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
@@ -272,7 +272,7 @@ class AdminerDesktop extends Adminer\Plugin {
 				if ($path) {
 					// loading=lazy so opening the dialog does not fire 26 requests at once;
 					// the endpoint serves a placeholder rather than failing when offline.
-					echo "<img src='screenshot.php?design=" . urlencode(basename(dirname($path)))
+					echo "<img src='settings/theme/screenshot.php?design=" . urlencode(basename(dirname($path)))
 						. "' alt='' loading='lazy' width='160' height='100'>";
 				}
 				echo "</label>\n";
