@@ -21,9 +21,9 @@ class Theme {
 	*/
 	function designs(string $mode): array {
 		$return = array("" => $this->desktop->t('(built-in)'));
-		foreach (glob($this->desktop->dir() . "/designs/*/*.css") as $filename) {
+		foreach (glob(__DIR__ . "/designs/*/*.css") as $filename) {
 			$dir = basename(dirname($filename));
-			$path = "designs/$dir/" . basename($filename);
+			$path = "settings/theme/designs/$dir/" . basename($filename);
 			// Match -dark anywhere in the path, not just the filename, which is what
 			// upstream plugins/designs.php:30 does. rmsoft_blue-dark is the case that
 			// proves it: the folder is marked dark but its file is a plain adminer.css,

@@ -21,9 +21,9 @@ class PluginList {
 	*/
 	function available(): array {
 		$return = array();
-		// Top level only: plugins-available/drivers/ are database drivers, which need a
+		// Top level only: available/drivers/ are database drivers, which need a
 		// server we cannot assume exists, not a checkbox.
-		foreach (glob($this->desktop->dir() . "/plugins-available/*.php") as $filename) {
+		foreach (glob(__DIR__ . "/available/*.php") as $filename) {
 			$return[basename($filename, ".php")] = $filename;
 		}
 		ksort($return);
@@ -125,7 +125,7 @@ class PluginList {
 					// Relative target, so it survives app/ being moved into a .app bundle.
 					// Windows only allows symlinks with elevated rights or developer mode
 					// on, so fall back to a copy there rather than failing silently.
-					@symlink("../plugins-available/$name.php", $link) || @copy($filename, $link);
+					@symlink("../settings/plugins/available/$name.php", $link) || @copy($filename, $link);
 				}
 			} elseif ($this->isOurs($link, $filename)) {
 				@unlink($link);

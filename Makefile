@@ -22,7 +22,7 @@ endif
 
 .PHONY: fetch verify qa phpstan golangci security check check-app build run editor bundle zip dist tarball winzip logs serve clean checksums
 
-fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp$(EXE)
+fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
 app/adminer.php:
 	@mkdir -p app
@@ -49,13 +49,15 @@ app/editor.php:
 
 # Shipped but NOT loaded. Everything in adminer-plugins/ is auto-enabled by
 # adminer (include/plugins.inc.php:17-19), so "available" has to live elsewhere.
-app/plugins-available: .cache/adminer-src
-	@mkdir -p app
+app/settings/plugins/available: .cache/adminer-src
+	@mkdir -p app/settings/plugins
 	rm -rf $@ && cp -R .cache/adminer-src/plugins $@
-	@mkdir -p app/adminer-plugins   # user's drop folder; empty by default
+	# adminer-plugins/ stays at the document root: adminer looks for it there and
+	# nowhere else (include/plugins.inc.php:18). Only the catalogue is ours to place.
+	@mkdir -p app/adminer-plugins
 
-app/designs: .cache/adminer-src
-	@mkdir -p app
+app/settings/theme/designs: .cache/adminer-src
+	@mkdir -p app/settings/theme
 	rm -rf $@ && cp -R .cache/adminer-src/designs $@
 
 bin/frankenphp$(EXE):

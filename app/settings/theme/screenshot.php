@@ -8,8 +8,8 @@
 * failure ends at the same placeholder, so the table never renders a broken-image icon.
 */
 
-// Two levels up: this lives in app/settings/theme/, the designs in app/designs/.
-$root = str_replace('\\', '/', dirname(__DIR__, 2));
+// The designs sit beside this file, under settings/theme/.
+$root = str_replace('\\', '/', __DIR__);
 $name = (string) ($_GET["design"] ?? "");
 
 function placeholder(): void {
