@@ -156,6 +156,15 @@ func main() {
 	defer w.Destroy()
 	w.SetTitle("Adminer")
 	w.SetSize(1280, 900, webview.HintNone)
+
+	// The menu is how logs stay reachable when login fails — a link inside adminer would
+	// only exist on pages you reach *after* logging in, which is exactly when you don't
+	// need it.
+	menuNavigate = w.Navigate
+	menuBaseURL = "http://" + addr
+	menuLogDir = filepath.Dir(logPath)
+	installMenu()
+
 	w.Navigate(url)
 	w.Run()
 }
