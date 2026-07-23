@@ -23,6 +23,10 @@ log found in one line what two rounds of guessing had missed.
 
 Never enable the inspector outside `-debug`.
 
+PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but only
+because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to
+the page and nowhere else. `make logs` or the Open Logs menu item opens the folder.
+
 ## Verify before pushing
 
 GitHub Actions is billed on this private repo and macOS runners cost 10x, so CI is not a

@@ -139,8 +139,12 @@ func main() {
 	// Adminer's permanent login needs somewhere durable to keep its key. Passing the
 	// path in means the per-OS logic stays in os.UserConfigDir and never gets restated
 	// in PHP.
+	// PHP_INI_SCAN_DIR: frankenphp logs nothing on a PHP fatal error by default -- it
+	// goes to the page and no further, so the log file a user is pointed at never sees
+	// the one thing they went looking for. app/php/desktop.ini turns log_errors on.
+	srv.Env = append(os.Environ(), "PHP_INI_SCAN_DIR="+filepath.Join(root, "php"))
 	if dir, err := dataDir(); err == nil {
-		srv.Env = append(os.Environ(), "ADMINER_DESKTOP_DATA="+dir)
+		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
