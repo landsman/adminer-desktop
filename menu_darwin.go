@@ -21,14 +21,6 @@ var (
 	menuLogDir   string
 )
 
-// Injected at build time by the Makefile from the same version pins the downloads use,
-// so About can never disagree with what is actually bundled.
-var (
-	version           = "dev"
-	adminerVersion    = "unknown"
-	frankenphpVersion = "unknown"
-)
-
 const (
 	adminerSiteURL = "https://www.adminer.org"
 	repoURL        = "https://github.com/landsman/adminer-desktop"
@@ -47,16 +39,7 @@ func goMenuEditor() { openApp("editor.php") }
 // whichever of the two you were last using.
 func openApp(name string) {
 	menuNavigate(menuBaseURL + "/" + name)
-	c := C.CString(name)
-	defer C.free(unsafe.Pointer(c))
-	C.setLastApp(c)
-}
-
-// lastApp is the remembered choice, or "" the first time the app is ever run.
-func lastApp() string {
-	c := C.lastApp()
-	defer C.free(unsafe.Pointer(c))
-	return C.GoString(c)
+	setLastApp(name)
 }
 
 //export goMenuLogs

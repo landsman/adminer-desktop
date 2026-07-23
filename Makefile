@@ -5,12 +5,24 @@ FRANKENPHP_VERSION = 1.12.6
 ADMINER_URL = https://github.com/vrana/adminer/releases/download/v$(ADMINER_VERSION)
 FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_VERSION)
 
-# ponytail: mac-arm64 only until someone needs to build elsewhere. M3 adds the matrix.
-FRANKEN_ASSET = frankenphp-mac-arm64
+# Which frankenphp build to fetch. Defaults to this machine; CI overrides it per runner.
+# Windows is the odd one: it is the only asset shipped as a zip rather than a bare binary.
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_S),Darwin)
+	FRANKEN_ASSET ?= frankenphp-mac-$(if $(filter arm64,$(UNAME_M)),arm64,x86_64)
+	EXE =
+else ifeq ($(UNAME_S),Linux)
+	FRANKEN_ASSET ?= frankenphp-linux-$(if $(filter aarch64 arm64,$(UNAME_M)),aarch64,x86_64)
+	EXE =
+else
+	FRANKEN_ASSET ?= frankenphp-windows-x86_64.zip
+	EXE = .exe
+endif
 
-.PHONY: fetch verify qa check check-app build run editor bundle zip logs serve clean checksums
+.PHONY: fetch verify qa check check-app build run editor bundle zip dist tarball winzip logs serve clean checksums
 
-fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp
+fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp$(EXE)
 
 app/adminer.php:
 	@mkdir -p app
@@ -37,27 +49,34 @@ app/designs: .cache/adminer-src.zip
 	unzip -qo $< 'adminer-$(ADMINER_VERSION)/designs/*' -d .cache
 	@mkdir -p app && rm -rf $@ && mv .cache/adminer-$(ADMINER_VERSION)/designs $@
 
-bin/frankenphp:
-	@mkdir -p bin
+bin/frankenphp$(EXE):
+	@mkdir -p bin .cache
+ifeq ($(suffix $(FRANKEN_ASSET)),.zip)
+	curl -fsSL -o .cache/frankenphp.zip $(FRANKEN_URL)/$(FRANKEN_ASSET)
+	unzip -qojd bin .cache/frankenphp.zip '*frankenphp.exe'
+else
 	curl -fsSL -o $@ $(FRANKEN_URL)/$(FRANKEN_ASSET)
+endif
 	chmod +x $@
 
-# Hard fail on mismatch: means the release was re-uploaded or the download was tampered with.
+# Hard fail on mismatch: means the release was re-uploaded or the download was tampered
+# with. Only the adminer artifacts are listed — frankenphp differs per platform, and a
+# per-OS checksum file would be four files to keep in step instead of one.
 verify: fetch
 	shasum -a 256 -c checksums.txt
 
 # Regenerate after a deliberate version bump. Review the diff.
 checksums:
-	shasum -a 256 app/adminer.php app/editor.php bin/frankenphp > checksums.txt
+	shasum -a 256 app/adminer.php app/editor.php > checksums.txt
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp
-	./bin/frankenphp php-cli lint.php
+qa: bin/frankenphp$(EXE)
+	./bin/frankenphp$(EXE) php-cli lint.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
 	@sh -n check-stream.sh && echo "sh ok"
-	@plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok"
+	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok" || echo "plists skipped (macOS only)"
 
 # M0: does FrankenPHP survive a 120s progressively-flushed response?
 check: fetch
@@ -70,18 +89,18 @@ LDFLAGS = -X main.version=$(VERSION) \
 	-X main.frankenphpVersion=$(FRANKENPHP_VERSION)
 
 build: fetch
-	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop .
+	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop$(EXE) .
 
 # The app itself: opens a window.
 run: build
-	./build/adminer-desktop
+	./build/adminer-desktop$(EXE)
 
 editor: build
-	./build/adminer-desktop -editor
+	./build/adminer-desktop$(EXE) -editor
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
-	./build/adminer-desktop -headless
+	./build/adminer-desktop$(EXE) -headless
 
 APP = build/Adminer Desktop.app
 ICON = build/AdminerDesktop.icns
@@ -121,6 +140,29 @@ zip: bundle
 	cd build && rm -f "Adminer Desktop.zip" && zip -qry "Adminer Desktop.zip" "Adminer Desktop.app"
 	@echo "built build/Adminer Desktop.zip -- $$(du -sh "build/Adminer Desktop.zip" | cut -f1)"
 
+# Linux and Windows get a plain directory rather than a bundle or an installer: the
+# layout resolve() looks for is "runtime and app/ next to the binary", which a folder
+# already satisfies. AppImage, .deb and an MSI are all packaging opinions we do not need
+# before anyone has asked to install this.
+# Staged under build/pkg/ so the folder name inside the archive can still be
+# adminer-desktop without colliding with the binary of that name in build/.
+DIST = build/pkg/adminer-desktop
+
+dist: build
+	rm -rf $(DIST) && mkdir -p $(DIST)
+	cp build/adminer-desktop$(EXE) bin/frankenphp$(EXE) $(DIST)/
+	rsync -a --exclude '_stream.php' app/ $(DIST)/app/
+	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
+
+# tar preserves the executable bit; zip on windows does not need it.
+tarball: dist
+	cd build/pkg && tar czf ../adminer-desktop-linux.tar.gz adminer-desktop
+	@echo "built build/adminer-desktop-linux.tar.gz -- $$(du -sh build/adminer-desktop-linux.tar.gz | cut -f1)"
+
+winzip: dist
+	rm -f build/adminer-desktop-windows.zip && cd build/pkg && zip -qry ../adminer-desktop-windows.zip adminer-desktop
+	@echo "built build/adminer-desktop-windows.zip -- $$(du -sh build/adminer-desktop-windows.zip | cut -f1)"
+
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.
 logs:
@@ -128,7 +170,7 @@ logs:
 
 # Just the server, no window. Handy for poking at it with curl.
 serve: fetch
-	./bin/frankenphp php-server --root app --listen 127.0.0.1:18000 --no-compress
+	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
 
 clean:
 	rm -rf app bin .cache

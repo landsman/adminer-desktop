@@ -14,7 +14,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"syscall"
+	"runtime"
 	"time"
 
 	webview "github.com/webview/webview_go"
@@ -29,10 +29,16 @@ func resolve() (php string, root string, err error) {
 		return "", "", err
 	}
 	dir := filepath.Dir(exe)
-	// Bundle layout first, then the dev tree we run from with `go run .`.
+	bin := "frankenphp"
+	if runtime.GOOS == "windows" {
+		bin += ".exe"
+	}
+	// macOS .app bundle, then the flat folder linux and windows ship, then the dev tree
+	// we run from with `go run .`.
 	for _, c := range []struct{ php, root string }{
-		{filepath.Join(dir, "frankenphp"), filepath.Join(dir, "..", "Resources", "app")},
-		{"bin/frankenphp", "app"},
+		{filepath.Join(dir, bin), filepath.Join(dir, "..", "Resources", "app")},
+		{filepath.Join(dir, bin), filepath.Join(dir, "app")},
+		{filepath.Join("bin", bin), "app"},
 	} {
 		if _, e := os.Stat(c.php); e == nil {
 			if _, e := os.Stat(c.root); e == nil {
@@ -43,18 +49,13 @@ func resolve() (php string, root string, err error) {
 	return "", "", fmt.Errorf("could not find frankenphp and app/ (run `make fetch`)")
 }
 
-// openLog puts the log where macOS users and Console.app already look for one.
-// PHP errors, adminer's own warnings and caddy's access log all arrive on the server's
-// stderr, so one file is the whole logging story.
+// openLog opens the single log file. PHP errors, adminer's own warnings and caddy's
+// access log all arrive on the server's stderr, so one file is the whole logging story.
 // ponytail: append forever, no rotation. A local admin tool writes a line per click,
 // not per request-per-user; wire in lumberjack if a log ever gets big enough to notice.
 func openLog() (*os.File, string, error) {
-	home, err := os.UserHomeDir()
+	dir, err := logDir()
 	if err != nil {
-		return nil, "", err
-	}
-	dir := filepath.Join(home, "Library", "Logs", "Adminer Desktop")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, "", err
 	}
 	path := filepath.Join(dir, "adminer-desktop.log")
@@ -92,6 +93,14 @@ func waitReady(url string, timeout time.Duration) error {
 	return fmt.Errorf("server did not become ready within %s", timeout)
 }
 
+// Injected at build time by the Makefile from the same version pins the downloads use,
+// so About can never disagree with what is actually bundled.
+var (
+	version           = "dev"
+	adminerVersion    = "unknown"
+	frankenphpVersion = "unknown"
+)
+
 func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
 	headless := flag.Bool("headless", false, "start the server, verify it serves, exit (used by `make check-app`)")
@@ -122,20 +131,24 @@ func main() {
 	srv := exec.Command(php, "php-server", "--root", root, "--listen", addr, "--no-compress", "--access-log")
 	// Both, not either: stderr is what you read during `make run`, the file is the only
 	// thing that survives being launched from Finder, where stderr goes nowhere.
+	// Adminer's permanent login needs somewhere durable to keep its key. Passing the
+	// path in means the per-OS logic stays in os.UserConfigDir and never gets restated
+	// in PHP.
+	if dir, err := dataDir(); err == nil {
+		srv.Env = append(os.Environ(), "ADMINER_DESKTOP_DATA="+dir)
+	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
-	// Own process group, so the whole tree dies with us rather than orphaning a server
-	// that still holds the port.
-	srv.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	setProcessGroup(srv)
 	if err := srv.Start(); err != nil {
 		log.Fatal(err)
 	}
-	stop := func() { syscall.Kill(-srv.Process.Pid, syscall.SIGTERM) }
+	stop := func() { stopProcessGroup(srv.Process) }
 	defer stop()
 
 	// A kill(2) from the OS must not leak the server either.
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigs, os.Interrupt)
 	go func() { <-sigs; stop(); os.Exit(1) }()
 
 	// Remembered choice, unless -editor says otherwise: an explicit flag beats a

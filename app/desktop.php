@@ -27,8 +27,13 @@ class AdminerDesktop extends Adminer\Plugin {
 		// "Permanent login" survives, and upstream keeps that key in get_temp_dir(). On
 		// macOS that is /var/folders/…/T, which the OS cleans out, so the saved list
 		// silently expires with "Master password expired".
-		// Same mechanism, same adminer helpers, durable location.
-		$dir = getenv("HOME") . "/Library/Application Support/Adminer Desktop";
+		// Same mechanism, same adminer helpers, durable location. The launcher passes the
+		// path in, so the per-OS choice stays in one place (Go's os.UserConfigDir) instead
+		// of being restated here for macOS, Linux and Windows.
+		$dir = getenv("ADMINER_DESKTOP_DATA");
+		if (!$dir) {
+			return ''; // served outside the app: no durable home, so no permanent login
+		}
 		$filename = "$dir/adminer.key";
 		if (!$create && !file_exists($filename)) {
 			return '';

@@ -8,10 +8,34 @@ on:
 
 jobs:
   build:
-    # macos-15 runners are Apple Silicon, which is what FRANKEN_ASSET pins. On an Intel
-    # runner the downloaded frankenphp would be the wrong architecture and every step
-    # after `make fetch` would fail.
-    runs-on: macos-15
+    strategy:
+      # One red platform should not hide the state of the other two.
+      fail-fast: false
+      matrix:
+        include:
+          # macos-15 runners are Apple Silicon, matching frankenphp-mac-arm64. On an
+          # Intel runner the downloaded binary would be the wrong architecture.
+          - os: macos-15
+            asset: frankenphp-mac-arm64
+            package: zip
+            artifact: adminer-desktop-macos-arm64
+            path: build/Adminer Desktop.zip
+          - os: ubuntu-24.04
+            asset: frankenphp-linux-x86_64
+            package: tarball
+            artifact: adminer-desktop-linux-x86_64
+            path: build/adminer-desktop-linux.tar.gz
+          - os: windows-2025
+            asset: frankenphp-windows-x86_64.zip
+            package: winzip
+            artifact: adminer-desktop-windows-x86_64
+            path: build/adminer-desktop-windows.zip
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # The Makefile is written for a POSIX shell; bash ships with the windows runner.
+        shell: bash
 
     steps:
       - uses: actions/checkout@v5
@@ -21,36 +45,43 @@ jobs:
           go-version: stable
           cache-dependency-path: go.sum
 
-      # frankenphp is a 178 MB download and the adminer source zip another 2 MB. Both are
-      # pinned, so the cache key is just the checksums file: it changes exactly when the
-      # pinned versions do, and never otherwise.
+      # webview is cgo, and on linux that means the system GTK and WebKit headers. macOS
+      # and windows get theirs from the platform SDK and WebView2, already on the runner.
+      - name: Install webview build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      # frankenphp is a ~180 MB download. It is pinned, so the key only has to change
+      # when the pinned version does.
       - name: Cache pinned downloads
         uses: actions/cache@v4
         with:
           path: |
             bin
             .cache
-          key: pinned-${{ hashFiles('checksums.txt') }}
+          key: pinned-${{ matrix.asset }}-${{ hashFiles('Makefile') }}
 
-      - run: make fetch
+      - run: make fetch FRANKEN_ASSET=${{ matrix.asset }}
 
       # Before anything else: a mismatch means the release was re-uploaded or the
       # download was tampered with, and neither should reach a build.
-      - run: make verify
+      - run: make verify FRANKEN_ASSET=${{ matrix.asset }}
 
-      - run: make qa
+      - run: make qa FRANKEN_ASSET=${{ matrix.asset }}
 
       # ~2 minutes, and deliberately not shortened. The point is to outlast the ordinary
       # 60s server write timeout, so a faster run would stop proving the thing it exists
       # to prove.
-      - run: make check
+      - run: make check FRANKEN_ASSET=${{ matrix.asset }}
 
-      - run: make zip
+      - run: make ${{ matrix.package }} FRANKEN_ASSET=${{ matrix.asset }}
 
-      # Unsigned and un-notarized, so a first launch needs right-click > Open. Signing
-      # needs an Apple Developer certificate as a repository secret.
+      # All unsigned: macOS needs right-click > Open on first launch, and Windows shows a
+      # SmartScreen warning. Signing needs paid certificates held as repository secrets.
       - uses: actions/upload-artifact@v4
         with:
-          name: adminer-desktop-macos-arm64
-          path: build/Adminer Desktop.zip
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
           if-no-files-found: error
