@@ -111,10 +111,19 @@ phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php
 golangci:
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
-# Format-check and lint CSS and JS with Biome, through mise (which provides node). Run
-# `mise run install` once first to fetch Biome; CI does the same before `make qa`.
+# Format-check and lint CSS and JS with Biome. Run `mise run install` once to fetch it.
+# Prefer the installed binary directly (it needs only node on PATH); fall back to mise,
+# which puts node on PATH, when node is not there itself; skip with a note if neither is
+# set up, so `make qa` is not blocked on a machine that has not installed the JS tooling.
+# Bare `mise` is not assumed to be on PATH — in a plain make shell it often is not.
 biome:
-	mise run lint
+	@if [ -x node_modules/.bin/biome ] && command -v node >/dev/null 2>&1; then \
+		node_modules/.bin/biome check . ; \
+	elif command -v mise >/dev/null 2>&1; then \
+		mise run lint ; \
+	else \
+		echo "biome skipped (run 'mise run install', or put node on PATH)" ; \
+	fi
 
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
