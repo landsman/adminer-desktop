@@ -166,8 +166,10 @@ build: fetch
 run: build
 	./build/adminer-desktop$(EXE)
 
-# Alias for run.
-dev: run
+# Like run, but reloads the window whenever a file under app/ changes — edit PHP or CSS
+# and see it without a rebuild (frankenphp serves the tree live; the window just reloads).
+dev: build
+	./build/adminer-desktop$(EXE) -dev
 
 editor: build
 	./build/adminer-desktop$(EXE) -editor
