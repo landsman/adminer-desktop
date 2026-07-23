@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: fetch verify qa phpstan golangci security check check-app build run editor bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: fetch verify qa phpstan golangci security check check-app build run editor debug bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
@@ -147,6 +147,12 @@ run: build
 
 editor: build
 	./build/adminer-desktop$(EXE) -editor
+
+# Turns on Safari's Web Inspector against the app's page: Develop > this machine >
+# Adminer Desktop. There is no console in the app otherwise, which is how a confirm()
+# that never fired stayed invisible for as long as it did.
+debug: build
+	./build/adminer-desktop$(EXE) -debug
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build

@@ -103,6 +103,7 @@ var (
 
 func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
+	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
 	headless := flag.Bool("headless", false, "start the server, verify it serves, exit (used by `make check-app`)")
 	flag.Parse()
 
@@ -185,7 +186,15 @@ func main() {
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
 	// need it.
-	installJSDialogs()
+	installJSDialogs(w.Window())
+	if *debug {
+		log.Print("webview ", describeUIDelegate(w.Window()))
+		if enableInspector(w.Window()) {
+			log.Print("web inspector on: Safari > Develop > this machine > Adminer Desktop")
+		} else {
+			log.Print("web inspector unavailable")
+		}
+	}
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
 	w.Navigate(url)
