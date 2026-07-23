@@ -56,7 +56,14 @@ directory is not.
 before the browser sees it. Use `{n}`.
 
 **`qsl()` returns the last match in the whole document**, not the element before the
-script. Inline scripts must follow the element they bind to.
+script. Inline scripts must follow the element they bind to — which is why ours are files
+under `desktop/javascript/` bound by id instead.
+
+**Our HTML is Latte, adminer's is adminer's.** `Desktop\latte()` builds the engine;
+templates sit beside the class that renders them and escape by context, so no `h()`.
+Adminer's `input_hidden()`/`input_token()` are registered on it, and `make qa` compiles
+every `.latte` through that same engine. An `n:attribute` needs its element closed, which
+adminer's markup often is not.
 
 **Adminer's own CSS is the styling system.** Reuse `--bg`, `--fg`, `--dim`, `--lit` and
 classes like `.odds`; `dark.css` overrides them, so anything built on them follows the
@@ -100,7 +107,9 @@ runs it; it stays out of `qa` because it is slow and needs docker.
 ```
 app/desktop.php              the plugin adminer sees: hooks and all translations
 app/files.php                Desktop\Files - recursive file finding
-app/settings/dialog.php      the settings dialog shell
+app/latte.php                Desktop\latte() - the engine every *.latte is rendered by
+app/debug.php                Desktop\debug() - Tracy, and only under -debug
+app/settings/dialog.php      the settings dialog shell (settings-dialog.latte)
 app/settings/theme/          designs, previews, the screenshot endpoint
 app/settings/theme/designs/adminer-desktop/   our default theme (@import components)
 app/settings/plugins/        the catalogue and the enable/disable logic
