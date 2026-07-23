@@ -9,16 +9,19 @@
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
 
+require_once __DIR__ . "/styles/styles.php";
 require_once __DIR__ . "/settings/theme/theme.php";
 require_once __DIR__ . "/settings/plugins/plugins.php";
 require_once __DIR__ . "/settings/dialog.php";
 
 class AdminerDesktop extends Adminer\Plugin {
+	/** @var Desktop\Styles */ private $styles;
 	/** @var Desktop\Theme */ private $theme;
 	/** @var Desktop\PluginList */ private $plugins;
 	/** @var Desktop\Dialog */ private $dialog;
 
 	function __construct() {
+		$this->styles = new Desktop\Styles(__DIR__ . "/styles");
 		$this->theme = new Desktop\Theme($this);
 		$this->plugins = new Desktop\PluginList($this);
 		$this->dialog = new Desktop\Dialog($this, $this->theme, $this->plugins);
@@ -96,15 +99,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	function head($dark = null) {
-		// Everything this plugin adds to adminer's UI is in its own stylesheet rather than
-		// inline <style>, so it can be read and diffed as CSS.
-		// index-style entry point only imports, so its own mtime says nothing about whether
-		// the styles changed; the newest of them all is what has to bust the cache.
-		$mtime = 0;
-		foreach (glob($this->dir() . "/styles/*.css") as $file) {
-			$mtime = max($mtime, (int) @filemtime($file));
-		}
-		echo "<link rel='stylesheet' href='styles/desktop.css?v=$mtime'>\n";
+		$this->styles->link();
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 

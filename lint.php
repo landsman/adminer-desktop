@@ -12,18 +12,27 @@
 * growing rules instead of catching bugs.
 */
 
-// adminer.php and editor.php are downloaded release artifacts, not ours: linting them
-// would report upstream's choices as our problems, and they are checksum-verified anyway.
-$vendored = array("adminer.php", "editor.php");
+// Shipped verbatim from the adminer release, not ours: linting them would report
+// upstream's choices as our problems, and they are checksum-verified anyway.
+$vendored = array(
+	"app/adminer.php",
+	"app/editor.php",
+	"/settings/plugins/available/",
+	"/settings/theme/designs/",
+);
 
 $errors = 0;
-// Recursive: the plugin is split across app/settings/ now, and a linter that only
-// looks at the top level is a linter that stops noticing.
-foreach (array_merge(glob(__DIR__ . "/app/*.php"), glob(__DIR__ . "/app/settings/*.php"), glob(__DIR__ . "/app/settings/*/*.php"), array(__FILE__)) as $filename) {
-	$short = basename($filename);
-	if (in_array($short, $vendored)) {
-		continue;
-	}
+// Required, not autoloaded: this is the linter, so it has to work before anything else
+// does. Desktop\Files is app code because app code will want it too.
+require_once __DIR__ . "/app/files.php";
+
+$filenames = array_merge(
+	Desktop\Files::find(__DIR__ . "/app", "php", $vendored),
+	array(__FILE__)
+);
+
+foreach ($filenames as $filename) {
+	$short = str_replace(__DIR__ . "/", "", $filename);
 	$source = file_get_contents($filename);
 
 	// TOKEN_PARSE makes the tokenizer validate, so this is `php -l` without executing
