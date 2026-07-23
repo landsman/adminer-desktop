@@ -32,8 +32,8 @@
 		<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
 	</div>
 
-	{\Adminer\input_hidden('desktop_settings', 1)|noescape}
-	{\Adminer\input_token()|noescape}
+	{input_hidden('desktop_settings', 1)|noescape}
+	{input_token()|noescape}
 
 	{* Cancel first, primary action last: that is the order every mac dialog uses, and
 		muscle memory puts the confirm button in the bottom right corner. *}
