@@ -18,3 +18,6 @@ func installJSDialogs(window unsafe.Pointer) {}
 func enableInspector(window unsafe.Pointer) bool { return false }
 
 func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }
+
+// No screen query off macOS yet; the caller falls back to a fixed window size.
+func defaultWindowSize() (int, int) { return 0, 0 }

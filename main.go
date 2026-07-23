@@ -185,7 +185,13 @@ func main() {
 	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle("Adminer Desktop")
-	w.SetSize(1280, 900, webview.HintNone)
+	// Open at 60% of the screen where a screen size is available (macOS), otherwise a fixed
+	// default. HintNone leaves the window freely resizable after that.
+	winW, winH := 1280, 900
+	if sw, sh := defaultWindowSize(); sw > 0 && sh > 0 {
+		winW, winH = sw, sh
+	}
+	w.SetSize(winW, winH, webview.HintNone)
 
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't

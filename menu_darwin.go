@@ -76,6 +76,14 @@ func enableInspector(window unsafe.Pointer) bool {
 	return C.enableInspector(window) == 1
 }
 
+// defaultWindowSize is 60% of the main screen's usable area, from AppKit. It returns
+// 0, 0 when no screen is available, so the caller falls back to a fixed size.
+func defaultWindowSize() (int, int) {
+	var w, h C.int
+	C.defaultWindowSize(&w, &h)
+	return int(w), int(h)
+}
+
 func installJSDialogs(window unsafe.Pointer) {
 	if C.installJSDialogs(window) != 1 {
 		log.Print("js dialogs: could not attach a UI delegate - alert, confirm, prompt and file upload will not work")
