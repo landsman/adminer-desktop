@@ -1,0 +1,7 @@
+# Git checks out CRLF on windows by default, which breaks two things here: sha256sum -c
+# reads "app/adminer.php\r" and reports "FAILED open or read", and sh chokes on the
+# check script. Everything text stays LF in the working tree on every platform.
+* text=auto eol=lf
+
+*.png binary
+*.icns binary
