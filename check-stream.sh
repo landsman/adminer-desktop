@@ -59,7 +59,18 @@ curl -s -b "$JAR" -c "$JAR" -L -o "$OUT" \
 rm -f "$JAR"
 # Both must come back media-gated, which is what makes the OS theme pick the design.
 grep -q "media='(prefers-color-scheme: light)' href='designs/brade/adminer.css'" "$OUT" || {
-	echo "FAIL: light design not applied, or not gated on prefers-color-scheme"; exit 1; }
+	echo "FAIL: light design not applied, or not gated on prefers-color-scheme"
+	# Say why. Chasing this blind across CI runs costs more than printing it here does.
+	echo "--- php diagnostics from the response:"
+	grep -oiE '(warning|notice|fatal error|parse error)[^<]{0,120}' "$OUT" | head -5 || true
+	echo "--- design options offered:"
+	grep -o "value=\"designs/[^\"]*\"" "$OUT" | head -3 || echo "  (none — glob found no designs)"
+	echo "--- stylesheets emitted:"
+	grep -o "<link rel='stylesheet'[^>]*>" "$OUT" | head -5 || true
+	echo "--- server log:"
+	tail -5 /tmp/adminer-desktop-check.log
+	exit 1
+}
 grep -q "media='(prefers-color-scheme: dark)' href='designs/dracula/adminer-dark.css'" "$OUT" || {
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
