@@ -147,6 +147,12 @@ func main() {
 	if dir, err := dataDir(); err == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 	}
+	// -debug reaches the page too: the plugin tags <body> with it, and the desktop scripts
+	// that smooth over the WebView (the link context-menu block) stand down so the inspector's
+	// own right-click menu, Inspect Element and the rest are all there.
+	if *debug {
+		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DEBUG=1")
+	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
 	setProcessGroup(srv)

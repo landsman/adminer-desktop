@@ -13,4 +13,8 @@ function suppressLinkMenu(e) {
 	}
 }
 
-addEventListener("contextmenu", suppressLinkMenu);
+// Under -debug the body carries a "debug" class; leave the menu alone then so the web
+// inspector's right-click — Inspect Element and the rest — is unobstructed.
+if (!document.body.classList.contains("debug")) {
+	addEventListener("contextmenu", suppressLinkMenu);
+}

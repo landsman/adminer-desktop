@@ -123,6 +123,11 @@ class AdminerDesktop extends Adminer\Plugin {
 	function bodyClass() {
 		$os = array("Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux");
 		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
+		// The launcher sets this under -debug; the desktop scripts read it to stand down so
+		// the web inspector's own behaviour is unobstructed.
+		if (getenv("ADMINER_DESKTOP_DEBUG")) {
+			echo " debug";
+		}
 		$this->theme->bodyClass();
 	}
 
