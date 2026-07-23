@@ -114,15 +114,19 @@ body:has(#desktop-settings[open]) {
 	font-weight: bold;
 }
 
+/* No focus ring on the tabs: opening the dialog moves focus onto the checked tab, so the
+   ring flashed on every open. The checked tab already shows its state (underline + weight),
+   so keyboard users still see where they are. */
 #desktop-tabs input:focus-visible + label {
-	outline: 2px solid currentColor;
-	outline-offset: -2px;
+	outline: none;
 }
 
 #desktop-panels {
 	overflow: auto;
 	min-height: 0;
 	flex: 1;
+	/* A little larger than the app text — em, so it still follows the theme's scaling. */
+	font-size: 1.05em;
 	/* No padding-top: the sticky header sticks to the top of the scrollport, and any
 	   padding above it is scrollable area where rows show through above the header. */
 }
@@ -218,7 +222,7 @@ body:has(#desktop-settings[open]) {
    target - clicking the name, the description or the preview all select it. */
 #desktop-panels td label {
 	display: block;
-	padding: var(--ad-cell-padding);
+	padding: 0.5em 0.75em;
 	cursor: pointer;
 }
 

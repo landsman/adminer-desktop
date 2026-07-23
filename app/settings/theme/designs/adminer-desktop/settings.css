@@ -25,14 +25,10 @@
 	color: var(--fg);
 }
 
-/* Accent the active tab and its focus ring (base uses currentColor). */
+/* Accent the active tab (base handles the focus ring). */
 #desktop-tabs input:checked + label {
 	border-bottom-color: var(--ad-accent);
 	color: var(--ad-accent);
-}
-
-#desktop-tabs input:focus-visible + label {
-	outline-color: var(--ad-accent);
 }
 
 /* Primary action: our accent, not the OS AccentColor, so it matches the rest of the theme. */

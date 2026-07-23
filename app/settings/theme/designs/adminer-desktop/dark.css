@@ -32,4 +32,13 @@
 	.icon {
 		filter: invert(1) hue-rotate(180deg);
 	}
+
+	/* The sidebar table and database names are a long list to read, not a set of links to
+	   pick out, so on the dark surface they take the plain text colour instead of the
+	   accent — hover and the active item still mark them. */
+	#tables a,
+	#tables span,
+	#logins a {
+		color: var(--fg);
+	}
 }

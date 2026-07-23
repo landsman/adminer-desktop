@@ -25,6 +25,9 @@ input[type="radio"] {
 	   directly or they stay tiny while the text around them grows. */
 	width: calc(13px * var(--ad-scale, 1));
 	height: calc(13px * var(--ad-scale, 1));
+	/* Centre them on the text line rather than the baseline, so a radio and its label read
+	   as one row. */
+	vertical-align: middle;
 }
 
 textarea,
