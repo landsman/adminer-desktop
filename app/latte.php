@@ -15,6 +15,9 @@ function latte(): \Latte\Engine {
 	static $latte;
 	if (!$latte) {
 		$latte = new \Latte\Engine();
+		// Latte's own bridge to Tracy: an error in a template then points at the line in the
+		// .latte file rather than at the compiled PHP. Idle when Tracy is off, so no branch.
+		$latte->addExtension(new \Latte\Bridges\Tracy\TracyExtension());
 		// Adminer's helpers are plain functions in its own namespace, and a fully qualified
 		// call inside a template is something an editor reads as a class name. Registered,
 		// they are {input_token()} — and the list is also what a template may reach for.
