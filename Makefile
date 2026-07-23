@@ -38,16 +38,25 @@ app/editor.php:
 	@mkdir -p .cache
 	curl -fsSL -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).zip
 
+# Extracted whole, once. Selecting with a pattern like 'designs/*' is not portable:
+# macOS and linux unzip let * match a slash and recurse, the windows one does not, so
+# only the file directly inside designs/ came out and every design silently vanished.
+.cache/adminer-src: .cache/adminer-src.zip
+	rm -rf $@ .cache/src-tmp
+	unzip -qo $< -d .cache/src-tmp
+	mv .cache/src-tmp/adminer-$(ADMINER_VERSION) $@
+	rm -rf .cache/src-tmp
+
 # Shipped but NOT loaded. Everything in adminer-plugins/ is auto-enabled by
 # adminer (include/plugins.inc.php:17-19), so "available" has to live elsewhere.
-app/plugins-available: .cache/adminer-src.zip
-	unzip -qo $< 'adminer-$(ADMINER_VERSION)/plugins/*' -d .cache
-	@mkdir -p app && rm -rf $@ && mv .cache/adminer-$(ADMINER_VERSION)/plugins $@
+app/plugins-available: .cache/adminer-src
+	@mkdir -p app
+	rm -rf $@ && cp -R .cache/adminer-src/plugins $@
 	@mkdir -p app/adminer-plugins   # user's drop folder; empty by default
 
-app/designs: .cache/adminer-src.zip
-	unzip -qo $< 'adminer-$(ADMINER_VERSION)/designs/*' -d .cache
-	@mkdir -p app && rm -rf $@ && mv .cache/adminer-$(ADMINER_VERSION)/designs $@
+app/designs: .cache/adminer-src
+	@mkdir -p app
+	rm -rf $@ && cp -R .cache/adminer-src/designs $@
 
 bin/frankenphp$(EXE):
 	@mkdir -p bin .cache
