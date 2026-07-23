@@ -1,0 +1,14 @@
+# Everything below is downloaded by `make fetch` at a pinned version.
+# Checked-in checksums are what make it reproducible — the bytes don't belong in git.
+/vendor/
+/.cache/
+/app/adminer.php
+/app/editor.php
+/app/designs/
+/app/plugins-available/
+
+# The enabled-plugin set is user state, not source.
+/app/adminer-plugins/*
+!/app/adminer-plugins/.gitkeep
+
+/build/
