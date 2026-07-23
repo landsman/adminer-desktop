@@ -59,15 +59,19 @@ else
 endif
 	chmod +x $@
 
+# macOS ships shasum and no sha256sum; the windows runner's git bash ships sha256sum and
+# no shasum. Both write the same "hash  file" format, so one checksums.txt serves all.
+SHA256 := $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo "shasum -a 256")
+
 # Hard fail on mismatch: means the release was re-uploaded or the download was tampered
 # with. Only the adminer artifacts are listed — frankenphp differs per platform, and a
 # per-OS checksum file would be four files to keep in step instead of one.
 verify: fetch
-	shasum -a 256 -c checksums.txt
+	$(SHA256) -c checksums.txt
 
 # Regenerate after a deliberate version bump. Review the diff.
 checksums:
-	shasum -a 256 app/adminer.php app/editor.php > checksums.txt
+	$(SHA256) app/adminer.php app/editor.php > checksums.txt
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.

@@ -52,6 +52,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+          # webview_go hardcodes `pkg-config webkit2gtk-4.0`, which ubuntu 24.04 no longer
+          # ships -- 4.1 is the same API over libsoup3. A .pc that just requires 4.1 keeps
+          # us on a current runner instead of pinning to an ubuntu that is on its way out.
+          printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
+            | sudo tee /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
       # frankenphp is a ~180 MB download. It is pinned, so the key only has to change
       # when the pinned version does.
