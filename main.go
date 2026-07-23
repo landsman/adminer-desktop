@@ -121,6 +121,10 @@ func main() {
 		log.Fatal(err)
 	}
 	defer logFile.Close() //nolint:errcheck // process is exiting anyway
+	// Also states the versions, which is the first thing worth knowing from a log, and
+	// keeps the ldflags-injected values honest on every platform rather than only where
+	// the About panel reads them.
+	fmt.Printf("adminer-desktop %s (adminer %s, frankenphp %s)\n", version, adminerVersion, frankenphpVersion)
 	fmt.Printf("logging to %s\n", logPath)
 
 	// --no-compress: adminer/file.inc.php:14 already sets zlib.output_compression.
@@ -160,6 +164,9 @@ func main() {
 	if *editor {
 		app = "editor.php"
 	}
+	// Remember it here too, not just from the mac menu: -editor should still be sticky on
+	// platforms that have no menu to switch with.
+	setLastApp(app)
 	url := fmt.Sprintf("http://%s/%s", addr, app)
 	if err := waitReady(url, 15*time.Second); err != nil {
 		log.Fatal(err)
@@ -178,10 +185,7 @@ func main() {
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
 	// need it.
-	menuNavigate = w.Navigate
-	menuBaseURL = "http://" + addr
-	menuLogDir = filepath.Dir(logPath)
-	installMenu()
+	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
 	w.Navigate(url)
 	w.Run()

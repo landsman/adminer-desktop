@@ -13,8 +13,8 @@ import (
 	"unsafe"
 )
 
-// Set by main before the menu can be clicked. The menu only exists while the webview is
-// running, so these are always populated by the time a callback fires.
+// Set by installMenu before the menu can be clicked. The menu only exists while the
+// webview is running, so these are always populated by the time a callback fires.
 var (
 	menuNavigate func(string)
 	menuBaseURL  string
@@ -60,7 +60,8 @@ func goMenuIssues() { openURL(issuesURL) }
 
 // installMenu replaces the default menu webview gives an unbundled binary. Must run on
 // the main thread, after webview has created NSApp and before Run().
-func installMenu() {
+func installMenu(navigate func(string), baseURL, logDir string) {
+	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)
 	defer C.free(unsafe.Pointer(v))
 	defer C.free(unsafe.Pointer(a))
