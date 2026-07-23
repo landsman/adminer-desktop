@@ -21,6 +21,38 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null; // let adminer handle every other field
 	}
 
+	function permanentLogin($create = false) {
+		// Adminer already remembers servers and databases you have logged into and offers
+		// them for one click on the login page — but only for as long as the key behind
+		// "Permanent login" survives, and upstream keeps that key in get_temp_dir(). On
+		// macOS that is /var/folders/…/T, which the OS cleans out, so the saved list
+		// silently expires with "Master password expired".
+		// Same mechanism, same adminer helpers, durable location.
+		$dir = getenv("HOME") . "/Library/Application Support/Adminer Desktop";
+		$filename = "$dir/adminer.key";
+		if (!$create && !file_exists($filename)) {
+			return '';
+		}
+		// 0700 before the file exists: this key decrypts stored database passwords, so it
+		// must never be readable by another account on the machine.
+		if (!is_dir($dir)) {
+			@mkdir($dir, 0700, true);
+		}
+		$fp = Adminer\file_open_lock($filename);
+		if (!$fp) {
+			return '';
+		}
+		$return = stream_get_contents($fp);
+		if (!$return) {
+			$return = Adminer\rand_string();
+			Adminer\file_write_unlock($fp, $return);
+			@chmod($filename, 0600);
+		} else {
+			Adminer\file_unlock($fp);
+		}
+		return $return;
+	}
+
 	/** Get shipped designs for one side of the light/dark split, path => label
 	* @param string $mode "light" or "dark"
 	* @return array<string, string>
@@ -60,30 +92,15 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $return ?: null;
 	}
 
-	function navigation($missing) {
-		// Bottom right, which is where upstream plugins/designs.php puts its own switcher.
-		// Not moved up next to the language selector: #lang lives inside adminer's <form>
-		// and HTML forms cannot nest, so getting there needs either absolute positioning
-		// or JS that relocates the controls and submits through a synthesised form —
-		// neither worth it for a theme picker.
-		echo "<form action='' method='post' style='position: fixed; bottom: .5em; right: .5em'>\n";
-		foreach (array("light" => $this->lang('Light'), "dark" => $this->lang('Dark')) as $mode => $label) {
-			echo "<label style='margin-left: .5em'>" . Adminer\h($label) . " "
-				. Adminer\html_select("design_$mode", $this->designs($mode), $_SESSION["design_$mode"], "this.form.submit();")
-				. "</label>\n";
-		}
-		echo Adminer\input_token();
-		echo "</form>\n";
-	}
-
-	/** Get shipped plugins, name => path; the enabled ones are whatever is symlinked
-	* into adminer-plugins/, so the filesystem is the only state there is
+	/** Get shipped plugins, name => path. The enabled ones are whatever is symlinked into
+	* adminer-plugins/, so the filesystem is the only state there is — which means dragging
+	* a downloaded plugin into that folder behaves exactly like ticking a box here.
 	* @return array<string, string>
 	*/
 	private function available(): array {
 		$return = array();
 		// Top level only: plugins-available/drivers/ are database drivers, which need a
-		// connection to a system we cannot assume exists, not a checkbox.
+		// server we cannot assume exists, not a checkbox.
 		foreach (glob(__DIR__ . "/plugins-available/*.php") as $filename) {
 			$return[basename($filename, ".php")] = $filename;
 		}
@@ -95,11 +112,18 @@ class AdminerDesktop extends Adminer\Plugin {
 		return __DIR__ . "/adminer-plugins/$name.php";
 	}
 
-	function afterConnect() {
-		// Hidden marker, not the checkbox array: unticking the last plugin posts no
-		// array at all, and that has to mean "disable everything", not "do nothing".
-		if (!$_POST["desktop_plugins"] || !Adminer\verify_token()) {
+	/** Apply settings posted from the modal. Called from adminer-plugins.php rather than
+	* from a hook: it runs after session_start() and before any output, which is what both
+	* the session write and the redirect need. afterConnect() would only fire once you are
+	* connected, so nothing here would work on the login screen.
+	*/
+	function handlePost(): void {
+		if (!$_POST["desktop_settings"] || !Adminer\verify_token()) {
 			return;
+		}
+		Adminer\restart_session();
+		foreach (array("light", "dark") as $mode) {
+			$_SESSION["design_$mode"] = $_POST["design_$mode"];
 		}
 		// Whitelist by construction — we iterate what we ship and only look the POSTed
 		// names up in it, so nothing user-supplied ever reaches a filesystem path.
@@ -108,8 +132,7 @@ class AdminerDesktop extends Adminer\Plugin {
 			$link = $this->link($name);
 			if (isset($wanted[$name])) {
 				if (!file_exists($link)) {
-					// Relative target, so it survives the whole app/ folder being moved
-					// into a .app bundle.
+					// Relative target, so it survives app/ being moved into a .app bundle.
 					@symlink("../plugins-available/$name.php", $link);
 				}
 			} elseif (is_link($link)) {
@@ -121,30 +144,52 @@ class AdminerDesktop extends Adminer\Plugin {
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
 
-	function pluginsLinks() {
-		$available = $this->available();
-		if (!$available) {
-			return;
-		}
+	function navigation($missing) {
 		$writable = is_writable(dirname($this->link("x")));
-		echo "<h3>" . Adminer\h($this->lang('Available plugins')) . "</h3>\n";
-		if (!$writable) {
-			echo "<p class='error'>" . Adminer\h($this->lang('The plugins folder is read-only.')) . "\n";
+		// <dialog> rather than a hand-rolled overlay: it brings the backdrop, focus
+		// trapping, top-layer stacking and escape-to-close with it, and needs no library.
+		echo "<button type='button' id='desktop-gear' title='" . Adminer\h($this->lang('Settings'))
+			. "' style='position: fixed; bottom: .5em; right: .5em; font-size: 1.2em; line-height: 1; padding: .3em .5em; cursor: pointer'>&#9881;</button>";
+		// Adminer sets a CSP nonce on its scripts, so behaviour is attached via its own
+		// script()/qsl() helpers; an inline onclick attribute would be blocked.
+		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').showModal(); };");
+
+		echo "<dialog id='desktop-settings' style='max-width: 40em; padding: 1em'>\n";
+		echo "<form action='' method='post'>\n";
+
+		echo "<h3>" . Adminer\h($this->lang('Theme')) . "</h3>\n";
+		// Two selects because no design upstream ships both variants: each is either
+		// light-only or dark-only, and auto-switching needs one of each.
+		foreach (array("light" => $this->lang('Light'), "dark" => $this->lang('Dark')) as $mode => $label) {
+			echo "<label style='margin-right: 1em'>" . Adminer\h($label) . " "
+				. Adminer\html_select("design_$mode", $this->designs($mode), $_SESSION["design_$mode"])
+				. "</label>\n";
 		}
-		echo "<form action='' method='post'>\n<ul style='columns: 3; list-style: none; padding: 0'>\n";
-		foreach ($available as $name => $filename) {
-			// ponytail: names only, no descriptions. Rendering those means including all
-			// 51 files on every page load to read their doc-comments, and the names
-			// (dump-json, login-ip, table-structure) already say what they do. Include
-			// them if that ever stops being true.
-			echo "<li>" . Adminer\checkbox("plugins[]", $name, file_exists($this->link($name)), $name) . "\n";
+		echo "<p class='message'>" . Adminer\h($this->lang('Leave both on (built-in) to follow the system theme.')) . "\n";
+
+		$available = $this->available();
+		if ($available) {
+			echo "<h3>" . Adminer\h($this->lang('Plugins')) . "</h3>\n";
+			if (!$writable) {
+				echo "<p class='error'>" . Adminer\h($this->lang('The plugins folder is read-only.')) . "\n";
+			}
+			echo "<ul style='columns: 2; list-style: none; padding: 0; max-height: 22em; overflow: auto'>\n";
+			foreach ($available as $name => $filename) {
+				// ponytail: names only, no descriptions. Rendering those means including all
+				// 51 files on every page load to read their doc-comments, and the names
+				// (dump-json, login-ip, table-structure) already say what they do.
+				echo "<li>" . Adminer\checkbox("plugins[]", $name, file_exists($this->link($name)), $name) . "\n";
+			}
+			echo "</ul>\n";
 		}
-		echo "</ul>\n";
-		echo Adminer\input_hidden("desktop_plugins", 1);
+
+		echo Adminer\input_hidden("desktop_settings", 1);
 		echo Adminer\input_token();
-		echo "<input type='submit' value='" . Adminer\h($this->lang('Save')) . "'"
+		echo "<p><input type='submit' value='" . Adminer\h($this->lang('Save')) . "'"
 			. ($writable ? "" : " disabled") . ">\n";
-		echo "</form>\n";
+		echo "<button type='button' id='desktop-close'>" . Adminer\h($this->lang('Cancel')) . "</button>\n";
+		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').close(); };");
+		echo "</form>\n</dialog>\n";
 	}
 
 	protected $translations = array(
@@ -156,6 +201,11 @@ class AdminerDesktop extends Adminer\Plugin {
 			'(built-in)' => '(vestavěný)',
 			'Light' => 'Světlý',
 			'Dark' => 'Tmavý',
+			'Settings' => 'Nastavení',
+			'Theme' => 'Vzhled',
+			'Plugins' => 'Pluginy',
+			'Cancel' => 'Zavřít',
+			'Leave both on (built-in) to follow the system theme.' => 'Nechte obojí na (vestavěný), aby se vzhled řídil systémem.',
 		),
 	);
 }

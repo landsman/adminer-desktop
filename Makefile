@@ -8,7 +8,7 @@ FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_
 # ponytail: mac-arm64 only until someone needs to build elsewhere. M3 adds the matrix.
 FRANKEN_ASSET = frankenphp-mac-arm64
 
-.PHONY: fetch verify check check-app build run editor bundle zip logs serve clean checksums
+.PHONY: fetch verify qa check check-app build run editor bundle zip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp
 
@@ -49,6 +49,15 @@ verify: fetch
 # Regenerate after a deliberate version bump. Review the diff.
 checksums:
 	shasum -a 256 app/adminer.php app/editor.php bin/frankenphp > checksums.txt
+
+# Static checks, every one from a tool we already have: the php is the frankenphp we
+# download, the rest ship with macOS or the go toolchain. Nothing to install.
+qa: bin/frankenphp
+	./bin/frankenphp php-cli lint.php
+	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
+	go vet ./...
+	@sh -n check-stream.sh && echo "sh ok"
+	@plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok"
 
 # M0: does FrankenPHP survive a 120s progressively-flushed response?
 check: fetch

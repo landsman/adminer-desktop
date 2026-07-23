@@ -17,14 +17,9 @@ require_once __DIR__ . "/desktop.php";
 // included from bootstrap.inc.php:81, which is after session_start() at :51 and before
 // any output, so the session write and the redirect both still work. Every hook a
 // plugin can offer runs too late for one or the other.
-if ((isset($_POST["design_light"]) || isset($_POST["design_dark"])) && Adminer\verify_token()) {
-	Adminer\restart_session();
-	foreach (array("light", "dark") as $mode) {
-		$_SESSION["design_$mode"] = $_POST["design_$mode"];
-	}
-	Adminer\redirect($_SERVER["REQUEST_URI"]);
-}
+$desktop = new AdminerDesktop();
+$desktop->handlePost();
 
 return array(
-	new AdminerDesktop(),
+	$desktop,
 );

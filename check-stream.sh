@@ -53,7 +53,7 @@ JAR=$(mktemp)
 OUT=/tmp/adminer-desktop-design.html
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o "$OUT" \
-	-d "design_light=designs/brade/adminer.css" \
+	-d "desktop_settings=1" -d "design_light=designs/brade/adminer.css" \
 	-d "design_dark=designs/dracula/adminer-dark.css" \
 	-d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
@@ -63,6 +63,22 @@ grep -q "media='(prefers-color-scheme: light)' href='designs/brade/adminer.css'"
 grep -q "media='(prefers-color-scheme: dark)' href='designs/dracula/adminer-dark.css'" "$OUT" || {
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
+
+# Enabling a plugin is a symlink into adminer-plugins/, so the filesystem is the state.
+JAR=$(mktemp)
+TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
+curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
+	-d "desktop_settings=1" -d "plugins[]=dark-switcher" -d "token=$TOKEN" "$BASE/adminer.php"
+[ -L app/adminer-plugins/dark-switcher.php ] || {
+	echo "FAIL: ticking a plugin did not create the symlink"; rm -f "$JAR"; exit 1; }
+# ...and unticking must remove it again, which is the half that silently rots.
+TOKEN=$(curl -s -b "$JAR" -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
+curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
+	-d "desktop_settings=1" -d "token=$TOKEN" "$BASE/adminer.php"
+rm -f "$JAR"
+[ ! -e app/adminer-plugins/dark-switcher.php ] || {
+	echo "FAIL: unticking a plugin did not remove the symlink"; exit 1; }
+echo "ok: plugins toggle on and off"
 
 echo "streaming $N lines over ~${TOTAL}s ..."
 START=$(date +%s)
