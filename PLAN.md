@@ -221,3 +221,24 @@ note in the README is enough.
 
 M0 is the only milestone that can invalidate the others. It runs first and it costs
 an hour. Everything after it is packaging.
+
+---
+
+## Later: a template engine for the HTML
+
+The settings dialog is built by `echo`-ing HTML out of PHP, which is how Adminer itself
+writes UI and why it was written that way here. It has stopped scaling: `navigation()`
+is now tabs, two tables, previews and an actions row, all as escaped string
+concatenation, and every change means counting quotes.
+
+Worth moving to a real template engine — [Latte](https://latte.nette.org) is the
+obvious candidate: context-aware escaping, so `h()` around every value stops being
+something to remember, and the markup becomes readable as markup.
+
+Not done yet because it is the first runtime dependency this project would take on, and
+it needs answers first: vendored into `app/` or fetched at build time and checksummed
+like everything else? Compiled templates cached where — the data directory, next to the
+screenshot cache? And it only earns its place once there is more UI than one dialog.
+
+The CSS already moved out to `app/styles/` for the same reason. HTML is the half that
+is left.

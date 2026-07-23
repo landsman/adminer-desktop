@@ -1,0 +1,142 @@
+/* Settings dialog.
+ *
+ * Everything the desktop wrapper adds to Adminer's own UI lives here rather than in
+ * inline <style> blocks, so it can be read, diffed and edited as CSS.
+ *
+ * Colours come from Adminer's variables (--bg, --fg, --dim, --lit) wherever possible,
+ * so the dialog follows whichever design is selected instead of fighting it.
+ */
+
+/* --- Trigger ------------------------------------------------------------------ */
+
+#desktop-gear {
+	position: fixed;
+	bottom: .5em;
+	right: .5em;
+	font-size: 1.2em;
+	line-height: 1;
+	padding: .3em .5em;
+	cursor: pointer;
+}
+
+/* --- Dialog ------------------------------------------------------------------- */
+
+#desktop-settings {
+	width: 56em;
+	max-width: 92vw;
+	max-height: 88vh;
+	padding: 1.2em;
+	display: flex;
+	flex-direction: column;
+}
+
+#desktop-settings form {
+	display: flex;
+	flex-direction: column;
+	min-height: 0; /* or the panel below cannot shrink and the dialog overflows */
+}
+
+/* Lock the page behind the dialog. CSS rather than JS toggling a class: <dialog> closes
+   on escape and on form submission as well as from the Cancel button, and a handler on
+   the button would miss both, leaving the page unscrollable with nothing to explain it. */
+body:has(#desktop-settings[open]) {
+	overflow: hidden;
+}
+
+/* --- Tabs --------------------------------------------------------------------- */
+
+/* No JS: hidden radios drive the panels through :has(). A checked radio is also the
+   state, so nothing has to be re-applied when the dialog is reopened. */
+
+#desktop-tabs input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+#desktop-tabs label {
+	display: inline-block;
+	padding: .4em 1em;
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+}
+
+#desktop-tabs input:checked + label {
+	border-bottom-color: currentColor;
+	font-weight: bold;
+}
+
+#desktop-tabs input:focus-visible + label {
+	outline: 2px solid currentColor;
+	outline-offset: -2px;
+}
+
+#desktop-panels {
+	overflow: auto;
+	min-height: 0;
+	flex: 1;
+	padding-top: .5em;
+}
+
+#desktop-panels > div {
+	display: none;
+}
+
+#desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
+#desktop-settings:has(#desktop-tab-themes:checked) #desktop-panel-themes {
+	display: block;
+}
+
+#desktop-actions {
+	padding-top: .8em;
+}
+
+/* --- Tables ------------------------------------------------------------------- */
+
+/* Striping is Adminer's own .odds class, which dark.css overrides, so rows follow the
+   active design rather than colours picked here. */
+
+#desktop-panels table {
+	width: 100%;
+}
+
+#desktop-panels td {
+	padding: 0;
+}
+
+/* Each cell's content is a <label for> the row's input, so the whole row is a hit
+   target - clicking the name, the description or the preview all select it. */
+#desktop-panels td label {
+	display: block;
+	padding: .3em .5em;
+	cursor: pointer;
+}
+
+#desktop-panels tbody tr:hover {
+	background: var(--dim);
+}
+
+#desktop-panels img {
+	border-radius: 4px;
+	object-fit: cover;
+	object-position: top;
+}
+
+/* --- Unsaved rows ------------------------------------------------------------- */
+
+/* [checked] is the attribute as the server rendered it, :checked is what the box is
+   now, so the two disagreeing is exactly an edit that has not been saved - no JS and no
+   bookkeeping. Deselecting a radio counts too, so switching design marks both the row
+   being left and the row being chosen. */
+
+#desktop-panels tbody tr:has(input[checked]:not(:checked)),
+#desktop-panels tbody tr:has(input:not([checked]):checked) {
+	background: #fdf6ba;
+}
+
+@media (prefers-color-scheme: dark) {
+	#desktop-panels tbody tr:has(input[checked]:not(:checked)),
+	#desktop-panels tbody tr:has(input:not([checked]):checked) {
+		background: #4a3f12;
+	}
+}

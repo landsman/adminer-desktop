@@ -208,51 +208,73 @@ class AdminerDesktop extends Adminer\Plugin {
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
 
+	function head($dark = null) {
+		// Everything this plugin adds to adminer's UI is in its own stylesheet rather than
+		// inline <style>, so it can be read and diffed as CSS. filemtime busts the cache on
+		// edit without a build step.
+		$file = $this->dir() . "/styles/settings.css";
+		echo "<link rel='stylesheet' href='styles/settings.css?v=" . (int) @filemtime($file) . "'>\n";
+		return null; // let adminer's own head() run; it prints the favicon
+	}
+
 	function navigation($missing) {
 		$writable = is_writable(dirname($this->link("x")));
 		// Lock the page behind the dialog. CSS rather than JS toggling a class: <dialog>
 		// can be closed by escape and by form submission as well as by the Cancel button,
 		// and a handler hung on the button would miss both — leaving the page unscrollable
 		// with nothing on screen to explain why.
-		echo "<style>body:has(#desktop-settings[open]) { overflow: hidden }</style>\n";
 		// <dialog> rather than a hand-rolled overlay: it brings the backdrop, focus
 		// trapping, top-layer stacking and escape-to-close with it, and needs no library.
-		echo "<button type='button' id='desktop-gear' title='" . Adminer\h($this->lang('Settings'))
-			. "' style='position: fixed; bottom: .5em; right: .5em; font-size: 1.2em; line-height: 1; padding: .3em .5em; cursor: pointer'>&#9881;</button>";
+		echo "<button type='button' id='desktop-gear' title='" . Adminer\h($this->lang('Settings')) . "'>&#9881;</button>";
 		// Adminer sets a CSP nonce on its scripts, so behaviour is attached via its own
 		// script()/qsl() helpers; an inline onclick attribute would be blocked.
 		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').showModal(); };");
 
 		// Wide enough for a plugin name and its description side by side, and roomy enough
 		// that the next thing added here does not need the size revisited.
-		echo "<dialog id='desktop-settings' style='width: 56em; max-width: 92vw; max-height: 88vh; padding: 1.2em'>\n";
+		echo "<dialog id='desktop-settings'>\n";
 		echo "<form action='' method='post'>\n";
 
-		echo "<h3>" . Adminer\h($this->lang('Theme')) . "</h3>\n";
+		echo "<div id='desktop-tabs'>\n";
+		echo "<input type='radio' name='desktop_tab' id='desktop-tab-plugins' checked>"
+			. "<label for='desktop-tab-plugins'>" . Adminer\h($this->lang('Plugins')) . "</label>\n";
+		echo "<input type='radio' name='desktop_tab' id='desktop-tab-themes'>"
+			. "<label for='desktop-tab-themes'>" . Adminer\h($this->lang('Theme')) . "</label>\n";
+		echo "</div>\n";
+
+		echo "<div id='desktop-panels'>\n<div id='desktop-panel-themes'>\n";
 		echo "<p class='message'>" . Adminer\h($this->lang('Pick one of each; the system setting decides which applies.')) . "\n";
 		// A design is either light or dark -- none upstream ships both -- so it belongs to
 		// exactly one of these tables, and the radio group it sits in is what makes it the
 		// light choice or the dark one.
 		foreach (array("light" => $this->lang('Light'), "dark" => $this->lang('Dark')) as $mode => $label) {
 			echo "<h4>" . Adminer\h($label) . "</h4>\n";
-			echo "<div style='max-height: 20em; overflow: auto'>\n<table>\n";
+			// class=odds is adminer's own zebra striping, and it is overridden in dark.css,
+			// so the rows follow whichever design is active instead of us picking colours.
+			echo "<table class='odds'>\n";
+			echo "<thead><tr><th>" . Adminer\h($this->lang('Design')) . "<th>" . Adminer\h($this->lang('Preview')) . "</thead>\n";
+			echo "<tbody>\n";
+			$i = 0;
 			foreach ($this->designs($mode) as $path => $design) {
+				$id = "desktop-design-$mode-" . $i++;
 				$checked = ($_SESSION["design_$mode"] == $path ? " checked" : "");
-				echo "<tr><td style='white-space: nowrap'><label>"
-					. "<input type='radio' name='design_$mode' value='" . Adminer\h($path) . "'$checked> "
-					. Adminer\h($design) . "</label>"
-					. "<td>";
+				// Every cell's content is a <label for> the row's input, so clicking the name
+				// or the preview selects it, not just the radio itself.
+				echo "<tr><td style='white-space: nowrap'>"
+					. "<input type='radio' name='design_$mode' value='" . Adminer\h($path) . "' id='$id'$checked>"
+					. "<label for='$id' style='display: inline-block'> " . Adminer\h($design) . "</label>"
+					. "<td><label for='$id'>";
 				if ($path) {
 					// loading=lazy so opening the dialog does not fire 26 requests at once;
 					// the endpoint serves a placeholder rather than failing when offline.
 					echo "<img src='screenshot.php?design=" . urlencode(basename(dirname($path)))
-						. "' alt='' loading='lazy' width='160' height='100'"
-						. " style='border-radius: 4px; object-fit: cover; object-position: top'>";
+						. "' alt='' loading='lazy' width='160' height='100'>";
 				}
-				echo "\n";
+				echo "</label>\n";
 			}
-			echo "</table>\n</div>\n";
+			echo "</tbody>\n</table>\n";
 		}
+		echo "</div>\n<div id='desktop-panel-plugins'>\n";
 
 		$available = $this->available();
 		if ($available) {
@@ -263,22 +285,28 @@ class AdminerDesktop extends Adminer\Plugin {
 			}
 			// One per row with what it actually does: 51 bare names is a list you have to
 			// already know your way around. The descriptions are the plugins' own.
-			echo "<div style='max-height: 26em; overflow: auto'>\n<table>\n";
+			echo "<table class='odds'>\n";
+			echo "<thead><tr><th>" . Adminer\h($this->lang('Plugin')) . "<th>" . Adminer\h($this->lang('What it does')) . "</thead>\n";
+			echo "<tbody>\n";
 			foreach ($available as $name => $filename) {
+				$id = "desktop-plugin-" . preg_replace('~[^\w-]~', "-", $name);
+				$checked = (file_exists($this->link($name)) ? " checked" : "");
 				echo "<tr><td style='white-space: nowrap'>"
-					. Adminer\checkbox("plugins[]", $name, file_exists($this->link($name)), $name)
-					. "<td>" . Adminer\h($descriptions[$name]) . "\n";
+					. "<input type='checkbox' name='plugins[]' value='" . Adminer\h($name) . "' id='$id'$checked>"
+					. "<label for='$id' style='display: inline-block'> " . Adminer\h($name) . "</label>"
+					. "<td><label for='$id'>" . Adminer\h($descriptions[$name]) . "</label>\n";
 			}
-			echo "</table>\n</div>\n";
+			echo "</tbody>\n</table>\n";
 		}
+		echo "</div>\n</div>\n";
 
 		echo Adminer\input_hidden("desktop_settings", 1);
 		echo Adminer\input_token();
-		echo "<p><input type='submit' value='" . Adminer\h($this->lang('Save')) . "'"
+		echo "<div id='desktop-actions'><input type='submit' value='" . Adminer\h($this->lang('Save')) . "'"
 			. ($writable ? "" : " disabled") . ">\n";
 		echo "<button type='button' id='desktop-close'>" . Adminer\h($this->lang('Cancel')) . "</button>\n";
 		echo Adminer\script("qsl('button').onclick = function () { qs('#desktop-settings').close(); };");
-		echo "</form>\n</dialog>\n";
+		echo "</div>\n</form>\n</dialog>\n";
 	}
 
 	protected $translations = array(
