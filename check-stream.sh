@@ -50,14 +50,19 @@ echo "ok: Server field prefilled"
 # afterConnect(), so without our override adminer answers "the action will be performed
 # after successful login" and nothing changes.
 JAR=$(mktemp)
-DESIGN="designs/dracula/adminer-dark.css"
+OUT=/tmp/adminer-desktop-design.html
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
-curl -s -b "$JAR" -c "$JAR" -L -o /tmp/adminer-desktop-design.html \
-	-d "design=$DESIGN" -d "token=$TOKEN" "$BASE/adminer.php"
-grep -q "$DESIGN" /tmp/adminer-desktop-design.html || {
-	echo "FAIL: design not applied on the login page"; rm -f "$JAR"; exit 1; }
+curl -s -b "$JAR" -c "$JAR" -L -o "$OUT" \
+	-d "design_light=designs/brade/adminer.css" \
+	-d "design_dark=designs/dracula/adminer-dark.css" \
+	-d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
-echo "ok: design switches before login"
+# Both must come back media-gated, which is what makes the OS theme pick the design.
+grep -q "media='(prefers-color-scheme: light)' href='designs/brade/adminer.css'" "$OUT" || {
+	echo "FAIL: light design not applied, or not gated on prefers-color-scheme"; exit 1; }
+grep -q "media='(prefers-color-scheme: dark)' href='designs/dracula/adminer-dark.css'" "$OUT" || {
+	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
+echo "ok: designs switch before login and follow the OS theme"
 
 echo "streaming $N lines over ~${TOTAL}s ..."
 START=$(date +%s)
