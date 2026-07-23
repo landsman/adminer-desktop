@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -40,6 +41,25 @@ func resolve() (php string, root string, err error) {
 		}
 	}
 	return "", "", fmt.Errorf("could not find frankenphp and app/ (run `make fetch`)")
+}
+
+// openLog puts the log where macOS users and Console.app already look for one.
+// PHP errors, adminer's own warnings and caddy's access log all arrive on the server's
+// stderr, so one file is the whole logging story.
+// ponytail: append forever, no rotation. A local admin tool writes a line per click,
+// not per request-per-user; wire in lumberjack if a log ever gets big enough to notice.
+func openLog() (*os.File, string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, "", err
+	}
+	dir := filepath.Join(home, "Library", "Logs", "Adminer")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, "", err
+	}
+	path := filepath.Join(dir, "adminer-desktop.log")
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	return f, path, err
 }
 
 // freePort asks the kernel for an unused port and immediately gives it back.
@@ -87,11 +107,23 @@ func main() {
 	}
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 
+	logFile, logPath, err := openLog()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+	fmt.Printf("logging to %s\n", logPath)
+
 	// --no-compress: adminer/file.inc.php:14 already sets zlib.output_compression.
+	// --access-log: off by default; on a single-user local app the request list is the
+	// most useful thing in the log and there is no privacy cost to writing it.
 	// Everything else we need is a php-server default and is asserted by check-stream.sh:
 	// no request timeout, no response buffering, plaintext HTTP, localhost-only bind.
-	srv := exec.Command(php, "php-server", "--root", root, "--listen", addr, "--no-compress")
-	srv.Stderr = os.Stderr
+	srv := exec.Command(php, "php-server", "--root", root, "--listen", addr, "--no-compress", "--access-log")
+	// Both, not either: stderr is what you read during `make run`, the file is the only
+	// thing that survives being launched from Finder, where stderr goes nowhere.
+	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
+	srv.Stdout = srv.Stderr
 	// Own process group, so the whole tree dies with us rather than orphaning a server
 	// that still holds the port.
 	srv.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

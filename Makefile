@@ -8,7 +8,7 @@ FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_
 # ponytail: mac-arm64 only until someone needs to build elsewhere. M3 adds the matrix.
 FRANKEN_ASSET = frankenphp-mac-arm64
 
-.PHONY: fetch verify check check-app build run editor serve clean checksums
+.PHONY: fetch verify check check-app build run editor logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/plugins-available app/designs bin/frankenphp
 
@@ -67,6 +67,11 @@ editor: build
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
 	./build/adminer-desktop -headless
+
+# PHP errors, adminer warnings and caddy's access log all land in one file, in the
+# place macOS users and Console.app already look.
+logs:
+	open ~/Library/Logs/Adminer
 
 # Just the server, no window. Handy for poking at it with curl.
 serve: fetch
