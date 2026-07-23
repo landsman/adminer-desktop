@@ -146,7 +146,9 @@ class AdminerDesktop extends Adminer\Plugin {
 	* connected, so nothing here would work on the login screen.
 	*/
 	function handlePost(): void {
-		if (!$_POST["desktop_settings"] || !Adminer\verify_token()) {
+		// empty(), not adminer's bare $_POST["x"]: this one runs on every request, including
+		// every GET, so the warning it would leave is on every page in the debug bar.
+		if (empty($_POST["desktop_settings"]) || !Adminer\verify_token()) {
 			return;
 		}
 		Adminer\restart_session();
