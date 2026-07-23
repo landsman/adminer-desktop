@@ -108,11 +108,15 @@ golangci:
 
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
+# Pinned like everything else: on :latest a new rule turns a green build red with no
+# change of ours, which is the one thing pinning exists to prevent.
+SEMGREP_VERSION = 1.171.0
+
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
-	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep semgrep \
+	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep:$(SEMGREP_VERSION) semgrep \
 		--config=p/php --config=p/golang --config=p/secrets \
-		--exclude=adminer.php --exclude=editor.php --exclude=plugins-available \
+		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we

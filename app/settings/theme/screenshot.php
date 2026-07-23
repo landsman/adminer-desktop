@@ -13,6 +13,19 @@ declare(strict_types=1);
 $root = str_replace('\\', '/', __DIR__);
 $name = (string) ($_GET["design"] ?? "");
 
+/** Send a cached screenshot.
+* nosniff because the body is bytes fetched from another host: the PNG magic number is
+* checked before anything is written to the cache, and this stops a browser second
+* guessing the content type anyway.
+*/
+function serve(string $filename): void {
+	header("Content-Type: image/png");
+	header("X-Content-Type-Options: nosniff");
+	header("Cache-Control: max-age=86400");
+	readfile($filename);
+	exit;
+}
+
 function placeholder(): void {
 	// Redirect to the shared file rather than emitting the markup here: every design
 	// without a preview then points at one URL the browser caches once, instead of each
@@ -23,23 +36,31 @@ function placeholder(): void {
 	exit;
 }
 
-// Whitelist by existence: the name reaches a filesystem path and a URL, so it is checked
-// against the directories we actually ship rather than merely pattern-matched.
-if (!preg_match('~^[\w.-]+$~', $name) || !is_dir("$root/designs/$name")) {
+// $design is assigned from the filesystem, never from the query string. The name only
+// ever takes part in a comparison, so no path below is built out of user input -- which
+// is what makes this safe, and is also why it needs no scanner suppression to say so.
+//
+// The previous version checked a pattern plus is_dir(), and that was wrong: the pattern
+// allowed dots, so ".." matched it, and is_dir() on the parent directory is true.
+$design = null;
+foreach ((array) glob("$root/designs/*", GLOB_ONLYDIR) as $dir) {
+	if (basename($dir) === $name) {
+		$design = basename($dir);
+		break;
+	}
+}
+if ($design === null) {
 	placeholder();
 }
 
 // The launcher passes the data directory in; without it (running `make serve` by hand)
 // fall back to temp, where a lost cache costs only a re-fetch.
 $dir = (getenv("ADMINER_DESKTOP_DATA") ?: sys_get_temp_dir()) . "/screenshots";
-$file = "$dir/$name.png";
-$miss = "$dir/$name.miss";
+$file = "$dir/$design.png";
+$miss = "$dir/$design.miss";
 
 if (is_file($file) && filesize($file) > 0) {
-	header("Content-Type: image/png");
-	header("Cache-Control: max-age=86400");
-	readfile($file);
-	exit;
+	serve($file);
 }
 
 // Remember failures too, or a design with no screenshot upstream — adminer-dark has
@@ -52,17 +73,14 @@ $context = stream_context_create(array("http" => array(
 	"timeout" => 5, // offline should look like a placeholder, not like a hung page
 	"user_agent" => "adminer-desktop",
 )));
-$body = @file_get_contents("https://www.adminer.org/static/designs/$name/screenshot.png", false, $context);
+$body = @file_get_contents("https://www.adminer.org/static/designs/$design/screenshot.png", false, $context);
 
 @mkdir($dir, 0700, true);
 // Check the magic number, not just that something came back: an error page is a 200 with
 // HTML in it, and caching that would poison the entry until it expired.
 if ($body !== false && strncmp($body, "\x89PNG", 4) === 0) {
 	file_put_contents($file, $body);
-	header("Content-Type: image/png");
-	header("Cache-Control: max-age=86400");
-	echo $body;
-	exit;
+	serve($file);
 }
 
 @touch($miss);
