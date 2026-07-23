@@ -242,5 +242,11 @@ logs:
 serve: fetch
 	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
 
+# Serve with a demo database and a data dir, so you can actually log in and eyeball the
+# theme in a browser (Adminer refuses passwordless login; the app opens SQLite via argv).
+# Needs docker for the throwaway postgres. See dev/preview.login.js to drive it.
+preview: fetch
+	./dev/preview.sh
+
 clean:
 	rm -rf app bin .cache
