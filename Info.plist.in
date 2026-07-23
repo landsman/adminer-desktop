@@ -12,6 +12,8 @@
 	<string>adminer-desktop</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleIconFile</key>
+	<string>Adminer.icns</string>
 	<!-- Tracks the adminer release we bundle: that is the version a user cares about. -->
 	<key>CFBundleShortVersionString</key>
 	<string>@ADMINER_VERSION@</string>

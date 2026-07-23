@@ -56,6 +56,17 @@ static void addItem(NSMenu *menu, NSString *title, SEL action, NSString *key, id
 	[menu addItem:item];
 }
 
+static NSString *const kLastApp = @"lastApp";
+
+void setLastApp(const char *name) {
+	[[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithUTF8String:name] forKey:kLastApp];
+}
+
+char *lastApp(void) {
+	NSString *v = [[NSUserDefaults standardUserDefaults] stringForKey:kLastApp];
+	return strdup(v ? [v UTF8String] : "");
+}
+
 void installMenu(const char *version, const char *adminerVersion, const char *frankenphpVersion) {
 	aboutVersion = [NSString stringWithUTF8String:version];
 	// Assembled here rather than in Go so that every user-visible string in the app lives

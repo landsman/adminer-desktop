@@ -38,10 +38,26 @@ const (
 func openURL(url string) { _ = exec.Command("open", url).Start() }
 
 //export goMenuAdminer
-func goMenuAdminer() { menuNavigate(menuBaseURL + "/adminer.php") }
+func goMenuAdminer() { openApp("adminer.php") }
 
 //export goMenuEditor
-func goMenuEditor() { menuNavigate(menuBaseURL + "/editor.php") }
+func goMenuEditor() { openApp("editor.php") }
+
+// openApp switches the window and remembers the choice, so the next launch reopens
+// whichever of the two you were last using.
+func openApp(name string) {
+	menuNavigate(menuBaseURL + "/" + name)
+	c := C.CString(name)
+	defer C.free(unsafe.Pointer(c))
+	C.setLastApp(c)
+}
+
+// lastApp is the remembered choice, or "" the first time the app is ever run.
+func lastApp() string {
+	c := C.lastApp()
+	defer C.free(unsafe.Pointer(c))
+	return C.GoString(c)
+}
 
 //export goMenuLogs
 func goMenuLogs() {

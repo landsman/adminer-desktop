@@ -138,7 +138,12 @@ func main() {
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 	go func() { <-sigs; stop(); os.Exit(1) }()
 
+	// Remembered choice, unless -editor says otherwise: an explicit flag beats a
+	// remembered preference.
 	app := "adminer.php"
+	if remembered := lastApp(); remembered == "editor.php" || remembered == "adminer.php" {
+		app = remembered
+	}
 	if *editor {
 		app = "editor.php"
 	}

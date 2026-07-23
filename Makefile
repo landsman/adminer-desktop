@@ -75,10 +75,25 @@ check-app: build
 	./build/adminer-desktop -headless
 
 APP = build/Adminer.app
+ICON = build/Adminer.icns
+
+# sips and iconutil ship with macOS, so the icon needs no image tooling installed.
+# ponytail: the source is adminer's own 57px pictogram, the largest that exists —
+# so the big sizes are upscaled and soft. Swap in a vector if upstream ever has one.
+$(ICON): assets/logo.png
+	@mkdir -p build/icon.iconset
+	@for s in 16 32 64 128 256 512 1024; do \
+		sips -z $$s $$s $< --out build/icon.iconset/icon_$${s}x$${s}.png >/dev/null; \
+	done
+	@cd build/icon.iconset && for s in 16 32 128 256 512; do \
+		d=$$((s * 2)); cp icon_$${d}x$${d}.png icon_$${s}x$${s}@2x.png; \
+	done && rm -f icon_64x64.png icon_1024x1024.png
+	iconutil -c icns build/icon.iconset -o $@
+	@rm -rf build/icon.iconset
 
 # A .app is just a directory, which is why none of this needs go:embed or a static
 # single-binary build: the runtime and app/ are simply files inside it.
-bundle: build
+bundle: build $(ICON)
 	rm -rf $(APP)
 	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
 	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > $(APP)/Contents/Info.plist
@@ -89,6 +104,7 @@ bundle: build
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj $(APP)/Contents/Resources/
+	cp $(ICON) $(APP)/Contents/Resources/
 	@echo "built $(APP) -- $$(du -sh $(APP) | cut -f1)"
 
 # Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
