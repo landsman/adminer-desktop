@@ -21,10 +21,10 @@
 	padding: var(--ad-dialog-padding);
 }
 
-/* Dim the page behind the dialog more than the browser's faint default, so the modal
-   reads as the foreground. */
+/* Dim the page behind the dialog well past the browser's faint default, so the modal
+   reads clearly as the foreground. */
 #desktop-settings::backdrop {
-	background: rgba(0, 0, 0, 0.45);
+	background: rgba(0, 0, 0, 0.6);
 }
 
 /* Only when open. A bare `display: flex` here overrides the `display: none` the browser
@@ -33,6 +33,45 @@
 #desktop-settings[open] {
 	display: flex;
 	flex-direction: column;
+}
+
+/* Open/close animation. @starting-style is the entry keyframe; transitioning display and
+   overlay with allow-discrete keeps the dialog in the top layer while it fades back out on
+   close. Modern webviews only — older ones just snap, which is fine. */
+@media (prefers-reduced-motion: no-preference) {
+	#desktop-settings,
+	#desktop-settings::backdrop {
+		transition:
+			opacity 0.18s ease,
+			transform 0.18s ease,
+			overlay 0.18s allow-discrete,
+			display 0.18s allow-discrete;
+	}
+
+	#desktop-settings {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.98);
+	}
+	#desktop-settings[open] {
+		opacity: 1;
+		transform: none;
+	}
+	#desktop-settings::backdrop {
+		opacity: 0;
+	}
+	#desktop-settings[open]::backdrop {
+		opacity: 1;
+	}
+
+	@starting-style {
+		#desktop-settings[open] {
+			opacity: 0;
+			transform: translateY(-8px) scale(0.98);
+		}
+		#desktop-settings[open]::backdrop {
+			opacity: 0;
+		}
+	}
 }
 
 #desktop-settings form {
