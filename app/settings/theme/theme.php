@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Desktop;
 
 require_once __DIR__ . "/mode.php";
+require_once __DIR__ . "/../../user-settings.php";
 
 /** The theme half of the settings dialog: which designs exist, which are chosen, and
 * the panel that lets you change that.
@@ -13,9 +14,11 @@ require_once __DIR__ . "/mode.php";
 */
 class Theme {
 	private \AdminerDesktop $desktop;
+	private UserSettings $settings;
 
-	function __construct(\AdminerDesktop $desktop) {
+	function __construct(\AdminerDesktop $desktop, UserSettings $settings) {
 		$this->desktop = $desktop;
+		$this->settings = $settings;
 	}
 
 	/** Get shipped designs for one side of the light/dark split, path => label
@@ -58,9 +61,9 @@ class Theme {
 		$self = "settings/theme/designs/adminer-desktop/adminer.css";
 		$sides = [];
 		foreach (Mode::cases() as $mode) {
-			$design = $_SESSION["design_" . $mode->value] ?? "";
-			// array_key_exists, not truthiness: a stale session pointing at a design a later
-			// adminer release no longer ships falls back to ours rather than to nothing.
+			$design = (string) $this->settings->get($mode->designKey(), "");
+			// array_key_exists, not truthiness: a stored design a later adminer release no
+			// longer ships falls back to ours rather than to nothing.
 			$sides[$mode->value] = ($design && array_key_exists($design, $this->designs($mode))) ? $design : $self;
 		}
 		// An appearance override pins the page to one scheme: hand adminer only that side's
@@ -69,7 +72,7 @@ class Theme {
 		// adminer's own dark.css for the JUSH palette — so the choice themes everything
 		// without the OS. "auto" is not a Mode, so tryFrom() returns null and it falls through
 		// to the OS-driven map below.
-		$appearance = $_SESSION["appearance"] ?? "auto";
+		$appearance = $this->settings->get(SettingKey::Appearance, "auto");
 		$pinned = Mode::tryFrom(is_string($appearance) ? $appearance : "");
 		if ($pinned !== null) {
 			return [$sides[$pinned->value] => $pinned->value];
@@ -101,15 +104,15 @@ class Theme {
 				"light" => $this->desktop->t('Light'),
 				"dark" => $this->desktop->t('Dark'),
 			],
-			"appearance" => (string) ($_SESSION["appearance"] ?? "auto"),
+			"appearance" => (string) $this->settings->get(SettingKey::Appearance, "auto"),
 			"densities" => [
 				"compact" => $this->desktop->t('Compact'),
 				"cozy" => $this->desktop->t('Cozy'),
 				"comfortable" => $this->desktop->t('Comfortable'),
 			],
-			"density" => (string) ($_SESSION["density"] ?? "cozy"),
+			"density" => (string) $this->settings->get(SettingKey::Density, "cozy"),
 			"scalings" => self::SCALINGS,
-			"scaling" => (string) ($_SESSION["scaling"] ?? "100"),
+			"scaling" => (string) $this->settings->get(SettingKey::Scaling, "100"),
 			// ?? "", like cssMap() above: nothing is stored until a design is picked, and the
 			// panel is drawn on every page — that would be a warning per row per load.
 			"sides" => $this->sides(),
@@ -128,36 +131,36 @@ class Theme {
 				"mode" => $mode->value,
 				"label" => $mode === Mode::Light ? $this->desktop->t('Light') : $this->desktop->t('Dark'),
 				"designs" => $this->designs($mode),
-				"chosen" => (string) ($_SESSION["design_" . $mode->value] ?? ""),
+				"chosen" => (string) $this->settings->get($mode->designKey(), ""),
 			];
 		}
 		return $sides;
 	}
 
-	/** Store the chosen designs, appearance and density. */
+	/** Store the chosen designs, appearance, density and scaling — in UserSettings, so they
+	* outlive the process (a $_SESSION did not, issue #10) and a cold start reopens as left. */
 	function apply(): void {
 		foreach (Mode::cases() as $mode) {
-			$key = "design_" . $mode->value;
-			$_SESSION[$key] = $_POST[$key] ?? "";
+			$this->settings->set($mode->designKey(), (string) ($_POST["design_" . $mode->value] ?? ""));
 		}
 		// Whitelisted: these values are echoed into body classes, so never store raw input.
 		$appearance = $_POST["appearance"] ?? "auto";
-		$_SESSION["appearance"] = in_array($appearance, self::APPEARANCES, true) ? $appearance : "auto";
+		$this->settings->set(SettingKey::Appearance, in_array($appearance, self::APPEARANCES, true) ? $appearance : "auto");
 		$density = $_POST["density"] ?? "cozy";
-		$_SESSION["density"] = in_array($density, self::DENSITIES, true) ? $density : "cozy";
+		$this->settings->set(SettingKey::Density, in_array($density, self::DENSITIES, true) ? $density : "cozy");
 		$scaling = $_POST["scaling"] ?? "100";
-		$_SESSION["scaling"] = in_array($scaling, self::SCALINGS, true) ? $scaling : "100";
+		$this->settings->set(SettingKey::Scaling, in_array($scaling, self::SCALINGS, true) ? $scaling : "100");
 	}
 
 	/** The appearance, density and scaling classes for <body>, added next to the OS class in
 	* AdminerDesktop. The appearance class is only read by the dark icon invert in base.css —
 	* the colours themselves ride on adminer's color-scheme meta (cssMap), not this class. */
 	function bodyClass(): void {
-		$appearance = $_SESSION["appearance"] ?? "auto";
+		$appearance = $this->settings->get(SettingKey::Appearance, "auto");
 		echo " theme-" . (in_array($appearance, self::APPEARANCES, true) ? $appearance : "auto");
-		$density = $_SESSION["density"] ?? "cozy";
+		$density = $this->settings->get(SettingKey::Density, "cozy");
 		echo " density-" . (in_array($density, self::DENSITIES, true) ? $density : "cozy");
-		$scaling = $_SESSION["scaling"] ?? "100";
+		$scaling = $this->settings->get(SettingKey::Scaling, "100");
 		echo " scale-" . (in_array($scaling, self::SCALINGS, true) ? $scaling : "100");
 	}
 

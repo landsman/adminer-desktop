@@ -20,10 +20,10 @@ require_once __DIR__ . "/env.php";
 * debug bar stays blank — the error screen replaces the page and is unaffected.
 */
 function debug(): void {
-	if (!Env::Debug->get()) {
+	if (!env(Env::Debug)) {
 		return;
 	}
-	$dir = Env::Data->get();
+	$dir = env(Env::DataDir);
 	$log = $dir ? "$dir/log" : null;
 	if ($log && !is_dir($log)) {
 		@mkdir($log, 0700, true);

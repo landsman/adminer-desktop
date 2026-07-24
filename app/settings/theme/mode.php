@@ -2,6 +2,8 @@
 declare(strict_types=1);
 namespace Desktop;
 
+require_once __DIR__ . "/../../setting-key.php";
+
 /** A colour scheme side: the light half or the dark half.
 *
 * adminer's css() hook is handed one stylesheet per side, the design gallery has a light and
@@ -17,4 +19,9 @@ namespace Desktop;
 enum Mode: string {
 	case Light = 'light';
 	case Dark = 'dark';
+
+	/** The settings key holding the design chosen for this side. */
+	function designKey(): SettingKey {
+		return $this === self::Light ? SettingKey::DesignLight : SettingKey::DesignDark;
+	}
 }

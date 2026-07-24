@@ -9,6 +9,9 @@ declare(strict_types=1);
 * failure ends at the same placeholder, so the table never renders a broken-image icon.
 */
 
+use Desktop\Env;
+use function Desktop\env;
+
 require_once __DIR__ . "/../../env.php";
 
 // The designs sit beside this file, under settings/theme/.
@@ -57,7 +60,7 @@ if ($design === null) {
 
 // The launcher passes the data directory in; without it (running `make serve` by hand)
 // fall back to temp, where a lost cache costs only a re-fetch.
-$dir = (\Desktop\Env::Data->get() ?: sys_get_temp_dir()) . "/screenshots";
+$dir = (env(Env::DataDir) ?: sys_get_temp_dir()) . "/screenshots";
 $file = "$dir/$design.png";
 $miss = "$dir/$design.miss";
 

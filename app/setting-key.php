@@ -11,4 +11,10 @@ namespace Desktop;
 */
 enum SettingKey: string {
 	case SidebarWidth = 'sidebar_width';
+	case Appearance = 'appearance';
+	case Density = 'density';
+	case Scaling = 'scaling';
+	// One per light/dark side; Mode::designKey() maps a side to its key.
+	case DesignLight = 'design_light';
+	case DesignDark = 'design_dark';
 }

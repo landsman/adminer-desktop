@@ -43,6 +43,14 @@ try {
 	if (!str_contains($body, 'density-compact')) {
 		$failures[] = "density: did not save (body class: $body)";
 	}
+	// And it landed in the persistent store, not just this session — settings.json is what
+	// survives a cold start (issue #10) and what the debug panel reads.
+	$settingsFile = sys_get_temp_dir() . '/adminer-desktop-e2e/settings.json';
+	clearstatcache(true, $settingsFile);
+	$stored = is_file($settingsFile) ? json_decode((string) file_get_contents($settingsFile), true) : [];
+	if (!is_array($stored) || ($stored['density'] ?? null) !== 'compact') {
+		$failures[] = 'density: not persisted to settings.json (got: ' . json_encode($stored) . ')';
+	}
 
 	// 2. A light design -> its stylesheet is linked. Whichever gallery design is offered
 	// first, so this does not break when the catalogue changes.

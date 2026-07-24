@@ -32,7 +32,7 @@ class UserSettings {
 	private ?array $cache = null;
 
 	function __construct(?string $dir = null) {
-		$dir = $dir ?? (Env::Data->get() ?: null);
+		$dir = $dir ?? (env(Env::DataDir) ?: null);
 		$this->file = $dir !== null ? "$dir/settings.json" : null;
 	}
 

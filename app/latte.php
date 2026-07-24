@@ -28,7 +28,7 @@ function latte(): \Latte\Engine {
 		$latte->addFunction("input_token", fn() => \Adminer\input_token());
 		// Without a cache directory Latte compiles into memory on every request — correct,
 		// just slower, which is what we get when the app is served without a data dir.
-		$dir = Env::Data->get();
+		$dir = env(Env::DataDir);
 		if ($dir && (is_dir("$dir/latte") || @mkdir("$dir/latte", 0700, true))) {
 			$latte->setCacheDirectory("$dir/latte");
 		}

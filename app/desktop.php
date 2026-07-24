@@ -10,6 +10,9 @@ declare(strict_types=1);
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
 
+use Desktop\Env;
+use function Desktop\env;
+
 require_once __DIR__ . "/import.php";
 require_once __DIR__ . "/latte.php";
 require_once __DIR__ . "/env.php";
@@ -37,7 +40,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
 		// backslashes in a Windows __DIR__ as escapes, matching nothing.
 		$this->javascript = new Desktop\Javascript($this->dir() . "/desktop/javascript");
-		$this->theme = new Desktop\Theme($this);
+		$this->theme = new Desktop\Theme($this, $this->userSettings);
 		$this->plugins = new Desktop\PluginList($this);
 		$this->dialog = new Desktop\Dialog($this, $this->theme, $this->plugins);
 	}
@@ -95,7 +98,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// Same mechanism, same adminer helpers, durable location. The launcher passes the
 		// path in, so the per-OS choice stays in one place (Go's os.UserConfigDir) instead
 		// of being restated here for macOS, Linux and Windows.
-		$dir = Desktop\Env::Data->get();
+		$dir = env(Env::DataDir);
 		if (!$dir) {
 			return ''; // served outside the app: no durable home, so no permanent login
 		}
@@ -142,7 +145,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// `make demo` forwards the throwaway connection here; desktop/javascript/demo-login.js
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
 		// shipped build never defines the global and the script stays inert.
-		if ($demo = Desktop\Env::Demo->get()) {
+		if ($demo = env(Env::Demo)) {
 			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
 		}
 		return null; // let adminer's own head() run; it prints the favicon
@@ -163,7 +166,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @return void
 	*/
 	function csp(&$csp) {
-		if (!Desktop\Env::Debug->get()) {
+		if (!env(Env::Debug)) {
 			return;
 		}
 		foreach ($csp as &$set) {
@@ -185,7 +188,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
-		if (Desktop\Env::Debug->get()) {
+		if (env(Env::Debug)) {
 			echo " debug";
 		}
 		$this->theme->bodyClass();
