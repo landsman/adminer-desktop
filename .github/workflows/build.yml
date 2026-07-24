@@ -54,7 +54,7 @@ jobs:
       - run: make qa FRANKEN_ASSET=frankenphp-linux-x86_64
 
       # shellcheck is already on the runner and says far more than `sh -n` does.
-      - run: shellcheck check-stream.sh
+      - run: shellcheck check.sh
 
       # Security rules for php, go and leaked secrets. Docker is on the runner, so this
       # needs nothing installed.
