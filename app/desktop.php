@@ -64,7 +64,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param string $value
 	* @return string|null
 	*/
-	function loginFormField($name, $heading, $value) {
+	function loginFormField(string $name, string $heading, string $value): ?string
+    {
 		// Adminer ships the Server field empty, which means "connect over a Unix socket".
 		// That is right for a server deployment and wrong for a desktop one: here the
 		// database is nearly always in Docker or remote, and Docker publishes TCP only —
@@ -84,7 +85,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param bool $create
 	* @return string
 	*/
-	function permanentLogin($create = false) {
+	function permanentLogin(bool $create = false): string
+    {
 		// Adminer already remembers servers and databases you have logged into and offers
 		// them for one click on the login page — but only for as long as the key behind
 		// "Permanent login" survives, and upstream keeps that key in get_temp_dir(). On
@@ -125,7 +127,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param bool|null $dark
 	* @return string|null
 	*/
-	function head($dark = null) {
+	function head(?bool $dark = null): ?string
+    {
 		$this->styles->link();
 		$this->javascript->link();
 		// Restore the sidebar to the width the user last dragged it to, before the body paints,
@@ -147,7 +150,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	/** @return array<string,string> */
-	function css() {
+	function css(): array
+    {
 		return $this->theme->cssMap();
 	}
 
@@ -160,7 +164,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param array<int,array<string,string>> $csp
 	* @return void
 	*/
-	function csp(&$csp) {
+	function csp(array &$csp): void
+    {
 		if (!env(Env::Debug)) {
 			return;
 		}
@@ -178,7 +183,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* no launcher env var is needed for it.
 	* @return void
 	*/
-	function bodyClass() {
+	function bodyClass(): void
+    {
 		$os = ["Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux"];
 		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
@@ -193,7 +199,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param mixed $missing
 	* @return void
 	*/
-	function navigation($missing) {
+	function navigation(mixed $missing): void
+    {
 		$this->dialog->render();
 	}
 
