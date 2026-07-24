@@ -5,6 +5,7 @@ namespace Desktop;
 // vendor/ sits next to app/ in the checkout and inside it in a packaged build, because
 // the packaging copies it in — app/ is the only tree that ships.
 require_once (file_exists(__DIR__ . "/vendor/autoload.php") ? __DIR__ : dirname(__DIR__)) . "/vendor/autoload.php";
+require_once __DIR__ . "/env.php";
 
 /** The shared Latte engine for our own markup.
 *
@@ -27,7 +28,7 @@ function latte(): \Latte\Engine {
 		$latte->addFunction("input_token", fn() => \Adminer\input_token());
 		// Without a cache directory Latte compiles into memory on every request — correct,
 		// just slower, which is what we get when the app is served without a data dir.
-		$dir = getenv("ADMINER_DESKTOP_DATA");
+		$dir = Env::Data->get();
 		if ($dir && (is_dir("$dir/latte") || @mkdir("$dir/latte", 0700, true))) {
 			$latte->setCacheDirectory("$dir/latte");
 		}

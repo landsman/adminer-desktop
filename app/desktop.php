@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/import.php";
 require_once __DIR__ . "/latte.php";
+require_once __DIR__ . "/env.php";
 require_once __DIR__ . "/user-settings.php";
 require_once __DIR__ . "/styles/styles.php";
 require_once __DIR__ . "/desktop/javascript.php";
@@ -94,7 +95,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// Same mechanism, same adminer helpers, durable location. The launcher passes the
 		// path in, so the per-OS choice stays in one place (Go's os.UserConfigDir) instead
 		// of being restated here for macOS, Linux and Windows.
-		$dir = getenv("ADMINER_DESKTOP_DATA");
+		$dir = Desktop\Env::Data->get();
 		if (!$dir) {
 			return ''; // served outside the app: no durable home, so no permanent login
 		}
@@ -141,7 +142,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// `make demo` forwards the throwaway connection here; desktop/javascript/demo-login.js
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
 		// shipped build never defines the global and the script stays inert.
-		if ($demo = getenv("ADMINER_DESKTOP_DEMO")) {
+		if ($demo = Desktop\Env::Demo->get()) {
 			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
 		}
 		return null; // let adminer's own head() run; it prints the favicon
@@ -162,7 +163,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @return void
 	*/
 	function csp(&$csp) {
-		if (!getenv("ADMINER_DESKTOP_DEBUG")) {
+		if (!Desktop\Env::Debug->get()) {
 			return;
 		}
 		foreach ($csp as &$set) {
@@ -184,7 +185,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
-		if (getenv("ADMINER_DESKTOP_DEBUG")) {
+		if (Desktop\Env::Debug->get()) {
 			echo " debug";
 		}
 		$this->theme->bodyClass();
