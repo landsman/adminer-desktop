@@ -6,13 +6,22 @@
 *}
 {parameters
 	\AdminerDesktop $desktop,
+	array $appearances,
+	string $appearance,
 	array $densities,
 	string $density,
 	array $scalings,
 	string $scaling,
 	array $sides
 }
-<p class="message">{$desktop->t('Adminer Desktop follows the system light and dark automatically. Override either side with a design below.')}
+<p class="message">{$desktop->t('Adminer Desktop follows the system light and dark, or pin it to Light or Dark. Either scheme uses the design chosen for it below.')}
+
+{* Sync with OS (the default) hands both schemes to the browser and lets prefers-color-scheme
+	pick; Light or Dark pins it, so it stays put whatever the OS does. *}
+<h4>{$desktop->t('Appearance')}</h4>
+<p>
+	<label n:foreach="$appearances as $value => $label" for="desktop-appearance-{$value}" style="margin-right: 1.2em; white-space: nowrap">
+		<input type="radio" name="appearance" value="{$value}" id="desktop-appearance-{$value}" n:attr="checked: $appearance == $value"> {$label}</label>
 
 <h4>{$desktop->t('Language')}</h4>
 <p id="desktop-lang-slot"></p>

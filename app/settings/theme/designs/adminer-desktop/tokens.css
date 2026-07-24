@@ -3,29 +3,48 @@
  *
  * The four unprefixed names are Adminer's own structural tokens — overriding them is what
  * reskins its whole UI. The --ad-* names are ours, prefixed so they can never collide.
+ *
+ * Both schemes live in one place: light-dark(light, dark) picks a side by the used
+ * color-scheme, which Adminer sets from its <meta name="color-scheme"> — light dark when
+ * the appearance is Auto (so it follows the OS), or pinned to one side when the user
+ * overrode it (Theme::cssMap). So there is no scheme media query here; the meta decides,
+ * and one Light/Dark override flips every rule at once. The colour-only exception —
+ * inverting Adminer's sprite icons on the dark surface — is in base.css.
  */
 
 html {
 	/* Adminer's structural tokens. */
-	--bg: #ffffff;
-	--fg: #1d2127;
-	--dim: #f1f3f6;
-	--lit: #e9edfb;
+	--bg: light-dark(#ffffff, #15171c);
+	--fg: light-dark(#1d2127, #c7ccd6);
+	--dim: light-dark(#f1f3f6, #21252e);
+	--lit: light-dark(#e9edfb, #272d42);
 
 	/* Ours. */
-	--ad-accent: #4b5bd4;
-	--ad-accent-fg: #ffffff;
-	--ad-accent-quiet: color-mix(in srgb, var(--ad-accent) 12%, transparent);
-	--ad-border: color-mix(in srgb, var(--fg) 13%, transparent);
-	--ad-border-strong: color-mix(in srgb, var(--fg) 24%, transparent);
+	--ad-accent: light-dark(#4b5bd4, #808ef6);
+	--ad-accent-fg: light-dark(#ffffff, #12131a);
+	--ad-accent-quiet: light-dark(
+		color-mix(in srgb, var(--ad-accent) 12%, transparent),
+		color-mix(in srgb, var(--ad-accent) 18%, transparent)
+	);
+	--ad-border: light-dark(
+		color-mix(in srgb, var(--fg) 13%, transparent),
+		color-mix(in srgb, var(--fg) 16%, transparent)
+	);
+	--ad-border-strong: light-dark(
+		color-mix(in srgb, var(--fg) 24%, transparent),
+		color-mix(in srgb, var(--fg) 30%, transparent)
+	);
 	--ad-radius: 7px;
 	--ad-radius-sm: 5px;
-	--ad-menu-bg: #f7f8fa;
-	--ad-zebra: color-mix(in srgb, var(--fg) 3%, transparent);
-	--ad-danger: #b42318;
-	--ad-danger-bg: #fef3f2;
-	--ad-ok: #067647;
-	--ad-ok-bg: #ecfdf3;
+	--ad-menu-bg: light-dark(#f7f8fa, #191c23);
+	--ad-zebra: light-dark(
+		color-mix(in srgb, var(--fg) 3%, transparent),
+		color-mix(in srgb, #ffffff 4%, transparent)
+	);
+	--ad-danger: light-dark(#b42318, #ff9d95);
+	--ad-danger-bg: light-dark(#fef3f2, #2a1613);
+	--ad-ok: light-dark(#067647, #6fe0a1);
+	--ad-ok-bg: light-dark(#ecfdf3, #12291d);
 
 	/* The OS UI font, resolved by the browser: San Francisco on macOS, Segoe UI on
 	   Windows, the desktop's own font on Linux. system-ui is enough on its own in the
@@ -42,7 +61,9 @@ html {
 	/* UI scale (100%) — overridden by the scale-* body classes below. */
 	--ad-scale: 1;
 
-	color-scheme: light;
+	/* No color-scheme here on purpose: Adminer's <meta name="color-scheme"> sets it, and a
+	   value here would beat the meta and defeat a Light/Dark override. accent-color rides on
+	   --ad-accent, which is already scheme-aware above. */
 	accent-color: var(--ad-accent);
 }
 

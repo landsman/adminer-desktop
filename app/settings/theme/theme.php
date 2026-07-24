@@ -61,6 +61,15 @@ class Theme {
 			// adminer release no longer ships falls back to ours rather than to nothing.
 			$sides[$mode] = ($design && array_key_exists($design, $this->designs($mode))) ? $design : $self;
 		}
+		// An appearance override pins the page to one scheme: hand adminer only that side's
+		// design, tagged with its scheme. design.inc.php then sets <meta name="color-scheme">
+		// to it, which pins our light-dark() tokens to that side and (for dark) loads
+		// adminer's own dark.css for the JUSH palette — so the choice themes everything
+		// without the OS. "auto" falls through to the OS-driven map below.
+		$appearance = $_SESSION["appearance"] ?? "auto";
+		if ($appearance === "light" || $appearance === "dark") {
+			return array($sides[$appearance] => $appearance);
+		}
 		if ($sides["light"] === $self && $sides["dark"] === $self) {
 			return array($self => ""); // the out-of-the-box case: one self-switching sheet
 		}
@@ -81,6 +90,14 @@ class Theme {
 	function panel(): void {
 		latte()->render(__DIR__ . "/theme-panel.latte", [
 			"desktop" => $this->desktop,
+			// t() takes literal strings (it runs them through lang()), so the labels are
+			// spelled out here rather than translated from a loop variable.
+			"appearances" => [
+				"auto" => $this->desktop->t('Sync with OS'),
+				"light" => $this->desktop->t('Light'),
+				"dark" => $this->desktop->t('Dark'),
+			],
+			"appearance" => (string) ($_SESSION["appearance"] ?? "auto"),
 			"densities" => [
 				"compact" => $this->desktop->t('Compact'),
 				"cozy" => $this->desktop->t('Cozy'),
@@ -108,27 +125,33 @@ class Theme {
 		]);
 	}
 
-	/** Store the chosen designs and density. */
+	/** Store the chosen designs, appearance and density. */
 	function apply(): void {
 		foreach (array("light", "dark") as $mode) {
 			$_SESSION["design_$mode"] = $_POST["design_$mode"] ?? "";
 		}
 		// Whitelisted: these values are echoed into body classes, so never store raw input.
+		$appearance = $_POST["appearance"] ?? "auto";
+		$_SESSION["appearance"] = in_array($appearance, self::APPEARANCES, true) ? $appearance : "auto";
 		$density = $_POST["density"] ?? "cozy";
 		$_SESSION["density"] = in_array($density, self::DENSITIES, true) ? $density : "cozy";
 		$scaling = $_POST["scaling"] ?? "100";
 		$_SESSION["scaling"] = in_array($scaling, self::SCALINGS, true) ? $scaling : "100";
 	}
 
-	/** The density and scaling classes for <body>, added next to the OS class in
-	* AdminerDesktop. */
+	/** The appearance, density and scaling classes for <body>, added next to the OS class in
+	* AdminerDesktop. The appearance class is only read by the dark icon invert in base.css —
+	* the colours themselves ride on adminer's color-scheme meta (cssMap), not this class. */
 	function bodyClass(): void {
+		$appearance = $_SESSION["appearance"] ?? "auto";
+		echo " theme-" . (in_array($appearance, self::APPEARANCES, true) ? $appearance : "auto");
 		$density = $_SESSION["density"] ?? "cozy";
 		echo " density-" . (in_array($density, self::DENSITIES, true) ? $density : "cozy");
 		$scaling = $_SESSION["scaling"] ?? "100";
 		echo " scale-" . (in_array($scaling, self::SCALINGS, true) ? $scaling : "100");
 	}
 
+	/** @var list<string> */ private const APPEARANCES = array("auto", "light", "dark");
 	/** @var list<string> */ private const DENSITIES = array("compact", "cozy", "comfortable");
 	/** @var list<string> */ private const SCALINGS = array("100", "125", "150", "175", "200");
 }

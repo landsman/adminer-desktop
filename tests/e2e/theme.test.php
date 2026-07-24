@@ -45,6 +45,17 @@ try {
 		if (!is_string($accent) || $accent === '') {
 			$failures[] = "$scheme: theme not applied (--ad-accent is empty)";
 		}
+		// Both schemes are one set of light-dark() tokens now, resolved by color-scheme, so
+		// assert a real surface actually resolved to this scheme's side. A non-empty token
+		// alone would pass even if resolution silently fell back to light on every run.
+		$bgIsDark = (bool) $page->evaluate("() => {
+			const el = document.querySelector('#content') || document.body;
+			const [r, g, b] = getComputedStyle(el).backgroundColor.match(/\\d+/g).map(Number);
+			return r + g + b < 200;
+		}");
+		if ($bgIsDark !== ($scheme === 'dark')) {
+			$failures[] = "$scheme: the surface did not resolve to the $scheme scheme";
+		}
 		// And that the scheme itself was emulated — otherwise a dark run silently renders
 		// light and the screenshot is the only tell.
 		$isDark = (bool) $page->evaluate("() => matchMedia('(prefers-color-scheme: dark)').matches");

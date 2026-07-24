@@ -28,6 +28,19 @@
 	background: transparent;
 }
 
+/* The table and database names are a long list to read, not a set of links to pick out,
+   so the dark surface gives them the plain text colour rather than the accent; light keeps
+   the accent (its readable link colour). Hover and the active item (below) still mark the
+   current one. */
+#logins a,
+#tables a {
+	color: light-dark(var(--ad-accent), var(--fg));
+}
+
+#tables span {
+	color: var(--fg);
+}
+
 #logins a:hover {
 	background: var(--ad-accent-quiet);
 	border-radius: var(--ad-radius-sm);
