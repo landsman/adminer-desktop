@@ -76,17 +76,25 @@ to force module mode. We do not vendor Go deps.
 ## The Adminer Desktop theme
 
 `app/settings/theme/designs/adminer-desktop/` is the app's own default look, not one of
-the downloaded gallery designs. `Theme::cssMap()` hands it to Adminer with no media query,
-so its internal `@media (prefers-color-scheme)` does the light/dark itself — one file,
-both schemes. `Theme::designs()` keeps it out of the gallery; empty (the "Adminer Desktop"
-row) on each side means "use it".
+the downloaded gallery designs. It carries both schemes in one file: every scheme
+difference is a `light-dark(light, dark)` token (`tokens.css`), and the used `color-scheme`
+picks the side. Adminer sets that from its `<meta name="color-scheme">`, which
+`Theme::cssMap()` drives from the appearance preference — `light dark` for Auto (so it
+follows the OS), or pinned to one side for a Light/Dark override, which also loads adminer's
+own `dark.css` (JUSH palette) when dark. So there is no scheme media query in the theme;
+never hardcode `color-scheme` in the CSS either — a value there would beat the meta and
+defeat the override. `Theme::designs()` keeps it out of the gallery; empty (the "Adminer
+Desktop" row) on each side means "use it".
 
 It reskins through Adminer's own `--bg/--fg/--dim/--lit` plus our `--ad-*`, and is split
 into components pulled in by `@import`: `tokens`, `base`, `tables`, `forms`, `sidebar`,
-`settings`, `dark` (last, so it wins). `system-ui` gives the native OS font with no
-branching; the `os-mac`/`os-windows`/`os-linux` and `density-compact`/`-cozy`/
+`settings`. `light-dark()` is colour-only, so the one non-colour scheme difference —
+inverting adminer's sprite icons on the dark surface — lives in `base.css` and keys off the
+`theme-auto`/`theme-dark` body class instead. `system-ui` gives the native OS font with no
+branching; the `theme-*`, `os-mac`/`os-windows`/`os-linux` and `density-compact`/`-cozy`/
 `-comfortable` body classes come from `AdminerDesktop::bodyClass()` and are the hooks for
-per-OS and per-density tweaks. Biome owns the formatting — one declaration per line.
+appearance, per-OS and per-density tweaks. Biome owns the formatting — one declaration per
+line.
 
 ## The dev toolchain and e2e
 

@@ -136,3 +136,18 @@ a:focus-visible,
 			color 0.12s ease;
 	}
 }
+
+/* Adminer's sprite icons are dark-on-transparent gifs that vanish on the dark surface, so
+   invert them when the dark scheme is showing. light-dark() is colour-only and cannot
+   carry a filter, so unlike every other scheme difference (all folded into the tokens)
+   this one rule keys off the appearance mode on <body> (Theme::bodyClass): forced dark
+   always, Auto only when the OS is dark. */
+body.theme-dark .icon {
+	filter: invert(1) hue-rotate(180deg);
+}
+
+@media (prefers-color-scheme: dark) {
+	body.theme-auto .icon {
+		filter: invert(1) hue-rotate(180deg);
+	}
+}

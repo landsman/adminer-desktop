@@ -123,6 +123,35 @@ try {
 	}
 	$switchLang($page, 'en'); // back to English, so a rerun starts where this one did
 
+	// 5. Appearance override -> forcing Dark must pin the dark scheme even though this
+	// context's OS is light (no colorScheme emulation here). Proves the whole path end to
+	// end: the radio posts, cssMap hands adminer only the dark side, adminer's
+	// color-scheme meta flips the theme's light-dark() tokens to dark. Reset to Sync with
+	// OS after, so a rerun starts clean.
+	$readSurface = "() => {
+		const el = document.querySelector('#content') || document.body;
+		const [r, g, b] = getComputedStyle(el).backgroundColor.match(/\\d+/g).map(Number);
+		return r + g + b < 200; // dark surface?
+	}";
+	$osDark = (bool) $page->evaluate("() => matchMedia('(prefers-color-scheme: dark)').matches");
+	$openDialog($page);
+	$page->locator('input[name="appearance"][value="dark"]')->check(['force' => true]);
+	$page->locator('#desktop-save')->click();
+	$page->waitForLoadState('networkidle');
+	$appBody = (string) $page->evaluate("() => document.body.className");
+	$forcedDark = (bool) $page->evaluate($readSurface);
+	if ($osDark) {
+		$failures[] = "appearance: a light OS context is needed to prove the override";
+	} elseif (!str_contains($appBody, 'theme-dark')) {
+		$failures[] = "appearance: Dark did not save (body class: $appBody)";
+	} elseif (!$forcedDark) {
+		$failures[] = "appearance: Dark override did not render dark under a light OS";
+	}
+	$openDialog($page);
+	$page->locator('input[name="appearance"][value="auto"]')->check(['force' => true]);
+	$page->locator('#desktop-save')->click();
+	$page->waitForLoadState('networkidle');
+
 	$page->screenshot($fix['shots'] . '/settings.png');
 	$context->close();
 } catch (\Throwable $e) {
