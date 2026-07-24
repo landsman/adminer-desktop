@@ -5,7 +5,7 @@ parameters:
     # things that must not be analysed are stable while our own files are not.
     paths:
         - app
-        - lint.php
+        - cli/lint.php
 
     excludePaths:
         - app/adminer.php
@@ -21,10 +21,13 @@ parameters:
         - app/adminer.php
         - phpstan-stubs.php
 
-    # Adminer silences undefined-key warnings on purpose (include/errors.inc.php) and its
-    # own style is bare $_POST["x"], which this repo follows so the plugin reads like the
-    # code it plugs into. Level 5 keeps the type checking and skips arguing about that.
-    level: 5
+    # Level 6 adds the missing-type checks: every parameter, return and property in our own
+    # code carries a type. The adminer hooks we override (head, css, csp, navigation, ...)
+    # carry @param/@return phpdoc rather than native types — adminer's base leaves them
+    # untyped and dispatches them dynamically, so a native type would risk a runtime
+    # TypeError, not just a phpstan note. Bare $_POST["x"] stays fine either way: phpstan
+    # treats the superglobal as open-keyed, so an access is never "possibly undefined".
+    level: 6
 
     # phpstan's workers shell out to a `php` binary, and there is deliberately no PHP
     # installed here — we run it through the frankenphp we already download. One process

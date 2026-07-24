@@ -30,17 +30,37 @@ body {
 	background: var(--ad-menu-bg);
 }
 
-/* Left panel: #menu lives inside #foot. */
+/* Left panel: #menu lives inside #foot. Its width is a variable so the drag handle
+   (sidebar-resize.js) and head()'s restored value can both drive it from one place. */
 #foot {
 	order: -1;
 	position: static;
 	display: flex;
-	flex: 0 0 19em;
+	flex: 0 0 var(--ad-sidebar-width);
 	min-height: 0;
 	overflow: hidden;
 	background: var(--bg);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius);
+}
+
+/* The drag handle between the two panels. sidebar-resize.js inserts it into the flex row
+   only under this layout, so it needs no markup elsewhere. A thin gutter that stays quiet
+   until hover or keyboard focus reveals the grip; the negative margins pull it back into
+   the panels' 0.5rem gaps so it adds no net width. */
+#ad-sidebar-resizer {
+	flex: 0 0 5px;
+	margin: 0 -0.25rem;
+	cursor: col-resize;
+	border-radius: var(--ad-radius-sm);
+	background: transparent;
+	transition: background-color 0.12s ease;
+}
+
+#ad-sidebar-resizer:hover,
+#ad-sidebar-resizer:focus-visible {
+	background: var(--ad-accent-quiet);
+	outline: none;
 }
 
 #menu {

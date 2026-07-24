@@ -9,7 +9,7 @@ namespace Desktop;
 * css/ beside this file so the stylesheets are not interleaved with the code loading them.
 */
 class Styles {
-	/** @var string */ private $dir;
+	private string $dir;
 
 	function __construct(string $dir) {
 		$this->dir = $dir;

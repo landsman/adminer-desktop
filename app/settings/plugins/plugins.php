@@ -9,7 +9,7 @@ namespace Desktop;
 * and its rule of instantiating anything called Adminer* as a plugin.
 */
 class PluginList {
-	/** @var \AdminerDesktop */ private $desktop;
+	private \AdminerDesktop $desktop;
 
 	function __construct(\AdminerDesktop $desktop) {
 		$this->desktop = $desktop;
@@ -21,7 +21,7 @@ class PluginList {
 	* @return array<string, string>
 	*/
 	function available(): array {
-		$return = array();
+		$return = [];
 		// Top level only: available/drivers/ are database drivers, which need a
 		// server we cannot assume exists, not a checkbox.
 		foreach (glob(__DIR__ . "/available/*.php") as $filename) {
@@ -44,14 +44,14 @@ class PluginList {
 	* @return array<string, string>
 	*/
 	function descriptions(): array {
-		$return = array();
+		$return = [];
 		foreach ($this->available() as $name => $filename) {
 			$before = get_declared_classes();
 			@include_once $filename;
 			$description = "";
 			foreach (array_diff(get_declared_classes(), $before) as $class) {
 				$defaults = (new \ReflectionClass($class))->getDefaultProperties();
-				$translations = (isset($defaults["translations"]) ? (array) $defaults["translations"] : array());
+				$translations = (isset($defaults["translations"]) ? (array) $defaults["translations"] : []);
 				$description = (string) ($translations[\Adminer\LANG][""] ?? "");
 			}
 			if ($description === "") {

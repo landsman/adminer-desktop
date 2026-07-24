@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<ruleset name="AdminerDesktop">
+	<description>
+		Type-safety rules for the PHP we wrote: native property types and short array syntax.
+		phpstan (level 6) owns parameter/return/value types; this owns what phpstan cannot say
+		— a property must be a native declaration, not a bare @var — and the [] vs array()
+		style phpstan does not judge. Everything that ships verbatim from the adminer release
+		is excluded: it keeps its own conventions and is not ours to report on.
+	</description>
+
+	<!-- Our code only. -->
+	<file>app</file>
+	<file>cli</file>
+
+	<exclude-pattern>app/adminer.php</exclude-pattern>
+	<exclude-pattern>app/editor.php</exclude-pattern>
+	<exclude-pattern>app/settings/plugins/available/*</exclude-pattern>
+	<exclude-pattern>app/settings/theme/designs/*</exclude-pattern>
+
+	<!-- slevomat ships no phpcs-4 installer plugin, so register its standard by hand rather
+	     than relying on one. Relative to the repo root, where phpcs is run from. -->
+	<config name="installed_paths" value="vendor/slevomat/coding-standard"/>
+
+	<!-- [] not array(). -->
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+	<!-- Every property carries a native type; a bare @var is not enough. The one property that
+	     cannot (it overrides an untyped one in adminer's base class) opts out with a
+	     phpcs:ignore comment on the line. -->
+	<rule ref="SlevomatCodingStandard.TypeHints.PropertyTypeHint"/>
+</ruleset>

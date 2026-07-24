@@ -37,6 +37,11 @@ html {
 	--ad-radius: 7px;
 	--ad-radius-sm: 5px;
 	--ad-menu-bg: light-dark(#f7f8fa, #191c23);
+
+	/* Sidebar width — the default the layout opens at. sidebar-resize.js overrides it live
+	   while dragging, and head() re-emits the dragged value on the next load, so this is
+	   only the starting point before the user has ever touched the handle. */
+	--ad-sidebar-width: 19em;
 	--ad-zebra: light-dark(
 		color-mix(in srgb, var(--fg) 3%, transparent),
 		color-mix(in srgb, #ffffff 4%, transparent)

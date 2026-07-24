@@ -14,11 +14,11 @@ class Files {
 	*                       which is how vendored trees stay out of our own tooling
 	* @return string[]
 	*/
-	static function find(string $dir, string $extension = "php", array $skip = array()): array {
+	static function find(string $dir, string $extension = "php", array $skip = []): array {
 		if (!is_dir($dir)) {
-			return array();
+			return [];
 		}
-		$return = array();
+		$return = [];
 		$files = new \RecursiveIteratorIterator(
 			new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS)
 		);

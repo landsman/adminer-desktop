@@ -5,11 +5,14 @@
     "type": "project",
     "require-dev": {
         "dg/composer-cleaner": "^2.2",
-        "playwright-php/playwright": "^1.2"
+        "playwright-php/playwright": "^1.2",
+        "slevomat/coding-standard": "^8.16",
+        "squizlabs/php_codesniffer": "^4.0"
     },
     "config": {
         "allow-plugins": {
-            "dg/composer-cleaner": true
+            "dg/composer-cleaner": true,
+            "dealerdirect/phpcodesniffer-composer-installer": false
         },
         "sort-packages": true
     },

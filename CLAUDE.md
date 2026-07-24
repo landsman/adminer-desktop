@@ -139,5 +139,19 @@ Adminer's, because this code sits next to Adminer's: tabs, `h()` for HTML, `lang
 single quotes, bare `$_POST["key"]`, `{}` around every block. `make qa` enforces the
 mechanical ones.
 
+Where it is our own code and not adminer's, prefer type-safety over plain strings: a native
+type on every property (`private ?string $file`, not a bare `private $file` on a `@var`, which
+stays only for what the native type can't say — an array's shape), `[]` not `array()`, and an
+enum for a fixed set of values (`Desktop\Mode` for the light/dark scheme) rather than a magic
+string. `make qa` enforces these: phpstan at level 6 for parameter, return and value types,
+and phpcs with slevomat (`phpcs.xml`) for the two things phpstan does not judge — native
+property declarations and short array syntax. Both run through the bundled frankenphp, no
+separate PHP install. The exceptions are adminer's own downloaded files (excluded) and a
+method or property that overrides an untyped one in adminer's base class — those keep
+adminer's untyped shape (a phpdoc `@param`/`@return`, or a `phpcs:ignore` on the line),
+because PHP forbids narrowing an inherited signature. Filenames stay lowercase with a
+PascalCase class inside (`config.php` → `Config`, like `theme.php` → `Theme`); an IDE may flag
+the case mismatch, but it is the house style and PSR-4 is not in play.
+
 Commit messages say why, not what. No Claude or AI attribution anywhere — not in
 commits, PR text, comments or docs.
