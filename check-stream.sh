@@ -55,9 +55,9 @@ echo "ok: Server field prefilled"
 # The refresh shortcut is a script we inject. curl cannot press F5 — that it reloads is
 # browser behaviour — but it can prove the two things that silently regress: the tag is
 # emitted with the CSP nonce it needs under strict-dynamic, and the file actually serves.
-curl -s "$BASE/adminer.php" | grep -q "desktop/javascript/shortcuts.js?v=[0-9]*' nonce=" || {
+curl -s "$BASE/adminer.php" | grep -q "src/Assets/javascript/shortcuts.js?v=[0-9]*' nonce=" || {
 	echo "FAIL: refresh-shortcut script not emitted with a nonce"; exit 1; }
-[ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/desktop/javascript/shortcuts.js")" = "200" ] || {
+[ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/src/Assets/javascript/shortcuts.js")" = "200" ] || {
 	echo "FAIL: shortcuts.js does not serve"; exit 1; }
 echo "ok: refresh shortcut wired and served"
 
@@ -68,12 +68,12 @@ JAR=$(mktemp)
 OUT=/tmp/adminer-desktop-design.html
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o "$OUT" \
-	-d "desktop_settings=1" -d "design_light=settings/theme/designs/brade/adminer.css" \
-	-d "design_dark=settings/theme/designs/dracula/adminer-dark.css" \
+	-d "desktop_settings=1" -d "design_light=src/Settings/Theme/designs/brade/adminer.css" \
+	-d "design_dark=src/Settings/Theme/designs/dracula/adminer-dark.css" \
 	-d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
 # Both must come back media-gated, which is what makes the OS theme pick the design.
-grep -q "media='(prefers-color-scheme: light)' href='settings/theme/designs/brade/adminer.css'" "$OUT" || {
+grep -q "media='(prefers-color-scheme: light)' href='src/Settings/Theme/designs/brade/adminer.css'" "$OUT" || {
 	echo "FAIL: light design not applied, or not gated on prefers-color-scheme"
 	# Say why. Chasing this blind across CI runs costs more than printing it here does.
 	echo "--- php diagnostics from the response:"
@@ -82,13 +82,11 @@ grep -q "media='(prefers-color-scheme: light)' href='settings/theme/designs/brad
 	grep -o "value=\"designs/[^\"]*\"" "$OUT" | head -3 || echo "  (none — glob found no designs)"
 	echo "--- stylesheets emitted:"
 	grep -o "<link rel='stylesheet'[^>]*>" "$OUT" | head -5 || true
-	echo "--- what the app sees on disk:"
-	curl -s "$BASE/_stream.php?probe=1"
 	echo "--- server log:"
 	tail -5 /tmp/adminer-desktop-check.log
 	exit 1
 }
-grep -q "media='(prefers-color-scheme: dark)' href='settings/theme/designs/dracula/adminer-dark.css'" "$OUT" || {
+grep -q "media='(prefers-color-scheme: dark)' href='src/Settings/Theme/designs/dracula/adminer-dark.css'" "$OUT" || {
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
 

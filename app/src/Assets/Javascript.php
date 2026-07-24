@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Desktop;
+namespace Desktop\Assets;
 
 /** Loads the JavaScript that makes the app behave like a browser rather than a bare
 * WebView -- see javascript/README.md for what belongs there.
@@ -25,7 +25,7 @@ class Javascript {
 	function link(): void {
 		foreach (glob($this->dir . "/*.js") as $filename) {
 			$name = basename($filename);
-			echo \Adminer\script_src("desktop/javascript/$name?v=" . (int) @filemtime($filename), true);
+			echo \Adminer\script_src("src/Assets/javascript/$name?v=" . (int) @filemtime($filename), true);
 		}
 	}
 }

@@ -18,8 +18,8 @@ parameters:
         analyseAndScan:
             - app/adminer.php
             - app/editor.php
-            - app/settings/plugins/available
-            - app/settings/theme/designs
+            - app/src/Settings/Plugins/available
+            - app/src/Settings/Theme/designs
 
     # Not analysed, only read for symbols: this is where Adminer\Plugin, Adminer\h(),
     # verify_token() and the rest are defined. Without it every adminer call is an

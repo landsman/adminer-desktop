@@ -4,13 +4,13 @@ declare(strict_types=1);
 *
 * A bare endpoint, served directly by php-server like screenshot.php beside it — it stores
 * one number and has no business booting the whole application to do it.
-* desktop/javascript/sidebar-resize.js posts here on release; AdminerDesktop::head() reads it
-* back on the next load and emits it before paint.
+* src/Assets/javascript/sidebar-resize.js posts here on release; AdminerDesktop::head() reads
+* it back on the next load and emits it before paint.
 */
 
 // A bare endpoint doesn't boot adminer, so it turns on autoloading itself; UserSettings and
 // SettingKey then load on use.
-require_once __DIR__ . "/../vendor/autoload.php";
+require_once __DIR__ . "/../../vendor/autoload.php";
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 	http_response_code(405);

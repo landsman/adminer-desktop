@@ -26,17 +26,17 @@ $vendored = [
 	"/vendor/",
 	"app/adminer.php",
 	"app/editor.php",
-	"/settings/plugins/available/",
+	"/Settings/Plugins/available/",
 	// Whatever the user has enabled is a copy of one of those, or a file they dropped in
 	// themselves. Either way it is not ours to have opinions about.
 	"/adminer-plugins/",
-	"/settings/theme/designs/",
+	"/Settings/Theme/designs/",
 ];
 
 $errors = 0;
 // Required, not autoloaded: this is the linter, so it has to work before anything else
 // does. Desktop\Files is app code because app code will want it too.
-require_once $root . "/app/src/files.php";
+require_once $root . "/app/src/Files.php";
 
 $filenames = array_merge(
 	Desktop\Files::find($root . "/app", "php", $vendored),
@@ -105,8 +105,8 @@ echo ($errors ? "$errors problem(s)\n" : "php ok\n");
 // failed when the deps are not installed, like the JS tooling in the Makefile: this file
 // is also what a fresh clone runs before `mise run install`.
 if (file_exists($root . "/app/vendor/autoload.php")) {
-	require_once $root . "/app/src/latte.php";
-	if (!(new Latte\Tools\Linter(Desktop\latte()))->scanDirectory($root . "/app")) {
+	require_once $root . "/app/vendor/autoload.php";
+	if (!(new Latte\Tools\Linter(Desktop\Latte::engine()))->scanDirectory($root . "/app")) {
 		$errors++;
 	}
 } else {

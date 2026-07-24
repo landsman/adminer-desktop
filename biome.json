@@ -16,9 +16,9 @@
 	},
 	"files": {
 		"includes": [
-			"app/settings/theme/designs/adminer-desktop/**/*.css",
-			"app/styles/css/**/*.css",
-			"app/desktop/javascript/**/*.js",
+			"app/src/Settings/Theme/designs/adminer-desktop/**/*.css",
+			"app/src/Assets/css/**/*.css",
+			"app/src/Assets/javascript/**/*.js",
 			"tests/**/*.js"
 		]
 	}

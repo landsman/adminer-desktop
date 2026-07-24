@@ -10,11 +10,10 @@ declare(strict_types=1);
 */
 
 use Desktop\Env;
-use function Desktop\env;
 
-// A bare endpoint doesn't boot adminer, so it turns on autoloading itself; that also defines
-// env() (a files autoload).
-require_once __DIR__ . "/../../vendor/autoload.php";
+// A bare endpoint doesn't boot adminer, so it turns on autoloading itself; UserSettings, Env
+// and the rest then load on use.
+require_once __DIR__ . "/../../../vendor/autoload.php";
 
 // The designs sit beside this file, under settings/theme/.
 $root = str_replace('\\', '/', __DIR__);
@@ -62,7 +61,7 @@ if ($design === null) {
 
 // The launcher passes the data directory in; without it (running `make serve` by hand)
 // fall back to temp, where a lost cache costs only a re-fetch.
-$dir = (env(Env::DataDir) ?: sys_get_temp_dir()) . "/screenshots";
+$dir = (Env::DataDir->get() ?: sys_get_temp_dir()) . "/screenshots";
 $file = "$dir/$design.png";
 $miss = "$dir/$design.miss";
 

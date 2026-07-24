@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
-namespace Desktop;
+namespace Desktop\Settings\Theme;
+
+use Desktop\Latte;
+use Desktop\SettingKey;
+use Desktop\UserSettings;
 
 /** The theme half of the settings dialog: which designs exist, which are chosen, and
 * the panel that lets you change that.
@@ -30,7 +34,7 @@ class Theme {
 			if ($dir === "adminer-desktop") {
 				continue; // our theme is the default, not one gallery entry among the rest
 			}
-			$path = "settings/theme/designs/$dir/" . basename($filename);
+			$path = "src/Settings/Theme/designs/$dir/" . basename($filename);
 			// Match -dark anywhere in the path, not just the filename, which is what
 			// upstream plugins/designs.php:30 does. rmsoft_blue-dark is the case that
 			// proves it: the folder is marked dark but its file is a plain adminer.css,
@@ -55,7 +59,7 @@ class Theme {
 	* @return array<string,string>
 	*/
 	function cssMap(): array {
-		$self = "settings/theme/designs/adminer-desktop/adminer.css";
+		$self = "src/Settings/Theme/designs/adminer-desktop/adminer.css";
 		$sides = [];
 		foreach (Mode::cases() as $mode) {
 			$design = (string) $this->settings->get($mode->designKey(), "");
@@ -92,7 +96,7 @@ class Theme {
 	* spelled out rather than translated from a loop variable.
 	*/
 	function panel(): void {
-		latte()->render(__DIR__ . "/theme-panel.latte", [
+		Latte::engine()->render(__DIR__ . "/theme-panel.latte", [
 			"desktop" => $this->desktop,
 			// t() takes literal strings (it runs them through lang()), so the labels are
 			// spelled out here rather than translated from a loop variable.

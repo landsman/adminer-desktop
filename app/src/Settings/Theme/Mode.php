@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace Desktop;
+namespace Desktop\Settings\Theme;
+
+use Desktop\SettingKey;
 
 /** A colour scheme side: the light half or the dark half.
 *

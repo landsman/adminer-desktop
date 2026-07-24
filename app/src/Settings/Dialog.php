@@ -1,12 +1,16 @@
 <?php
 declare(strict_types=1);
-namespace Desktop;
+namespace Desktop\Settings;
+
+use Desktop\Latte;
+use Desktop\Settings\Plugins\PluginList;
+use Desktop\Settings\Theme\Theme;
 
 /** The settings dialog itself: the trigger, the tab shell and the actions row.
 *
 * It owns no settings of its own — the panels come from Theme and PluginList, and this
 * only decides where they sit. The markup is settings-dialog.latte and the behaviour is
-* desktop/javascript/settings-dialog.js, so what is left here is handing one the other's
+* src/Assets/javascript/settings-dialog.js, so what is left here is handing one the other's
 * translated strings.
 */
 class Dialog {
@@ -21,7 +25,7 @@ class Dialog {
 	}
 
 	function render(): void {
-		latte()->render(__DIR__ . "/settings-dialog.latte", [
+		Latte::engine()->render(__DIR__ . "/settings-dialog.latte", [
 			"desktop" => $this->desktop,
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
