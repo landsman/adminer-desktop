@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop;
 
 /** The environment variables the launcher sets and the app reads — the whole contract in one

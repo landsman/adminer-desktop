@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop;
 
 /** The keys UserSettings can store — the whole set of persisted preferences in one list.

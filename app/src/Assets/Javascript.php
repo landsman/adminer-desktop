@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop\Assets;
 
 /** Loads the JavaScript that makes the app behave like a browser rather than a bare

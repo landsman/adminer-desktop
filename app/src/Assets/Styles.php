@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop\Assets;
 
 /** Loads the stylesheet adminer-desktop adds on top of Adminer's own.

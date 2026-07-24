@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop;
 
 /** Let a pg_dump through adminer's SQL parser.

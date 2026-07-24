@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop;
 
 /** The user's own preferences — what they chose, not what we configure for them — kept in one
