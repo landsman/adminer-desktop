@@ -204,10 +204,12 @@ debug: build
 	./build/adminer-desktop$(EXE) -debug
 
 # The app in dev mode against seeded demo data, for clicking around by hand. Brings up
-# (or reuses) the same throwaway postgres the e2e uses, reseeds it, and opens the app —
-# log in with the prefilled 127.0.0.1, port 55432, postgres / demo / demo. `make down`
-# kills the container when you are done. vendor/ because dev serves app/ and Latte renders
-# from it. The seed drops and recreates, so re-running just refreshes the data.
+# (or reuses) the same throwaway postgres the e2e uses, reseeds it, and opens the app
+# logged straight into it — ADMINER_DESKTOP_DEMO carries the throwaway connection, which
+# desktop.php hands to demo-login.js to fill and submit. Only `make demo` ever sets it, so
+# a shipped build never auto-logs-in. `make down` kills the container when you are done.
+# vendor/ because dev serves app/ and Latte renders from it. The seed drops and recreates,
+# so re-running just refreshes the data.
 DEMO_PG = adminer-demo-pg
 
 demo: build vendor
@@ -216,7 +218,7 @@ demo: build vendor
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
 	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed.sql >/dev/null
 	@echo "demo data ready on 127.0.0.1:55432 (postgres / demo / demo)"
-	./build/adminer-desktop$(EXE) -dev
+	ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 postgres demo demo' ./build/adminer-desktop$(EXE) -dev
 
 # Kill the demo database container `make demo` left running.
 down:
