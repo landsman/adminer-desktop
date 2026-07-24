@@ -144,6 +144,10 @@ app/src/Settings/Theme/      designs, previews, the screenshot endpoint
 app/src/Settings/Theme/designs/adminer-desktop/   our default theme (@import components)
 app/src/Settings/Plugins/    the catalogue and the enable/disable logic
 app/src/Assets/              Styles + Javascript, and the css/ and javascript/ they load
+launcher/                    the native shell (Go + Objective-C) - see launcher/README.md
+launcher/main.go             start frankenphp, point a WebView at it, take it down with the window
+launcher/dialogs_darwin.m    what WKWebView leaves out: JS dialogs, file picker, mouse/reload
+launcher/download_darwin.m   turn an Export > save attachment into a real download + progress
 tests/e2e/run.php            playwright-php browser check + seed.sql
 mise.toml                    node, and the install/format/lint/e2e tasks
 ```

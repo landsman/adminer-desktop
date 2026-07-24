@@ -2,6 +2,7 @@
 #import <WebKit/WebKit.h>
 #include <objc/runtime.h>
 #include "menu_darwin.h"
+#import "webview_darwin.h"
 
 /* JavaScript alert(), confirm(), prompt() and the file picker.
  *
@@ -80,7 +81,8 @@
 /* WKWebView holds its UIDelegate weakly, so something else has to keep it alive. */
 static AdminerDesktopUIDelegate *uiDelegate = nil;
 
-static WKWebView *findWebView(NSView *view) {
+// Declared in webview_darwin.h and shared with download_darwin.m, so not static.
+WKWebView *findWebView(NSView *view) {
 	// The view itself, not just its children: webview makes the WKWebView the window's
 	// contentView, so walking only subviews finds nothing.
 	if ([view isKindOfClass:[WKWebView class]]) {

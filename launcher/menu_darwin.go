@@ -104,6 +104,15 @@ func installReloadShortcut(window unsafe.Pointer) {
 	C.installReloadShortcut(window)
 }
 
+// installDownloads makes the webview save an attachment response (Adminer's Export > save)
+// through a native Save panel instead of rendering the file into the window. macOS 11.3+;
+// below that it is a no-op and the old behaviour stands.
+func installDownloads(window unsafe.Pointer) {
+	if C.installDownloads(window) != 1 {
+		log.Print("downloads: native save handling not attached (needs macOS 11.3+); Export > save will show the file in the window")
+	}
+}
+
 func installMenu(navigate func(string), baseURL, logDir string) {
 	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)
