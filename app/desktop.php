@@ -112,6 +112,12 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head($dark = null) {
 		$this->styles->link();
 		$this->javascript->link();
+		// `make demo` forwards the throwaway connection here; desktop/javascript/demo-login.js
+		// fills it into the login form and submits. Only `make demo` ever sets this, so a
+		// shipped build never defines the global and the script stays inert.
+		if ($demo = getenv("ADMINER_DESKTOP_DEMO")) {
+			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
+		}
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
