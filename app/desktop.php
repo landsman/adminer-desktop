@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/import.php";
 require_once __DIR__ . "/latte.php";
+require_once __DIR__ . "/config.php";
 require_once __DIR__ . "/styles/styles.php";
 require_once __DIR__ . "/desktop/javascript.php";
 require_once __DIR__ . "/settings/theme/theme.php";
@@ -24,11 +25,13 @@ class AdminerDesktop extends Adminer\Plugin {
 	/** @var Desktop\Theme */ private $theme;
 	/** @var Desktop\PluginList */ private $plugins;
 	/** @var Desktop\Dialog */ private $dialog;
+	/** @var Desktop\Config */ private $config;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
 		// is included, and there is no hook between the two. See Desktop\Import.
 		Desktop\Import::defuse();
+		$this->config = new Desktop\Config();
 		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
 		// backslashes in a Windows __DIR__ as escapes, matching nothing.
@@ -112,6 +115,15 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head($dark = null) {
 		$this->styles->link();
 		$this->javascript->link();
+		// Restore the sidebar to the width the user last dragged it to, before the body paints,
+		// so a cold start opens at that width instead of flashing the default then jumping. The
+		// stored value is already a clamped integer (settings/sidebar-width.php); cast again so
+		// nothing but a number can reach the stylesheet. The CSP has no style-src, so an inline
+		// <style> needs no nonce — and only our own islands layout reads the property anyway.
+		$width = $this->config->get("sidebar_width");
+		if ($width !== null) {
+			echo "<style>:root{--ad-sidebar-width:" . (int) $width . "px}</style>\n";
+		}
 		// `make demo` forwards the throwaway connection here; desktop/javascript/demo-login.js
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
 		// shipped build never defines the global and the script stays inert.

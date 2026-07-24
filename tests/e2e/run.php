@@ -14,7 +14,7 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 use Symfony\Component\Process\Process;
 
 $root = dirname(__DIR__, 2);
-$checks = ['theme.test.php', 'settings.test.php'];
+$checks = ['theme.test.php', 'settings.test.php', 'sidebar-resize.test.php'];
 $failed = [];
 
 foreach ($checks as $check) {
