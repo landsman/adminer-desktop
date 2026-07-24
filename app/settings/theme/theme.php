@@ -73,89 +73,45 @@ class Theme {
 		return $return;
 	}
 
-	/** Render the theme panel: the density picker, then one table per light/dark side. */
+	/** Render the theme panel: the preferences, then one table per light/dark side.
+	* The markup is theme-panel.latte; what is prepared here is what a template cannot say —
+	* t() takes literal strings (it runs them through lang()), so every label has to be
+	* spelled out rather than translated from a loop variable.
+	*/
 	function panel(): void {
-		echo "<p class='message'>" . \Adminer\h($this->desktop->t('Adminer Desktop follows the system light and dark automatically. Override either side with a design below.')) . "\n";
-
-		// Adminer's own language <select> is relocated into this slot by
-		// desktop/javascript/language.js, so the switch lives with the other preferences
-		// rather than loose in the corner of every page.
-		echo "<h4>" . \Adminer\h($this->desktop->t('Language')) . "</h4>\n<p id='desktop-lang-slot'></p>\n";
-
-		// Row density applies to the Adminer Desktop theme (it drives our --ad-row-*); a
-		// gallery design brings its own spacing, so this has no effect while one is chosen.
-		$density = $_SESSION["density"] ?? "cozy";
-		echo "<h4>" . \Adminer\h($this->desktop->t('Row density')) . "</h4>\n<p>";
-		// t() takes literal strings (it runs them through lang()), so spell each label out
-		// rather than translating a loop variable.
-		foreach (array(
-			"compact" => $this->desktop->t('Compact'),
-			"cozy" => $this->desktop->t('Cozy'),
-			"comfortable" => $this->desktop->t('Comfortable'),
-		) as $value => $label) {
-			$id = "desktop-density-$value";
-			$checked = ($density == $value ? " checked" : "");
-			echo "<label for='$id' style='margin-right: 1.2em; white-space: nowrap'>"
-				. "<input type='radio' name='density' value='$value' id='$id'$checked> "
-				. \Adminer\h($label) . "</label>";
-		}
-		echo "\n";
-
-		// Scaling zooms the whole UI. Like density it only affects the Adminer Desktop theme.
-		$scaling = $_SESSION["scaling"] ?? "100";
-		echo "<h4>" . \Adminer\h($this->desktop->t('Scaling')) . "</h4>\n<p>";
-		echo "<select name='scaling'>";
-		foreach (self::SCALINGS as $value) {
-			$selected = ($scaling == $value ? " selected" : "");
-			echo "<option value='$value'$selected>$value%</option>";
-		}
-		echo "</select>\n";
-
-		// A design is either light or dark -- none upstream ships both -- so it belongs to
-		// exactly one of these tables, and the radio group it sits in is what makes it the
-		// light choice or the dark one.
-		foreach (array("light" => $this->desktop->t('Light'), "dark" => $this->desktop->t('Dark')) as $mode => $label) {
-			echo "<h4>" . \Adminer\h($label) . "</h4>\n";
-			// class=odds is adminer's own zebra striping, and it is overridden in dark.css,
-			// so the rows follow whichever design is active instead of us picking colours.
-			echo "<table class='odds'>\n";
-			echo "<thead><tr><th>" . \Adminer\h($this->desktop->t('Design')) . "<th>" . \Adminer\h($this->desktop->t('Preview')) . "</thead>\n";
-			echo "<tbody>\n";
-			$i = 0;
-			foreach ($this->designs($mode) as $path => $design) {
-				$id = "desktop-design-$mode-" . $i++;
-				$checked = ($_SESSION["design_$mode"] == $path ? " checked" : "");
-				// Every cell's content is a <label for> the row's input, so clicking the name
-				// or the preview selects it, not just the radio itself.
-				// The whole first cell is one <label> around the radio and the name, so
-				// clicking anywhere in it selects the design; the second cell wraps the
-				// preview the same way. #desktop-panels td label is display:block.
-				echo "<tr><td style='white-space: nowrap'>"
-					. "<label for='$id'>"
-					. "<input type='radio' name='design_$mode' value='" . \Adminer\h($path) . "' id='$id'$checked> "
-					. \Adminer\h($design)
-					. "</label>"
-					. "<td><label for='$id'>";
-				if ($path) {
-					// loading=lazy so opening the dialog does not fire 26 requests at once;
-					// the endpoint serves a placeholder rather than failing when offline.
-					echo "<img src='settings/theme/screenshot.php?design=" . urlencode(basename(dirname($path)))
-						. "' alt='' loading='lazy' width='160' height='100'>";
-				} else {
-					// Our own default has no adminer.org screenshot; the placeholder gives its
-					// row the same height as the gallery rows.
-					echo "<img src='settings/theme/placeholder.svg' alt='' width='160' height='100'>";
-				}
-				echo "</label>\n";
-			}
-			echo "</tbody>\n</table>\n";
-		}
+		latte()->render(__DIR__ . "/theme-panel.latte", [
+			"desktop" => $this->desktop,
+			"densities" => [
+				"compact" => $this->desktop->t('Compact'),
+				"cozy" => $this->desktop->t('Cozy'),
+				"comfortable" => $this->desktop->t('Comfortable'),
+			],
+			"density" => (string) ($_SESSION["density"] ?? "cozy"),
+			"scalings" => self::SCALINGS,
+			"scaling" => (string) ($_SESSION["scaling"] ?? "100"),
+			// ?? "", like cssMap() above: nothing is stored until a design is picked, and the
+			// panel is drawn on every page — that would be a warning per row per load.
+			"sides" => [
+				[
+					"mode" => "light",
+					"label" => $this->desktop->t('Light'),
+					"designs" => $this->designs("light"),
+					"chosen" => (string) ($_SESSION["design_light"] ?? ""),
+				],
+				[
+					"mode" => "dark",
+					"label" => $this->desktop->t('Dark'),
+					"designs" => $this->designs("dark"),
+					"chosen" => (string) ($_SESSION["design_dark"] ?? ""),
+				],
+			],
+		]);
 	}
 
 	/** Store the chosen designs and density. */
 	function apply(): void {
 		foreach (array("light", "dark") as $mode) {
-			$_SESSION["design_$mode"] = $_POST["design_$mode"];
+			$_SESSION["design_$mode"] = $_POST["design_$mode"] ?? "";
 		}
 		// Whitelisted: these values are echoed into body classes, so never store raw input.
 		$density = $_POST["density"] ?? "cozy";

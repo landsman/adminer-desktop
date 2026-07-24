@@ -9,6 +9,11 @@
  * form, which redirects in handlePost before Adminer ever reads $_POST["lang"] — the switch
  * would be lost. So the change is rewired to a standalone POST of just lang + token, which
  * is exactly what Adminer's own form sends and all its language handler needs.
+ *
+ * And the select is dropped from the settings form: it sits there only for layout, so it
+ * loses its name. Otherwise Save would post lang too, and Adminer's lang.inc.php treats any
+ * request carrying lang as a language switch — it redirects before handlePost runs, so no
+ * setting is ever saved. The value still travels through the standalone POST above.
  */
 
 const lang = document.querySelector("#lang");
@@ -34,6 +39,7 @@ if (slot && select && token) {
 		document.body.append(form);
 		form.submit();
 	};
+	select.removeAttribute("name");
 	slot.append(select);
 	lang.remove();
 }

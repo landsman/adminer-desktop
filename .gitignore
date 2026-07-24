@@ -1,24 +1,24 @@
 
 !/app/adminer-plugins/.gitkeep
-/.cache/
+/.cache
 /.idea/
 /.playwright-mcp/
 # Installed dependencies — composer.json/lock and package.json/lock are the source of
 # truth; the trees themselves are built by `mise run install`, not committed.
-/node_modules/
+/node_modules
 /vendor/
 # e2e artifacts: screenshots the browser check writes.
 /tests/e2e/screenshots/
 /app/adminer-plugins/*
 /app/adminer.php
 /app/editor.php
-/app/settings/plugins/available/
+/app/settings/plugins/available
 # The gallery designs are fetched, but adminer-desktop/ is our own theme — keep it. The
 # /* form ignores each fetched design individually so the one exception can be negated;
 # a blanket designs/ would stop git descending and the negation could not take effect.
 /app/settings/theme/designs/*
 !/app/settings/theme/designs/adminer-desktop/
-/bin/
+/bin
 /build/
 # Checked-in checksums are what make it reproducible — the bytes don't belong in git.
 # Everything below is downloaded by `make fetch` at a pinned version.

@@ -96,15 +96,27 @@ checksums:
 # reason rather than because a linter happened not to ship a new rule today.
 GOLANGCI_VERSION = v2.12.2
 PHPSTAN_VERSION  = 2.2.5
+COMPOSER_VERSION = 2.10.2
 
 .cache/phpstan.phar:
 	@mkdir -p .cache
 	curl -fsSL -o $@ https://github.com/phpstan/phpstan/releases/download/$(PHPSTAN_VERSION)/phpstan.phar
 
+.cache/composer.phar:
+	@mkdir -p .cache
+	curl -fsSL -o $@ https://getcomposer.org/download/$(COMPOSER_VERSION)/composer.phar
+
+# The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
+# needs them as much as the app does -- phpstan resolves those classes through vendor/,
+# and the template linter is one of the packages.
+vendor: composer.json composer.lock bin/frankenphp$(EXE) .cache/composer.phar
+	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-interaction
+	@touch vendor
+
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
 # and there deliberately is none here -- we run it through the frankenphp we download.
 # 2G because adminer.php is 500 KB of minified source on very long lines.
-phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php
+phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php vendor
 	./bin/frankenphp$(EXE) php-cli .cache/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
@@ -140,7 +152,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp$(EXE)
+qa: bin/frankenphp$(EXE) vendor
 	./bin/frankenphp$(EXE) php-cli lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
@@ -214,7 +226,7 @@ $(ICON): assets/logo.png
 
 # A .app is just a directory, which is why none of this needs go:embed or a static
 # single-binary build: the runtime and app/ are simply files inside it.
-bundle: build $(ICON)
+bundle: build vendor $(ICON)
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)"/Contents/MacOS "$(APP)"/Contents/Resources
 	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > "$(APP)"/Contents/Info.plist
@@ -222,6 +234,8 @@ bundle: build $(ICON)
 	cp bin/frankenphp "$(APP)"/Contents/MacOS/
 	# Everything except the M0 probe and the plugins the user has not enabled.
 	rsync -a --exclude '_stream.php' app/ "$(APP)"/Contents/Resources/app/
+	# Latte renders our own markup, so composer's vendor/ has to travel with app/.
+	rsync -a vendor/ "$(APP)"/Contents/Resources/app/vendor/
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
@@ -241,13 +255,14 @@ zip: bundle
 # adminer-desktop without colliding with the binary of that name in build/.
 DIST = build/pkg/adminer-desktop
 
-dist: build
+dist: build vendor
 	rm -rf $(DIST) && mkdir -p $(DIST)
 	cp build/adminer-desktop$(EXE) $(DIST)/
 	# All of bin/, because on windows that is the php runtime's DLLs and ext/ as well as
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
 	cp -R app $(DIST)/app
+	cp -R vendor $(DIST)/app/vendor   # Latte renders our own markup
 	rm -f $(DIST)/app/_stream.php   # M0 probe, not part of the product
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 

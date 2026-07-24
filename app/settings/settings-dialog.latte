@@ -1,0 +1,46 @@
+{* The settings dialog itself: the trigger, the tab shell and the actions row.
+
+	<dialog> rather than a hand-rolled overlay: it brings the backdrop, focus trapping,
+	top-layer stacking and escape-to-close with it, and needs no library. The buttons are
+	wired up by desktop/javascript/settings-dialog.js.
+*}
+{parameters
+	\AdminerDesktop $desktop,
+	\Desktop\Theme $theme,
+	\Desktop\PluginList $plugins,
+	bool $writable,
+	string $unsaved
+}
+<button type="button" id="desktop-gear" title="{$desktop->t('Settings')}">&#9881;</button>
+
+<dialog id="desktop-settings">
+<form action="" method="post">
+
+	{* Tabs are hidden radios plus :has() in the stylesheet: no JS, and a checked radio is
+		also the state, so nothing has to be restored when the dialog reopens. *}
+	<div id="desktop-tabs">
+		<input type="radio" name="desktop_tab" id="desktop-tab-themes" checked>
+		<label for="desktop-tab-themes">{$desktop->t('Theme')}</label>
+		<input type="radio" name="desktop_tab" id="desktop-tab-plugins">
+		<label for="desktop-tab-plugins">{$desktop->t('Plugins')}</label>
+	</div>
+
+	{* The panels print themselves; this only decides where they sit. *}
+	<div id="desktop-panels">
+		<div id="desktop-panel-themes">{do $theme->panel()}</div>
+		<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
+	</div>
+
+	{input_hidden('desktop_settings', 1)|noescape}
+	{input_token()|noescape}
+
+	{* Cancel first, primary action last: that is the order every mac dialog uses, and
+		muscle memory puts the confirm button in the bottom right corner. *}
+	<div id="desktop-actions">
+		{* The question the script asks before discarding edits, translated here because
+			this is where the translations are. *}
+		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('Cancel')}</button>
+		<button type="submit" id="desktop-save" n:attr="disabled: !$writable">{$desktop->t('Save')}</button>
+	</div>
+</form>
+</dialog>

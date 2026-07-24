@@ -1,0 +1,65 @@
+{* The theme panel: the preferences, then one table of designs per light/dark side.
+
+	Adminer's own language <select> is relocated into #desktop-lang-slot by
+	desktop/javascript/language.js, so the switch lives with the other preferences rather
+	than loose in the corner of every page.
+*}
+{parameters
+	\AdminerDesktop $desktop,
+	array $densities,
+	string $density,
+	array $scalings,
+	string $scaling,
+	array $sides
+}
+<p class="message">{$desktop->t('Adminer Desktop follows the system light and dark automatically. Override either side with a design below.')}
+
+<h4>{$desktop->t('Language')}</h4>
+<p id="desktop-lang-slot"></p>
+
+{* Row density applies to the Adminer Desktop theme (it drives our --ad-row-*); a gallery
+	design brings its own spacing, so this has no effect while one is chosen. *}
+<h4>{$desktop->t('Row density')}</h4>
+<p>
+	<label n:foreach="$densities as $value => $label" for="desktop-density-{$value}" style="margin-right: 1.2em; white-space: nowrap">
+		<input type="radio" name="density" value="{$value}" id="desktop-density-{$value}" n:attr="checked: $density == $value"> {$label}</label>
+
+{* Scaling zooms the whole UI. Like density it only affects the Adminer Desktop theme. *}
+<h4>{$desktop->t('Scaling')}</h4>
+<p>
+	<select name="scaling">
+		<option n:foreach="$scalings as $value" value="{$value}" n:attr="selected: $scaling == $value">{$value}%</option>
+	</select>
+
+{* A design is either light or dark — none upstream ships both — so it belongs to exactly
+	one of these tables, and the radio group it sits in is what makes it the light choice
+	or the dark one. *}
+{foreach $sides as $side}
+	<h4>{$side['label']}</h4>
+	{* class=odds is adminer's own zebra striping, and it is overridden in dark.css, so the
+		rows follow whichever design is active instead of us picking colours. *}
+	<table class="odds">
+		<thead><tr><th>{$desktop->t('Design')}<th>{$desktop->t('Preview')}</thead>
+		<tbody>
+			{foreach $side['designs'] as $path => $design}
+				{var $id = "desktop-design-{$side['mode']}-{$iterator->counter0}"}
+				{* Every cell's content is a <label for> the row's input, so clicking the name or
+					the preview selects it, not just the radio itself. #desktop-panels td label is
+					display:block. *}
+				<tr>
+					<td style="white-space: nowrap">
+						<label for="{$id}">
+							<input type="radio" name="design_{$side['mode']}" value="{$path}" id="{$id}" n:attr="checked: $side['chosen'] == $path"> {$design}</label>
+					<td>
+						<label for="{$id}">
+							{* loading=lazy so opening the dialog does not fire 26 requests at once; the
+								endpoint serves a placeholder rather than failing when offline. Our own
+								default has no adminer.org screenshot, and the placeholder gives its row
+								the same height as the gallery rows. *}
+							<img n:if="$path" src="settings/theme/screenshot.php?design={urlencode(basename(dirname($path)))}" alt="" loading="lazy" width="160" height="100">
+							<img n:if="!$path" src="settings/theme/placeholder.svg" alt="" width="160" height="100">
+						</label>
+			{/foreach}
+		</tbody>
+	</table>
+{/foreach}
