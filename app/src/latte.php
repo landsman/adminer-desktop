@@ -6,6 +6,8 @@ namespace Desktop;
 // and in a packaged build, where app/ is the whole tree that ships. Loading it turns on
 // autoloading for every Desktop\ class and eagerly defines env() (a function, so it is a
 // files autoload, not a class the loader can find on demand).
+use Latte\Engine;
+
 require_once dirname(__DIR__) . "/vendor/autoload.php";
 
 /** The shared Latte engine for our own markup.
@@ -13,10 +15,10 @@ require_once dirname(__DIR__) . "/vendor/autoload.php";
 * Only our HTML goes through it: Adminer's own output stays Adminer's. Templates get
 * absolute paths, so there is no root to keep in sync with where the files live.
 */
-function latte(): \Latte\Engine {
+function latte(): Engine {
 	static $latte;
 	if (!$latte) {
-		$latte = new \Latte\Engine();
+		$latte = new Engine();
 		// Latte's own bridge to Tracy: an error in a template then points at the line in the
 		// .latte file rather than at the compiled PHP. Idle when Tracy is off, so no branch.
 		$latte->addExtension(new \Latte\Bridges\Tracy\TracyExtension());

@@ -6,6 +6,8 @@ namespace Desktop;
 // and in a packaged build, where app/ is the whole tree that ships. Loading it turns on
 // autoloading for every Desktop\ class and eagerly defines env() (a function, so it is a
 // files autoload, not a class the loader can find on demand).
+use Tracy\Debugger;
+
 require_once dirname(__DIR__) . "/vendor/autoload.php";
 
 /** Turn Tracy on when the app was started with -debug.
@@ -29,12 +31,12 @@ function debug(): void {
 	if ($log && !is_dir($log)) {
 		@mkdir($log, 0700, true);
 	}
-	\Tracy\Debugger::enable(\Tracy\Debugger::Development, $log);
+	Debugger::enable(Debugger::Development, $log);
 
 	// A bar panel that prints the user's persistent settings file, so the stored preferences
 	// are one click away while debugging — both classes autoload, so the panel is built here
 	// before adminer boots without pulling their files in by hand.
-	\Tracy\Debugger::getBar()->addPanel(new SettingsPanel(new UserSettings()));
+	Debugger::getBar()->addPanel(new SettingsPanel(new UserSettings()));
 
 	// Enabling Tracy replaces adminer's own error handler, and with it the two things
 	// include/errors.inc.php deliberately turns off: E_DEPRECATED (it targets older PHP

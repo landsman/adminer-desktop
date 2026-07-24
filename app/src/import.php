@@ -22,7 +22,7 @@ class Import {
 	* `--` and `/*` only mean anything as a pair, so breaking the pair is enough: escaping
 	* every dash would blow up every date in the dump to four times the size.
 	*/
-	private const ESCAPES = [
+	private const array ESCAPES = [
 		"'" => '\047',
 		'"' => '\042',
 		'$' => '\044', // $tag$ dollar quoting
