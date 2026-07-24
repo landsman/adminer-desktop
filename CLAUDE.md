@@ -35,7 +35,7 @@ test harness to iterate against. The three-platform build only runs on manual di
 ```sh
 mise run install   # once: node deps, composer deps, and the e2e browser
 make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
-make check         # asserts the transport, and that settings apply before login (~2 min)
+make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
 ```
 

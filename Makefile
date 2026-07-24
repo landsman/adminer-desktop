@@ -164,22 +164,23 @@ qa: bin/frankenphp$(EXE) app/vendor
 	go vet ./...
 	@# Every darwin-only function needs a stub in menu_other.go, or the build breaks on
 	@# linux and windows only -- a CI round trip away rather than a compile away.
-	@for f in $$(grep -oE '^func [a-zA-Z]+' menu_darwin.go | cut -d' ' -f2); do \
-		grep -q "$$f(" main.go || continue; \
-		grep -q "func $$f(" menu_other.go || { echo "menu_other.go: missing stub for $$f(), used by main.go"; exit 1; }; \
+	@for f in $$(grep -oE '^func [a-zA-Z]+' launcher/menu_darwin.go | cut -d' ' -f2); do \
+		grep -q "$$f(" launcher/main.go || continue; \
+		grep -q "func $$f(" launcher/menu_other.go || { echo "launcher/menu_other.go: missing stub for $$f(), used by main.go"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check-stream.sh && echo "shellcheck ok"; } \
-		|| { sh -n check-stream.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && echo "sh ok (shellcheck not installed)"; }
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok" || echo "plists skipped (macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
 	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
 	@$(MAKE) --no-print-directory biome && echo "biome ok"
 
-# M0: does FrankenPHP survive a 120s progressively-flushed response?
+# Boot the app and assert the desktop plugin's before-login behaviour — prefill, refresh
+# shortcut, design switch, plugin toggle — against the real login page.
 check: fetch
-	./check-stream.sh
+	./check.sh
 
 # About reads these, so it can never disagree with what is actually bundled.
 VERSION = $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -188,7 +189,7 @@ LDFLAGS = -X main.version=$(VERSION) \
 	-X main.frankenphpVersion=$(FRANKENPHP_VERSION)
 
 build: fetch
-	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop$(EXE) .
+	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop$(EXE) ./launcher
 
 # The app itself: opens a window.
 run: build
@@ -258,9 +259,9 @@ bundle: build app/vendor $(ICON)
 	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > "$(APP)"/Contents/Info.plist
 	cp build/adminer-desktop "$(APP)"/Contents/MacOS/
 	cp bin/frankenphp "$(APP)"/Contents/MacOS/
-	# Everything except the M0 probe and the plugins the user has not enabled. vendor/ lives
-	# in app/ now, so it (and the autoloader Latte needs) travels along with this one copy.
-	rsync -a --exclude '_stream.php' app/ "$(APP)"/Contents/Resources/app/
+	# The whole app/ tree in one copy — vendor/ lives in app/ now, so it (and the autoloader
+	# Latte needs) travels along too.
+	rsync -a app/ "$(APP)"/Contents/Resources/app/
 	# Strip the dev tooling the shared app/vendor target installs for qa (phpcs, slevomat,
 	# playwright — ~9 MB the shipped app never runs). composer.json travels with app/, so this
 	# reconciles the copied tree down to the production deps in place.
@@ -292,7 +293,6 @@ dist: build app/vendor
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
 	cp -R app $(DIST)/app   # includes app/vendor, the autoloader Latte renders through
-	rm -f $(DIST)/app/_stream.php   # M0 probe, not part of the product
 	# Strip the dev tooling app/vendor carries for qa (phpcs, slevomat, playwright — ~9 MB the
 	# shipped app never runs), reconciling the copied tree down to production deps in place.
 	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-dev --no-interaction \

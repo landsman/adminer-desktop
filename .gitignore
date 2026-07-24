@@ -23,3 +23,4 @@
 # Checked-in checksums are what make it reproducible — the bytes don't belong in git.
 # Everything below is downloaded by `make fetch` at a pinned version.
 # The enabled-plugin set is user state, not source.
+.DS_Store
