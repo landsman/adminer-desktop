@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/import.php";
 require_once __DIR__ . "/latte.php";
-require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/user-settings.php";
 require_once __DIR__ . "/styles/styles.php";
 require_once __DIR__ . "/desktop/javascript.php";
 require_once __DIR__ . "/settings/theme/theme.php";
@@ -25,13 +25,13 @@ class AdminerDesktop extends Adminer\Plugin {
 	private Desktop\Theme $theme;
 	private Desktop\PluginList $plugins;
 	private Desktop\Dialog $dialog;
-	private Desktop\Config $config;
+	private Desktop\UserSettings $userSettings;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
 		// is included, and there is no hook between the two. See Desktop\Import.
 		Desktop\Import::defuse();
-		$this->config = new Desktop\Config();
+		$this->userSettings = new Desktop\UserSettings();
 		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
 		// backslashes in a Windows __DIR__ as escapes, matching nothing.
@@ -134,7 +134,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// stored value is already a clamped integer (settings/sidebar-width.php); cast again so
 		// nothing but a number can reach the stylesheet. The CSP has no style-src, so an inline
 		// <style> needs no nonce — and only our own islands layout reads the property anyway.
-		$width = $this->config->get("sidebar_width");
+		$width = $this->userSettings->get(Desktop\SettingKey::SidebarWidth);
 		if ($width !== null) {
 			echo "<style>:root{--ad-sidebar-width:" . (int) $width . "px}</style>\n";
 		}

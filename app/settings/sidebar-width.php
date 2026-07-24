@@ -8,7 +8,7 @@ declare(strict_types=1);
 * back on the next load and emits it before paint.
 */
 
-require_once __DIR__ . "/../config.php";
+require_once __DIR__ . "/../user-settings.php";
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 	http_response_code(405);
@@ -29,5 +29,5 @@ if ($width === false || $width === null) {
 // sidebar off-screen or down to nothing.
 $width = max(180, min(640, $width));
 
-(new Desktop\Config())->set("sidebar_width", $width);
+(new Desktop\UserSettings())->set(Desktop\SettingKey::SidebarWidth, $width);
 http_response_code(204);

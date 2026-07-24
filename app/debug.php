@@ -29,12 +29,12 @@ function debug(): void {
 	}
 	\Tracy\Debugger::enable(\Tracy\Debugger::Development, $log);
 
-	// A bar panel that prints the persistent settings file, so the stored preferences are
-	// one click away while debugging. config.php is required here too (rather than relying on
-	// desktop.php below) so the panel can be built before adminer boots.
-	require_once __DIR__ . "/config.php";
-	require_once __DIR__ . "/config-panel.php";
-	\Tracy\Debugger::getBar()->addPanel(new ConfigPanel(new Config()));
+	// A bar panel that prints the user's persistent settings file, so the stored preferences
+	// are one click away while debugging. user-settings.php is required here too (rather than
+	// relying on desktop.php below) so the panel can be built before adminer boots.
+	require_once __DIR__ . "/user-settings.php";
+	require_once __DIR__ . "/settings-panel.php";
+	\Tracy\Debugger::getBar()->addPanel(new SettingsPanel(new UserSettings()));
 
 	// Enabling Tracy replaces adminer's own error handler, and with it the two things
 	// include/errors.inc.php deliberately turns off: E_DEPRECATED (it targets older PHP

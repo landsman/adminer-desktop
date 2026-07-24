@@ -33,7 +33,7 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	// torn down by the very next navigation.
 	const persist = () => {
 		navigator.sendBeacon(
-			"settings/sidebar-width.php",
+			window.desktopApi.sidebarWidth,
 			new URLSearchParams({ width: String(clamp(Math.round(width()))) }),
 		);
 	};

@@ -14,7 +14,10 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 use Symfony\Component\Process\Process;
 
 $root = dirname(__DIR__, 2);
-$checks = ['theme.test.php', 'settings.test.php', 'sidebar-resize.test.php'];
+// Every *.test.php in this folder is a check — drop one in and it runs, no list to keep in
+// step. glob() returns them sorted, so the order is stable; each owns its own app server and
+// shares only the postgres the first boots (fixture.php).
+$checks = array_map('basename', glob(__DIR__ . '/*.test.php') ?: []);
 $failed = [];
 
 foreach ($checks as $check) {

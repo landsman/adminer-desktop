@@ -19,18 +19,18 @@ use Playwright\Playwright;
 $fix = e2e_boot();
 $failures = [];
 
-// The fixture's data dir, where Desktop\Config writes config.json. Start from a clean slate
-// so a width left by an earlier run cannot push this drag into the clamp and mask a failure.
-$config = sys_get_temp_dir() . '/adminer-desktop-e2e/config.json';
-@unlink($config);
+// The fixture's data dir, where Desktop\UserSettings writes settings.json. Start from a clean
+// slate so a width left by an earlier run cannot push this drag into the clamp and mask it.
+$settings = sys_get_temp_dir() . '/adminer-desktop-e2e/settings.json';
+@unlink($settings);
 
 /** Poll for the beacon to land: sendBeacon is fire-and-forget, so the file appears a beat
  * after mouseup with no response to await. Returns the stored width, or null if it never
  * showed. */
-$storedWidth = static function () use ($config): ?int {
+$storedWidth = static function () use ($settings): ?int {
 	for ($i = 0; $i < 30; $i++) {
-		if (is_file($config)) {
-			$data = json_decode((string) file_get_contents($config), true);
+		if (is_file($settings)) {
+			$data = json_decode((string) file_get_contents($settings), true);
 			if (is_array($data) && isset($data['sidebar_width'])) {
 				return (int) $data['sidebar_width'];
 			}
@@ -49,7 +49,7 @@ try {
 	$page->waitForLoadState('networkidle');
 
 	// The handle only exists under the islands layout; its absence is the first failure.
-	$rect = $page->evaluate("() => {
+	$rect = $page->evaluate(/** @lang JavaScript */ "() => {
 		const h = document.querySelector('#ad-sidebar-resizer');
 		if (!h) { return null; }
 		const r = h.getBoundingClientRect();
@@ -61,7 +61,7 @@ try {
 	}
 
 	$footWidth = static fn () => (float) $page->evaluate(
-		"() => document.querySelector('#foot').getBoundingClientRect().width",
+		/** @lang JavaScript */ "() => document.querySelector('#foot').getBoundingClientRect().width",
 	);
 	$before = $footWidth();
 
@@ -80,7 +80,7 @@ try {
 	// The dragged width is stored, matching what the panel actually renders at.
 	$stored = $storedWidth();
 	if ($stored === null) {
-		$failures[] = 'the width was not persisted to config.json';
+		$failures[] = 'the width was not persisted to settings.json';
 	} elseif (abs($stored - $after) > 3) {
 		$failures[] = sprintf('the stored width %d does not match the rendered %.0f', $stored, $after);
 	}
@@ -91,7 +91,7 @@ try {
 		$cold = $context->newPage();
 		$cold->goto($fix['select']);
 		$cold->waitForLoadState('networkidle');
-		$coldWidth = (float) $cold->evaluate("() => document.querySelector('#foot').getBoundingClientRect().width");
+		$coldWidth = (float) $cold->evaluate(/** @lang JavaScript */ "() => document.querySelector('#foot').getBoundingClientRect().width");
 		if (abs($coldWidth - $stored) > 3) {
 			$failures[] = sprintf('cold start opened at %.0f, not the stored %d', $coldWidth, $stored);
 		}
