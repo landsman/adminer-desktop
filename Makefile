@@ -26,17 +26,17 @@ fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src
 
 app/adminer.php:
 	@mkdir -p app
-	curl -fsSL -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).php
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).php
 
 app/editor.php:
 	@mkdir -p app
-	curl -fsSL -o $@ $(ADMINER_URL)/editor-$(ADMINER_VERSION).php
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/editor-$(ADMINER_VERSION).php
 
 # The release zip is the full source tree; we want plugins/ and designs/ out of it.
 # Same zip, same pinned tag as adminer.php — plugins can never drift from the core.
 .cache/adminer-src.zip:
 	@mkdir -p .cache
-	curl -fsSL -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).zip
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).zip
 
 # Extracted whole, once. Selecting with a pattern like 'designs/*' is not portable:
 # macOS and linux unzip let * match a slash and recurse, the windows one does not, so
@@ -63,13 +63,13 @@ app/src/Settings/Theme/designs: .cache/adminer-src
 bin/frankenphp$(EXE):
 	@mkdir -p bin .cache
 ifeq ($(suffix $(FRANKEN_ASSET)),.zip)
-	curl -fsSL -o .cache/frankenphp.zip $(FRANKEN_URL)/$(FRANKEN_ASSET)
+	curl -fsSL --retry 3 --retry-delay 2 -o .cache/frankenphp.zip $(FRANKEN_URL)/$(FRANKEN_ASSET)
 	# The whole tree, not just the exe: the windows build is a real php install, with
 	# ~30 DLLs beside the binary and ext/ and lib/ next to it. Taking only frankenphp.exe
 	# got 0xC0000135, STATUS_DLL_NOT_FOUND, the moment it ran.
 	unzip -qo .cache/frankenphp.zip -d bin
 else
-	curl -fsSL -o $@ $(FRANKEN_URL)/$(FRANKEN_ASSET)
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(FRANKEN_URL)/$(FRANKEN_ASSET)
 endif
 	chmod +x $@
 
@@ -95,11 +95,11 @@ COMPOSER_VERSION = 2.10.2
 
 .cache/phpstan.phar:
 	@mkdir -p .cache
-	curl -fsSL -o $@ https://github.com/phpstan/phpstan/releases/download/$(PHPSTAN_VERSION)/phpstan.phar
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ https://github.com/phpstan/phpstan/releases/download/$(PHPSTAN_VERSION)/phpstan.phar
 
 .cache/composer.phar:
 	@mkdir -p .cache
-	curl -fsSL -o $@ https://getcomposer.org/download/$(COMPOSER_VERSION)/composer.phar
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ https://getcomposer.org/download/$(COMPOSER_VERSION)/composer.phar
 
 # The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
 # needs them as much as the app does -- phpstan resolves those classes through vendor/,
