@@ -261,6 +261,11 @@ bundle: build app/vendor $(ICON)
 	# Everything except the M0 probe and the plugins the user has not enabled. vendor/ lives
 	# in app/ now, so it (and the autoloader Latte needs) travels along with this one copy.
 	rsync -a --exclude '_stream.php' app/ "$(APP)"/Contents/Resources/app/
+	# Strip the dev tooling the shared app/vendor target installs for qa (phpcs, slevomat,
+	# playwright — ~9 MB the shipped app never runs). composer.json travels with app/, so this
+	# reconciles the copied tree down to the production deps in place.
+	./bin/frankenphp php-cli .cache/composer.phar install --no-dev --no-interaction \
+		--working-dir="$(APP)"/Contents/Resources/app
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
@@ -288,6 +293,10 @@ dist: build app/vendor
 	cp -R bin/. $(DIST)/
 	cp -R app $(DIST)/app   # includes app/vendor, the autoloader Latte renders through
 	rm -f $(DIST)/app/_stream.php   # M0 probe, not part of the product
+	# Strip the dev tooling app/vendor carries for qa (phpcs, slevomat, playwright — ~9 MB the
+	# shipped app never runs), reconciling the copied tree down to production deps in place.
+	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-dev --no-interaction \
+		--working-dir=$(DIST)/app
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.
