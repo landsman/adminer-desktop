@@ -3,19 +3,24 @@ declare(strict_types=1);
 /** Syntax and style check for the PHP we ship.
 *
 * Run through the frankenphp we already download, so QA needs nothing installed:
-*   ./bin/frankenphp php-cli lint.php
+*   ./bin/frankenphp php-cli cli/lint.php
 *
 * A parse error here is not a lint nicety — adminer includes these files on every
 * request, so a bad one is a blank white app with the reason buried in the log.
 *
-* ponytail: no phpcs, no phpstan. Those need composer and a php install this repo
-* deliberately does not have, to check ~250 lines. Add them if this file starts
-* growing rules instead of catching bugs.
+* This stays dependency-free on purpose: it runs before `mise run install` on a fresh clone,
+* where a parse error would otherwise blank the app. The deeper checks that need composer —
+* phpstan for types, phpcs (with slevomat) for the conventions — run in `make qa` through the
+* same frankenphp once the deps are in; keep new rules there, not here.
 */
+
+// The repo root, one level up now that this lives in cli/: every path below is resolved
+// against it rather than against this file's own directory.
+$root = dirname(__DIR__);
 
 // Shipped verbatim from the adminer release, not ours: linting them would report
 // upstream's choices as our problems, and they are checksum-verified anyway.
-$vendored = array(
+$vendored = [
 	"app/adminer.php",
 	"app/editor.php",
 	"/settings/plugins/available/",
@@ -23,20 +28,20 @@ $vendored = array(
 	// themselves. Either way it is not ours to have opinions about.
 	"/adminer-plugins/",
 	"/settings/theme/designs/",
-);
+];
 
 $errors = 0;
 // Required, not autoloaded: this is the linter, so it has to work before anything else
 // does. Desktop\Files is app code because app code will want it too.
-require_once __DIR__ . "/app/files.php";
+require_once $root . "/app/files.php";
 
 $filenames = array_merge(
-	Desktop\Files::find(__DIR__ . "/app", "php", $vendored),
-	array(__FILE__)
+	Desktop\Files::find($root . "/app", "php", $vendored),
+	[__FILE__]
 );
 
 foreach ($filenames as $filename) {
-	$short = str_replace(__DIR__ . "/", "", $filename);
+	$short = str_replace($root . "/", "", $filename);
 	$source = file_get_contents($filename);
 
 	// TOKEN_PARSE makes the tokenizer validate, so this is `php -l` without executing
@@ -96,9 +101,9 @@ echo ($errors ? "$errors problem(s)\n" : "php ok\n");
 // functions registered on it and does not report them as unknown. Skipped rather than
 // failed when the deps are not installed, like the JS tooling in the Makefile: this file
 // is also what a fresh clone runs before `mise run install`.
-if (file_exists(__DIR__ . "/vendor/autoload.php")) {
-	require_once __DIR__ . "/app/latte.php";
-	if (!(new Latte\Tools\Linter(Desktop\latte()))->scanDirectory(__DIR__ . "/app")) {
+if (file_exists($root . "/vendor/autoload.php")) {
+	require_once $root . "/app/latte.php";
+	if (!(new Latte\Tools\Linter(Desktop\latte()))->scanDirectory($root . "/app")) {
 		$errors++;
 	}
 } else {

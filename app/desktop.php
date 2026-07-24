@@ -20,12 +20,12 @@ require_once __DIR__ . "/settings/plugins/plugins.php";
 require_once __DIR__ . "/settings/dialog.php";
 
 class AdminerDesktop extends Adminer\Plugin {
-	/** @var Desktop\Styles */ private $styles;
-	/** @var Desktop\Javascript */ private $javascript;
-	/** @var Desktop\Theme */ private $theme;
-	/** @var Desktop\PluginList */ private $plugins;
-	/** @var Desktop\Dialog */ private $dialog;
-	/** @var Desktop\Config */ private $config;
+	private Desktop\Styles $styles;
+	private Desktop\Javascript $javascript;
+	private Desktop\Theme $theme;
+	private Desktop\PluginList $plugins;
+	private Desktop\Dialog $dialog;
+	private Desktop\Config $config;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
@@ -59,6 +59,12 @@ class AdminerDesktop extends Adminer\Plugin {
 		return str_replace('\\', '/', __DIR__);
 	}
 
+	/**
+	* @param string $name
+	* @param string $heading
+	* @param string $value
+	* @return string|null
+	*/
 	function loginFormField($name, $heading, $value) {
 		// Adminer ships the Server field empty, which means "connect over a Unix socket".
 		// That is right for a server deployment and wrong for a desktop one: here the
@@ -75,6 +81,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null; // let adminer handle every other field
 	}
 
+	/**
+	* @param bool $create
+	* @return string
+	*/
 	function permanentLogin($create = false) {
 		// Adminer already remembers servers and databases you have logged into and offers
 		// them for one click on the login page — but only for as long as the key behind
@@ -112,6 +122,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $return;
 	}
 
+	/**
+	* @param bool|null $dark
+	* @return string|null
+	*/
 	function head($dark = null) {
 		$this->styles->link();
 		$this->javascript->link();
@@ -133,8 +147,29 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
+	/** @return array<string,string> */
 	function css() {
 		return $this->theme->cssMap();
+	}
+
+	/** Under -debug, let Tracy's own inline scripts run so the debug bar actually renders
+	* (its panels — the settings one included — are otherwise built and never shown). The
+	* script-src already lists 'unsafe-inline'; only 'strict-dynamic' suppresses it, telling
+	* the browser to trust nonced scripts and the scripts they load and nothing else. Dropping
+	* just that one token re-enables inline here — never outside -debug, the same line the web
+	* inspector and Tracy itself hold.
+	* @param array<int,array<string,string>> $csp
+	* @return void
+	*/
+	function csp(&$csp) {
+		if (!getenv("ADMINER_DESKTOP_DEBUG")) {
+			return;
+		}
+		foreach ($csp as &$set) {
+			if (isset($set["script-src"])) {
+				$set["script-src"] = trim(str_replace("'strict-dynamic'", "", $set["script-src"]));
+			}
+		}
 	}
 
 	/** Tag <body> with the host OS and the chosen row density, for the theme to key off.
@@ -142,9 +177,10 @@ class AdminerDesktop extends Adminer\Plugin {
 	* " adminer"), concatenating whatever each echoes — so this adds classes rather than
 	* replacing them. PHP_OS_FAMILY is the real OS because frankenphp runs on the machine;
 	* no launcher env var is needed for it.
+	* @return void
 	*/
 	function bodyClass() {
-		$os = array("Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux");
+		$os = ["Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux"];
 		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
@@ -154,6 +190,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->theme->bodyClass();
 	}
 
+	/**
+	* @param mixed $missing
+	* @return void
+	*/
 	function navigation($missing) {
 		$this->dialog->render();
 	}
@@ -175,8 +215,9 @@ class AdminerDesktop extends Adminer\Plugin {
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
 
-	protected $translations = array(
-		'cs' => array(
+	/** @var array<string,array<string,string>> */
+	protected $translations = [ // phpcs:ignore SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint -- overrides adminer's untyped Adminer\Plugin::$translations, which PHP forbids narrowing
+		'cs' => [
 			'' => 'Přizpůsobí výchozí hodnoty pro desktopovou aplikaci',
 			'Available plugins' => 'Dostupné pluginy',
 			'The plugins folder is read-only.' => 'Složka s pluginy je jen pro čtení.',
@@ -203,6 +244,6 @@ class AdminerDesktop extends Adminer\Plugin {
 			// {n}, not %d: lang() runs the string through sprintf, which would replace %d with 0
 			// before the browser ever sees it.
 			'Unsaved changes: {n}. Close anyway?' => 'Neuložené změny: {n}. Přesto zavřít?',
-		),
-	);
+		],
+	];
 }

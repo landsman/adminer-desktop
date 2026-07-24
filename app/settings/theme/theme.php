@@ -2,6 +2,8 @@
 declare(strict_types=1);
 namespace Desktop;
 
+require_once __DIR__ . "/mode.php";
+
 /** The theme half of the settings dialog: which designs exist, which are chosen, and
 * the panel that lets you change that.
 *
@@ -10,20 +12,19 @@ namespace Desktop;
 * (include/plugins.inc.php:33), so a helper called AdminerTheme would quietly become one.
 */
 class Theme {
-	/** @var \AdminerDesktop */ private $desktop;
+	private \AdminerDesktop $desktop;
 
 	function __construct(\AdminerDesktop $desktop) {
 		$this->desktop = $desktop;
 	}
 
 	/** Get shipped designs for one side of the light/dark split, path => label
-	* @param string $mode "light" or "dark"
 	* @return array<string, string>
 	*/
-	function designs(string $mode): array {
+	function designs(Mode $mode): array {
 		// The empty option is our own theme, which is the default for this side rather than
 		// Adminer's raw look. Picking a gallery design below overrides it.
-		$return = array("" => $this->desktop->t('Adminer Desktop'));
+		$return = ["" => $this->desktop->t('Adminer Desktop')];
 		foreach (glob(__DIR__ . "/designs/*/*.css") as $filename) {
 			$dir = basename(dirname($filename));
 			if ($dir === "adminer-desktop") {
@@ -35,7 +36,7 @@ class Theme {
 			// proves it: the folder is marked dark but its file is a plain adminer.css,
 			// so matching the basename alone lands a dark theme in the light list.
 			$is_dark = (bool) preg_match('~-dark~', $path);
-			if ($is_dark == ($mode == "dark")) {
+			if ($is_dark === ($mode === Mode::Dark)) {
 				$return[$path] = $dir;
 			}
 		}
@@ -51,31 +52,34 @@ class Theme {
 	* it covers both sides it is handed over with an empty value: no media query, and its
 	* internal @media does the switching. Splitting it across two media queries instead
 	* would pin each half to one scheme and disable the other.
+	* @return array<string,string>
 	*/
-	function cssMap() {
+	function cssMap(): array {
 		$self = "settings/theme/designs/adminer-desktop/adminer.css";
-		$sides = array();
-		foreach (array("light", "dark") as $mode) {
-			$design = $_SESSION["design_$mode"] ?? "";
+		$sides = [];
+		foreach (Mode::cases() as $mode) {
+			$design = $_SESSION["design_" . $mode->value] ?? "";
 			// array_key_exists, not truthiness: a stale session pointing at a design a later
 			// adminer release no longer ships falls back to ours rather than to nothing.
-			$sides[$mode] = ($design && array_key_exists($design, $this->designs($mode))) ? $design : $self;
+			$sides[$mode->value] = ($design && array_key_exists($design, $this->designs($mode))) ? $design : $self;
 		}
 		// An appearance override pins the page to one scheme: hand adminer only that side's
 		// design, tagged with its scheme. design.inc.php then sets <meta name="color-scheme">
 		// to it, which pins our light-dark() tokens to that side and (for dark) loads
 		// adminer's own dark.css for the JUSH palette — so the choice themes everything
-		// without the OS. "auto" falls through to the OS-driven map below.
+		// without the OS. "auto" is not a Mode, so tryFrom() returns null and it falls through
+		// to the OS-driven map below.
 		$appearance = $_SESSION["appearance"] ?? "auto";
-		if ($appearance === "light" || $appearance === "dark") {
-			return array($sides[$appearance] => $appearance);
+		$pinned = Mode::tryFrom(is_string($appearance) ? $appearance : "");
+		if ($pinned !== null) {
+			return [$sides[$pinned->value] => $pinned->value];
 		}
-		if ($sides["light"] === $self && $sides["dark"] === $self) {
-			return array($self => ""); // the out-of-the-box case: one self-switching sheet
+		if ($sides[Mode::Light->value] === $self && $sides[Mode::Dark->value] === $self) {
+			return [$self => ""]; // the out-of-the-box case: one self-switching sheet
 		}
 		// A gallery design overrides the side it was chosen for; the other side stays ours,
 		// tagged with its scheme so only that half of our file applies.
-		$return = array();
+		$return = [];
 		foreach ($sides as $mode => $path) {
 			$return[$path] = $mode;
 		}
@@ -108,27 +112,33 @@ class Theme {
 			"scaling" => (string) ($_SESSION["scaling"] ?? "100"),
 			// ?? "", like cssMap() above: nothing is stored until a design is picked, and the
 			// panel is drawn on every page — that would be a warning per row per load.
-			"sides" => [
-				[
-					"mode" => "light",
-					"label" => $this->desktop->t('Light'),
-					"designs" => $this->designs("light"),
-					"chosen" => (string) ($_SESSION["design_light"] ?? ""),
-				],
-				[
-					"mode" => "dark",
-					"label" => $this->desktop->t('Dark'),
-					"designs" => $this->designs("dark"),
-					"chosen" => (string) ($_SESSION["design_dark"] ?? ""),
-				],
-			],
+			"sides" => $this->sides(),
 		]);
+	}
+
+	/** One entry per light/dark side for the panel: its field name, label, designs and the
+	* one chosen. t() takes literal strings (it runs them through lang()), so the label is a
+	* match on the case rather than a translation of $mode->value.
+	* @return list<array{mode:string, label:string, designs:array<string,string>, chosen:string}>
+	*/
+	private function sides(): array {
+		$sides = [];
+		foreach (Mode::cases() as $mode) {
+			$sides[] = [
+				"mode" => $mode->value,
+				"label" => $mode === Mode::Light ? $this->desktop->t('Light') : $this->desktop->t('Dark'),
+				"designs" => $this->designs($mode),
+				"chosen" => (string) ($_SESSION["design_" . $mode->value] ?? ""),
+			];
+		}
+		return $sides;
 	}
 
 	/** Store the chosen designs, appearance and density. */
 	function apply(): void {
-		foreach (array("light", "dark") as $mode) {
-			$_SESSION["design_$mode"] = $_POST["design_$mode"] ?? "";
+		foreach (Mode::cases() as $mode) {
+			$key = "design_" . $mode->value;
+			$_SESSION[$key] = $_POST[$key] ?? "";
 		}
 		// Whitelisted: these values are echoed into body classes, so never store raw input.
 		$appearance = $_POST["appearance"] ?? "auto";
@@ -151,7 +161,7 @@ class Theme {
 		echo " scale-" . (in_array($scaling, self::SCALINGS, true) ? $scaling : "100");
 	}
 
-	/** @var list<string> */ private const APPEARANCES = array("auto", "light", "dark");
-	/** @var list<string> */ private const DENSITIES = array("compact", "cozy", "comfortable");
-	/** @var list<string> */ private const SCALINGS = array("100", "125", "150", "175", "200");
+	/** @var list<string> */ private const APPEARANCES = ["auto", "light", "dark"];
+	/** @var list<string> */ private const DENSITIES = ["compact", "cozy", "comfortable"];
+	/** @var list<string> */ private const SCALINGS = ["100", "125", "150", "175", "200"];
 }

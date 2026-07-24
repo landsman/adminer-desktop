@@ -10,7 +10,7 @@ namespace Desktop;
 * Drop a .js in javascript/ and it loads; nothing here lists them by name.
 */
 class Javascript {
-	/** @var string */ private $dir;
+	private string $dir;
 
 	function __construct(string $dir) {
 		$this->dir = $dir;

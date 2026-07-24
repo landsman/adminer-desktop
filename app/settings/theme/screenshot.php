@@ -69,10 +69,10 @@ if (is_file($miss) && filemtime($miss) > time() - 86400) {
 	placeholder();
 }
 
-$context = stream_context_create(array("http" => array(
+$context = stream_context_create(["http" => [
 	"timeout" => 5, // offline should look like a placeholder, not like a hung page
 	"user_agent" => "adminer-desktop",
-)));
+]]);
 $body = @file_get_contents("https://www.adminer.org/static/designs/$design/screenshot.png", false, $context);
 
 @mkdir($dir, 0700, true);

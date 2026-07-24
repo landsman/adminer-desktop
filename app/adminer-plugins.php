@@ -26,6 +26,6 @@ require_once __DIR__ . "/desktop.php";
 $desktop = new AdminerDesktop();
 $desktop->handlePost();
 
-return array(
+return [
 	$desktop,
-);
+];

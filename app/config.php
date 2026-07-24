@@ -19,11 +19,12 @@ namespace Desktop;
 * (settings/sidebar-width.php), so it leans on nothing but the standard library.
 */
 class Config {
-	/** @var string|null the file, or null when served with no durable home (e.g. `make serve`) */
-	private $file;
+	/** the file, or null when served with no durable home (e.g. `make serve`) */
+	private ?string $file;
 
-	/** @var array<string,mixed>|null the parsed file, read once per request */
-	private $cache;
+	/** the parsed file, read once per request; null until first read
+	* @var array<string,mixed>|null */
+	private ?array $cache = null;
 
 	function __construct(?string $dir = null) {
 		$dir = $dir ?? (getenv("ADMINER_DESKTOP_DATA") ?: null);
@@ -31,8 +32,19 @@ class Config {
 	}
 
 	/** @return mixed the stored value, or $default when the key is unset */
-	function get(string $key, $default = null) {
+	function get(string $key, mixed $default = null) {
 		return $this->read()[$key] ?? $default;
+	}
+
+	/** Everything stored, for inspection (the Tracy panel prints it under -debug).
+	* @return array<string,mixed> */
+	function all(): array {
+		return $this->read();
+	}
+
+	/** The backing file, or null when there is no durable home to write to. */
+	function path(): ?string {
+		return $this->file;
 	}
 
 	/** @param mixed $value */
