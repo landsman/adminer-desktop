@@ -13,15 +13,10 @@ declare(strict_types=1);
 use Desktop\Env;
 use function Desktop\env;
 
-require_once __DIR__ . "/import.php";
-require_once __DIR__ . "/latte.php";
-require_once __DIR__ . "/env.php";
-require_once __DIR__ . "/user-settings.php";
-require_once __DIR__ . "/styles/styles.php";
-require_once __DIR__ . "/desktop/javascript.php";
-require_once __DIR__ . "/settings/theme/theme.php";
-require_once __DIR__ . "/settings/plugins/plugins.php";
-require_once __DIR__ . "/settings/dialog.php";
+// Every Desktop\ class below autoloads (app/vendor, keyed by class name). Only latte() has
+// to be pulled in by hand — it is a function, and functions are not autoloaded; requiring
+// its file here defines it once for the templates our panels render.
+require_once __DIR__ . "/src/latte.php";
 
 class AdminerDesktop extends Adminer\Plugin {
 	private Desktop\Styles $styles;

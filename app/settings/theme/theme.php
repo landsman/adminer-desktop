@@ -2,9 +2,6 @@
 declare(strict_types=1);
 namespace Desktop;
 
-require_once __DIR__ . "/mode.php";
-require_once __DIR__ . "/../../user-settings.php";
-
 /** The theme half of the settings dialog: which designs exist, which are chosen, and
 * the panel that lets you change that.
 *

@@ -69,9 +69,28 @@ adminer's markup often is not.
 classes like `.odds`; `dark.css` overrides them, so anything built on them follows the
 design the user picked. Our own tokens are prefixed `--ad-`.
 
-**composer's `vendor/` collides with Go's vendoring directory.** With it present every go
-command fails with "inconsistent vendoring"; the Makefile exports `GOFLAGS=-mod=readonly`
-to force module mode. We do not vendor Go deps.
+**composer's `vendor/` lives in `app/`, not the repo root.** Two reasons in one move. It
+keeps out of Go's way — a `vendor/` at the module root makes every go command fail with
+"inconsistent vendoring", which is why there used to be a `GOFLAGS=-mod=readonly` — and it
+puts the autoloader beside the code it maps, so the classmap resolves the same in the
+checkout and in the packaged app (where `app/` is the document root and there is no root
+above it). `composer.json`/`composer.lock` moved there too; run composer with
+`--working-dir=app`, as the `app/vendor` target does. We do not vendor Go deps.
+
+**Our classes autoload; our functions do not.** `app/composer.json` classmaps `src/` and the
+class subdirs (`styles/`, `desktop/`, `settings/`, minus the plugin catalogue), so any
+`Desktop\` class or enum loads on first use — no `require`. The classmap points at directories,
+not `.`: composer scans a classmap root recursively, and `.` would drag in `vendor/` and the
+half-megabyte `adminer.php`, and even trips composer-cleaner mid-install. Functions can't be
+autoloaded, so the three files that hold one are wired by hand. `env()` is a composer **files**
+autoload (`src/env.php`), eagerly defined the moment the autoloader loads — do **not** assume
+`env(Env::…)` autoloads it through the `Env` argument: PHP resolves the function name *before*
+evaluating the argument, so that fatals when it is the first `Env` reference. `latte()` and
+`debug()` are pulled in by an explicit `require_once` at their one caller. The autoloader comes
+up when adminer boots (`adminer-plugins.php` requires `src/debug.php`, which loads it); the two
+bare endpoints that don't boot adminer — `sidebar-width.php`, `screenshot.php` — each require
+`vendor/autoload.php` themselves. A new class under `src/` or a class subdir just needs
+`composer dump-autoload`, which `make qa`/the build already run via `composer install`.
 
 ## The Adminer Desktop theme
 
@@ -100,9 +119,10 @@ line.
 
 mise pins node and orchestrates the tooling; run `mise run install` once. There is no
 second PHP — composer and the e2e run on the bundled frankenphp (`./bin/frankenphp
-php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `composer.json` and
-`package.json` with their lockfiles are the source of truth; `vendor/` and `node_modules/`
-are built, not committed, and `dg/composer-cleaner` slims `vendor/` for a production build.
+php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `app/composer.json`
+and `package.json` with their lockfiles are the source of truth; `app/vendor/` and
+`node_modules/` are built, not committed, and `dg/composer-cleaner` slims `app/vendor/` for
+a production build.
 
 `tests/e2e/run.php` is the browser end-to-end check, on playwright-php. It owns its whole
 fixture — a throwaway postgres in docker, the app served with a data dir so Adminer's
@@ -113,10 +133,12 @@ runs it; it stays out of `qa` because it is slow and needs docker.
 ## Layout
 
 ```
+app/adminer-plugins.php      the entry adminer includes: boots the autoloader, returns the plugin
 app/desktop.php              the plugin adminer sees: hooks and all translations
-app/files.php                Desktop\Files - recursive file finding
-app/latte.php                Desktop\latte() - the engine every *.latte is rendered by
-app/debug.php                Desktop\debug() - Tracy, and only under -debug
+app/src/                     the Desktop\ namespace: our autoloaded classes and the two functions
+app/src/files.php            Desktop\Files - recursive file finding
+app/src/latte.php            Desktop\latte() - the engine every *.latte is rendered by
+app/src/debug.php            Desktop\debug() - Tracy, and only under -debug
 app/settings/dialog.php      the settings dialog shell (settings-dialog.latte)
 app/settings/theme/          designs, previews, the screenshot endpoint
 app/settings/theme/designs/adminer-desktop/   our default theme (@import components)

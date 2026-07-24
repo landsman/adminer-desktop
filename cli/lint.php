@@ -21,6 +21,9 @@ $root = dirname(__DIR__);
 // Shipped verbatim from the adminer release, not ours: linting them would report
 // upstream's choices as our problems, and they are checksum-verified anyway.
 $vendored = [
+	// composer's tree lives under app/ now, so the recursive find would reach it — and it
+	// is not ours to lint.
+	"/vendor/",
 	"app/adminer.php",
 	"app/editor.php",
 	"/settings/plugins/available/",
@@ -33,7 +36,7 @@ $vendored = [
 $errors = 0;
 // Required, not autoloaded: this is the linter, so it has to work before anything else
 // does. Desktop\Files is app code because app code will want it too.
-require_once $root . "/app/files.php";
+require_once $root . "/app/src/files.php";
 
 $filenames = array_merge(
 	Desktop\Files::find($root . "/app", "php", $vendored),
@@ -101,8 +104,8 @@ echo ($errors ? "$errors problem(s)\n" : "php ok\n");
 // functions registered on it and does not report them as unknown. Skipped rather than
 // failed when the deps are not installed, like the JS tooling in the Makefile: this file
 // is also what a fresh clone runs before `mise run install`.
-if (file_exists($root . "/vendor/autoload.php")) {
-	require_once $root . "/app/latte.php";
+if (file_exists($root . "/app/vendor/autoload.php")) {
+	require_once $root . "/app/src/latte.php";
 	if (!(new Latte\Tools\Linter(Desktop\latte()))->scanDirectory($root . "/app")) {
 		$errors++;
 	}

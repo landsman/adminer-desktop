@@ -23,10 +23,16 @@ if curl -s -o /dev/null --max-time 2 "$BASE/"; then
 	exit 1
 fi
 
+# Own the fixture, like tests/e2e does: the design and plugin preferences persist to
+# settings.json in this dir, and without one the design asserts below silently no-op (set()
+# has nowhere to write). The Go launcher sets this in the real app; here we make a throwaway.
+ADMINER_DESKTOP_DATA=$(mktemp -d)
+export ADMINER_DESKTOP_DATA
+
 ./bin/frankenphp php-server --root app --listen "127.0.0.1:$PORT" --no-compress \
 	2>/tmp/adminer-desktop-check.log &
 SERVER=$!
-trap 'kill $SERVER 2>/dev/null' EXIT
+trap 'kill $SERVER 2>/dev/null; rm -rf "$ADMINER_DESKTOP_DATA"' EXIT
 
 # Wait for listen rather than sleeping a guessed amount.
 i=0

@@ -20,11 +20,6 @@ else
 	EXE = .exe
 endif
 
-# composer installs PHP deps into vendor/, which is also Go's vendoring directory — with
-# it present Go switches to vendor mode and every go command fails ("inconsistent
-# vendoring"). We do not vendor Go deps, so force module mode for all of them.
-export GOFLAGS := -mod=readonly
-
 .PHONY: fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
@@ -108,15 +103,17 @@ COMPOSER_VERSION = 2.10.2
 
 # The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
 # needs them as much as the app does -- phpstan resolves those classes through vendor/,
-# and the template linter is one of the packages.
-vendor: composer.json composer.lock bin/frankenphp$(EXE) .cache/composer.phar
-	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-interaction
-	@touch vendor
+# and the template linter is one of the packages. composer.json lives in app/ so vendor/
+# lands beside the code it autoloads (and out of Go's way at the module root), hence
+# --working-dir.
+app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar
+	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-interaction --working-dir=app
+	@touch app/vendor
 
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
 # and there deliberately is none here -- we run it through the frankenphp we download.
 # 2G because adminer.php is 500 KB of minified source on very long lines.
-phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php vendor
+phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php app/vendor
 	./bin/frankenphp$(EXE) php-cli .cache/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
@@ -124,8 +121,8 @@ phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php vendor
 # enough) and [] over array(). PHPCS with slevomat, run through the frankenphp we already
 # download — no separate PHP install. The ruleset (phpcs.xml) holds the rules and excludes
 # adminer's own downloaded files, which keep their conventions.
-phpcs: vendor
-	./bin/frankenphp$(EXE) php-cli vendor/bin/phpcs --standard=phpcs.xml
+phpcs: app/vendor
+	./bin/frankenphp$(EXE) php-cli app/vendor/bin/phpcs --standard=phpcs.xml
 
 golangci:
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
@@ -159,7 +156,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp$(EXE) vendor
+qa: bin/frankenphp$(EXE) app/vendor
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
@@ -220,7 +217,7 @@ debug: build
 # so re-running just refreshes the data.
 DEMO_PG = adminer-demo-pg
 
-demo: build vendor
+demo: build app/vendor
 	@docker start $(DEMO_PG) >/dev/null 2>&1 || docker run -d --name $(DEMO_PG) \
 		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 55432:5432 postgres:18-alpine >/dev/null
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
@@ -255,16 +252,15 @@ $(ICON): assets/logo.png
 
 # A .app is just a directory, which is why none of this needs go:embed or a static
 # single-binary build: the runtime and app/ are simply files inside it.
-bundle: build vendor $(ICON)
+bundle: build app/vendor $(ICON)
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)"/Contents/MacOS "$(APP)"/Contents/Resources
 	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > "$(APP)"/Contents/Info.plist
 	cp build/adminer-desktop "$(APP)"/Contents/MacOS/
 	cp bin/frankenphp "$(APP)"/Contents/MacOS/
-	# Everything except the M0 probe and the plugins the user has not enabled.
+	# Everything except the M0 probe and the plugins the user has not enabled. vendor/ lives
+	# in app/ now, so it (and the autoloader Latte needs) travels along with this one copy.
 	rsync -a --exclude '_stream.php' app/ "$(APP)"/Contents/Resources/app/
-	# Latte renders our own markup, so composer's vendor/ has to travel with app/.
-	rsync -a vendor/ "$(APP)"/Contents/Resources/app/vendor/
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
@@ -284,14 +280,13 @@ zip: bundle
 # adminer-desktop without colliding with the binary of that name in build/.
 DIST = build/pkg/adminer-desktop
 
-dist: build vendor
+dist: build app/vendor
 	rm -rf $(DIST) && mkdir -p $(DIST)
 	cp build/adminer-desktop$(EXE) $(DIST)/
 	# All of bin/, because on windows that is the php runtime's DLLs and ext/ as well as
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
-	cp -R app $(DIST)/app
-	cp -R vendor $(DIST)/app/vendor   # Latte renders our own markup
+	cp -R app $(DIST)/app   # includes app/vendor, the autoloader Latte renders through
 	rm -f $(DIST)/app/_stream.php   # M0 probe, not part of the product
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 

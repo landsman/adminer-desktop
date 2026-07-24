@@ -2,9 +2,6 @@
 declare(strict_types=1);
 namespace Desktop;
 
-require_once __DIR__ . "/setting-key.php";
-require_once __DIR__ . "/env.php";
-
 /** The user's own preferences — what they chose, not what we configure for them — kept in one
 * JSON file in the durable data directory.
 *

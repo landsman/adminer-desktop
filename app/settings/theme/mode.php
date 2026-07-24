@@ -2,8 +2,6 @@
 declare(strict_types=1);
 namespace Desktop;
 
-require_once __DIR__ . "/../../setting-key.php";
-
 /** A colour scheme side: the light half or the dark half.
 *
 * adminer's css() hook is handed one stylesheet per side, the design gallery has a light and

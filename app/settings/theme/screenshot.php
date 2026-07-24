@@ -12,7 +12,9 @@ declare(strict_types=1);
 use Desktop\Env;
 use function Desktop\env;
 
-require_once __DIR__ . "/../../env.php";
+// A bare endpoint doesn't boot adminer, so it turns on autoloading itself; that also defines
+// env() (a files autoload).
+require_once __DIR__ . "/../../vendor/autoload.php";
 
 // The designs sit beside this file, under settings/theme/.
 $root = str_replace('\\', '/', __DIR__);

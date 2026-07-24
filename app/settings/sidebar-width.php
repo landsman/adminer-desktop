@@ -8,7 +8,9 @@ declare(strict_types=1);
 * back on the next load and emits it before paint.
 */
 
-require_once __DIR__ . "/../user-settings.php";
+// A bare endpoint doesn't boot adminer, so it turns on autoloading itself; UserSettings and
+// SettingKey then load on use.
+require_once __DIR__ . "/../vendor/autoload.php";
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 	http_response_code(405);

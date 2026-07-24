@@ -19,5 +19,17 @@
     "require": {
         "latte/latte": "^3.1",
         "tracy/tracy": "^2.12"
+    },
+    "autoload": {
+        "files": ["src/env.php"],
+        "classmap": [
+            "src/",
+            "styles/",
+            "desktop/",
+            "settings/"
+        ],
+        "exclude-from-classmap": [
+            "settings/plugins/available/"
+        ]
     }
 }

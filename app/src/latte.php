@@ -2,10 +2,11 @@
 declare(strict_types=1);
 namespace Desktop;
 
-// vendor/ sits next to app/ in the checkout and inside it in a packaged build, because
-// the packaging copies it in — app/ is the only tree that ships.
-require_once (file_exists(__DIR__ . "/vendor/autoload.php") ? __DIR__ : dirname(__DIR__)) . "/vendor/autoload.php";
-require_once __DIR__ . "/env.php";
+// vendor/ sits one level up in app/, beside this src/ dir — the same place in the checkout
+// and in a packaged build, where app/ is the whole tree that ships. Loading it turns on
+// autoloading for every Desktop\ class and eagerly defines env() (a function, so it is a
+// files autoload, not a class the loader can find on demand).
+require_once dirname(__DIR__) . "/vendor/autoload.php";
 
 /** The shared Latte engine for our own markup.
 *
