@@ -1,8 +1,9 @@
 /* The whole-page dropzone for the SQL import (drag-drop-import.js).
  *
  * The overlay is created by that script only on the import page and only while a file is being
- * dragged over the window; here it is a full-window dashed frame that dims the page behind a
- * centred prompt. Built on Adminer's own --bg/--fg and our --ad-border so it follows whichever
+ * dragged over the window; here it is a bold accent-coloured takeover — the whole window filled
+ * with the design's accent (a scheme-aware blue), a dashed frame and a centred prompt in the
+ * accent's contrast colour. Built on our --ad-accent/--ad-accent-fg, so it follows whichever
  * design and scheme the user picked. It never takes the pointer, so the drag underneath — and
  * the counting the script does to know when the drag has left — is never disturbed.
  */
@@ -15,9 +16,9 @@
 	align-items: center;
 	justify-content: center;
 	padding: 1em;
-	border: 3px dashed var(--ad-border);
-	background: color-mix(in srgb, var(--bg) 80%, transparent);
-	color: var(--fg);
+	border: 4px dashed var(--ad-accent-fg);
+	background: color-mix(in srgb, var(--ad-accent) 88%, transparent);
+	color: var(--ad-accent-fg);
 	font-size: 1.4em;
 	font-weight: 600;
 	text-align: center;

@@ -93,6 +93,8 @@ try {
 		$failures[] = 'dragging a file over the page did not raise the drop affordance';
 	}
 	// Proof of the affordance for a human to glance at, like the other checks leave behind.
+	// Let the 0.12s fade-in finish first, so the shot shows the overlay at full opacity.
+	usleep(200_000);
 	$page->screenshot($fix['shots'] . '/import-dropzone.png');
 
 	// Drop it: the file must land on Adminer's input, the overlay must fall away, and the
