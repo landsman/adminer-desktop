@@ -148,6 +148,12 @@ class AdminerDesktop extends Adminer\Plugin {
 		if ($demo = Env::Demo->get()) {
 			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
 		}
+		// The whole-page import dropzone (src/Assets/javascript/drag-drop-import.js) is client
+		// side, but its label is ours to translate — so hand it over server-side in a meta the
+		// script reads. Only on the import page, which is the one the dropzone wires itself to.
+		if (isset($_GET["import"])) {
+			echo '<meta name="ad-import-drop" content="' . Adminer\h($this->t('Drop the SQL file to import')) . "\">\n";
+		}
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
@@ -245,6 +251,7 @@ class AdminerDesktop extends Adminer\Plugin {
 			'Theme' => 'Vzhled',
 			'Plugins' => 'Pluginy',
 			'Cancel' => 'Zavřít',
+			'Drop the SQL file to import' => 'Přetáhněte sem SQL soubor pro import',
 			// {n}, not %d: lang() runs the string through sprintf, which would replace %d with 0
 			// before the browser ever sees it.
 			'Unsaved changes: {n}. Close anyway?' => 'Neuložené změny: {n}. Přesto zavřít?',

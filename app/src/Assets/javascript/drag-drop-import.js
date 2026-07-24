@@ -19,7 +19,10 @@ const input = document.querySelector('input[type="file"][name="sql_file[]"]');
 if (input) {
 	const overlay = document.createElement("div");
 	overlay.id = "ad-import-drop";
-	overlay.textContent = "Drop the SQL file to import";
+	// The label is translated server-side and handed over in a meta by AdminerDesktop::head();
+	// fall back to English if it is somehow not there.
+	const label = document.querySelector('meta[name="ad-import-drop"]');
+	overlay.textContent = label ? label.content : "Drop the SQL file to import";
 	// Decoration, and it never takes the pointer (CSS), so it stays out of the drag entirely.
 	overlay.setAttribute("aria-hidden", "true");
 	document.body.append(overlay);

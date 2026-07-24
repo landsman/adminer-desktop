@@ -52,10 +52,13 @@ try {
 	$ready = $page->evaluate("() => {
 		const input = document.querySelector('input[type=\"file\"][name=\"sql_file[]\"]');
 		const overlay = document.getElementById('ad-import-drop');
+		const meta = document.querySelector('meta[name=\"ad-import-drop\"]');
 		return {
 			input: !!input,
 			overlay: !!overlay,
 			hidden: overlay ? getComputedStyle(overlay).visibility === 'hidden' : null,
+			label: overlay ? overlay.textContent : null,
+			metaLabel: meta ? meta.content : null,
 		};
 	}");
 	if (!is_array($ready) || !$ready['input']) {
@@ -65,6 +68,12 @@ try {
 		$failures[] = 'the dropzone overlay was not created on the import page';
 	} elseif ($ready['hidden'] !== true) {
 		$failures[] = 'the dropzone overlay was visible before any drag';
+	}
+	// The label is rendered server-side and localized: it must come from the meta AdminerDesktop
+	// emits on the import page, not from a hardcoded string in the script.
+	if (!is_array($ready) || ($ready['metaLabel'] ?? '') === '' || $ready['label'] !== $ready['metaLabel']) {
+		$failures[] = 'the dropzone label did not come from the server meta (label: '
+			. json_encode($ready['label'] ?? null) . ', meta: ' . json_encode($ready['metaLabel'] ?? null) . ')';
 	}
 
 	// Drag a file over the window: dragenter + dragover must raise the affordance. The same
