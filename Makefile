@@ -25,7 +25,7 @@ endif
 # vendoring"). We do not vendor Go deps, so force module mode for all of them.
 export GOFLAGS := -mod=readonly
 
-.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run dev editor debug bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
@@ -202,6 +202,25 @@ editor: build
 # that never fired stayed invisible for as long as it did.
 debug: build
 	./build/adminer-desktop$(EXE) -debug
+
+# The app in dev mode against seeded demo data, for clicking around by hand. Brings up
+# (or reuses) the same throwaway postgres the e2e uses, reseeds it, and opens the app —
+# log in with the prefilled 127.0.0.1, port 55432, postgres / demo / demo. `make down`
+# kills the container when you are done. vendor/ because dev serves app/ and Latte renders
+# from it. The seed drops and recreates, so re-running just refreshes the data.
+DEMO_PG = adminer-demo-pg
+
+demo: build vendor
+	@docker start $(DEMO_PG) >/dev/null 2>&1 || docker run -d --name $(DEMO_PG) \
+		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 55432:5432 postgres:18-alpine >/dev/null
+	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
+	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed.sql >/dev/null
+	@echo "demo data ready on 127.0.0.1:55432 (postgres / demo / demo)"
+	./build/adminer-desktop$(EXE) -dev
+
+# Kill the demo database container `make demo` left running.
+down:
+	-docker rm -f $(DEMO_PG)
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
