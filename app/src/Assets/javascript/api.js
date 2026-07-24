@@ -10,5 +10,5 @@
 
 window.desktopApi = Object.freeze({
 	// Persists the dragged sidebar width; read back by head() on the next load.
-	sidebarWidth: "settings/sidebar-width.php",
+	sidebarWidth: "src/Settings/sidebar-width.php",
 });

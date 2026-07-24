@@ -4,48 +4,48 @@ declare(strict_types=1);
 /** Adapt Adminer's defaults to running as a desktop app.
 *
 * This file is the plugin adminer sees: the hooks, and the strings. The work behind them
-* lives in settings/, one file per concern, so that this stays a map of what is hooked
+* lives in src/, one file per concern, so that this stays a map of what is hooked
 * rather than a pile of everything.
 *
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
 
+use Desktop\Assets\Javascript;
+use Desktop\Assets\Styles;
 use Desktop\Env;
-use function Desktop\env;
+use Desktop\Import;
+use Desktop\SettingKey;
+use Desktop\Settings\Dialog;
+use Desktop\Settings\Plugins\PluginList;
+use Desktop\Settings\Theme\Theme;
+use Desktop\UserSettings;
 
-require_once __DIR__ . "/import.php";
-require_once __DIR__ . "/latte.php";
-require_once __DIR__ . "/env.php";
-require_once __DIR__ . "/user-settings.php";
-require_once __DIR__ . "/styles/styles.php";
-require_once __DIR__ . "/desktop/javascript.php";
-require_once __DIR__ . "/settings/theme/theme.php";
-require_once __DIR__ . "/settings/plugins/plugins.php";
-require_once __DIR__ . "/settings/dialog.php";
-
+// Every class below autoloads via PSR-4 (Desktop\ -> src/). This file itself is not — it is
+// the global-namespace plugin adminer instantiates, required by adminer-plugins.php once the
+// autoloader is on.
 class AdminerDesktop extends Adminer\Plugin {
-	private Desktop\Styles $styles;
-	private Desktop\Javascript $javascript;
-	private Desktop\Theme $theme;
-	private Desktop\PluginList $plugins;
-	private Desktop\Dialog $dialog;
-	private Desktop\UserSettings $userSettings;
+	private Styles $styles;
+	private Javascript $javascript;
+	private Theme $theme;
+	private PluginList $plugins;
+	private Dialog $dialog;
+	private UserSettings $userSettings;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
 		// is included, and there is no hook between the two. See Desktop\Import.
-		Desktop\Import::defuse();
-		$this->userSettings = new Desktop\UserSettings();
-		$this->styles = new Desktop\Styles(__DIR__ . "/styles/css");
+		Import::defuse();
+		$this->userSettings = new UserSettings();
+		$this->styles = new Styles(__DIR__ . "/src/Assets/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
 		// backslashes in a Windows __DIR__ as escapes, matching nothing.
-		$this->javascript = new Desktop\Javascript($this->dir() . "/desktop/javascript");
-		$this->theme = new Desktop\Theme($this, $this->userSettings);
-		$this->plugins = new Desktop\PluginList($this);
-		$this->dialog = new Desktop\Dialog($this, $this->theme, $this->plugins);
+		$this->javascript = new Javascript($this->dir() . "/src/Assets/javascript");
+		$this->theme = new Theme($this, $this->userSettings);
+		$this->plugins = new PluginList($this);
+		$this->dialog = new Dialog($this, $this->theme, $this->plugins);
 	}
 
-	/** Translate. lang() is protected on Plugin, and the classes in settings/ need it;
+	/** Translate. lang() is protected on Plugin, and the classes in src/ need it;
 	* keeping every string in one $translations below is also one file for a translator.
 	* @param literal-string $idf
 	*/
@@ -69,7 +69,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param string $value
 	* @return string|null
 	*/
-	function loginFormField($name, $heading, $value) {
+	function loginFormField(string $name, string $heading, string $value): ?string {
 		// Adminer ships the Server field empty, which means "connect over a Unix socket".
 		// That is right for a server deployment and wrong for a desktop one: here the
 		// database is nearly always in Docker or remote, and Docker publishes TCP only —
@@ -89,7 +89,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param bool $create
 	* @return string
 	*/
-	function permanentLogin($create = false) {
+	function permanentLogin(bool $create = false): string {
 		// Adminer already remembers servers and databases you have logged into and offers
 		// them for one click on the login page — but only for as long as the key behind
 		// "Permanent login" survives, and upstream keeps that key in get_temp_dir(). On
@@ -98,7 +98,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// Same mechanism, same adminer helpers, durable location. The launcher passes the
 		// path in, so the per-OS choice stays in one place (Go's os.UserConfigDir) instead
 		// of being restated here for macOS, Linux and Windows.
-		$dir = env(Env::DataDir);
+		$dir = Env::DataDir->get();
 		if (!$dir) {
 			return ''; // served outside the app: no durable home, so no permanent login
 		}
@@ -130,29 +130,29 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param bool|null $dark
 	* @return string|null
 	*/
-	function head($dark = null) {
+	function head(?bool $dark = null): ?string {
 		$this->styles->link();
 		$this->javascript->link();
 		// Restore the sidebar to the width the user last dragged it to, before the body paints,
 		// so a cold start opens at that width instead of flashing the default then jumping. The
-		// stored value is already a clamped integer (settings/sidebar-width.php); cast again so
-		// nothing but a number can reach the stylesheet. The CSP has no style-src, so an inline
-		// <style> needs no nonce — and only our own islands layout reads the property anyway.
-		$width = $this->userSettings->get(Desktop\SettingKey::SidebarWidth);
+		// stored value is already a clamped integer (src/Settings/sidebar-width.php); cast again
+		// so nothing but a number can reach the stylesheet. The CSP has no style-src, so an
+		// inline <style> needs no nonce — and only our own islands layout reads the property.
+		$width = $this->userSettings->get(SettingKey::SidebarWidth);
 		if ($width !== null) {
 			echo "<style>:root{--ad-sidebar-width:" . (int) $width . "px}</style>\n";
 		}
-		// `make demo` forwards the throwaway connection here; desktop/javascript/demo-login.js
+		// `make demo` forwards the throwaway connection here; src/Assets/javascript/demo-login.js
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
 		// shipped build never defines the global and the script stays inert.
-		if ($demo = env(Env::Demo)) {
+		if ($demo = Env::Demo->get()) {
 			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
 		}
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
 	/** @return array<string,string> */
-	function css() {
+	function css(): array {
 		return $this->theme->cssMap();
 	}
 
@@ -165,8 +165,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param array<int,array<string,string>> $csp
 	* @return void
 	*/
-	function csp(&$csp) {
-		if (!env(Env::Debug)) {
+	function csp(array &$csp): void {
+		if (!Env::Debug->get()) {
 			return;
 		}
 		foreach ($csp as &$set) {
@@ -183,12 +183,12 @@ class AdminerDesktop extends Adminer\Plugin {
 	* no launcher env var is needed for it.
 	* @return void
 	*/
-	function bodyClass() {
+	function bodyClass(): void {
 		$os = ["Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux"];
 		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
-		if (env(Env::Debug)) {
+		if (Env::Debug->get()) {
 			echo " debug";
 		}
 		$this->theme->bodyClass();
@@ -198,7 +198,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param mixed $missing
 	* @return void
 	*/
-	function navigation($missing) {
+	function navigation(mixed $missing): void {
 		$this->dialog->render();
 	}
 

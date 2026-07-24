@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
-namespace Desktop;
 
-require_once __DIR__ . "/setting-key.php";
-require_once __DIR__ . "/env.php";
+namespace Desktop;
 
 /** The user's own preferences — what they chose, not what we configure for them — kept in one
 * JSON file in the durable data directory.
@@ -21,7 +19,7 @@ require_once __DIR__ . "/env.php";
 *
 * Keys are the SettingKey enum, not free strings, so a typo is a type error and the whole set
 * of what can be stored is one list. It is read from inside adminer (head()) and written from a
-* bare endpoint (settings/sidebar-width.php), so it leans on nothing but the standard library.
+* bare endpoint (src/Settings/sidebar-width.php), so it leans on nothing but the standard library.
 */
 class UserSettings {
 	/** the file, or null when served with no durable home (e.g. `make serve`) */
@@ -32,7 +30,7 @@ class UserSettings {
 	private ?array $cache = null;
 
 	function __construct(?string $dir = null) {
-		$dir = $dir ?? (env(Env::DataDir) ?: null);
+		$dir = $dir ?? (Env::DataDir->get() ?: null);
 		$this->file = $dir !== null ? "$dir/settings.json" : null;
 	}
 

@@ -1,7 +1,7 @@
 {* The theme panel: the preferences, then one table of designs per light/dark side.
 
 	Adminer's own language <select> is relocated into #desktop-lang-slot by
-	desktop/javascript/language.js, so the switch lives with the other preferences rather
+	src/Assets/javascript/language.js, so the switch lives with the other preferences rather
 	than loose in the corner of every page.
 *}
 {parameters
@@ -65,8 +65,8 @@
 								endpoint serves a placeholder rather than failing when offline. Our own
 								default has no adminer.org screenshot, and the placeholder gives its row
 								the same height as the gallery rows. *}
-							<img n:if="$path" src="settings/theme/screenshot.php?design={urlencode(basename(dirname($path)))}" alt="" loading="lazy" width="160" height="100">
-							<img n:if="!$path" src="settings/theme/placeholder.svg" alt="" width="160" height="100">
+							<img n:if="$path" src="src/Settings/Theme/screenshot.php?design={urlencode(basename(dirname($path)))}" alt="" loading="lazy" width="160" height="100">
+							<img n:if="!$path" src="src/Settings/Theme/placeholder.svg" alt="" width="160" height="100">
 						</label>
 			{/foreach}
 		</tbody>

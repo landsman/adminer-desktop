@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 namespace Desktop;
 
 /** Let a pg_dump through adminer's SQL parser.
@@ -22,7 +23,7 @@ class Import {
 	* `--` and `/*` only mean anything as a pair, so breaking the pair is enough: escaping
 	* every dash would blow up every date in the dump to four times the size.
 	*/
-	private const ESCAPES = [
+	private const array ESCAPES = [
 		"'" => '\047',
 		'"' => '\042',
 		'$' => '\044', // $tag$ dollar quoting

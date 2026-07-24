@@ -5,7 +5,7 @@
  * The width rides on the --ad-sidebar-width custom property that the islands layout's #foot
  * reads (theme/designs/adminer-desktop/layout.css). This inserts a grab handle between the
  * two panels, updates the property live while dragging, and posts the final width to
- * settings/sidebar-width.php, which stores it in the app's durable config. head() reads it
+ * src/Settings/sidebar-width.php, which stores it in the app's durable config. head() reads it
  * back and emits it before paint, so the next launch opens at the same width with no jump.
  *
  * Only the adminer-desktop theme lays the panels out as side-by-side flex columns, so the
@@ -19,7 +19,7 @@ const foot = document.querySelector("#foot");
 // to resize (a plain adminer design, or the login page before the sidebar exists).
 if (content && foot && getComputedStyle(document.body).display === "flex") {
 	const root = document.documentElement;
-	// Keep in step with the clamp in settings/sidebar-width.php.
+	// Keep in step with the clamp in src/Settings/sidebar-width.php.
 	const MIN = 180;
 	const MAX = 640;
 	const STEP = 16;

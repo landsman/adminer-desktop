@@ -12,14 +12,17 @@
 	<file>app</file>
 	<file>cli</file>
 
+	<!-- composer's tree lives under app/ now; it is not ours to sniff. -->
+	<exclude-pattern>app/vendor/*</exclude-pattern>
 	<exclude-pattern>app/adminer.php</exclude-pattern>
 	<exclude-pattern>app/editor.php</exclude-pattern>
-	<exclude-pattern>app/settings/plugins/available/*</exclude-pattern>
-	<exclude-pattern>app/settings/theme/designs/*</exclude-pattern>
+	<exclude-pattern>app/src/Settings/Plugins/available/*</exclude-pattern>
+	<exclude-pattern>app/src/Settings/Theme/designs/*</exclude-pattern>
 
 	<!-- slevomat ships no phpcs-4 installer plugin, so register its standard by hand rather
-	     than relying on one. Relative to the repo root, where phpcs is run from. -->
-	<config name="installed_paths" value="vendor/slevomat/coding-standard"/>
+	     than relying on one. Relative to the repo root, where phpcs is run from; vendor/ is
+	     under app/. -->
+	<config name="installed_paths" value="app/vendor/slevomat/coding-standard"/>
 
 	<!-- [] not array(). -->
 	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>

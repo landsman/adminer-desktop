@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace Desktop;
+
+namespace Desktop\Settings\Plugins;
+
+use Desktop\Latte;
 
 /** The plugin half of the settings dialog: what is shipped, what is enabled, and the
 * panel that toggles them.
@@ -98,7 +101,7 @@ class PluginList {
 				"description" => $descriptions[$name],
 			];
 		}
-		latte()->render(__DIR__ . "/plugins-panel.latte", [
+		Latte::engine()->render(__DIR__ . "/plugins-panel.latte", [
 			"desktop" => $this->desktop,
 			"plugins" => $plugins,
 			"writable" => $this->writable(),
@@ -126,7 +129,7 @@ class PluginList {
 					// Relative target, so it survives app/ being moved into a .app bundle.
 					// Windows only allows symlinks with elevated rights or developer mode
 					// on, so fall back to a copy there rather than failing silently.
-					@symlink("../settings/plugins/available/$name.php", $link) || @copy($filename, $link);
+					@symlink("../src/Settings/Plugins/available/$name.php", $link) || @copy($filename, $link);
 				}
 			} elseif ($this->isOurs($link, $filename)) {
 				@unlink($link);

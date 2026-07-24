@@ -13,9 +13,9 @@ description = "Fetch composer, install PHP + JS deps, and the e2e browser"
 run = [
 	# composer and its version pin live in the Makefile, because qa and the packaged app
 	# need vendor/ too — this would otherwise be the second place to bump it.
-	"make vendor",
+	"make app/vendor",
 	"npm install --no-audit --no-fund",
-	"./bin/frankenphp php-cli vendor/bin/playwright-install --browsers",
+	"./bin/frankenphp php-cli app/vendor/bin/playwright-install --browsers",
 ]
 
 [tasks.format]

@@ -35,7 +35,7 @@ test harness to iterate against. The three-platform build only runs on manual di
 ```sh
 mise run install   # once: node deps, composer deps, and the e2e browser
 make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
-make check         # asserts the transport, and that settings apply before login (~2 min)
+make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
 ```
 
@@ -49,7 +49,7 @@ whose name starts with `Adminer` and registers it (`include/plugins.inc.php:33`)
 classes live in the `Desktop\` namespace for that reason.
 
 **`app/adminer-plugins/` cannot move.** Adminer globs for it relative to the document
-root and nowhere else. The catalogue under `settings/plugins/available/` is ours; that
+root and nowhere else. The catalogue under `src/Settings/Plugins/available/` is ours; that
 directory is not.
 
 **`lang()` runs strings through sprintf.** A `%d` meant for JavaScript is replaced with 0
@@ -57,9 +57,9 @@ before the browser sees it. Use `{n}`.
 
 **`qsl()` returns the last match in the whole document**, not the element before the
 script. Inline scripts must follow the element they bind to — which is why ours are files
-under `desktop/javascript/` bound by id instead.
+under `src/Assets/javascript/` bound by id instead.
 
-**Our HTML is Latte, adminer's is adminer's.** `Desktop\latte()` builds the engine;
+**Our HTML is Latte, adminer's is adminer's.** `Desktop\Latte::engine()` builds the engine;
 templates sit beside the class that renders them and escape by context, so no `h()`.
 Adminer's `input_hidden()`/`input_token()` are registered on it, and `make qa` compiles
 every `.latte` through that same engine. An `n:attribute` needs its element closed, which
@@ -69,13 +69,32 @@ adminer's markup often is not.
 classes like `.odds`; `dark.css` overrides them, so anything built on them follows the
 design the user picked. Our own tokens are prefixed `--ad-`.
 
-**composer's `vendor/` collides with Go's vendoring directory.** With it present every go
-command fails with "inconsistent vendoring"; the Makefile exports `GOFLAGS=-mod=readonly`
-to force module mode. We do not vendor Go deps.
+**composer's `vendor/` lives in `app/`, not the repo root.** Two reasons in one move. It
+keeps out of Go's way — a `vendor/` at the module root makes every go command fail with
+"inconsistent vendoring", which is why there used to be a `GOFLAGS=-mod=readonly` — and it
+puts the autoloader beside the code it maps, so PSR-4 resolves the same in the checkout and
+in the packaged app (where `app/` is the document root and there is no root above it).
+`composer.json`/`composer.lock` moved there too; run composer with
+`--working-dir=app`, as the `app/vendor` target does. We do not vendor Go deps.
+
+**Our code is PSR-4 under `src/`.** `app/composer.json` maps `"Desktop\\": "src/"`, so a
+`Desktop\` class loads from the matching path — `Desktop\Settings\Theme\Theme` →
+`src/Settings/Theme/Theme.php`, filename and case matching the class. The case match is not
+optional: PSR-4 is exact-case so it resolves on a case-sensitive filesystem (Linux, CI) as
+well as macOS. The namespace mirrors the folders, so a new class needs no list anywhere —
+`composer dump-autoload` (run by `make qa`/the build via `composer install`) picks it up.
+Two things sit outside the tree. `AdminerDesktop` is global-namespace on purpose — adminer
+registers every `Adminer*` class as a plugin — so it stays at the doc root as
+`AdminerDesktop.php`, `require`d (not autoloaded) by `adminer-plugins.php`, which also
+`require`s `vendor/autoload.php` to turn the loader on. And the two bare endpoints that don't
+boot adminer — `Settings/sidebar-width.php`, `Settings/Theme/screenshot.php` — each `require`
+`vendor/autoload.php` themselves. What used to be free functions is now methods
+(`Env::DataDir->get()`, `Latte::engine()`, `Debug::enable()`), so there are no function files
+to special-case — PSR-4 covers everything.
 
 ## The Adminer Desktop theme
 
-`app/settings/theme/designs/adminer-desktop/` is the app's own default look, not one of
+`app/src/Settings/Theme/designs/adminer-desktop/` is the app's own default look, not one of
 the downloaded gallery designs. It carries both schemes in one file: every scheme
 difference is a `light-dark(light, dark)` token (`tokens.css`), and the used `color-scheme`
 picks the side. Adminer sets that from its `<meta name="color-scheme">`, which
@@ -100,9 +119,10 @@ line.
 
 mise pins node and orchestrates the tooling; run `mise run install` once. There is no
 second PHP — composer and the e2e run on the bundled frankenphp (`./bin/frankenphp
-php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `composer.json` and
-`package.json` with their lockfiles are the source of truth; `vendor/` and `node_modules/`
-are built, not committed, and `dg/composer-cleaner` slims `vendor/` for a production build.
+php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `app/composer.json`
+and `package.json` with their lockfiles are the source of truth; `app/vendor/` and
+`node_modules/` are built, not committed, and `dg/composer-cleaner` slims `app/vendor/` for
+a production build.
 
 `tests/e2e/run.php` is the browser end-to-end check, on playwright-php. It owns its whole
 fixture — a throwaway postgres in docker, the app served with a data dir so Adminer's
@@ -113,16 +133,17 @@ runs it; it stays out of `qa` because it is slow and needs docker.
 ## Layout
 
 ```
-app/desktop.php              the plugin adminer sees: hooks and all translations
-app/files.php                Desktop\Files - recursive file finding
-app/latte.php                Desktop\latte() - the engine every *.latte is rendered by
-app/debug.php                Desktop\debug() - Tracy, and only under -debug
-app/settings/dialog.php      the settings dialog shell (settings-dialog.latte)
-app/settings/theme/          designs, previews, the screenshot endpoint
-app/settings/theme/designs/adminer-desktop/   our default theme (@import components)
-app/settings/plugins/        the catalogue and the enable/disable logic
-app/styles/styles.php        loads the CSS in app/styles/css/
-app/desktop/javascript.php   loads app/desktop/javascript/ - JS that closes WebView/browser gaps
+app/adminer-plugins.php      the entry adminer includes: boots the autoloader, returns the plugin
+app/AdminerDesktop.php       the plugin adminer sees (global namespace): hooks and all translations
+app/src/                     the Desktop\ namespace, PSR-4: everything we wrote
+app/src/Files.php            Desktop\Files - recursive file finding
+app/src/Latte.php            Desktop\Latte::engine() - the engine every *.latte is rendered by
+app/src/Debug.php            Desktop\Debug::enable() - Tracy, and only under -debug
+app/src/Settings/Dialog.php  the settings dialog shell (settings-dialog.latte)
+app/src/Settings/Theme/      designs, previews, the screenshot endpoint
+app/src/Settings/Theme/designs/adminer-desktop/   our default theme (@import components)
+app/src/Settings/Plugins/    the catalogue and the enable/disable logic
+app/src/Assets/              Styles + Javascript, and the css/ and javascript/ they load
 tests/e2e/run.php            playwright-php browser check + seed.sql
 mise.toml                    node, and the install/format/lint/e2e tasks
 ```
@@ -130,7 +151,7 @@ mise.toml                    node, and the install/format/lint/e2e tasks
 Everything downloaded — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
 is pinned in the `Makefile` and checksum-verified. Nothing resolves "latest", and those
 files are never edited: behaviour changes go in the plugin. The `adminer-desktop` theme
-under `settings/theme/designs/` is the exception — it is ours, and the `.gitignore` negates
+under `src/Settings/Theme/designs/` is the exception — it is ours, and the `.gitignore` negates
 the designs-are-downloaded rule to keep it.
 
 ## Conventions
@@ -149,9 +170,10 @@ property declarations and short array syntax. Both run through the bundled frank
 separate PHP install. The exceptions are adminer's own downloaded files (excluded) and a
 method or property that overrides an untyped one in adminer's base class — those keep
 adminer's untyped shape (a phpdoc `@param`/`@return`, or a `phpcs:ignore` on the line),
-because PHP forbids narrowing an inherited signature. Filenames stay lowercase with a
-PascalCase class inside (`config.php` → `Config`, like `theme.php` → `Theme`); an IDE may flag
-the case mismatch, but it is the house style and PSR-4 is not in play.
+because PHP forbids narrowing an inherited signature. Class files are PSR-4: a PascalCase
+filename matching the class, in folders matching the namespace (`Settings\Theme\Theme` →
+`src/Settings/Theme/Theme.php`). Only non-class files stay lowercase — the `.latte` templates,
+the `css/`/`javascript/` assets, and the two bare endpoints served by URL.
 
 Commit messages say why, not what. No Claude or AI attribution anywhere — not in
 commits, PR text, comments or docs.

@@ -13,7 +13,7 @@ declare(strict_types=1);
  * server is per-file, and it is cheap to start.
  */
 
-require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require dirname(__DIR__, 2) . '/app/vendor/autoload.php';
 
 use Symfony\Component\Process\Process;
 

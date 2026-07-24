@@ -9,7 +9,7 @@ declare(strict_types=1);
  * `make e2e` runs this.
  */
 
-require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require dirname(__DIR__, 2) . '/app/vendor/autoload.php';
 
 use Symfony\Component\Process\Process;
 

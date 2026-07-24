@@ -8,11 +8,18 @@ parameters:
         - cli/lint.php
 
     excludePaths:
-        - app/adminer.php
-        - app/editor.php
-        - app/settings/plugins/available
-        - app/settings/theme/designs
-
+        # vendor/ lives under app/ now, so paths: [app] would otherwise analyse all of it.
+        # Excluded from analysis but still scanned for symbols — which is how Latte and Tracy
+        # resolve, without registering composer's autoloader as a bootstrap. That bootstrap
+        # would make phpstan *include* our classes to reflect them and fatal on AdminerDesktop's
+        # parent Adminer\Plugin, a symbol we only scan (below), never load.
+        analyse:
+            - app/vendor
+        analyseAndScan:
+            - app/adminer.php
+            - app/editor.php
+            - app/src/Settings/Plugins/available
+            - app/src/Settings/Theme/designs
 
     # Not analysed, only read for symbols: this is where Adminer\Plugin, Adminer\h(),
     # verify_token() and the rest are defined. Without it every adminer call is an
