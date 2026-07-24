@@ -25,7 +25,7 @@ endif
 # vendoring"). We do not vendor Go deps, so force module mode for all of them.
 export GOFLAGS := -mod=readonly
 
-.PHONY: fetch verify qa phpstan golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
 
 fetch: app/adminer.php app/editor.php app/settings/plugins/available app/settings/theme/designs bin/frankenphp$(EXE)
 
@@ -120,6 +120,13 @@ phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php vendor
 	./bin/frankenphp$(EXE) php-cli .cache/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
+# The conventions phpstan does not judge: every property a native type (a bare @var is not
+# enough) and [] over array(). PHPCS with slevomat, run through the frankenphp we already
+# download — no separate PHP install. The ruleset (phpcs.xml) holds the rules and excludes
+# adminer's own downloaded files, which keep their conventions.
+phpcs: vendor
+	./bin/frankenphp$(EXE) php-cli vendor/bin/phpcs --standard=phpcs.xml
+
 golangci:
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
@@ -153,7 +160,7 @@ security:
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
 qa: bin/frankenphp$(EXE) vendor
-	./bin/frankenphp$(EXE) php-cli lint.php
+	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
@@ -169,6 +176,7 @@ qa: bin/frankenphp$(EXE) vendor
 		|| { sh -n check-stream.sh && echo "sh ok (shellcheck not installed)"; }
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "plists ok" || echo "plists skipped (macOS only)"
 	@$(MAKE) --no-print-directory phpstan
+	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
 	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
 	@$(MAKE) --no-print-directory biome && echo "biome ok"
 

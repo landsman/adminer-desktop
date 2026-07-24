@@ -5,6 +5,7 @@ namespace Desktop;
 // vendor/ sits next to app/ in the checkout and inside it in a packaged build, because
 // the packaging copies it in — app/ is the only tree that ships.
 require_once (file_exists(__DIR__ . "/vendor/autoload.php") ? __DIR__ : dirname(__DIR__)) . "/vendor/autoload.php";
+require_once __DIR__ . "/env.php";
 
 /** Turn Tracy on when the app was started with -debug.
 *
@@ -19,15 +20,22 @@ require_once (file_exists(__DIR__ . "/vendor/autoload.php") ? __DIR__ : dirname(
 * debug bar stays blank — the error screen replaces the page and is unaffected.
 */
 function debug(): void {
-	if (!getenv("ADMINER_DESKTOP_DEBUG")) {
+	if (!Env::Debug->get()) {
 		return;
 	}
-	$dir = getenv("ADMINER_DESKTOP_DATA");
+	$dir = Env::Data->get();
 	$log = $dir ? "$dir/log" : null;
 	if ($log && !is_dir($log)) {
 		@mkdir($log, 0700, true);
 	}
 	\Tracy\Debugger::enable(\Tracy\Debugger::Development, $log);
+
+	// A bar panel that prints the user's persistent settings file, so the stored preferences
+	// are one click away while debugging. user-settings.php is required here too (rather than
+	// relying on desktop.php below) so the panel can be built before adminer boots.
+	require_once __DIR__ . "/user-settings.php";
+	require_once __DIR__ . "/settings-panel.php";
+	\Tracy\Debugger::getBar()->addPanel(new SettingsPanel(new UserSettings()));
 
 	// Enabling Tracy replaces adminer's own error handler, and with it the two things
 	// include/errors.inc.php deliberately turns off: E_DEPRECATED (it targets older PHP
