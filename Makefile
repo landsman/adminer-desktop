@@ -20,9 +20,17 @@ else
 	EXE = .exe
 endif
 
-.PHONY: fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: help fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
 
-fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)
+.DEFAULT_GOAL := help
+
+# Self-documenting: every target with a `## ` comment lists itself here, so this
+# stays in step with the Makefile instead of being a second list to maintain.
+help:  ## Show this help
+	@grep -hE '^[a-z][a-zA-Z-]*:.*## ' $(MAKEFILE_LIST) \
+		| sort | awk -F':.*## ' '{printf "  \033[1m%-10s\033[0m %s\n", $$1, $$2}'
+
+fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
 
 app/adminer.php:
 	@mkdir -p app
@@ -80,7 +88,7 @@ SHA256 := $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo
 # Hard fail on mismatch: means the release was re-uploaded or the download was tampered
 # with. Only the adminer artifacts are listed — frankenphp differs per platform, and a
 # per-OS checksum file would be four files to keep in step instead of one.
-verify: fetch
+verify: fetch  ## Checksum-verify the downloaded adminer files
 	$(SHA256) -c checksums.txt
 
 # Regenerate after a deliberate version bump. Review the diff.
@@ -156,7 +164,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp$(EXE) app/vendor
+qa: bin/frankenphp$(EXE) app/vendor  ## Run every static check (php, go, js lint + formatting)
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
@@ -179,7 +187,7 @@ qa: bin/frankenphp$(EXE) app/vendor
 
 # Boot the app and assert the desktop plugin's before-login behaviour — prefill, refresh
 # shortcut, design switch, plugin toggle — against the real login page.
-check: fetch
+check: fetch  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
 	./check.sh
 
 # About reads these, so it can never disagree with what is actually bundled.
@@ -188,25 +196,25 @@ LDFLAGS = -X main.version=$(VERSION) \
 	-X main.adminerVersion=$(ADMINER_VERSION) \
 	-X main.frankenphpVersion=$(FRANKENPHP_VERSION)
 
-build: fetch
+build: fetch  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop$(EXE) ./launcher
 
 # The app itself: opens a window.
-run: build
+run: build  ## Build and open the app window
 	./build/adminer-desktop$(EXE)
 
 # Like run, but reloads the window whenever a file under app/ changes — edit PHP or CSS
 # and see it without a rebuild (frankenphp serves the tree live; the window just reloads).
-dev: build
+dev: build  ## Run, reloading the window on any change under app/
 	./build/adminer-desktop$(EXE) -dev
 
-editor: build
+editor: build  ## Run in editor mode
 	./build/adminer-desktop$(EXE) -editor
 
 # Turns on Safari's Web Inspector against the app's page: Develop > this machine >
 # Adminer Desktop. There is no console in the app otherwise, which is how a confirm()
 # that never fired stayed invisible for as long as it did.
-debug: build
+debug: build  ## Run with Safari's Web Inspector attached
 	./build/adminer-desktop$(EXE) -debug
 
 # The app in dev mode against seeded demo data, for clicking around by hand. Brings up
@@ -218,7 +226,7 @@ debug: build
 # so re-running just refreshes the data.
 DEMO_PG = adminer-demo-pg
 
-demo: build app/vendor
+demo: build app/vendor  ## Run against seeded demo data, opened logged in (needs docker)
 	@docker start $(DEMO_PG) >/dev/null 2>&1 || docker run -d --name $(DEMO_PG) \
 		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 55432:5432 postgres:18-alpine >/dev/null
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
@@ -227,7 +235,7 @@ demo: build app/vendor
 	ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 postgres demo demo' ./build/adminer-desktop$(EXE) -dev
 
 # Kill the demo database container `make demo` left running.
-down:
+down:  ## Stop the demo database container
 	-docker rm -f $(DEMO_PG)
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
@@ -253,7 +261,7 @@ $(ICON): assets/logo.png
 
 # A .app is just a directory, which is why none of this needs go:embed or a static
 # single-binary build: the runtime and app/ are simply files inside it.
-bundle: build app/vendor $(ICON)
+bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)"/Contents/MacOS "$(APP)"/Contents/Resources
 	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > "$(APP)"/Contents/Info.plist
@@ -274,7 +282,7 @@ bundle: build app/vendor $(ICON)
 	@echo "built "$(APP)" -- $$(du -sh "$(APP)" | cut -f1)"
 
 # Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
-zip: bundle
+zip: bundle  ## Zip the macOS .app bundle
 	cd build && rm -f "Adminer Desktop.zip" && zip -qry "Adminer Desktop.zip" "Adminer Desktop.app"
 	@echo "built build/Adminer Desktop.zip -- $$(du -sh "build/Adminer Desktop.zip" | cut -f1)"
 
@@ -286,7 +294,7 @@ zip: bundle
 # adminer-desktop without colliding with the binary of that name in build/.
 DIST = build/pkg/adminer-desktop
 
-dist: build app/vendor
+dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	rm -rf $(DIST) && mkdir -p $(DIST)
 	cp build/adminer-desktop$(EXE) $(DIST)/
 	# All of bin/, because on windows that is the php runtime's DLLs and ext/ as well as
@@ -300,29 +308,29 @@ dist: build app/vendor
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.
-tarball: dist
+tarball: dist  ## Package the Linux tarball
 	cd build/pkg && tar czf ../adminer-desktop-linux.tar.gz adminer-desktop
 	@echo "built build/adminer-desktop-linux.tar.gz -- $$(du -sh build/adminer-desktop-linux.tar.gz | cut -f1)"
 
-winzip: dist
+winzip: dist  ## Package the Windows zip
 	rm -f build/adminer-desktop-windows.zip && cd build/pkg && zip -qry ../adminer-desktop-windows.zip adminer-desktop
 	@echo "built build/adminer-desktop-windows.zip -- $$(du -sh build/adminer-desktop-windows.zip | cut -f1)"
 
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.
-logs:
+logs:  ## Open the log folder (macOS)
 	open ~/Library/Logs/"Adminer Desktop"
 
 # Just the server, no window. Handy for poking at it with curl.
-serve: fetch
+serve: fetch  ## Serve app/ with no window, for poking at with curl
 	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
 
 # Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
 # writes screenshots to tests/e2e/screenshots/. Needs docker (a throwaway postgres) and
 # the Playwright browser from `mise run install`. Kept out of `qa` because it is slow and
 # needs docker; run it on its own.
-e2e: fetch
+e2e: fetch  ## Browser check: login + theme in light and dark (needs docker)
 	mise run e2e
 
-clean:
+clean:  ## Remove downloaded and built files (app/, bin/, .cache/)
 	rm -rf app bin .cache
