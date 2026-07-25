@@ -9,6 +9,7 @@ declare(strict_types=1);
 // AdminerDesktop, so here it is coverage-checked only.
 
 use Desktop\I18n\Catalog;
+use Desktop\I18n\Domain;
 use Desktop\I18n\Generator;
 
 require dirname(__DIR__) . "/app/vendor/autoload.php";
@@ -17,14 +18,18 @@ $root = dirname(__DIR__);
 
 if (($argv[1] ?? "") === "check") {
 	$ok = true;
-	foreach (["native", "plugin"] as $domain) {
+	foreach (Domain::cases() as $domain) {
 		$catalog = Catalog::load($domain);
-		echo (new Generator($catalog))->report($domain), "\n";
-		$ok = $ok && $catalog->complete();
+		echo (new Generator($catalog))->report($domain->value), "\n";
+		$malformed = $catalog->malformedIds();
+		if ($malformed !== []) {
+			echo "Malformed IDs in {$domain->value}: '" . implode("', '", $malformed) . "'\n\n";
+		}
+		$ok = $ok && $catalog->complete() && $malformed === [];
 	}
 	exit($ok ? 0 : 1);
 }
 
-$catalog = Catalog::load("native");
+$catalog = Catalog::load(Domain::Native);
 (new Generator($catalog))->generate($root);
 echo "i18n: wrote " . count($catalog->all()) . " .strings + launcher/i18n_gen.h\n";

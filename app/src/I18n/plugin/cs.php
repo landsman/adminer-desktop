@@ -5,9 +5,8 @@ declare(strict_types=1);
 // English, so `make i18n-check` lists what is still missing.
 
 return [
-	// The plugin's own description, shown in Adminer's plugin list. Adminer keys this on '' (an
-	// empty msgid, Plugin::description() = lang('')); English comes from the AdminerDesktop docblock.
-	'' => 'Přizpůsobí výchozí hodnoty pro desktopovou aplikaci',
+	// The plugin's own description, shown in Adminer's plugin list (AdminerDesktop::description()).
+	'plugin.description' => 'Přizpůsobí výchozí hodnoty pro desktopovou aplikaci',
 
 	// Settings dialog shell.
 	'settings.title' => 'Nastavení',

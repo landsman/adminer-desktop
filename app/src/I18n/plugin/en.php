@@ -11,6 +11,9 @@ declare(strict_types=1);
 // AdminerDesktop class docblock (its '' translation lives in cs.php only).
 
 return [
+	// The plugin's own description, shown in Adminer's plugin list (AdminerDesktop::description()).
+	'plugin.description' => "Adapt Adminer's defaults to running as a desktop app.",
+
 	// Settings dialog shell (settings-dialog.latte, Dialog.php).
 	'settings.title' => 'Settings',
 	'settings.tab_theme' => 'Theme',

@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 
 use Desktop\I18n\Catalog;
+use Desktop\I18n\Domain;
 use Desktop\I18n\Generator;
 use Desktop\I18n\Locale;
 use Tester\Assert;
@@ -21,9 +22,9 @@ require dirname(__DIR__) . "/bootstrap.php";
 
 $root = dirname(__DIR__, 2) . "/.cache/i18n-test";
 array_map('unlink', glob("$root/lproj/*.lproj/Localizable.strings") ?: []);
-(new Generator(Catalog::load('native')))->generate($root);
+(new Generator(Catalog::load(Domain::Native)))->generate($root);
 
-$catalog = Catalog::load('native');
+$catalog = Catalog::load(Domain::Native);
 $base = $catalog->base();
 $cs = (string) file_get_contents("$root/lproj/cs.lproj/Localizable.strings");
 $en = (string) file_get_contents("$root/lproj/en.lproj/Localizable.strings");
@@ -81,7 +82,15 @@ Assert::contains('- B', $report);
 Assert::contains('50%', $report);
 
 // The plugin domain (the PHP UI strings, fed to Adminer's lang()) loads and is fully translated.
-$plugin = Catalog::load('plugin');
+$plugin = Catalog::load(Domain::Plugin);
 Assert::true($plugin->complete());
 Assert::same('Save', $plugin->base()['settings.save']);
 Assert::same('Uložit', $plugin->all()['cs']['settings.save']);
+
+// Both shipped domains use only well-formed IDs...
+Assert::same([], Catalog::load(Domain::Native)->malformedIds());
+Assert::same([], $plugin->malformedIds());
+
+// ...and the check catches empty, spaced, uppercase and un-namespaced IDs.
+$weird = new Catalog(['en' => ['ok.id' => 'a', '' => 'b', 'has space' => 'c', 'Upper.Case' => 'd', 'nodot' => 'e']]);
+Assert::same(['', 'has space', 'Upper.Case', 'nodot'], $weird->malformedIds());

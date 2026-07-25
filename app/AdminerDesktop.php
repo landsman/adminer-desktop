@@ -14,6 +14,7 @@ use Desktop\Assets\Javascript;
 use Desktop\Assets\Styles;
 use Desktop\Env;
 use Desktop\I18n\Catalog;
+use Desktop\I18n\Domain;
 use Desktop\Import;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
@@ -38,7 +39,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		Import::defuse();
 		// The plugin UI strings live in app/src/I18n/plugin/ (per-language files, dotted IDs) and
 		// feed Adminer's Plugin::lang() through $translations. See Desktop\I18n\Catalog.
-		$this->translations = Catalog::load('plugin')->all();
+		$this->translations = Catalog::load(Domain::Plugin)->all();
 		$this->userSettings = new UserSettings();
 		$this->styles = new Styles(__DIR__ . "/src/Assets/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
@@ -49,12 +50,21 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->dialog = new Dialog($this, $this->theme, $this->plugins);
 	}
 
-	/** Translate. lang() is protected on Plugin, and the classes in src/ need it;
-	* keeping every string in one $translations below is also one file for a translator.
+	/** Translate a plugin-UI string by its ID. lang() is protected on Plugin and the classes in
+	* src/ need it; the IDs and their text live in app/src/I18n/plugin/ (loaded into $translations).
 	* @param literal-string $idf
 	*/
 	function t(string $idf): string {
 		return $this->lang($idf);
+	}
+
+	/** The plugin's description in Adminer's plugin list. Adminer's Plugin::description() returns
+	* lang(''), a bare empty-string key; override it to use a normal ID so the description sits in
+	* the language files with every other string rather than as a special case.
+	* @return string
+	*/
+	function description() {
+		return $this->t('plugin.description');
 	}
 
 	/** Get this directory with forward slashes.

@@ -12,18 +12,22 @@ namespace Desktop\I18n;
 * gap; load() is the production path that reads the <domain>/<value>.php files.
 */
 final class Catalog {
+	/** A well-formed ID: lowercase dotted namespaces (topic.name), each segment starting with a
+	* letter, [a-z0-9_] after. Rejects empty keys, whitespace, uppercase and other oddities. */
+	private const string ID_PATTERN = '~^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$~';
+
 	/** @param array<string,array<string,string>> $byLocale locale value => [id => text] */
 	public function __construct(private readonly array $byLocale) {
 	}
 
-	/** Load a domain's per-language file for each Locale case ("native", "plugin"). A declared
-	* locale with no file fails loudly here — the enum is the authority on what must exist.
+	/** Load a domain's per-language file for each Locale case. A declared locale with no file
+	* fails loudly here — the enum is the authority on what must exist.
 	*/
-	public static function load(string $domain): self {
+	public static function load(Domain $domain): self {
 		$byLocale = [];
 		foreach (Locale::cases() as $locale) {
 			/** @var array<string,string> $strings */
-			$strings = require __DIR__ . "/$domain/{$locale->value}.php";
+			$strings = require __DIR__ . "/{$domain->value}/{$locale->value}.php";
 			$byLocale[$locale->value] = $strings;
 		}
 		return new self($byLocale);
@@ -64,5 +68,22 @@ final class Catalog {
 	/** Every declared locale translates every base key — the machine-readable gate for CI. */
 	public function complete(): bool {
 		return $this->missing() === [];
+	}
+
+	/** IDs across all locales that are not well-formed (empty, spaced, uppercase, un-namespaced,
+	* or otherwise off the topic.name convention). Empty means every ID is valid; the test and
+	* `make i18n-check` gate on it.
+	* @return list<string>
+	*/
+	public function malformedIds(): array {
+		$bad = [];
+		foreach ($this->byLocale as $strings) {
+			foreach (array_keys($strings) as $id) {
+				if (preg_match(self::ID_PATTERN, $id) !== 1) {
+					$bad[$id] = $id;
+				}
+			}
+		}
+		return array_values($bad);
 	}
 }
