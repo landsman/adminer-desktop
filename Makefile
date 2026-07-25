@@ -190,7 +190,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp$(EXE) app/vendor  ## Run every static check (php, go, js lint + formatting)
+qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js lint + formatting)
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
@@ -209,11 +209,10 @@ qa: bin/frankenphp$(EXE) app/vendor  ## Run every static check (php, go, js lint
 	@command -v shellcheck >/dev/null \
 		&& { shellcheck check.sh && echo "shellcheck ok"; } \
 		|| { sh -n check.sh && echo "sh ok (shellcheck not installed)"; }
-	@# Native-shell strings: assert the generator's output quality, then regenerate from the
-	@# language files (the output is gitignored, rebuilt every build, so there is nothing to diff)
-	@# and lint the emitted plists. `make i18n-check` reports coverage separately.
+	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
+	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
+	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
 	./bin/frankenphp$(EXE) php-cli tests/i18n/GeneratorTest.php
-	./bin/frankenphp$(EXE) php-cli cli/i18n.php
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
