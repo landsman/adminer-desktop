@@ -169,7 +169,10 @@ static gboolean on_decide_destination(WebKitDownload *download, gchar *suggested
 	(void) user_data;
 	GtkWindow *parent = g_main_window ? GTK_WINDOW(g_main_window) : NULL;
 	GtkFileChooserNative *dialog = gtk_file_chooser_native_new(
-		adTr("download.save_title"), parent, GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
+		// NULL accept/cancel labels: GTK fills in its own localized stock buttons for the Save
+		// action (the toolkit's translations, like macOS's system Save panel), so only our own
+		// title needs adTr.
+		adTr("download.save_title"), parent, GTK_FILE_CHOOSER_ACTION_SAVE, NULL, NULL);
 	GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
 	gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
 	gtk_file_chooser_set_current_name(chooser,
