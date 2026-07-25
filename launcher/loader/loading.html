@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Adminer Desktop</title>
+<!-- The native window shows this from the first frame while the server starts, so it covers
+     the pre-paint flash; the app replaces it once frankenphp answers. The <link> keeps the
+     page standalone-renderable in an editor -- at runtime the launcher inlines the CSS. -->
+<link rel="stylesheet" href="loader.css">
+<div class="spinner"></div>
+<!-- Tell the launcher the moment this page has parsed. adLoaderShown (bound in main.go) reveals
+     the window then, so it appears already painted on the spinner instead of as a blank frame,
+     and logs the timing. DOMContentLoaded, not load, because it fires even while the window is
+     hidden -- a paint-driven event (rAF, load) could stall and the window would never show. -->
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		if (window.adLoaderShown) {
+			window.adLoaderShown();
+		}
+	});
+</script>

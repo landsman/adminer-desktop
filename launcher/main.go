@@ -4,6 +4,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	webview "github.com/webview/webview_go"
@@ -148,6 +150,26 @@ var (
 	frankenphpVersion = "unknown"
 )
 
+// The startup splash pages, shown in the native window before frankenphp is serving -- so
+// they can't be fetched from it and are compiled in. This is not the app/ tree the note above
+// keeps on disk: three tiny files the window needs before any server exists, with nothing to
+// extract or cache, and they must never be missing since one is the first frame and one is the
+// error screen. Edited as real .html/.css; go:embed bakes them in. loaderPage folds the shared
+// stylesheet into a page (the templates keep a <link> so each renders standalone in an editor).
+//
+//go:embed loader/loading.html
+var loadingHTML string
+
+//go:embed loader/unreachable.html
+var unreachableHTML string
+
+//go:embed loader/loader.css
+var loaderCSS string
+
+func loaderPage(html string) string {
+	return strings.Replace(html, `<link rel="stylesheet" href="loader.css">`, "<style>\n"+loaderCSS+"</style>", 1)
+}
+
 func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
 	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
@@ -228,26 +250,50 @@ func main() {
 	// platforms that have no menu to switch with.
 	setLastApp(app)
 	url := fmt.Sprintf("http://%s/%s", addr, app)
-	cold, err := waitReady(url, 15*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// A warm request for comparison: opcache is on, so this second hit is served from
-	// compiled bytecode. cold - warm is the compile cost, i.e. the ceiling on what
-	// opcache.file_cache could shave off the first request of every future launch.
-	warm := timeGet(url)
-	log.Printf("startup: server ready in %s; first request %s cold vs %s warm (~%s is PHP compile)",
-		time.Since(bootStart).Round(time.Millisecond), cold.Round(time.Millisecond),
-		warm.Round(time.Millisecond), (cold - warm).Round(time.Millisecond))
 
+	// logReady reports the pre-window wait, splitting the cold first request from a warm one:
+	// opcache is on, so the warm hit is served from compiled bytecode and cold - warm is the
+	// compile cost -- the ceiling on what opcache.file_cache could save off each launch's first
+	// request. The probe now runs behind the loader, so this logs from wherever it ran.
+	logReady := func(cold time.Duration) {
+		warm := timeGet(url)
+		log.Printf("startup: server ready in %s; first request %s cold vs %s warm (~%s is PHP compile)",
+			time.Since(bootStart).Round(time.Millisecond), cold.Round(time.Millisecond),
+			warm.Round(time.Millisecond), (cold - warm).Round(time.Millisecond))
+	}
+
+	// headless is check-app's mode: assert the server serves, then exit. No window to fill
+	// while it waits, so it keeps the plain blocking probe.
 	if *headless {
+		cold, err := waitReady(url, 15*time.Second)
+		if err != nil {
+			log.Fatal(err)
+		}
+		logReady(cold)
 		fmt.Printf("OK: serving %s\n", url)
 		return
 	}
 
+	// WebKitGTK's DMABUF renderer leaves the window black/unpainted for a second or two on
+	// many Linux drivers while its GPU compositor comes up -- long enough that the loader
+	// below can't paint and the user just sees an empty rectangle until the app arrives.
+	// Disabling it makes WebKit paint the first frame (the loader) right away. Must be set
+	// before the webview is created, since WebKit reads it at init.
+	// ponytail: off for everyone on Linux, not just the affected drivers -- a black startup
+	// window is worse than losing the DMABUF fast path on a local admin tool. Drop this if
+	// WebKitGTK ever fixes the first-paint stall.
+	if runtime.GOOS == "linux" {
+		os.Setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1") //nolint:errcheck // best-effort env hint
+	}
+
 	guiStart := time.Now()
 	w := webview.New(false)
+	log.Printf("startup: webview created in %s", time.Since(guiStart).Round(time.Millisecond))
 	defer w.Destroy()
+	// webview.New already mapped the window, unpainted and unsized -- that empty frame is the
+	// white flash. Hide it before the run loop starts (so it is never shown in that state) and
+	// bring it back once the loader has painted, in the adLoaderShown callback below.
+	hideWindow(w.Window())
 	w.SetTitle("Adminer Desktop")
 	// Without an icon the Linux taskbar shows a generic placeholder. macOS uses the .app's
 	// .icns and Windows its own, so setWindowIcon is a no-op there; this is the GTK path,
@@ -287,14 +333,38 @@ func main() {
 	}
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
-	w.Navigate(url)
-	// Native webview setup up to the navigate call. The black flash some users see is the
-	// gap between the window showing and WebKit's first paint, which lands after this --
-	// measuring that would need a load-finished callback from the native layer.
-	log.Printf("startup: window ready in %s (first paint follows, not measured here)", time.Since(guiStart).Round(time.Millisecond))
+	// Report from inside the webview when the loader has actually parsed and rendered -- the one
+	// startup phase Go can't time, since it is WebKit's own paint. It separates "the window was
+	// shown before the loader rendered" from "WebKit was slow to paint". loading.html calls this
+	// on DOMContentLoaded.
+	if err := w.Bind("adLoaderShown", func() {
+		log.Printf("startup: loader rendered in %s", time.Since(guiStart).Round(time.Millisecond))
+		// The loader has parsed and styled, so there is finally something to show: reveal the
+		// window (already sized), painting straight onto the spinner instead of a blank frame.
+		showWindow(w.Window())
+	}); err != nil {
+		log.Print("startup: loader timing bind failed: ", err)
+	}
+
+	// Show the loader now rather than blocking on the server first: a background probe swaps
+	// in the app once it answers, or the error page if it never does, so the window is up and
+	// painted from the first frame instead of after the whole cold start.
+	w.SetHtml(loaderPage(loadingHTML))
+	log.Printf("startup: loader html set in %s", time.Since(guiStart).Round(time.Millisecond))
+	go func() {
+		cold, err := waitReady(url, 15*time.Second)
+		if err != nil {
+			log.Print(err)
+			w.Dispatch(func() { w.SetHtml(loaderPage(unreachableHTML)) })
+			return
+		}
+		logReady(cold)
+		w.Dispatch(func() { w.Navigate(url) })
+	}()
 	if *dev {
 		go watchAndReload(root, w)
 	}
+	log.Printf("startup: entering run loop in %s", time.Since(guiStart).Round(time.Millisecond))
 	w.Run()
 }
 
