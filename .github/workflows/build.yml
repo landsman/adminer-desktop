@@ -22,6 +22,12 @@ jobs:
   quality:
     if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
+    # packages: write so the first run per semgrep version can push the mirror to GHCR;
+    # contents: read is the checkout's default, restated because naming any scope drops
+    # the rest to none.
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v5
 
@@ -53,8 +59,36 @@ jobs:
       # shellcheck is already on the runner and says far more than `sh -n` does.
       - run: shellcheck check.sh
 
-      # Security rules for php, go and leaked secrets. Docker is on the runner, so this
-      # needs nothing installed.
+      # semgrep only publishes to Docker Hub, which rate-limits anonymous pulls and has
+      # downtimes. Mirror the pinned image into GHCR (GitHub's own registry, no Hub
+      # limits) once per version, then pull from there on every run. Unlike actions/cache
+      # a pushed image persists — no 7-day eviction, so after the first mirror we never
+      # reach Docker Hub again until the pinned version bumps.
+      - id: semgrep
+        run: echo "version=$(grep -oP 'SEMGREP_VERSION = \K.*' Makefile)" >> "$GITHUB_OUTPUT"
+
+      - name: Mirror semgrep into GHCR
+        env:
+          MIRROR: ghcr.io/${{ github.repository }}/semgrep:${{ steps.semgrep.outputs.version }}
+          UPSTREAM: semgrep/semgrep:${{ steps.semgrep.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          if docker pull "$MIRROR"; then
+            echo "semgrep served from GHCR"
+          else
+            echo "not mirrored yet — pulling from Docker Hub once, then pushing to GHCR"
+            docker pull "$UPSTREAM"
+            docker tag "$UPSTREAM" "$MIRROR"
+            docker push "$MIRROR"
+          fi
+          # `make security` runs `docker run semgrep/semgrep:<version>`; tag the GHCR image
+          # under that name so it resolves locally and the Makefile stays untouched.
+          docker tag "$MIRROR" "$UPSTREAM"
+
+      # Security rules for php, go and leaked secrets. Docker is on the runner and the
+      # image is now local (from GHCR), so this needs nothing installed and no Hub pull.
       - run: make security
 
   # Manual only. Three platforms per commit is minutes spent to learn that a one-line PHP
