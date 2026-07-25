@@ -49,6 +49,26 @@ func resolve() (php string, root string, err error) {
 	return "", "", fmt.Errorf("could not find frankenphp and app/ (run `make fetch`)")
 }
 
+// iconPath finds the window icon: beside the binary in the shipped layout (dist and the
+// .deb put logo.png next to the executable), or assets/ when running from the dev tree.
+// Empty when neither exists, which just leaves the platform default.
+func iconPath() string {
+	if exe, err := os.Executable(); err == nil {
+		if p := filepath.Join(filepath.Dir(exe), "logo.png"); fileExists(p) {
+			return p
+		}
+	}
+	if fileExists("assets/logo.png") {
+		return "assets/logo.png"
+	}
+	return ""
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
 // openLog opens the single log file. PHP errors, adminer's own warnings and caddy's
 // access log all arrive on the server's stderr, so one file is the whole logging story.
 // ponytail: append forever, no rotation. A local admin tool writes a line per click,
@@ -192,6 +212,19 @@ func main() {
 	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle("Adminer Desktop")
+	// Without an icon the Linux taskbar shows a generic placeholder. macOS uses the .app's
+	// .icns and Windows its own, so setWindowIcon is a no-op there; this is the GTK path,
+	// reading the same logo the .icns is built from.
+	if icon := iconPath(); icon == "" {
+		log.Print("window icon: logo.png not found beside the binary or in assets/")
+	} else if !setWindowIcon(w.Window(), icon) {
+		log.Printf("window icon %q: gtk rejected it", icon)
+	} else if os.Getenv("XDG_SESSION_TYPE") == "wayland" {
+		// The window icon is set, but a Wayland taskbar ignores it and matches the window's
+		// app_id to an installed .desktop instead — so the icon only shows for the installed
+		// .deb (StartupWMClass), not for `make run`.
+		log.Print("window icon: wayland shows the taskbar icon from the installed .desktop, not the window — install the .deb to see it")
+	}
 	// Open at 60% of the screen where a screen size is available (macOS), otherwise a fixed
 	// default. HintNone leaves the window freely resizable after that.
 	winW, winH := 1280, 900

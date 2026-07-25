@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -29,6 +29,32 @@ endif
 help:  ## Show this help
 	@grep -hE '^[a-z][a-zA-Z-]*:.*## ' $(MAKEFILE_LIST) \
 		| sort | awk -F':.*## ' '{printf "  \033[1m%-10s\033[0m %s\n", $$1, $$2}'
+
+# mise owns the dev toolchain (node, go, composer + npm deps, the Chromium e2e browser) —
+# one entry point so its version pins stay in one place. On Linux the webview also needs
+# GTK/WebKit dev headers, which are a distro package rather than a mise tool, so install
+# runs linux-deps there too. Toolchain first, then `fetch` for the downloads (adminer +
+# designs), so one command sets a fresh checkout up completely.
+install:  ## Install everything: dev toolchain (mise) + Linux webview deps + downloads
+ifeq ($(UNAME_S),Linux)
+	$(MAKE) linux-deps
+endif
+	mise run install
+	$(MAKE) fetch
+
+# The one build dependency mise cannot pin: webview is cgo, and on Linux that means the
+# system GTK-3 and WebKit2GTK dev headers — distro packages, not a toolchain. webview_go
+# also hardcodes `pkg-config webkit2gtk-4.0`, which Ubuntu 24.04 dropped for 4.1 (same API
+# over libsoup3), so a shim .pc that just requires 4.1 keeps the build on a current distro.
+# Debian/Ubuntu (apt) is the only Linux supported right now — and the path CI and the .deb
+# build on — so gate on apt up front and fail clearly on Arch/Fedora/others rather than
+# half-installing. The pkg-config guard then makes a re-run a no-op that never re-sudos.
+linux-deps:  ## Install the Linux webview build deps (GTK/WebKit dev headers, Debian/Ubuntu only)
+	@command -v apt-get >/dev/null 2>&1 || { echo "linux-deps: Debian/Ubuntu (apt) is the only supported Linux distribution right now. On Arch, Fedora and others, install the GTK-3 and WebKit2GTK 4.1 dev headers with your own package manager."; exit 1; }
+	@pkg-config --exists gtk+-3.0 webkit2gtk-4.1 2>/dev/null && echo "gtk/webkit dev headers present" || { \
+		sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev; }
+	@pkg-config --exists webkit2gtk-4.0 2>/dev/null || printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
+		| sudo tee /usr/lib/$(UNAME_M)-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
 fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
 
@@ -297,6 +323,9 @@ DIST = build/pkg/adminer-desktop
 dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	rm -rf $(DIST) && mkdir -p $(DIST)
 	cp build/adminer-desktop$(EXE) $(DIST)/
+	# The window icon, beside the binary so iconPath() finds it at runtime (the launcher
+	# sets the GTK window icon from it; the .deb also points its .desktop at a copy).
+	cp assets/logo.png $(DIST)/
 	# All of bin/, because on windows that is the php runtime's DLLs and ext/ as well as
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
@@ -315,6 +344,44 @@ tarball: dist  ## Package the Linux tarball
 winzip: dist  ## Package the Windows zip
 	rm -f build/adminer-desktop-windows.zip && cd build/pkg && zip -qry ../adminer-desktop-windows.zip adminer-desktop
 	@echo "built build/adminer-desktop-windows.zip -- $$(du -sh build/adminer-desktop-windows.zip | cut -f1)"
+
+# A .deb is the same flat layout dist stages, just rooted at /usr/lib instead of a folder:
+# resolve() reads os.Executable(), which follows the /usr/bin symlink back to the real
+# binary, so frankenphp and app/ beside it are found exactly as in the tarball. Arch comes
+# from dpkg since the go build is never cross-compiled here. Debian versions must begin
+# with a digit and reserve '-' as the upstream/revision separator, so git's description is
+# trimmed to its first digit and its dashes turned to '~'. --root-owner-group ships the
+# files as root:root without needing fakeroot.
+DEB         = build/deb
+DEB_ARCH    = $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
+DEB_VERSION = $(shell printf '%s' '$(VERSION)' | sed -E 's/^[^0-9]*//; s/-/~/g')
+DEB_FILE    = build/adminer-desktop_$(DEB_VERSION)_$(DEB_ARCH).deb
+
+deb: dist  ## Package a Debian .deb (Linux)
+	rm -rf $(DEB)
+	mkdir -p $(DEB)/DEBIAN $(DEB)/usr/lib $(DEB)/usr/bin $(DEB)/usr/share/applications $(DEB)/usr/share/pixmaps
+	cp -R build/pkg/adminer-desktop $(DEB)/usr/lib/adminer-desktop
+	ln -sf ../lib/adminer-desktop/adminer-desktop $(DEB)/usr/bin/adminer-desktop
+	cp assets/logo.png $(DEB)/usr/share/pixmaps/adminer-desktop.png
+	# StartupWMClass = the GtkWindow's app_id (webview's prgname, the binary basename), so
+	# Plasma matches the running window to this entry and shows its icon in the taskbar —
+	# the way a Wayland session gets the icon, where the runtime GtkWindow icon does not reach.
+	printf '%s\n' \
+		'[Desktop Entry]' 'Type=Application' 'Name=Adminer Desktop' \
+		'Comment=Adminer as a desktop app' 'Exec=adminer-desktop' 'Icon=adminer-desktop' \
+		'Terminal=false' 'Categories=Development;Database;' 'StartupWMClass=adminer-desktop' \
+		> $(DEB)/usr/share/applications/adminer-desktop.desktop
+	printf '%s\n' \
+		'Package: adminer-desktop' 'Version: $(DEB_VERSION)' 'Architecture: $(DEB_ARCH)' \
+		'Maintainer: Michal Landsman <landsman@insuit.cz>' \
+		'Section: database' 'Priority: optional' \
+		'Depends: libgtk-3-0, libwebkit2gtk-4.1-0' \
+		'Homepage: https://github.com/landsman/adminer-desktop' \
+		'Description: Adminer as a desktop app' \
+		' No PHP install, no web server, no browser tab.' \
+		> $(DEB)/DEBIAN/control
+	dpkg-deb --build --root-owner-group $(DEB) $(DEB_FILE)
+	@echo "built $(DEB_FILE) -- $$(du -sh $(DEB_FILE) | cut -f1)"
 
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.

@@ -25,7 +25,7 @@ so it asserts long responses neither buffer nor time out.
 | | |
 | --- | --- |
 | macOS, Apple Silicon | works |
-| Linux x86_64 | works (`make tarball`), needs `libgtk-3`, `libwebkit2gtk-4.1` |
+| Linux x86_64 | works (`make tarball` / `make deb`); `make linux-deps` for the GTK/WebKit headers |
 | Windows | builds, but CI is red — not usable yet |
 
 ## Installing on another Mac
@@ -73,6 +73,13 @@ One plugin, `app/desktop.php`, no changes to `adminer.php`:
 - Logs in `~/Library/Logs/Adminer Desktop/`.
 
 See [PLAN.md](PLAN.md) for why any of this is the way it is.
+
+## Develop
+
+`make install` sets a fresh checkout up in one command: the toolchain via mise (node, go,
+composer + npm deps, the Chromium browser the e2e drives) plus the pinned Adminer and
+frankenphp downloads. On Linux it also runs `make linux-deps` — the one step that needs
+apt, for the GTK/WebKit dev headers the webview links against.
 
 ## Licence
 

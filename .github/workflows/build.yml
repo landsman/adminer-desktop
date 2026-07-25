@@ -30,13 +30,10 @@ jobs:
           go-version: stable
           cache-dependency-path: go.sum
 
-      # golangci-lint type-checks, so it needs what the package needs to compile.
+      # golangci-lint type-checks, so it needs what the package needs to compile. Same
+      # target `make install` runs on a Linux checkout, so the recipe lives in one place.
       - name: Install webview build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
-          printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
-            | sudo tee /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
+        run: make linux-deps
 
       - name: Cache pinned downloads
         uses: actions/cache@v4
@@ -104,16 +101,10 @@ jobs:
 
       # webview is cgo, and on linux that means the system GTK and WebKit headers. macOS
       # and windows get theirs from the platform SDK and WebView2, already on the runner.
+      # The apt install + webkit2gtk-4.0 shim live in one place: the linux-deps target.
       - name: Install webview build dependencies
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
-          # webview_go hardcodes `pkg-config webkit2gtk-4.0`, which ubuntu 24.04 no longer
-          # ships -- 4.1 is the same API over libsoup3. A .pc that just requires 4.1 keeps
-          # us on a current runner instead of pinning to an ubuntu that is on its way out.
-          printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
-            | sudo tee /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
+        run: make linux-deps
 
       # frankenphp is a ~180 MB download. It is pinned, so the key only has to change
       # when the pinned version does.
