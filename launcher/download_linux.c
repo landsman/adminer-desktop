@@ -12,6 +12,7 @@
 #include <webkit2/webkit2.h>
 #include <libsoup/soup.h>
 #include <glib/gstdio.h>
+#include "i18n_gen.h" // adTr(): the native-shell strings, generated from app/src/I18n/Locale/*.php
 
 // The app's main GtkWindow, kept to parent the Save dialog and the progress window.
 static GtkWidget *g_main_window = NULL;
@@ -46,7 +47,7 @@ static gboolean on_progress_delete(GtkWidget *widget, GdkEvent *event, gpointer 
 	DlCtx *c = user_data;
 	GtkWidget *ask = gtk_message_dialog_new(GTK_WINDOW(c->win),
 		GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-		GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, "Cancel this download?");
+		GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, "%s", adTr("Cancel this download?"));
 	gtk_window_set_title(GTK_WINDOW(ask), "Adminer Desktop");
 	gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(ask), "%s", c->name);
 	gint res = gtk_dialog_run(GTK_DIALOG(ask));
@@ -143,7 +144,7 @@ static void on_finished(WebKitDownload *download, gpointer user_data) {
 	GtkWidget *dialog = gtk_message_dialog_new(
 		g_main_window ? GTK_WINDOW(g_main_window) : NULL,
 		GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-		GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "Saved %s", c->name);
+		GTK_MESSAGE_INFO, GTK_BUTTONS_OK, adTr("Saved %s"), c->name);
 	gtk_window_set_title(GTK_WINDOW(dialog), "Adminer Desktop");
 	gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog), "%s", c->final_path);
 	gtk_dialog_run(GTK_DIALOG(dialog));
@@ -168,7 +169,7 @@ static gboolean on_decide_destination(WebKitDownload *download, gchar *suggested
 	(void) user_data;
 	GtkWindow *parent = g_main_window ? GTK_WINDOW(g_main_window) : NULL;
 	GtkFileChooserNative *dialog = gtk_file_chooser_native_new(
-		"Save Export", parent, GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
+		adTr("Save Export"), parent, GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
 	GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
 	gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
 	gtk_file_chooser_set_current_name(chooser,
