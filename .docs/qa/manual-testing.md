@@ -55,8 +55,8 @@ download detection is firing on responses it shouldn't.
 
 ### Linux (WebKitGTK, Wayland/X11)
 
-The completion dialog and the cancel-on-close are **Linux-only for now** (macOS has neither yet
-— see below), so they get their own checks:
+The completion dialog and cancel-on-close now exist on **both platforms** (macOS equivalents in
+its section). The checks here are written against Linux; **L3** is Linux-specific:
 
 | # | Do this | Expect |
 |---|---------|--------|
@@ -86,9 +86,11 @@ Notes:
 - Download handling needs **macOS 11.3+** (`WKDownload`). On 11.0–11.2 the whole path is a no-op
   and the response displays as it did before — expected, not a bug. The floor is worth a note if
   testing on an old point release.
-- **Not yet at parity with Linux:** there is no `Saved …` completion dialog (the progress panel
-  just closes on finish), and closing the panel does not offer to cancel. Checks **L1** and **L2**
-  do not apply here until that lands.
+- **Completion & cancel** (parity with Linux **L1**/**L2**): a finished download shows a
+  **`Saved <name>`** alert to dismiss with **OK**; the progress panel carries a **close button**,
+  and clicking it asks **`Cancel this download?`** — **Cancel Download** stops it (drops the
+  `.part`, hides the panel), **Keep Downloading** leaves it running. A cancel must **not** log
+  `download failed:`.
 - Use the Web Inspector (`make debug`, then Safari → Develop → this machine → Adminer Desktop)
   if a response renders when it should download.
 

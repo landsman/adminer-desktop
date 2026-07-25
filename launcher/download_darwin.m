@@ -17,12 +17,13 @@
  * display as before — a handful of old point-releases where this simply does nothing.
  */
 API_AVAILABLE(macos(11.3))
-@interface AdminerDesktopNavDelegate : NSObject <WKNavigationDelegate, WKDownloadDelegate>
+@interface AdminerDesktopNavDelegate : NSObject <WKNavigationDelegate, WKDownloadDelegate, NSWindowDelegate>
 @property (nonatomic, strong) NSPanel *progressPanel;
 @property (nonatomic, strong) NSProgressIndicator *progressBar;
 @property (nonatomic, strong) NSTextField *progressLabel;
 @property (nonatomic, strong) NSProgress *observedProgress;
 @property (nonatomic, copy) NSString *downloadName;
+@property (nonatomic, strong) WKDownload *activeDownload API_AVAILABLE(macos(11.3));
 @end
 
 /* Address used as the key to stash a download's [part, final] URLs on the WKDownload itself. */
@@ -86,6 +87,7 @@ static const char kDownloadDest = 0;
 
 - (void)downloadDidFinish:(WKDownload *)download API_AVAILABLE(macos(11.3)) {
 	[self hideProgress];
+	self.activeDownload = nil;
 	NSArray<NSURL *> *urls = objc_getAssociatedObject(download, &kDownloadDest);
 	if (!urls) {
 		return;
@@ -95,17 +97,50 @@ static const char kDownloadDest = 0;
 	// finished .part onto the real name -- that in-place rename is what marks it done.
 	[fm removeItemAtURL:urls[1] error:nil];
 	[fm moveItemAtURL:urls[0] toURL:urls[1] error:nil];
+
+	// A completion alert to dismiss, confirming where the export landed -- parity with the Linux
+	// build's "Saved ..." dialog.
+	NSAlert *alert = [[NSAlert alloc] init];
+	alert.messageText = [NSString stringWithFormat:@"Saved %@", urls[1].lastPathComponent];
+	alert.informativeText = urls[1].path;
+	[alert addButtonWithTitle:@"OK"];
+	[alert runModal];
 }
 
 - (void)download:(WKDownload *)download
 		didFailWithError:(NSError *)error
 		resumeData:(NSData *)resumeData API_AVAILABLE(macos(11.3)) {
 	[self hideProgress];
+	self.activeDownload = nil;
 	NSArray<NSURL *> *urls = objc_getAssociatedObject(download, &kDownloadDest);
 	if (urls) {
 		[[NSFileManager defaultManager] removeItemAtURL:urls[0] error:nil]; // drop the .part
 	}
-	NSLog(@"adminer-desktop: download failed: %@", error);
+	// A user cancel (closing the progress panel) comes through here too -- that is not a
+	// failure, so do not log it as one.
+	if (![error.domain isEqualToString:NSURLErrorDomain] || error.code != NSURLErrorCancelled) {
+		NSLog(@"adminer-desktop: download failed: %@", error);
+	}
+}
+
+// Closing the progress panel asks whether to cancel the download, and cancels it if so --
+// parity with the Linux build. Returns NO either way: the panel is only ever taken down by
+// hideProgress (on finish, or on the failure the cancel triggers), never by the close button.
+- (BOOL)windowShouldClose:(NSWindow *)sender API_AVAILABLE(macos(11.3)) {
+	if (!self.activeDownload) {
+		return NO;
+	}
+	NSAlert *alert = [[NSAlert alloc] init];
+	alert.messageText = @"Cancel this download?";
+	alert.informativeText = self.downloadName ?: @"";
+	[alert addButtonWithTitle:@"Cancel Download"];
+	[alert addButtonWithTitle:@"Keep Downloading"];
+	if ([alert runModal] == NSAlertFirstButtonReturn) {
+		// Cancelling reports NSURLErrorCancelled through didFailWithError:, which drops the
+		// .part and hides the panel.
+		[self.activeDownload cancel:nil];
+	}
+	return NO;
 }
 
 /* A small floating panel with a progress bar, shown while a download runs -- WKDownload has no
@@ -114,9 +149,10 @@ static const char kDownloadDest = 0;
 	if (self.progressPanel) {
 		return;
 	}
+	// Closable so its close button is the cancel affordance; windowShouldClose: intercepts it.
 	NSPanel *panel = [[NSPanel alloc]
 		initWithContentRect:NSMakeRect(0, 0, 340, 72)
-		styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskUtilityWindow
+		styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
 			| NSWindowStyleMaskNonactivatingPanel)
 		backing:NSBackingStoreBuffered
 		defer:NO];
@@ -125,6 +161,7 @@ static const char kDownloadDest = 0;
 	[panel setHidesOnDeactivate:NO];
 	[panel setReleasedWhenClosed:NO];
 	[panel setTitle:@"Adminer Desktop"];
+	[panel setDelegate:self];
 
 	NSTextField *label = [NSTextField labelWithString:@""];
 	[label setFrame:NSMakeRect(16, 38, 308, 18)];
@@ -145,6 +182,7 @@ static const char kDownloadDest = 0;
 - (void)showProgressForDownload:(WKDownload *)download filename:(NSString *)filename
 		API_AVAILABLE(macos(11.3)) {
 	[self buildProgressPanelIfNeeded];
+	self.activeDownload = download; // so the panel's close button can cancel it
 	// One export at a time in practice; if another is somehow mid-flight, it hands over the panel.
 	if (self.observedProgress) {
 		[self.observedProgress removeObserver:self forKeyPath:@"completedUnitCount"];
