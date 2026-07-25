@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
+.PHONY: help install fetch verify qa phpstan phpcs golangci biome security check check-app e2e build run dev editor debug demo down bundle zip dist tarball winzip logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -29,6 +29,11 @@ endif
 help:  ## Show this help
 	@grep -hE '^[a-z][a-zA-Z-]*:.*## ' $(MAKEFILE_LIST) \
 		| sort | awk -F':.*## ' '{printf "  \033[1m%-10s\033[0m %s\n", $$1, $$2}'
+
+# mise owns the dev toolchain (node deps, composer deps, the e2e browser) — one entry
+# point so its version pins stay in one place. This just surfaces it under make.
+install:  ## Install the dev toolchain (node + composer deps, e2e browser)
+	mise run install
 
 fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
 
