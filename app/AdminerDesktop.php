@@ -63,7 +63,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* the language files with every other string rather than as a special case.
 	* @return string
 	*/
-	function description() {
+	function description(): string {
 		return $this->t('plugin.description');
 	}
 
@@ -141,10 +141,9 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	/**
-	* @param bool|null $dark
 	* @return string|null
 	*/
-	function head(?bool $dark = null): ?string {
+	function head(): ?string {
 		$this->styles->link();
 		$this->javascript->link();
 		// Restore the sidebar to the width the user last dragged it to, before the body paints,
@@ -215,10 +214,9 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	/**
-	* @param mixed $missing
 	* @return void
 	*/
-	function navigation(mixed $missing): void {
+	function navigation(): void {
 		$this->dialog->render();
 	}
 
