@@ -31,10 +31,11 @@ help:  ## Show this help
 		| sort | awk -F':.*## ' '{printf "  \033[1m%-10s\033[0m %s\n", $$1, $$2}'
 
 # mise owns the dev toolchain (node deps, composer deps, the e2e browser) — one entry
-# point so its version pins stay in one place. `fetch` first so a fresh checkout pulls
-# the downloads (adminer + frankenphp + designs) in the same step, not on the next `make`.
-install: fetch  ## Install everything: downloads + dev toolchain (node + composer deps, e2e browser)
+# point so its version pins stay in one place. Toolchain first, then `fetch` for the
+# downloads (adminer + designs), so one command sets a fresh checkout up completely.
+install:  ## Install everything: dev toolchain (node + composer deps, e2e browser) + downloads
 	mise run install
+	$(MAKE) fetch
 
 fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
 
