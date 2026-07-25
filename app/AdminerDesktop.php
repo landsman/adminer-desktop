@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Desktop\Assets\Javascript;
 use Desktop\Assets\Styles;
 use Desktop\Env;
+use Desktop\I18n\Catalog;
 use Desktop\Import;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
@@ -35,6 +36,9 @@ class AdminerDesktop extends Adminer\Plugin {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
 		// is included, and there is no hook between the two. See Desktop\Import.
 		Import::defuse();
+		// The plugin UI strings live in app/src/I18n/plugin/ (per-language files, dotted IDs) and
+		// feed Adminer's Plugin::lang() through $translations. See Desktop\I18n\Catalog.
+		$this->translations = Catalog::load('plugin')->all();
 		$this->userSettings = new UserSettings();
 		$this->styles = new Styles(__DIR__ . "/src/Assets/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the
@@ -152,7 +156,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// side, but its label is ours to translate — so hand it over server-side in a meta the
 		// script reads. Only on the import page, which is the one the dropzone wires itself to.
 		if (isset($_GET["import"])) {
-			echo '<meta name="ad-import-drop" content="' . Adminer\h($this->t('Drop the SQL file to import')) . "\">\n";
+			echo '<meta name="ad-import-drop" content="' . Adminer\h($this->t('import.drop_hint')) . "\">\n";
 		}
 		return null; // let adminer's own head() run; it prints the favicon
 	}
@@ -225,36 +229,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
 
-	/** @var array<string,array<string,string>> */
-	protected $translations = [ // phpcs:ignore SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint -- overrides adminer's untyped Adminer\Plugin::$translations, which PHP forbids narrowing
-		'cs' => [
-			'' => 'Přizpůsobí výchozí hodnoty pro desktopovou aplikaci',
-			'Available plugins' => 'Dostupné pluginy',
-			'The plugins folder is read-only.' => 'Složka s pluginy je jen pro čtení.',
-			'Save' => 'Uložit',
-			'Light' => 'Světlý',
-			'Dark' => 'Tmavý',
-			'Design' => 'Vzhled',
-			'Preview' => 'Náhled',
-			'Language' => 'Jazyk',
-			'Row density' => 'Hustota řádků',
-			'Compact' => 'Kompaktní',
-			'Cozy' => 'Střední',
-			'Comfortable' => 'Vzdušný',
-			'Scaling' => 'Měřítko',
-			'Appearance' => 'Barevný režim',
-			'Sync with OS' => 'Podle systému',
-			'Adminer Desktop follows the system light and dark, or pin it to Light or Dark. Either scheme uses the design chosen for it below.' => 'Adminer Desktop se řídí světlým a tmavým režimem systému, nebo ho můžete připnout na Světlý či Tmavý. Každý režim použije vzhled zvolený níže.',
-			'Plugin' => 'Plugin',
-			'What it does' => 'Co dělá',
-			'Settings' => 'Nastavení',
-			'Theme' => 'Vzhled',
-			'Plugins' => 'Pluginy',
-			'Cancel' => 'Zavřít',
-			'Drop the SQL file to import' => 'Přetáhněte sem SQL soubor pro import',
-			// {n}, not %d: lang() runs the string through sprintf, which would replace %d with 0
-			// before the browser ever sees it.
-			'Unsaved changes: {n}. Close anyway?' => 'Neuložené změny: {n}. Přesto zavřít?',
-		],
-	];
+	/** Adminer's plugin translations, keyed by dotted ID. Populated in the constructor from the
+	* per-language files under app/src/I18n/plugin/; Adminer's Plugin::lang() reads this as
+	* $translations[LANG], with en.php the base an untranslated ID falls back to.
+	* @var array<string,array<string,string>>
+	*/
+	protected $translations = []; // phpcs:ignore SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint -- overrides adminer's untyped Adminer\Plugin::$translations, which PHP forbids narrowing
 }

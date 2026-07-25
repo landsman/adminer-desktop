@@ -11,7 +11,7 @@ namespace Desktop\I18n;
 * for the C side. English is the base and the fallback, so it gets no C rows of its own.
 */
 final class Generator {
-	private const string BANNER = 'Generated from app/src/I18n/Locale/*.php by cli/i18n.php. Do not edit — edit the language files and run `make i18n`.';
+	private const string BANNER = 'Generated from app/src/I18n/native/*.php by cli/i18n.php. Do not edit — edit the language files and run `make i18n`.';
 
 	public function __construct(private readonly Catalog $catalog) {
 	}
@@ -24,15 +24,15 @@ final class Generator {
 		$this->put("$root/launcher/i18n_gen.h", $this->header());
 	}
 
-	/** A human coverage report: the per-locale translated / missing / percentage table, then the
-	* keys each incomplete locale is missing. Catalog::complete() is the machine-readable gate; this
-	* returns a string rather than printing so it can be asserted.
+	/** A human coverage report for a domain ("native", "plugin"): the per-locale translated /
+	* missing / percentage table, then the IDs each incomplete locale is missing. Catalog::complete()
+	* is the machine-readable gate; this returns a string rather than printing so it can be asserted.
 	*/
-	public function report(): string {
+	public function report(string $label): string {
 		$total = count($this->catalog->base());
 		$missing = $this->catalog->missing();
 
-		$out = "Native-shell translations (app/src/I18n/Locale/, base " . Locale::En->value . ", $total strings)\n\n";
+		$out = "$label translations (base " . Locale::En->value . ", $total strings)\n\n";
 		$out .= sprintf("  %-8s  %-11s  %-8s  %s\n", "locale", "translated", "missing", "coverage");
 		foreach (array_keys($this->catalog->all()) as $locale) {
 			$gaps = count($missing[$locale] ?? []);

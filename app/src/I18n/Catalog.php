@@ -3,27 +3,27 @@ declare(strict_types=1);
 
 namespace Desktop\I18n;
 
-/** The native-shell strings, one [key => text] map per locale the Locale enum declares.
+/** One domain's strings, one [id => text] map per locale the Locale enum declares.
 *
-* English is the base: its keys are the canonical set and its text the fallback a translation
-* degrades to. Holds the loaded strings and answers what each locale still leaves untranslated;
-* Generator turns them into the platform formats and renders the coverage report. The map is
-* injected, so a test can construct a deliberate gap; load() is the production path that reads
-* the Locale/<value>.php files.
+* A domain is a directory of per-language files beside this class: "native" (the launcher shell,
+* turned into .strings + a C table by Generator) and "plugin" (the PHP UI, fed to Adminer's
+* lang() as $translations). English is the base: its IDs are the canonical set and its text the
+* fallback a translation degrades to. The map is injected, so a test can construct a deliberate
+* gap; load() is the production path that reads the <domain>/<value>.php files.
 */
 final class Catalog {
-	/** @param array<string,array<string,string>> $byLocale locale value => [key => text] */
+	/** @param array<string,array<string,string>> $byLocale locale value => [id => text] */
 	public function __construct(private readonly array $byLocale) {
 	}
 
-	/** Load the per-language file each Locale case declares. A declared locale with no file fails
-	* loudly here — the enum is the authority on what must exist.
+	/** Load a domain's per-language file for each Locale case ("native", "plugin"). A declared
+	* locale with no file fails loudly here — the enum is the authority on what must exist.
 	*/
-	public static function load(): self {
+	public static function load(string $domain): self {
 		$byLocale = [];
 		foreach (Locale::cases() as $locale) {
 			/** @var array<string,string> $strings */
-			$strings = require __DIR__ . "/Locale/{$locale->value}.php";
+			$strings = require __DIR__ . "/$domain/{$locale->value}.php";
 			$byLocale[$locale->value] = $strings;
 		}
 		return new self($byLocale);

@@ -21,9 +21,9 @@ require dirname(__DIR__) . "/bootstrap.php";
 
 $root = dirname(__DIR__, 2) . "/.cache/i18n-test";
 array_map('unlink', glob("$root/lproj/*.lproj/Localizable.strings") ?: []);
-(new Generator(Catalog::load()))->generate($root);
+(new Generator(Catalog::load('native')))->generate($root);
 
-$catalog = Catalog::load();
+$catalog = Catalog::load('native');
 $base = $catalog->base();
 $cs = (string) file_get_contents("$root/lproj/cs.lproj/Localizable.strings");
 $en = (string) file_get_contents("$root/lproj/en.lproj/Localizable.strings");
@@ -68,14 +68,20 @@ Assert::contains('static const char *adTr(const char *id)', $h);
 $complete = new Catalog(['en' => ['A' => 'A', 'B' => 'B'], 'cs' => ['A' => 'Á', 'B' => ' B']]);
 Assert::true($complete->complete());
 Assert::same([], $complete->missing());
-Assert::contains('All translations complete.', (new Generator($complete))->report());
-Assert::contains('100%', (new Generator($complete))->report());
+Assert::contains('All translations complete.', (new Generator($complete))->report('test'));
+Assert::contains('100%', (new Generator($complete))->report('test'));
 
 // ...and a catalog with a gap reports the missing key, the percentage, and is not complete.
 $gap = new Catalog(['en' => ['A' => 'A', 'B' => 'B'], 'cs' => ['A' => 'Á']]);
 Assert::false($gap->complete());
 Assert::same(['cs' => ['B']], $gap->missing());
-$report = (new Generator($gap))->report();
+$report = (new Generator($gap))->report('test');
 Assert::contains('Missing in cs', $report);
 Assert::contains('- B', $report);
 Assert::contains('50%', $report);
+
+// The plugin domain (the PHP UI strings, fed to Adminer's lang()) loads and is fully translated.
+$plugin = Catalog::load('plugin');
+Assert::true($plugin->complete());
+Assert::same('Save', $plugin->base()['settings.save']);
+Assert::same('Uložit', $plugin->all()['cs']['settings.save']);

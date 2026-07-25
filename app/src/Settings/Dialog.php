@@ -33,7 +33,7 @@ class Dialog {
 			"writable" => $this->plugins->writable(),
 			// {n}, not %d: lang() runs the string through sprintf, which would replace %d
 			// with 0 before the browser ever saw it. The script fills it in.
-			"unsaved" => $this->desktop->t('Unsaved changes: {n}. Close anyway?'),
+			"unsaved" => $this->desktop->t('settings.unsaved'),
 		]);
 	}
 }

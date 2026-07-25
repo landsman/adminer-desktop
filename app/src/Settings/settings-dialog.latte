@@ -11,7 +11,7 @@
 	bool $writable,
 	string $unsaved
 }
-<button type="button" id="desktop-gear" title="{$desktop->t('Settings')}">&#9881;</button>
+<button type="button" id="desktop-gear" title="{$desktop->t('settings.title')}">&#9881;</button>
 
 <dialog id="desktop-settings">
 <form action="" method="post">
@@ -20,9 +20,9 @@
 		also the state, so nothing has to be restored when the dialog reopens. *}
 	<div id="desktop-tabs">
 		<input type="radio" name="desktop_tab" id="desktop-tab-themes" checked>
-		<label for="desktop-tab-themes">{$desktop->t('Theme')}</label>
+		<label for="desktop-tab-themes">{$desktop->t('settings.tab_theme')}</label>
 		<input type="radio" name="desktop_tab" id="desktop-tab-plugins">
-		<label for="desktop-tab-plugins">{$desktop->t('Plugins')}</label>
+		<label for="desktop-tab-plugins">{$desktop->t('settings.tab_plugins')}</label>
 	</div>
 
 	{* The panels print themselves; this only decides where they sit. *}
@@ -39,8 +39,8 @@
 	<div id="desktop-actions">
 		{* The question the script asks before discarding edits, translated here because
 			this is where the translations are. *}
-		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('Cancel')}</button>
-		<button type="submit" id="desktop-save" n:attr="disabled: !$writable">{$desktop->t('Save')}</button>
+		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('settings.close')}</button>
+		<button type="submit" id="desktop-save" n:attr="disabled: !$writable">{$desktop->t('settings.save')}</button>
 	</div>
 </form>
 </dialog>

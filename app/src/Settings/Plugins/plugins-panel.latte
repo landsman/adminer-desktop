@@ -11,12 +11,12 @@
 }
 {* Closed, unlike adminer's own <p>: an n:attribute needs the element it sits on to end
 	somewhere, and latte says so rather than guessing. *}
-<p n:if="!$writable" class="error">{$desktop->t('The plugins folder is read-only.')}</p>
+<p n:if="!$writable" class="error">{$desktop->t('plugins.readonly')}</p>
 
 {* class=odds is adminer's own zebra striping, and it is overridden in dark.css, so the
 	rows follow whichever design is active instead of us picking colours. *}
 <table class="odds">
-	<thead><tr><th>{$desktop->t('Plugin')}<th>{$desktop->t('What it does')}</thead>
+	<thead><tr><th>{$desktop->t('plugins.col_name')}<th>{$desktop->t('plugins.col_desc')}</thead>
 	<tbody>
 		{foreach $plugins as $name => $plugin}
 			<tr>
