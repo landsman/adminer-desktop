@@ -2,20 +2,26 @@
 #
 # The runtime PHP is frankenphp (bundled — see Makefile), so mise does not build a second
 # one: composer and the PHP e2e tests run through `./bin/frankenphp php-cli`. mise pins
-# node — needed for Biome and for the browser the Playwright e2e driver launches — and the
-# tasks below are the single entry point for install / format / lint / e2e.
+# node — needed for Biome and for the browser the Playwright e2e driver launches — and go,
+# which builds the launcher, so a fresh checkout needs neither on the system. The go pin
+# tracks go.mod's `go` directive. The tasks below are the single entry point for
+# install / format / lint / e2e.
 
 [tools]
 node = "22"
+go = "1.26.5"
 
 [tasks.install]
-description = "Fetch composer, install PHP + JS deps, and the e2e browser"
+description = "Fetch composer, install PHP + JS deps, and the Chromium e2e browser"
 run = [
 	# composer and its version pin live in the Makefile, because qa and the packaged app
 	# need vendor/ too — this would otherwise be the second place to bump it.
 	"make app/vendor",
 	"npm install --no-audit --no-fund",
-	"./bin/frankenphp php-cli app/vendor/bin/playwright-install --browsers",
+	# Set up the Playwright server without --browsers (which pulls chromium, firefox and
+	# webkit), then install only chromium — the sole engine the e2e drives (Playwright::chromium).
+	"./bin/frankenphp php-cli app/vendor/bin/playwright-install",
+	"cd app/vendor/playwright-php/playwright/bin && npx --no-install playwright install chromium",
 ]
 
 [tasks.format]
