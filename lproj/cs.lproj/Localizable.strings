@@ -20,3 +20,9 @@
 /* Tlačítka v panelech pro JavaScript alert/confirm/prompt. */
 "OK" = "OK";
 "Cancel" = "Zrušit";
+
+/* Dialogy pro stahování exportu. %@ je název uloženého souboru; „OK“ výše se použije znovu. */
+"Saved %@" = "Uloženo %@";
+"Cancel this download?" = "Zrušit toto stahování?";
+"Cancel Download" = "Zrušit stahování";
+"Keep Downloading" = "Pokračovat ve stahování";

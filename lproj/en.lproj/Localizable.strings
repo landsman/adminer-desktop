@@ -22,3 +22,9 @@
 /* Buttons in the JavaScript alert/confirm/prompt panels. */
 "OK" = "OK";
 "Cancel" = "Cancel";
+
+/* Export download dialogs. %@ is the saved file's name; "OK" above is reused. */
+"Saved %@" = "Saved %@";
+"Cancel this download?" = "Cancel this download?";
+"Cancel Download" = "Cancel Download";
+"Keep Downloading" = "Keep Downloading";

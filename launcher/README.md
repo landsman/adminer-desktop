@@ -53,4 +53,15 @@ that slot free, it only uses the UI delegate — that turns a download into a re
 
 `WKDownload` is macOS **11.3+**; the app's floor is 11.0, so the whole path is behind
 `@available` and does nothing on the few point-releases below — there the response displays as
-it did before. Off macOS the stub is empty: WebView2 and WebKitGTK download files themselves.
+it did before.
+
+**Linux** (`download_linux.c`) has the same problem — WebKitGTK renders a displayable
+attachment (Adminer's SQL is `text/plain`) into the window, and tries but fails to download an
+undisplayable one because webview_go sets no destination — and the same fix, in WebKitGTK's
+terms: a `decide-policy` handler calls `webkit_policy_decision_download` for an `attachment`
+response or an unrenderable type; `download-started` on the web context then wires the
+`decide-destination` (a native `GtkFileChooserNative` Save dialog, KDE-native through the
+portal on Wayland), the same sibling-`.part`-then-rename, and a small `GtkWindow` progress bar
+pulsing on `received-data`. `webkit_download_set_destination` takes a path here (not the URI
+older WebKitGTK wanted). Off both, on **Windows**, the stub is empty: WebView2 downloads files
+itself.
