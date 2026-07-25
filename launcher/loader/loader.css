@@ -1,0 +1,39 @@
+/* Styling shared by the startup splash pages (loading.html, unreachable.html). These show
+ * in the native window before frankenphp is up, so at runtime this is inlined into the page
+ * rather than linked -- there is no server yet to serve it. color-scheme follows the OS, so
+ * the splash matches light/dark without knowing the user's app preference. */
+
+:root {
+	color-scheme: light dark;
+}
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: light-dark(#ffffff, #15171c);
+	color: light-dark(#1d2127, #c7ccd6);
+	font: 14px system-ui;
+	text-align: center;
+}
+
+.spinner {
+	width: 24px;
+	height: 24px;
+	border: 2px solid;
+	border-color: light-dark(#c8c8c8, #555555) transparent;
+	border-radius: 50%;
+	animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(1turn);
+	}
+}

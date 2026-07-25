@@ -4,6 +4,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	webview "github.com/webview/webview_go"
@@ -148,6 +150,26 @@ var (
 	frankenphpVersion = "unknown"
 )
 
+// The startup splash pages, shown in the native window before frankenphp is serving -- so
+// they can't be fetched from it and are compiled in. This is not the app/ tree the note above
+// keeps on disk: three tiny files the window needs before any server exists, with nothing to
+// extract or cache, and they must never be missing since one is the first frame and one is the
+// error screen. Edited as real .html/.css; go:embed bakes them in. loaderPage folds the shared
+// stylesheet into a page (the templates keep a <link> so each renders standalone in an editor).
+//
+//go:embed loader/loading.html
+var loadingHTML string
+
+//go:embed loader/unreachable.html
+var unreachableHTML string
+
+//go:embed loader/loader.css
+var loaderCSS string
+
+func loaderPage(html string) string {
+	return strings.Replace(html, `<link rel="stylesheet" href="loader.css">`, "<style>\n"+loaderCSS+"</style>", 1)
+}
+
 func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
 	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
@@ -228,19 +250,26 @@ func main() {
 	// platforms that have no menu to switch with.
 	setLastApp(app)
 	url := fmt.Sprintf("http://%s/%s", addr, app)
-	cold, err := waitReady(url, 15*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// A warm request for comparison: opcache is on, so this second hit is served from
-	// compiled bytecode. cold - warm is the compile cost, i.e. the ceiling on what
-	// opcache.file_cache could shave off the first request of every future launch.
-	warm := timeGet(url)
-	log.Printf("startup: server ready in %s; first request %s cold vs %s warm (~%s is PHP compile)",
-		time.Since(bootStart).Round(time.Millisecond), cold.Round(time.Millisecond),
-		warm.Round(time.Millisecond), (cold - warm).Round(time.Millisecond))
 
+	// logReady reports the pre-window wait, splitting the cold first request from a warm one:
+	// opcache is on, so the warm hit is served from compiled bytecode and cold - warm is the
+	// compile cost -- the ceiling on what opcache.file_cache could save off each launch's first
+	// request. The probe now runs behind the loader, so this logs from wherever it ran.
+	logReady := func(cold time.Duration) {
+		warm := timeGet(url)
+		log.Printf("startup: server ready in %s; first request %s cold vs %s warm (~%s is PHP compile)",
+			time.Since(bootStart).Round(time.Millisecond), cold.Round(time.Millisecond),
+			warm.Round(time.Millisecond), (cold - warm).Round(time.Millisecond))
+	}
+
+	// headless is check-app's mode: assert the server serves, then exit. No window to fill
+	// while it waits, so it keeps the plain blocking probe.
 	if *headless {
+		cold, err := waitReady(url, 15*time.Second)
+		if err != nil {
+			log.Fatal(err)
+		}
+		logReady(cold)
 		fmt.Printf("OK: serving %s\n", url)
 		return
 	}
@@ -287,11 +316,23 @@ func main() {
 	}
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
-	w.Navigate(url)
-	// Native webview setup up to the navigate call. The black flash some users see is the
-	// gap between the window showing and WebKit's first paint, which lands after this --
-	// measuring that would need a load-finished callback from the native layer.
+	// Show the loader now rather than blocking on the server first: a background probe swaps
+	// in the app once it answers, or the error page if it never does, so the window is up and
+	// painted from the first frame instead of after the whole cold start.
+	w.SetHtml(loaderPage(loadingHTML))
+	// The window is painted (on the loader) the moment SetHtml lands; the app's own first
+	// paint follows once the probe navigates, which measuring would need a native load hook.
 	log.Printf("startup: window ready in %s (first paint follows, not measured here)", time.Since(guiStart).Round(time.Millisecond))
+	go func() {
+		cold, err := waitReady(url, 15*time.Second)
+		if err != nil {
+			log.Print(err)
+			w.Dispatch(func() { w.SetHtml(loaderPage(unreachableHTML)) })
+			return
+		}
+		logReady(cold)
+		w.Dispatch(func() { w.Navigate(url) })
+	}()
 	if *dev {
 		go watchAndReload(root, w)
 	}
