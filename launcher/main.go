@@ -290,6 +290,10 @@ func main() {
 	w := webview.New(false)
 	log.Printf("startup: webview created in %s", time.Since(guiStart).Round(time.Millisecond))
 	defer w.Destroy()
+	// webview.New already mapped the window, unpainted and unsized -- that empty frame is the
+	// white flash. Hide it before the run loop starts (so it is never shown in that state) and
+	// bring it back once the loader has painted, in the adLoaderShown callback below.
+	hideWindow(w.Window())
 	w.SetTitle("Adminer Desktop")
 	// Without an icon the Linux taskbar shows a generic placeholder. macOS uses the .app's
 	// .icns and Windows its own, so setWindowIcon is a no-op there; this is the GTK path,
@@ -335,6 +339,9 @@ func main() {
 	// on DOMContentLoaded.
 	if err := w.Bind("adLoaderShown", func() {
 		log.Printf("startup: loader rendered in %s", time.Since(guiStart).Round(time.Millisecond))
+		// The loader has parsed and styled, so there is finally something to show: reveal the
+		// window (already sized), painting straight onto the spinner instead of a blank frame.
+		showWindow(w.Window())
 	}); err != nil {
 		log.Print("startup: loader timing bind failed: ", err)
 	}
