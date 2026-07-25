@@ -28,7 +28,7 @@
 		completionHandler:(void (^)(void))completionHandler {
 	NSAlert *alert = [[NSAlert alloc] init];
 	[alert setMessageText:message ?: @""];
-	[alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
+	[alert addButtonWithTitle:NSLocalizedString(@"dialog.ok", nil)];
 	[alert runModal];
 	completionHandler();
 }
@@ -40,8 +40,8 @@
 	NSAlert *alert = [[NSAlert alloc] init];
 	[alert setMessageText:message ?: @""];
 	// First button is the default, so return activates it, as on every system sheet.
-	[alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
-	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", nil)];
+	[alert addButtonWithTitle:NSLocalizedString(@"dialog.ok", nil)];
+	[alert addButtonWithTitle:NSLocalizedString(@"dialog.cancel", nil)];
 	completionHandler([alert runModal] == NSAlertFirstButtonReturn);
 }
 
@@ -52,8 +52,8 @@
 		completionHandler:(void (^)(NSString *))completionHandler {
 	NSAlert *alert = [[NSAlert alloc] init];
 	[alert setMessageText:prompt ?: @""];
-	[alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
-	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", nil)];
+	[alert addButtonWithTitle:NSLocalizedString(@"dialog.ok", nil)];
+	[alert addButtonWithTitle:NSLocalizedString(@"dialog.cancel", nil)];
 
 	NSTextField *field = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 320, 24)];
 	[field setStringValue:defaultText ?: @""];

@@ -1,0 +1,96 @@
+<?php
+declare(strict_types=1);
+
+/** Does the i18n generator emit correct .strings and a correct C table from the language files,
+ * and report coverage correctly?
+ *
+ * The output half generates into a throwaway dir and asserts the shape the native shells depend
+ * on: the Catalog loads exactly the locales the enum declares, every base key reaches each
+ * locale's .strings, translations carry through, multiline values escape to one line, macOS %@
+ * becomes printf %s for C, and English rows are omitted (they are the fallback). The coverage
+ * half feeds the Catalog an in-memory gap so the missing/report/return-code path is exercised too.
+ * No database, no browser, so `make qa` runs it via frankenphp.
+ */
+
+use Desktop\I18n\Catalog;
+use Desktop\I18n\Domain;
+use Desktop\I18n\Generator;
+use Desktop\I18n\Locale;
+use Tester\Assert;
+
+require dirname(__DIR__) . "/bootstrap.php";
+
+$root = dirname(__DIR__, 2) . "/.cache/i18n-test";
+array_map('unlink', glob("$root/lproj/*.lproj/Localizable.strings") ?: []);
+(new Generator(Catalog::load(Domain::Native)))->generate($root);
+
+$catalog = Catalog::load(Domain::Native);
+$base = $catalog->base();
+$cs = (string) file_get_contents("$root/lproj/cs.lproj/Localizable.strings");
+$en = (string) file_get_contents("$root/lproj/en.lproj/Localizable.strings");
+$h = (string) file_get_contents("$root/launcher/i18n_gen.h");
+
+// The Catalog loads exactly the locales the enum declares, in that order.
+Assert::same(array_map(fn (Locale $l) => $l->value, Locale::cases()), array_keys($catalog->all()));
+
+// The shipped locales are fully translated.
+Assert::true($catalog->complete());
+Assert::same([], $catalog->missing());
+
+// Every base ID reaches each locale's .strings as an NSLocalizedString key.
+foreach (array_keys($base) as $id) {
+	Assert::contains('"' . $id . '" = ', $en, "en is missing $id");
+	Assert::contains('"' . $id . '" = ', $cs, "cs is missing $id");
+}
+
+// Translations carry through by ID; the English .strings carries the base text under the ID.
+Assert::contains('"download.save_title" = "Uložit export";', $cs);
+Assert::contains('"download.save_title" = "Save Export";', $en);
+
+// Multiline values escape to one physical line, so every entry stays a valid single statement.
+Assert::contains('\nApache-2.0', $cs);
+foreach (explode("\n", trim($cs)) as $line) {
+	$line = trim($line);
+	if ($line !== "" && !str_starts_with($line, "/*")) {
+		Assert::true(str_ends_with($line, ";"), "unterminated .strings line: $line");
+	}
+}
+
+// C table: keyed by ID, placeholders rewritten to printf, every ID has an en fallback row, a
+// locale that matches English gets no row (dialog.ok), and adTr is present.
+Assert::notContains('%@', $h);
+Assert::contains('{"en", "download.saved", "Saved %s"},', $h);
+Assert::contains('{"cs", "download.saved", "Uloženo %s"},', $h);
+Assert::contains('{"en", "dialog.ok", "OK"},', $h);
+Assert::notContains('{"cs", "dialog.ok"', $h);
+Assert::contains('static const char *adTr(const char *id)', $h);
+
+// Coverage on injected data: a fully translated catalog reports complete...
+$complete = new Catalog(['en' => ['A' => 'A', 'B' => 'B'], 'cs' => ['A' => 'Á', 'B' => ' B']]);
+Assert::true($complete->complete());
+Assert::same([], $complete->missing());
+Assert::contains('All translations complete.', (new Generator($complete))->report('test'));
+Assert::contains('100%', (new Generator($complete))->report('test'));
+
+// ...and a catalog with a gap reports the missing key, the percentage, and is not complete.
+$gap = new Catalog(['en' => ['A' => 'A', 'B' => 'B'], 'cs' => ['A' => 'Á']]);
+Assert::false($gap->complete());
+Assert::same(['cs' => ['B']], $gap->missing());
+$report = (new Generator($gap))->report('test');
+Assert::contains('Missing in cs', $report);
+Assert::contains('- B', $report);
+Assert::contains('50%', $report);
+
+// The plugin domain (the PHP UI strings, fed to Adminer's lang()) loads and is fully translated.
+$plugin = Catalog::load(Domain::Plugin);
+Assert::true($plugin->complete());
+Assert::same('Save', $plugin->base()['settings.save']);
+Assert::same('Uložit', $plugin->all()['cs']['settings.save']);
+
+// Both shipped domains use only well-formed IDs...
+Assert::same([], Catalog::load(Domain::Native)->malformedIds());
+Assert::same([], $plugin->malformedIds());
+
+// ...and the check catches empty, spaced, uppercase and un-namespaced IDs.
+$weird = new Catalog(['en' => ['ok.id' => 'a', '' => 'b', 'has space' => 'c', 'Upper.Case' => 'd', 'nodot' => 'e']]);
+Assert::same(['', 'has space', 'Upper.Case', 'nodot'], $weird->malformedIds());

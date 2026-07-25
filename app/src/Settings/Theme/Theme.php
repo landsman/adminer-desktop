@@ -29,7 +29,7 @@ class Theme {
 	function designs(Mode $mode): array {
 		// The empty option is our own theme, which is the default for this side rather than
 		// Adminer's raw look. Picking a gallery design below overrides it.
-		$return = ["" => $this->desktop->t('Adminer Desktop')];
+		$return = ["" => $this->desktop->t('theme.builtin_design')];
 		foreach (glob(__DIR__ . "/designs/*/*.css") as $filename) {
 			$dir = basename(dirname($filename));
 			if ($dir === "adminer-desktop") {
@@ -102,15 +102,15 @@ class Theme {
 			// t() takes literal strings (it runs them through lang()), so the labels are
 			// spelled out here rather than translated from a loop variable.
 			"appearances" => [
-				"auto" => $this->desktop->t('Sync with OS'),
-				"light" => $this->desktop->t('Light'),
-				"dark" => $this->desktop->t('Dark'),
+				"auto" => $this->desktop->t('theme.appearance_auto'),
+				"light" => $this->desktop->t('theme.light'),
+				"dark" => $this->desktop->t('theme.dark'),
 			],
 			"appearance" => (string) $this->settings->get(SettingKey::Appearance, "auto"),
 			"densities" => [
-				"compact" => $this->desktop->t('Compact'),
-				"cozy" => $this->desktop->t('Cozy'),
-				"comfortable" => $this->desktop->t('Comfortable'),
+				"compact" => $this->desktop->t('theme.density_compact'),
+				"cozy" => $this->desktop->t('theme.density_cozy'),
+				"comfortable" => $this->desktop->t('theme.density_comfortable'),
 			],
 			"density" => (string) $this->settings->get(SettingKey::Density, "cozy"),
 			"scalings" => self::SCALINGS,
@@ -131,7 +131,7 @@ class Theme {
 		foreach (Mode::cases() as $mode) {
 			$sides[] = [
 				"mode" => $mode->value,
-				"label" => $mode === Mode::Light ? $this->desktop->t('Light') : $this->desktop->t('Dark'),
+				"label" => $mode === Mode::Light ? $this->desktop->t('theme.light') : $this->desktop->t('theme.dark'),
 				"designs" => $this->designs($mode),
 				"chosen" => (string) $this->settings->get($mode->designKey(), ""),
 			];

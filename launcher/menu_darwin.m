@@ -62,7 +62,7 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	// in Localizable.strings and a translator has exactly one file to work with.
 	// Short key, unlike the menu items: a multi-line format string makes a poor key, and
 	// en.lproj always ships so there is nothing to fall back to.
-	aboutCredits = [NSString stringWithFormat:NSLocalizedString(@"credits.format", nil),
+	aboutCredits = [NSString stringWithFormat:NSLocalizedString(@"about.credits", nil),
 		[NSString stringWithUTF8String:adminerVersion],
 		[NSString stringWithUTF8String:frankenphpVersion],
 		[NSString stringWithUTF8String:version]];
@@ -80,16 +80,16 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	[bar addItem:appItem];
 	NSMenu *appMenu = [[NSMenu alloc] initWithTitle:@"Adminer Desktop"];
 	// Also in the app menu, because that is where mac users reflexively look for it.
-	addItem(appMenu, NSLocalizedString(@"About Adminer Desktop", nil), @selector(openAbout:), @"", menuTarget);
+	addItem(appMenu, NSLocalizedString(@"menu.about", nil), @selector(openAbout:), @"", menuTarget);
 	[appMenu addItem:[NSMenuItem separatorItem]];
 	addItem(appMenu, @"Adminer", @selector(openAdminer:), @"1", menuTarget);
 	addItem(appMenu, @"Editor", @selector(openEditor:), @"2", menuTarget);
 	[appMenu addItem:[NSMenuItem separatorItem]];
-	addItem(appMenu, NSLocalizedString(@"Open Logs", nil), @selector(openLogs:), @"l", menuTarget);
+	addItem(appMenu, NSLocalizedString(@"menu.open_logs", nil), @selector(openLogs:), @"l", menuTarget);
 	[appMenu addItem:[NSMenuItem separatorItem]];
 	// nil target: Quit travels the responder chain to NSApp, which is what makes Cmd-Q
 	// behave like every other mac app.
-	addItem(appMenu, NSLocalizedString(@"Quit Adminer Desktop", nil), @selector(terminate:), @"q", nil);
+	addItem(appMenu, NSLocalizedString(@"menu.quit", nil), @selector(terminate:), @"q", nil);
 	[appItem setSubmenu:appMenu];
 
 	// Cmd-V in a WKWebView is not the system doing it: AppKit only delivers cut/copy/paste
@@ -98,25 +98,25 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	// nil target for the same reason Quit uses one — the chain finds the first responder.
 	NSMenuItem *editItem = [[NSMenuItem alloc] init];
 	[bar addItem:editItem];
-	NSMenu *editMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Edit", nil)];
-	addItem(editMenu, NSLocalizedString(@"Undo", nil), @selector(undo:), @"z", nil);
+	NSMenu *editMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"menu.edit", nil)];
+	addItem(editMenu, NSLocalizedString(@"menu.undo", nil), @selector(undo:), @"z", nil);
 	// Uppercase key equivalent: AppKit reads that as Shift-Cmd-Z on its own.
-	addItem(editMenu, NSLocalizedString(@"Redo", nil), @selector(redo:), @"Z", nil);
+	addItem(editMenu, NSLocalizedString(@"menu.redo", nil), @selector(redo:), @"Z", nil);
 	[editMenu addItem:[NSMenuItem separatorItem]];
-	addItem(editMenu, NSLocalizedString(@"Cut", nil), @selector(cut:), @"x", nil);
-	addItem(editMenu, NSLocalizedString(@"Copy", nil), @selector(copy:), @"c", nil);
-	addItem(editMenu, NSLocalizedString(@"Paste", nil), @selector(paste:), @"v", nil);
-	addItem(editMenu, NSLocalizedString(@"Select All", nil), @selector(selectAll:), @"a", nil);
+	addItem(editMenu, NSLocalizedString(@"menu.cut", nil), @selector(cut:), @"x", nil);
+	addItem(editMenu, NSLocalizedString(@"menu.copy", nil), @selector(copy:), @"c", nil);
+	addItem(editMenu, NSLocalizedString(@"menu.paste", nil), @selector(paste:), @"v", nil);
+	addItem(editMenu, NSLocalizedString(@"menu.select_all", nil), @selector(selectAll:), @"a", nil);
 	[editItem setSubmenu:editMenu];
 
 	NSMenuItem *helpItem = [[NSMenuItem alloc] init];
 	[bar addItem:helpItem];
-	NSMenu *helpMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Help", nil)];
-	addItem(helpMenu, NSLocalizedString(@"About Adminer Desktop", nil), @selector(openAbout:), @"", menuTarget);
+	NSMenu *helpMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"menu.help", nil)];
+	addItem(helpMenu, NSLocalizedString(@"menu.about", nil), @selector(openAbout:), @"", menuTarget);
 	[helpMenu addItem:[NSMenuItem separatorItem]];
-	addItem(helpMenu, NSLocalizedString(@"Adminer Website", nil), @selector(openAdminerSite:), @"", menuTarget);
-	addItem(helpMenu, NSLocalizedString(@"adminer-desktop on GitHub", nil), @selector(openRepo:), @"", menuTarget);
-	addItem(helpMenu, NSLocalizedString(@"Report an Issue", nil), @selector(openIssues:), @"", menuTarget);
+	addItem(helpMenu, NSLocalizedString(@"menu.adminer_website", nil), @selector(openAdminerSite:), @"", menuTarget);
+	addItem(helpMenu, NSLocalizedString(@"menu.github", nil), @selector(openRepo:), @"", menuTarget);
+	addItem(helpMenu, NSLocalizedString(@"menu.report_issue", nil), @selector(openIssues:), @"", menuTarget);
 	[helpItem setSubmenu:helpMenu];
 
 	[NSApp setMainMenu:bar];

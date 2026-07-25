@@ -2,6 +2,7 @@
 !/app/adminer-plugins/.gitkeep
 /.cache
 /.idea/
+/out/
 /.playwright-mcp/
 # Installed dependencies — composer.json/lock and package.json/lock are the source of
 # truth; the trees themselves are built by `mise run install`, not committed.
@@ -20,6 +21,10 @@
 !/app/src/Settings/Theme/designs/adminer-desktop/
 /bin
 /build/
+# Native-shell translations: generated from app/src/I18n/Locale/*.php by `make i18n` and rebuilt
+# before every build. The per-language files are the committed source.
+/lproj/*.lproj/Localizable.strings
+/launcher/i18n_gen.h
 # Checked-in checksums are what make it reproducible — the bytes don't belong in git.
 # Everything below is downloaded by `make fetch` at a pinned version.
 # The enabled-plugin set is user state, not source.

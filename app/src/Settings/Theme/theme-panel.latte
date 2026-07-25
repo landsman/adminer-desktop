@@ -14,27 +14,27 @@
 	string $scaling,
 	array $sides
 }
-<p class="message">{$desktop->t('Adminer Desktop follows the system light and dark, or pin it to Light or Dark. Either scheme uses the design chosen for it below.')}
+<p class="message">{$desktop->t('theme.appearance_hint')}
 
 {* Sync with OS (the default) hands both schemes to the browser and lets prefers-color-scheme
 	pick; Light or Dark pins it, so it stays put whatever the OS does. *}
-<h4>{$desktop->t('Appearance')}</h4>
+<h4>{$desktop->t('theme.appearance')}</h4>
 <p>
 	<label n:foreach="$appearances as $value => $label" for="desktop-appearance-{$value}" style="margin-right: 1.2em; white-space: nowrap">
 		<input type="radio" name="appearance" value="{$value}" id="desktop-appearance-{$value}" n:attr="checked: $appearance == $value"> {$label}</label>
 
-<h4>{$desktop->t('Language')}</h4>
+<h4>{$desktop->t('theme.language')}</h4>
 <p id="desktop-lang-slot"></p>
 
 {* Row density applies to the Adminer Desktop theme (it drives our --ad-row-*); a gallery
 	design brings its own spacing, so this has no effect while one is chosen. *}
-<h4>{$desktop->t('Row density')}</h4>
+<h4>{$desktop->t('theme.density')}</h4>
 <p>
 	<label n:foreach="$densities as $value => $label" for="desktop-density-{$value}" style="margin-right: 1.2em; white-space: nowrap">
 		<input type="radio" name="density" value="{$value}" id="desktop-density-{$value}" n:attr="checked: $density == $value"> {$label}</label>
 
 {* Scaling zooms the whole UI. Like density it only affects the Adminer Desktop theme. *}
-<h4>{$desktop->t('Scaling')}</h4>
+<h4>{$desktop->t('theme.scaling')}</h4>
 <p>
 	<select name="scaling">
 		<option n:foreach="$scalings as $value" value="{$value}" n:attr="selected: $scaling == $value">{$value}%</option>
@@ -48,7 +48,7 @@
 	{* class=odds is adminer's own zebra striping, and it is overridden in dark.css, so the
 		rows follow whichever design is active instead of us picking colours. *}
 	<table class="odds">
-		<thead><tr><th>{$desktop->t('Design')}<th>{$desktop->t('Preview')}</thead>
+		<thead><tr><th>{$desktop->t('theme.design')}<th>{$desktop->t('theme.preview')}</thead>
 		<tbody>
 			{foreach $side['designs'] as $path => $design}
 				{var $id = "desktop-design-{$side['mode']}-{$iterator->counter0}"}

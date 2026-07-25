@@ -5,7 +5,7 @@ parameters:
     # things that must not be analysed are stable while our own files are not.
     paths:
         - app
-        - cli/lint.php
+        - cli
 
     excludePaths:
         # vendor/ lives under app/ now, so paths: [app] would otherwise analyse all of it.

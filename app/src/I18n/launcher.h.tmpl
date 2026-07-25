@@ -1,0 +1,36 @@
+/* {{banner}} */
+#ifndef AD_I18N_GEN_H
+#define AD_I18N_GEN_H
+#include <stdlib.h>
+#include <string.h>
+
+/* Look up a string by its stable ID (e.g. "download.saved"). Rows are {locale, id, text}; every
+   ID has an "en" row (the base text and the fallback), plus a row per locale that translates it.
+   adTr returns the process locale's text ($LC_MESSAGES/$LANG), else English, else the id. */
+static const struct { const char *loc, *id, *text; } ad_i18n[] = {
+{{rows}}
+};
+
+static const char *adTr(const char *id) {
+	static const char *loc;
+	static int init;
+	if (!init) {
+		init = 1;
+		loc = getenv("LC_MESSAGES");
+		if (!loc || !*loc) { loc = getenv("LANG"); }
+	}
+	const char *en = id; /* unknown id -> the id itself */
+	for (size_t i = 0; i < sizeof(ad_i18n) / sizeof(ad_i18n[0]); i++) {
+		if (strcmp(ad_i18n[i].id, id) != 0) {
+			continue;
+		}
+		if (strcmp(ad_i18n[i].loc, "en") == 0) {
+			en = ad_i18n[i].text; /* remember English as the fallback */
+		} else if (loc && strncmp(loc, ad_i18n[i].loc, strlen(ad_i18n[i].loc)) == 0) {
+			return ad_i18n[i].text; /* the process locale's translation */
+		}
+	}
+	return en;
+}
+
+#endif

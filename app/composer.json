@@ -5,6 +5,7 @@
     "type": "project",
     "require-dev": {
         "dg/composer-cleaner": "^2.2",
+        "nette/tester": "^2.5",
         "playwright-php/playwright": "^1.2",
         "slevomat/coding-standard": "^8.16",
         "squizlabs/php_codesniffer": "^4.0"
