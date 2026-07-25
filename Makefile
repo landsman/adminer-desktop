@@ -236,11 +236,11 @@ LDFLAGS = -X main.version=$(VERSION) \
 # format (macOS .strings, a C table the Linux/Windows launcher #includes) so nothing gains a runtime
 # i18n dependency. The outputs are gitignored and rebuilt here before every build; the language
 # files are the committed source. The PHP plugin UI localises itself, via AdminerDesktop::$translations.
-i18n: bin/frankenphp$(EXE)  ## Generate the native-shell translations from app/src/I18n/Locale/*.php
+i18n: bin/frankenphp$(EXE) app/vendor  ## Generate the native-shell translations from app/src/I18n/Locale/*.php
 	./bin/frankenphp$(EXE) php-cli cli/i18n.php
 
 # Which strings each locale is still missing. Exits non-zero if any are, so CI can gate on it.
-i18n-check: bin/frankenphp$(EXE)  ## Report native-shell translation coverage (missing strings per locale)
+i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)
 	@./bin/frankenphp$(EXE) php-cli cli/i18n.php check
 
 build: fetch i18n  ## Build the launcher binary
