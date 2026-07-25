@@ -6,3 +6,12 @@
      page standalone-renderable in an editor -- at runtime the launcher inlines the CSS. -->
 <link rel="stylesheet" href="loader.css">
 <div class="spinner"></div>
+<!-- Report to the launcher when this page has parsed, so it can log when the loader actually
+     rendered vs when it was told to (adLoaderShown is bound in main.go). Diagnostic only. -->
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		if (window.adLoaderShown) {
+			window.adLoaderShown();
+		}
+	});
+</script>

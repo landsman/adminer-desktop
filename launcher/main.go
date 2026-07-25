@@ -288,6 +288,7 @@ func main() {
 
 	guiStart := time.Now()
 	w := webview.New(false)
+	log.Printf("startup: webview created in %s", time.Since(guiStart).Round(time.Millisecond))
 	defer w.Destroy()
 	w.SetTitle("Adminer Desktop")
 	// Without an icon the Linux taskbar shows a generic placeholder. macOS uses the .app's
@@ -328,13 +329,21 @@ func main() {
 	}
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
+	// Report from inside the webview when the loader has actually parsed and rendered -- the one
+	// startup phase Go can't time, since it is WebKit's own paint. It separates "the window was
+	// shown before the loader rendered" from "WebKit was slow to paint". loading.html calls this
+	// on DOMContentLoaded.
+	if err := w.Bind("adLoaderShown", func() {
+		log.Printf("startup: loader rendered in %s", time.Since(guiStart).Round(time.Millisecond))
+	}); err != nil {
+		log.Print("startup: loader timing bind failed: ", err)
+	}
+
 	// Show the loader now rather than blocking on the server first: a background probe swaps
 	// in the app once it answers, or the error page if it never does, so the window is up and
 	// painted from the first frame instead of after the whole cold start.
 	w.SetHtml(loaderPage(loadingHTML))
-	// The window is painted (on the loader) the moment SetHtml lands; the app's own first
-	// paint follows once the probe navigates, which measuring would need a native load hook.
-	log.Printf("startup: window ready in %s (first paint follows, not measured here)", time.Since(guiStart).Round(time.Millisecond))
+	log.Printf("startup: loader html set in %s", time.Since(guiStart).Round(time.Millisecond))
 	go func() {
 		cold, err := waitReady(url, 15*time.Second)
 		if err != nil {
@@ -348,6 +357,7 @@ func main() {
 	if *dev {
 		go watchAndReload(root, w)
 	}
+	log.Printf("startup: entering run loop in %s", time.Since(guiStart).Round(time.Millisecond))
 	w.Run()
 }
 
