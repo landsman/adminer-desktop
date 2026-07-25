@@ -13,6 +13,10 @@ int installMouseNav(void *nsWindow); // 1 when the monitor was attached
 // Reload the page on Cmd+R and F5, which WKWebView otherwise ignores.
 int installReloadShortcut(void *nsWindow); // 1 when the monitor was attached
 
+// Save an attachment response (Adminer's Export > save) through a native Save panel instead
+// of rendering the file into the window. macOS 11.3+.
+int installDownloads(void *nsWindow); // 1 when the download handler was attached
+
 const char *describeUIDelegate(void *nsWindow);
 int enableInspector(void *nsWindow); // 1 if the web inspector was turned on
 

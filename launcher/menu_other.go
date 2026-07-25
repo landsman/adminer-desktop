@@ -25,6 +25,11 @@ func installMouseNav(window unsafe.Pointer) {}
 // deliver the keystroke to it, so nothing native is needed.
 func installReloadShortcut(window unsafe.Pointer) {}
 
+// Downloads off macOS: Windows' WebView2 and Linux's WebKitGTK both bring their own download
+// handling (WebView2 shows a download UI; WebKitGTK emits download-started), so nothing is
+// wired here yet — built when those platforms ship, like the rest of this stub file.
+func installDownloads(window unsafe.Pointer) {}
+
 func enableInspector(window unsafe.Pointer) bool { return false }
 
 func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }
