@@ -36,15 +36,15 @@ Assert::same(array_map(fn (Locale $l) => $l->value, Locale::cases()), array_keys
 Assert::true($catalog->complete());
 Assert::same([], $catalog->missing());
 
-// Every base key reaches each locale's .strings as an NSLocalizedString key.
-foreach (array_keys($base) as $key) {
-	Assert::contains('"' . $key . '" = ', $en, "en is missing $key");
-	Assert::contains('"' . $key . '" = ', $cs, "cs is missing $key");
+// Every base ID reaches each locale's .strings as an NSLocalizedString key.
+foreach (array_keys($base) as $id) {
+	Assert::contains('"' . $id . '" = ', $en, "en is missing $id");
+	Assert::contains('"' . $id . '" = ', $cs, "cs is missing $id");
 }
 
-// Translations carry through; English degrades a key to itself.
-Assert::contains('"Save Export" = "Uložit export";', $cs);
-Assert::contains('"Save Export" = "Save Export";', $en);
+// Translations carry through by ID; the English .strings carries the base text under the ID.
+Assert::contains('"download.save_title" = "Uložit export";', $cs);
+Assert::contains('"download.save_title" = "Save Export";', $en);
 
 // Multiline values escape to one physical line, so every entry stays a valid single statement.
 Assert::contains('\nApache-2.0', $cs);
@@ -55,13 +55,14 @@ foreach (explode("\n", trim($cs)) as $line) {
 	}
 }
 
-// C table: placeholders rewritten to printf, English omitted (it is the fallback), identical
-// translations omitted, and adTr present.
+// C table: keyed by ID, placeholders rewritten to printf, every ID has an en fallback row, a
+// locale that matches English gets no row (dialog.ok), and adTr is present.
 Assert::notContains('%@', $h);
-Assert::contains('{"cs", "Saved %s", "Uloženo %s"},', $h);
-Assert::notContains('{"en",', $h);
-Assert::notContains('"OK", "OK"', $h);
-Assert::contains('static const char *adTr(const char *en)', $h);
+Assert::contains('{"en", "download.saved", "Saved %s"},', $h);
+Assert::contains('{"cs", "download.saved", "Uloženo %s"},', $h);
+Assert::contains('{"en", "dialog.ok", "OK"},', $h);
+Assert::notContains('{"cs", "dialog.ok"', $h);
+Assert::contains('static const char *adTr(const char *id)', $h);
 
 // Coverage on injected data: a fully translated catalog reports complete...
 $complete = new Catalog(['en' => ['A' => 'A', 'B' => 'B'], 'cs' => ['A' => 'Á', 'B' => ' B']]);

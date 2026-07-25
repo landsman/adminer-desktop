@@ -64,20 +64,24 @@ final class Generator {
 		return "/* " . self::BANNER . " */\n\n" . implode("\n", $lines) . "\n";
 	}
 
-	/** The launcher's C lookup table, filled into launcher.h.tmpl. Only a locale's real
-	* translations become rows — English is the fallback — and placeholders become printf's.
+	/** The launcher's C lookup table, filled into launcher.h.tmpl. Every ID gets an "en" row (the
+	* base text, and adTr's fallback); other locales get a row only where they actually translate
+	* it and differ. IDs are stable, so only the text needs its placeholders rewritten to printf.
 	*/
 	private function header(): string {
+		$base = $this->catalog->base();
 		$rows = [];
 		foreach ($this->catalog->all() as $locale => $strings) {
-			if ($locale === Locale::En->value) {
-				continue;
-			}
-			foreach ($this->catalog->base() as $key => $en) {
-				$tr = $strings[$key] ?? "";
-				if ($tr !== "" && $tr !== $en) {
-					$rows[] = "\t{" . self::quote($locale) . ", " . self::quote(self::toC($key)) . ", " . self::quote(self::toC($tr)) . "},";
+			foreach ($base as $id => $en) {
+				if ($locale === Locale::En->value) {
+					$text = $en;
+				} else {
+					$text = $strings[$id] ?? "";
+					if ($text === "" || $text === $en) {
+						continue; // no real translation -> adTr falls back to the en row
+					}
 				}
+				$rows[] = "\t{" . self::quote($locale) . ", " . self::quote($id) . ", " . self::quote(self::toC($text)) . "},";
 			}
 		}
 		$template = (string) file_get_contents(__DIR__ . "/launcher.h.tmpl");
