@@ -274,6 +274,18 @@ func main() {
 		return
 	}
 
+	// WebKitGTK's DMABUF renderer leaves the window black/unpainted for a second or two on
+	// many Linux drivers while its GPU compositor comes up -- long enough that the loader
+	// below can't paint and the user just sees an empty rectangle until the app arrives.
+	// Disabling it makes WebKit paint the first frame (the loader) right away. Must be set
+	// before the webview is created, since WebKit reads it at init.
+	// ponytail: off for everyone on Linux, not just the affected drivers -- a black startup
+	// window is worse than losing the DMABUF fast path on a local admin tool. Drop this if
+	// WebKitGTK ever fixes the first-paint stall.
+	if runtime.GOOS == "linux" {
+		os.Setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1") //nolint:errcheck // best-effort env hint
+	}
+
 	guiStart := time.Now()
 	w := webview.New(false)
 	defer w.Destroy()
