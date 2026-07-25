@@ -323,6 +323,9 @@ DIST = build/pkg/adminer-desktop
 dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	rm -rf $(DIST) && mkdir -p $(DIST)
 	cp build/adminer-desktop$(EXE) $(DIST)/
+	# The window icon, beside the binary so iconPath() finds it at runtime (the launcher
+	# sets the GTK window icon from it; the .deb also points its .desktop at a copy).
+	cp assets/logo.png $(DIST)/
 	# All of bin/, because on windows that is the php runtime's DLLs and ext/ as well as
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
@@ -360,10 +363,13 @@ deb: dist  ## Package a Debian .deb (Linux)
 	cp -R build/pkg/adminer-desktop $(DEB)/usr/lib/adminer-desktop
 	ln -sf ../lib/adminer-desktop/adminer-desktop $(DEB)/usr/bin/adminer-desktop
 	cp assets/logo.png $(DEB)/usr/share/pixmaps/adminer-desktop.png
+	# StartupWMClass = the GtkWindow's app_id (webview's prgname, the binary basename), so
+	# Plasma matches the running window to this entry and shows its icon in the taskbar —
+	# the way a Wayland session gets the icon, where the runtime GtkWindow icon does not reach.
 	printf '%s\n' \
 		'[Desktop Entry]' 'Type=Application' 'Name=Adminer Desktop' \
 		'Comment=Adminer as a desktop app' 'Exec=adminer-desktop' 'Icon=adminer-desktop' \
-		'Terminal=false' 'Categories=Development;Database;' \
+		'Terminal=false' 'Categories=Development;Database;' 'StartupWMClass=adminer-desktop' \
 		> $(DEB)/usr/share/applications/adminer-desktop.desktop
 	printf '%s\n' \
 		'Package: adminer-desktop' 'Version: $(DEB_VERSION)' 'Architecture: $(DEB_ARCH)' \
