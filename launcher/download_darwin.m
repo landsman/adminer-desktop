@@ -101,9 +101,9 @@ static const char kDownloadDest = 0;
 	// A completion alert to dismiss, confirming where the export landed -- parity with the Linux
 	// build's "Saved ..." dialog.
 	NSAlert *alert = [[NSAlert alloc] init];
-	alert.messageText = [NSString stringWithFormat:@"Saved %@", urls[1].lastPathComponent];
+	alert.messageText = [NSString stringWithFormat:NSLocalizedString(@"Saved %@", nil), urls[1].lastPathComponent];
 	alert.informativeText = urls[1].path;
-	[alert addButtonWithTitle:@"OK"];
+	[alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
 	[alert runModal];
 }
 
@@ -131,10 +131,10 @@ static const char kDownloadDest = 0;
 		return NO;
 	}
 	NSAlert *alert = [[NSAlert alloc] init];
-	alert.messageText = @"Cancel this download?";
+	alert.messageText = NSLocalizedString(@"Cancel this download?", nil);
 	alert.informativeText = self.downloadName ?: @"";
-	[alert addButtonWithTitle:@"Cancel Download"];
-	[alert addButtonWithTitle:@"Keep Downloading"];
+	[alert addButtonWithTitle:NSLocalizedString(@"Cancel Download", nil)];
+	[alert addButtonWithTitle:NSLocalizedString(@"Keep Downloading", nil)];
 	if ([alert runModal] == NSAlertFirstButtonReturn) {
 		// Cancelling reports NSURLErrorCancelled through didFailWithError:, which drops the
 		// .part and hides the panel.
