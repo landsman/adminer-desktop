@@ -100,8 +100,14 @@ func freePort() (int, error) {
 // server that boots but cannot run the app still counts as not ready.
 func waitReady(url string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
+	// Per-request timeout so the deadline below actually bounds the wait: http.Get uses
+	// DefaultClient (no timeout), so a request that connects but never answers -- frankenphp
+	// bound the port and logged "Caddy serving" but the first hit stalls while PHP warms up --
+	// blocks forever, the deadline never fires, and the GUI never opens. A bounded request
+	// times out and the loop just retries.
+	client := &http.Client{Timeout: 2 * time.Second}
 	for time.Now().Before(deadline) {
-		resp, err := http.Get(url)
+		resp, err := client.Get(url)
 		if err == nil {
 			resp.Body.Close() //nolint:errcheck // readiness poll, body is never read
 			if resp.StatusCode == http.StatusOK {
