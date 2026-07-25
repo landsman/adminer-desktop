@@ -97,8 +97,10 @@ func freePort() (int, error) {
 }
 
 // waitReady polls until PHP actually answers. Adminer's own page is the probe, so a
-// server that boots but cannot run the app still counts as not ready.
-func waitReady(url string, timeout time.Duration) error {
+// server that boots but cannot run the app still counts as not ready. It returns how
+// long that first successful request took -- the cold compile of adminer.php and its
+// includes, which is the one part of startup opcache.file_cache could shorten.
+func waitReady(url string, timeout time.Duration) (cold time.Duration, err error) {
 	deadline := time.Now().Add(timeout)
 	// Per-request timeout so the deadline below actually bounds the wait: http.Get uses
 	// DefaultClient (no timeout), so a request that connects but never answers -- frankenphp
@@ -107,16 +109,35 @@ func waitReady(url string, timeout time.Duration) error {
 	// times out and the loop just retries.
 	client := &http.Client{Timeout: 2 * time.Second}
 	for time.Now().Before(deadline) {
+		start := time.Now()
 		resp, err := client.Get(url)
 		if err == nil {
-			resp.Body.Close() //nolint:errcheck // readiness poll, body is never read
-			if resp.StatusCode == http.StatusOK {
-				return nil
+			ok := resp.StatusCode == http.StatusOK
+			if ok {
+				// Drain the body so the timing spans the whole response, not just its
+				// headers -- adminer streams the page as it renders.
+				io.Copy(io.Discard, resp.Body) //nolint:errcheck // draining to time the cold response
+			}
+			resp.Body.Close() //nolint:errcheck // readiness poll
+			if ok {
+				return time.Since(start), nil
 			}
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	return fmt.Errorf("server did not become ready within %s", timeout)
+	return 0, fmt.Errorf("server did not become ready within %s", timeout)
+}
+
+// timeGet issues one GET and returns how long the full response took. Used once at
+// startup for a warm baseline against waitReady's cold first request; the timing, not
+// the response, is the point, so a failure just reads as a near-zero sample.
+func timeGet(url string) time.Duration {
+	start := time.Now()
+	if resp, err := http.Get(url); err == nil {
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck // draining to time the full response
+		resp.Body.Close()              //nolint:errcheck
+	}
+	return time.Since(start)
 }
 
 // Injected at build time by the Makefile from the same version pins the downloads use,
@@ -182,6 +203,7 @@ func main() {
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
 	setProcessGroup(srv)
+	bootStart := time.Now()
 	if err := srv.Start(); err != nil {
 		log.Fatal(err)
 	}
@@ -206,15 +228,24 @@ func main() {
 	// platforms that have no menu to switch with.
 	setLastApp(app)
 	url := fmt.Sprintf("http://%s/%s", addr, app)
-	if err := waitReady(url, 15*time.Second); err != nil {
+	cold, err := waitReady(url, 15*time.Second)
+	if err != nil {
 		log.Fatal(err)
 	}
+	// A warm request for comparison: opcache is on, so this second hit is served from
+	// compiled bytecode. cold - warm is the compile cost, i.e. the ceiling on what
+	// opcache.file_cache could shave off the first request of every future launch.
+	warm := timeGet(url)
+	log.Printf("startup: server ready in %s; first request %s cold vs %s warm (~%s is PHP compile)",
+		time.Since(bootStart).Round(time.Millisecond), cold.Round(time.Millisecond),
+		warm.Round(time.Millisecond), (cold - warm).Round(time.Millisecond))
 
 	if *headless {
 		fmt.Printf("OK: serving %s\n", url)
 		return
 	}
 
+	guiStart := time.Now()
 	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle("Adminer Desktop")
@@ -257,6 +288,10 @@ func main() {
 	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
 
 	w.Navigate(url)
+	// Native webview setup up to the navigate call. The black flash some users see is the
+	// gap between the window showing and WebKit's first paint, which lands after this --
+	// measuring that would need a load-finished callback from the native layer.
+	log.Printf("startup: window ready in %s (first paint follows, not measured here)", time.Since(guiStart).Round(time.Millisecond))
 	if *dev {
 		go watchAndReload(root, w)
 	}
