@@ -196,11 +196,15 @@ qa: bin/frankenphp$(EXE) app/vendor  ## Run every static check (php, go, js lint
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
-	@# Every darwin-only function needs a stub in menu_other.go, or the build breaks on
-	@# linux and windows only -- a CI round trip away rather than a compile away.
+	@# Every darwin-only function needs a non-darwin definition, or the build breaks on
+	@# linux and windows only -- a CI round trip away rather than a compile away. That is
+	@# either a shared stub in menu_other.go, or a platform split (a real *_linux.go and a
+	@# *_other.go stub for windows), the way installDownloads is done.
 	@for f in $$(grep -oE '^func [a-zA-Z]+' launcher/menu_darwin.go | cut -d' ' -f2); do \
 		grep -q "$$f(" launcher/main.go || continue; \
-		grep -q "func $$f(" launcher/menu_other.go || { echo "launcher/menu_other.go: missing stub for $$f(), used by main.go"; exit 1; }; \
+		grep -q "func $$f(" launcher/menu_other.go && continue; \
+		{ grep -lq "func $$f(" launcher/*_linux.go && grep -lq "func $$f(" launcher/*_other.go; } \
+			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
 		&& { shellcheck check.sh && echo "shellcheck ok"; } \
