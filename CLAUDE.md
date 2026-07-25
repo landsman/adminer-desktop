@@ -117,6 +117,11 @@ line.
 
 ## The dev toolchain and e2e
 
+Run every tool through `mise` or `make`, never bare. mise pins the toolchain (go, node)
+and it is not on `PATH` — `go build` fails with "command not found", `make qa` and
+`mise run <task>` resolve it. Reach for a `make` target first, and `mise run`/`mise exec`
+for anything without one.
+
 mise pins node and orchestrates the tooling; run `mise run install` once. There is no
 second PHP — composer and the e2e run on the bundled frankenphp (`./bin/frankenphp
 php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `app/composer.json`
