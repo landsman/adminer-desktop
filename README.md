@@ -28,12 +28,26 @@ so it asserts long responses neither buffer nor time out.
 | Linux x86_64 | works (`make tarball` / `make deb`); `make linux-deps` for the GTK/WebKit headers |
 | Windows | builds, but CI is red — not usable yet |
 
+## Installing on Debian / Ubuntu
+
+Releases carry a `.deb` on the
+[releases page](https://github.com/landsman/adminer-desktop/releases) — beta, so they are
+marked pre-release.
+
+```sh
+sudo apt install ./adminer-desktop_0.4_amd64.deb
+```
+
+`apt` pulls in GTK and WebKit; the app then appears in the launcher. Upgrading means
+downloading the next `.deb` — there is no repository to subscribe to, and
+[.docs/releases-linux.md](.docs/releases-linux.md) says why not.
+
 ## Installing on another Mac
 
 The app is unsigned, so macOS blocks it on first launch. Terminal route:
 
 ```sh
-unzip "Adminer Desktop.zip"
+unzip adminer-desktop_0.4_macos-arm64.zip
 mv "Adminer Desktop.app" /Applications/
 xattr -dr com.apple.quarantine "/Applications/Adminer Desktop.app"
 open "/Applications/Adminer Desktop.app"

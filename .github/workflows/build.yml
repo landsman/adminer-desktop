@@ -13,6 +13,9 @@ on:
         description: Also build and package all three platforms
         type: boolean
         default: false
+      tag:
+        description: Existing tag — build it and attach the packages to its release
+        type: string
 
 jobs:
   # Kept separate from build so a lint failure reads as a lint failure rather than as a
@@ -92,10 +95,11 @@ jobs:
       - run: make security
 
   # Manual only. Three platforms per commit is minutes spent to learn that a one-line PHP
-  # change is still fine, and macOS runners bill at 10x. Run it from the Actions tab with
-  # the build box ticked when you actually want artifacts.
+  # change is still fine, and macOS runners bill at 10x. Run it from the Actions tab: tick
+  # the build box for artifacts, or name an existing tag to build that and attach the
+  # packages to its release.
   build:
-    if: github.event_name == 'workflow_dispatch' && inputs.build
+    if: github.event_name == 'workflow_dispatch' && (inputs.build || inputs.tag != '')
     strategy:
       # One red platform should not hide the state of the other two.
       fail-fast: false
@@ -107,17 +111,16 @@ jobs:
             asset: frankenphp-mac-arm64
             package: zip
             artifact: adminer-desktop-macos-arm64
-            path: build/Adminer Desktop.zip
+          # Both linux packages off one build: `deb` only re-roots what `dist` already
+          # staged, so it costs a dpkg-deb call rather than a second compile.
           - os: ubuntu-24.04
             asset: frankenphp-linux-x86_64
-            package: tarball
+            package: tarball deb
             artifact: adminer-desktop-linux-x86_64
-            path: build/adminer-desktop-linux.tar.gz
           - os: windows-2025
             asset: frankenphp-windows-x86_64.zip
             package: winzip
             artifact: adminer-desktop-windows-x86_64
-            path: build/adminer-desktop-windows.zip
 
     runs-on: ${{ matrix.os }}
     defaults:
@@ -126,7 +129,14 @@ jobs:
         shell: bash
 
     steps:
+      # An empty ref is the default branch, so this is the same checkout when no tag is
+      # named. Unshallow for the tags either way: VERSION is `git describe`, and the .deb
+      # takes its version from it. Without the tags that is "dev", which DEB_VERSION
+      # strips to nothing and dpkg-deb then refuses.
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
 
       - uses: actions/setup-go@v6
         with:
@@ -165,10 +175,49 @@ jobs:
 
       - run: make ${{ matrix.package }} FRANKEN_ASSET=${{ matrix.asset }}
 
+      # One glob for all three platforms, because every package is now named
+      # adminer-desktop_<version>_<os>-<arch>.<ext> (see PKG in the Makefile). It picks up
+      # the .deb beside the tarball and never the bare `build/adminer-desktop` binary,
+      # which has no underscore.
       # All unsigned: macOS needs right-click > Open on first launch, and Windows shows a
       # SmartScreen warning. Signing needs paid certificates held as repository secrets.
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.path }}
+          path: build/adminer-desktop_*
           if-no-files-found: error
+
+  # Attaches what the matrix built to the release that already exists for the named tag —
+  # draft or published, `gh` finds either. It never creates one: the release and its notes
+  # are written by hand on GitHub, and this only fills in the files and holds the beta flag.
+  # `--clobber` so a re-run replaces an asset instead of failing on the name.
+  #
+  # `!cancelled()` rather than the implicit success(): Windows is knowingly red (README),
+  # and uploading the platforms that did build beats uploading nothing. Every artifact is
+  # already `if-no-files-found: error`, so nothing half-built reaches this — but all three
+  # failing would leave an empty download, hence the check.
+  release:
+    if: ${{ !cancelled() && inputs.tag != '' }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # find rather than a glob, because it doubles as the "nothing built" guard: an
+      # unmatched glob would reach gh as a literal path and fail with something unhelpful.
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          test -n "$(find artifacts -type f)" || { echo "nothing built, nothing to upload"; exit 1; }
+          find artifacts -type f -print0 | xargs -0 gh release upload "$TAG" \
+            --repo "$GITHUB_REPOSITORY" --clobber
+          # Beta. The flag lives on the release, and this holds it there rather than
+          # trusting a checkbox to have been ticked — an unticked one puts a beta on the
+          # repo front page as "Latest". Idempotent, so re-runs and already-marked
+          # releases are a no-op. Delete this line at the first stable tag.
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease
