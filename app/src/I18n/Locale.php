@@ -17,4 +17,8 @@ namespace Desktop\I18n;
 enum Locale: string {
 	case En = 'en';
 	case Cs = 'cs';
+	case De = 'de';
+	case Pl = 'pl';
+	case Ro = 'ro';
+	case Sk = 'sk';
 }
