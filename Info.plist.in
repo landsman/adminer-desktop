@@ -27,6 +27,10 @@
 	<array>
 		<string>en</string>
 		<string>cs</string>
+		<string>de</string>
+		<string>pl</string>
+		<string>ro</string>
+		<string>sk</string>
 	</array>
 	<key>NSHighResolutionCapable</key>
 	<true/>
