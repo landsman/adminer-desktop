@@ -46,8 +46,17 @@ class AdminerDesktop extends Adminer\Plugin {
 		// backslashes in a Windows __DIR__ as escapes, matching nothing.
 		$this->javascript = new Javascript($this->dir() . "/src/Assets/javascript");
 		$this->theme = new Theme($this, $this->userSettings);
-		$this->plugins = new PluginList($this);
+		$this->plugins = new PluginList($this, $this->userSettings);
 		$this->dialog = new Dialog($this, $this->theme, $this->plugins);
+	}
+
+	/** The catalogue, so adminer-plugins.php can hand adminer the enabled plugins.
+	*
+	* Not a hook, despite living on a plugin: adminer only dispatches to methods its own
+	* Adminer class declares, and it has no plugins().
+	*/
+	function plugins(): PluginList {
+		return $this->plugins;
 	}
 
 	/** Translate a plugin-UI string by its ID. lang() is protected on Plugin and the classes in

@@ -34,7 +34,6 @@ return [
 	'theme.builtin_design' => 'Adminer Desktop',
 
 	// Plugins panel.
-	'plugins.readonly' => 'Priečinok s pluginmi je len na čítanie.',
 	'plugins.col_name' => 'Plugin',
 	'plugins.col_desc' => 'Čo robí',
 

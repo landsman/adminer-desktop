@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
-// Plugins that need constructor arguments must be instantiated here; everything the
-// user drops into adminer-plugins/ is picked up automatically (and auto-enabled) by
-// adminer itself — see include/plugins.inc.php:17.
+// Every plugin adminer runs is instantiated here — ours and the ones the user enabled in
+// settings. Adminer offers a second route, a directory of files it globs and auto-enables
+// (include/plugins.inc.php:17), which we deliberately do not use: it can only construct a
+// class with no arguments, it enables whatever it finds with no say from the app, and the
+// same class reached through both routes at once is a fatal redeclare.
 
 // Turn the autoloader on first (the app is PSR-4, Desktop\ -> src/), then Tracy — so a fatal
 // in anything below still lands on Tracy's screen rather than a blank page. Debug::enable()
@@ -10,9 +12,8 @@ declare(strict_types=1);
 require_once __DIR__ . "/vendor/autoload.php";
 Desktop\Debug::enable();
 
-// Ours, always on — it is app behaviour, not an optional plugin, so it lives here at the
-// document root rather than in adminer-plugins/ (the user's own enabled set). Global namespace
-// and named Adminer*, so it is not part of the Desktop\ PSR-4 tree; required, not autoloaded.
+// Ours, always on — it is app behaviour, not an optional plugin. Global namespace and named
+// Adminer*, so it is not part of the Desktop\ PSR-4 tree; required, not autoloaded.
 require_once __DIR__ . "/AdminerDesktop.php";
 
 // Design switching is handled by AdminerDesktop, not upstream plugins/designs.php:
@@ -28,6 +29,6 @@ require_once __DIR__ . "/AdminerDesktop.php";
 $desktop = new AdminerDesktop();
 $desktop->handlePost();
 
-return [
-	$desktop,
-];
+// handlePost() first: ticking a plugin and seeing it take effect on the same request is the
+// whole point of saving before this line rather than after it.
+return array_merge([$desktop], $desktop->plugins()->instances());

@@ -34,7 +34,6 @@ return [
 	'theme.builtin_design' => 'Adminer Desktop',
 
 	// Plugins panel.
-	'plugins.readonly' => 'Folderul cu pluginuri este doar pentru citire.',
 	'plugins.col_name' => 'Plugin',
 	'plugins.col_desc' => 'Ce face',
 

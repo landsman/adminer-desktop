@@ -73,8 +73,9 @@ tag, so they cannot drift apart. Nothing ever resolves "latest".
 
 A gear button, bottom right — works before login, unlike upstream.
 
-- **Plugins** — all 51 ship, none enabled by default. The enabled set *is* the contents
-  of `app/adminer-plugins/`, so ticking a box and dropping a file in are the same thing.
+- **Plugins** — the upstream ones that make sense on a desktop, hand-picked (adminer ships
+  51; the rest want a reverse proxy, an MTA or a CDN, or duplicate a setting this app
+  already owns). None enabled by default; the enabled set lives in `settings.json`.
 - **Theme** — pick a light design and a dark one; the OS setting picks between them.
 
 ## Desktop behaviour

@@ -18,7 +18,7 @@ require dirname(__DIR__, 2) . '/app/vendor/autoload.php';
 use Symfony\Component\Process\Process;
 
 /** Boot postgres (once) and a fresh app server; return everything a check needs.
- * @return array{root:string, pgPort:int, shots:string, server:Process, base:string, select:string}
+ * @return array{root:string, pgPort:int, shots:string, server:Process, base:string, select:string, data:string}
  */
 function e2e_boot(int $appPort = 18080): array
 {
@@ -84,7 +84,9 @@ function e2e_boot(int $appPort = 18080): array
 		'select' => 'users',
 	]);
 
-	return compact('root', 'pgPort', 'shots', 'server', 'base', 'select');
+	// $data too: the preferences a check saves land in $data/settings.json, which is where
+	// asserting that Save persisted anything has to look.
+	return compact('root', 'pgPort', 'shots', 'server', 'base', 'select', 'data');
 }
 
 /** Log a page into the demo database. */

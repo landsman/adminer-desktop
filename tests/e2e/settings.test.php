@@ -68,22 +68,22 @@ try {
 		}
 	}
 
-	// 3. A plugin -> ticking it drops the file into adminer-plugins/, unticking removes it,
-	// so the filesystem is the assertion. The tick/untick is set on the checkbox directly:
+	// 3. A plugin -> ticking it writes the name into settings.json, unticking takes it out,
+	// so the stored set is the assertion. The tick/untick is set on the checkbox directly:
 	// what this guards is that Save persists it, not the browser's own checkbox toggle.
 	// Enable then disable, so the working tree is left as it was found.
-	// dark-switcher specifically: a benign toggle with no side effects on the page, unlike
-	// e.g. adminer.js which injects script. Fall back to whatever is first if it is gone.
+	// row-numbers specifically: it only numbers rows in a select, so it cannot change
+	// anything this test looks at. Fall back to whatever is first if it is gone.
 	// No need to open the dialog to read this — the panel is in the DOM either way.
 	$plugin = $page->evaluate("() => {
-		const pick = document.querySelector('input[name=\"plugins[]\"][value=\"dark-switcher\"]')
+		const pick = document.querySelector('input[name=\"plugins[]\"][value=\"row-numbers\"]')
 			|| document.querySelector('input[name=\"plugins[]\"]');
 		return pick ? pick.value : null;
 	}");
+	$stored = fn(): string => (string) @file_get_contents($fix['data'] . "/settings.json");
 	if (!$plugin) {
 		$failures[] = "plugins: none were offered to toggle";
 	} else {
-		$pluginFile = $fix['root'] . "/app/adminer-plugins/$plugin.php";
 		$setPlugin = function (bool $on) use ($page, $plugin, $openDialog) {
 			$openDialog($page);
 			$checked = $on ? 'true' : 'false';
@@ -92,14 +92,12 @@ try {
 			$page->waitForLoadState('networkidle');
 		};
 		$setPlugin(true);
-		clearstatcache(true, $pluginFile); // the server made the change; drop our stale stat
-		if (!file_exists($pluginFile)) {
-			$failures[] = "plugins: enabling '$plugin' did not save (no $pluginFile)";
+		if (!str_contains($stored(), "\"$plugin\"")) {
+			$failures[] = "plugins: enabling '$plugin' did not save (not in settings.json)";
 		}
 		$setPlugin(false);
-		clearstatcache(true, $pluginFile);
-		if (file_exists($pluginFile)) {
-			$failures[] = "plugins: disabling '$plugin' did not save ($pluginFile remains)";
+		if (str_contains($stored(), "\"$plugin\"")) {
+			$failures[] = "plugins: disabling '$plugin' did not save (still in settings.json)";
 		}
 	}
 

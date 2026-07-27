@@ -4,55 +4,143 @@ declare(strict_types=1);
 namespace Desktop\Settings\Plugins;
 
 use Desktop\Latte;
+use Desktop\SettingKey;
+use Desktop\UserSettings;
 
-/** The plugin half of the settings dialog: what is shipped, what is enabled, and the
+/** The plugin half of the settings dialog: what we ship, what the user turned on, and the
 * panel that toggles them.
 *
 * Named PluginList rather than Plugins to stay clear of both adminer's own Plugins class
 * and its rule of instantiating anything called Adminer* as a plugin.
 */
 class PluginList {
-	private \AdminerDesktop $desktop;
+	/** What we ship: the file in available/ => the class it declares.
+	*
+	* Hand-picked, not globbed. The release carries 51 and most of them answer a question a
+	* desktop app never asks. Nine cannot be constructed at all without arguments — adminer
+	* refuses those and prints why in place of the plugin (include/plugins.inc.php:30) — and
+	* of the rest, some want a reverse proxy or an MTA that is not there, some fetch their
+	* editor from a CDN an offline app cannot reach, and some offer a second copy of a
+	* setting this app already owns. What is left is what works by ticking a box.
+	*
+	* The class name is written here rather than read back out of the file because we
+	* instantiate it ourselves (see instances()): one include, one `new`, and no guessing
+	* which of the declared classes was the plugin.
+	* @var array<string, class-string>
+	*/
+	private const array PICKED = [
+		'backward-keys' => \AdminerBackwardKeys::class,
+		'before-unload' => \AdminerBeforeUnload::class,
+		'dump-alter' => \AdminerDumpAlter::class,
+		'dump-bz2' => \AdminerDumpBz2::class,
+		'dump-date' => \AdminerDumpDate::class,
+		'dump-json' => \AdminerDumpJson::class,
+		'dump-php' => \AdminerDumpPhp::class,
+		'dump-xml' => \AdminerDumpXml::class,
+		'dump-zip' => \AdminerDumpZip::class,
+		'edit-foreign' => \AdminerEditForeign::class,
+		'edit-textarea' => \AdminerEditTextarea::class,
+		'editor-views' => \AdminerEditorViews::class,
+		'enum-option' => \AdminerEnumOption::class,
+		'foreign-system' => \AdminerForeignSystem::class,
+		'json-column' => \AdminerJsonColumn::class,
+		'pretty-json-column' => \AdminerPrettyJsonColumn::class,
+		'row-numbers' => \AdminerRowNumbers::class,
+		'slugify' => \AdminerSlugify::class,
+		'table-indexes-structure' => \AdminerTableIndexesStructure::class,
+		'table-structure' => \AdminerTableStructure::class,
+		'tables-filter' => \AdminerTablesFilter::class,
+		'translation' => \AdminerTranslation::class,
+	];
 
-	function __construct(\AdminerDesktop $desktop) {
+	/** On whatever the user picked, and not offered as a choice.
+	*
+	* Adminer fetches https://www.adminer.org/version/ from <body onload> unless a cookie
+	* says otherwise, and answers with a version this app cannot install — the adminer we
+	* bundle is pinned in the Makefile. The plugin is three lines replacing verifyVersion()
+	* with a no-op, so the check never leaves the machine.
+	* @var array<string, class-string>
+	*/
+	private const array ALWAYS = [
+		'version-noverify' => \AdminerVersionNoverify::class,
+	];
+
+	private \AdminerDesktop $desktop;
+	private UserSettings $settings;
+
+	function __construct(\AdminerDesktop $desktop, UserSettings $settings) {
 		$this->desktop = $desktop;
+		$this->settings = $settings;
 	}
 
-	/** Get shipped plugins, name => path. The enabled ones are whatever is symlinked into
-	* adminer-plugins/, so the filesystem is the only state there is — which means dragging
-	* a downloaded plugin into that folder behaves exactly like ticking a box here.
-	* @return array<string, string>
+	/** The names we ship, for anything that has to walk them without an adminer request
+	* behind it — check.sh boots each one in turn. Static so it needs no instance.
+	* @return array<string>
 	*/
-	function available(): array {
+	static function names(): array {
+		return array_keys(self::PICKED);
+	}
+
+	/** What the user turned on, in catalogue order.
+	*
+	* Only the enabled names are stored, and only the names: every plugin comes out of the
+	* adminer release pinned in the Makefile, so a version alongside them in settings.json
+	* could only ever disagree with the file actually loaded. Anything stored that we no
+	* longer ship drops out here rather than being carried around.
+	* @return array<string>
+	*/
+	function enabled(): array {
+		$stored = $this->settings->get(SettingKey::Plugins, []);
+		return array_values(array_intersect(array_keys(self::PICKED), is_array($stored) ? $stored : []));
+	}
+
+	/** The plugin objects adminer should register, constructed by us.
+	*
+	* Adminer instantiates every Adminer* class that happens to be declared, so the
+	* catalogue is not somewhere it can find and nothing includes it wholesale; only what
+	* is enabled is included, and adminer gets the instances (adminer-plugins.php). That is
+	* also the seam for a plugin that needs constructor arguments: a line here, reading
+	* whatever it needs off UserSettings, rather than the error adminer shows when it has
+	* to guess.
+	* @return array<object>
+	*/
+	function instances(): array {
 		$return = [];
-		// Top level only: available/drivers/ are database drivers, which need a
-		// server we cannot assume exists, not a checkbox.
-		foreach (glob(__DIR__ . "/available/*.php") as $filename) {
-			$return[basename($filename, ".php")] = $filename;
+		foreach (self::ALWAYS + array_intersect_key(self::PICKED, array_flip($this->enabled())) as $name => $class) {
+			$filename = __DIR__ . "/available/$name.php";
+			// A name a later adminer release no longer ships is skipped rather than fatal:
+			// this runs before there is any UI to untick it with.
+			if (is_file($filename)) {
+				include_once $filename;
+				$return[] = new $class();
+			}
 		}
-		ksort($return);
 		return $return;
 	}
 
-	/** Get each plugin's one-line description, in the interface language where it has one.
+	/** Each plugin's one-line description, in the interface language where it has one.
 	*
-	* Every shipped plugin carries its own translations, so this needs no network and
-	* cannot go stale against the bundled version — all 51 have Czech, and most have
-	* German, Polish, Croatian and Japanese.
+	* Every shipped plugin carries its own translations, so this needs no network and cannot
+	* go stale against the bundled version — all of them have Czech.
 	*
-	* The files are included but nothing is instantiated: reflection reads the default
-	* value of $translations off the class. Including is safe here because adminer builds
-	* its plugin list in Plugins::__construct, which has long since run by the time a page
-	* renders, so a class declared now is not picked up and enabled.
+	* The files are included but only the enabled ones were instantiated: reflection reads
+	* the default value of $translations off the class. Including the rest is safe because
+	* adminer builds its plugin list in Plugins::__construct, which has long since run by
+	* the time a page renders, so a class declared now is not picked up and enabled. It is
+	* the same path instances() includes, which is what keeps include_once meaning once —
+	* the same class reached through two paths is a fatal redeclare, not a no-op.
 	* @return array<string, string>
 	*/
 	function descriptions(): array {
 		$return = [];
-		foreach ($this->available() as $name => $filename) {
-			$before = get_declared_classes();
-			@include_once $filename;
+		foreach (self::PICKED as $name => $class) {
+			$filename = __DIR__ . "/available/$name.php";
+			if (!is_file($filename)) {
+				continue;
+			}
+			include_once $filename;
 			$description = "";
-			foreach (array_diff(get_declared_classes(), $before) as $class) {
+			if (class_exists($class, false)) {
 				$defaults = (new \ReflectionClass($class))->getDefaultProperties();
 				$translations = (isset($defaults["translations"]) ? (array) $defaults["translations"] : []);
 				$description = (string) ($translations[\Adminer\LANG][""] ?? "");
@@ -68,72 +156,31 @@ class PluginList {
 		return $return;
 	}
 
-	function link(string $name): string {
-		return $this->desktop->dir() . "/adminer-plugins/$name.php";
-	}
-
-	/** Is this enabled plugin one we put there, and therefore ours to remove?
-	* A symlink always is. A copy counts only while it still matches what we ship —
-	* so a .php the user dropped in by hand is never deleted by a checkbox, even if it
-	* happens to share a name with a bundled plugin.
-	*/
-	function isOurs(string $link, string $filename): bool {
-		if (is_link($link)) {
-			return true;
-		}
-		return file_exists($link) && file_get_contents($link) === file_get_contents($filename);
-	}
-
 	/** Render the plugin panel. The markup is plugins-panel.latte. */
 	function panel(): void {
-		$available = $this->available();
-		if (!$available) {
-			return;
-		}
-		$descriptions = $this->descriptions();
+		$enabled = array_flip($this->enabled());
 		$plugins = [];
-		foreach ($available as $name => $filename) {
+		foreach ($this->descriptions() as $name => $description) {
 			$plugins[$name] = [
 				// A plugin name is a filename, and an id has to be usable in a selector.
 				"id" => "desktop-plugin-" . preg_replace('~[^\w-]~', "-", $name),
-				// The filesystem is the state: enabled means it is in adminer-plugins/.
-				"enabled" => file_exists($this->link($name)),
-				"description" => $descriptions[$name],
+				"enabled" => isset($enabled[$name]),
+				"description" => $description,
 			];
 		}
 		Latte::engine()->render(__DIR__ . "/plugins-panel.latte", [
 			"desktop" => $this->desktop,
 			"plugins" => $plugins,
-			"writable" => $this->writable(),
 		]);
 	}
 
-	/** Can we enable and disable at all? The bundle is writable on macOS, but a copy in a
-	* read-only location would leave the checkboxes lying about what they do.
-	*/
-	function writable(): bool {
-		return is_writable(dirname($this->link("x")));
-	}
-
-	/** Enable exactly the plugins posted, disable the rest. */
+	/** Store exactly the plugins posted. */
 	function apply(): void {
-		// Whitelist by construction -- we iterate what we ship and only look the POSTed
-		// names up in it, so nothing user-supplied ever reaches a filesystem path.
+		// Whitelist by construction: the catalogue is intersected with what was posted, so a
+		// name we do not ship is never stored and never reaches an include path.
 		// ?? []: unticking the last plugin posts no plugins[] at all, which is the case that
-		// has to disable them, not warn.
-		$wanted = array_flip((array) ($_POST["plugins"] ?? []));
-		foreach ($this->available() as $name => $filename) {
-			$link = $this->link($name);
-			if (isset($wanted[$name])) {
-				if (!file_exists($link)) {
-					// Relative target, so it survives app/ being moved into a .app bundle.
-					// Windows only allows symlinks with elevated rights or developer mode
-					// on, so fall back to a copy there rather than failing silently.
-					@symlink("../src/Settings/Plugins/available/$name.php", $link) || @copy($filename, $link);
-				}
-			} elseif ($this->isOurs($link, $filename)) {
-				@unlink($link);
-			}
-		}
+		// has to clear the list, not be mistaken for "nothing was submitted".
+		$posted = (array) ($_POST["plugins"] ?? []);
+		$this->settings->set(SettingKey::Plugins, array_values(array_intersect(array_keys(self::PICKED), $posted)));
 	}
 }

@@ -51,6 +51,12 @@ curl -s "$BASE/adminer.php" | grep -q "src/Assets/javascript/shortcuts.js?v=[0-9
 	echo "FAIL: shortcuts.js does not serve"; exit 1; }
 echo "ok: refresh shortcut wired and served"
 
+# version-noverify is on whatever the user picked: adminer otherwise fetches
+# adminer.org/version/ from <body onload> and offers an upgrade this app cannot install.
+curl -s "$BASE/adminer.php" | grep -q "verifyVersion = () => { }" || {
+	echo "FAIL: the version check was not disabled"; exit 1; }
+echo "ok: adminer's version check is off"
+
 # Switching design must work before you log in. Upstream only handles it in
 # afterConnect(), so without our override adminer answers "the action will be performed
 # after successful login" and nothing changes.
@@ -80,22 +86,55 @@ grep -q "media='(prefers-color-scheme: dark)' href='src/Settings/Theme/designs/d
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
 
-# Enabling a plugin puts it in adminer-plugins/, so the filesystem is the state.
+# The enabled set is stored in settings.json, so the file is the state.
+SETTINGS="$ADMINER_DESKTOP_DATA/settings.json"
 JAR=$(mktemp)
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
-	-d "desktop_settings=1" -d "plugins[]=dark-switcher" -d "token=$TOKEN" "$BASE/adminer.php"
-# -e not -L: windows cannot make symlinks without elevated rights, so enabling copies
-# the file there instead.
-[ -e app/adminer-plugins/dark-switcher.php ] || {
+	-d "desktop_settings=1" -d "plugins[]=row-numbers" -d "token=$TOKEN" "$BASE/adminer.php"
+grep -q '"row-numbers"' "$SETTINGS" || {
 	echo "FAIL: ticking a plugin did not enable it"; rm -f "$JAR"; exit 1; }
-# ...and unticking must remove it again, which is the half that silently rots.
+# ...and unticking must remove it again, which is the half that silently rots: an empty
+# form posts no plugins[] at all, and that is what has to clear the list.
 TOKEN=$(curl -s -b "$JAR" -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
 	-d "desktop_settings=1" -d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
-[ ! -e app/adminer-plugins/dark-switcher.php ] || {
-	echo "FAIL: unticking a plugin did not disable it"; exit 1; }
+if grep -q '"row-numbers"' "$SETTINGS"; then
+	echo "FAIL: unticking a plugin did not disable it"; exit 1
+fi
 echo "ok: plugins toggle on and off"
+
+# Every plugin we ship, one at a time: enabled, the app still has to render. This is the
+# check that the catalogue is a list of things that actually work — a plugin needing
+# constructor arguments, a class name that a new adminer release renamed, or a second copy
+# of an already-included class all show up here as a broken page and nowhere else.
+# Settings are written straight to the file: the POST path is proven above, and 20-odd
+# CSRF round trips to prove it again would only make this slow.
+for NAME in $(./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php"; echo implode(" ", Desktop\Settings\Plugins\PluginList::names());'); do
+	printf '{"plugins":["%s"]}' "$NAME" > "$SETTINGS"
+	OUT=/tmp/adminer-desktop-plugin.html
+	CODE=$(curl -s -o "$OUT" -w '%{http_code}' "$BASE/adminer.php")
+	[ "$CODE" = "200" ] || { echo "FAIL: $NAME -> HTTP $CODE"; exit 1; }
+	# The login form still there, and nothing PHP had to say about it.
+	grep -q 'name="auth\[server\]"' "$OUT" || {
+		echo "FAIL: $NAME broke the login page"; grep -oiE '(fatal|parse) error[^<]{0,160}' "$OUT" | head -2; exit 1; }
+	if grep -qiE '<b>(Fatal error|Parse error|Warning|Deprecated|Notice)</b>' "$OUT"; then
+		echo "FAIL: $NAME raised a PHP error"
+		grep -oiE '<b>(fatal error|parse error|warning|deprecated|notice)</b>[^<]{0,160}' "$OUT" | head -2
+		exit 1
+	fi
+	# Adminer's answer when it cannot construct a plugin itself: it prints this instead.
+	if grep -q "adminer-plugins.php</b>" "$OUT"; then
+		echo "FAIL: $NAME cannot be constructed without arguments"; exit 1
+	fi
+	# ...and one that proves the enabled plugin was actually handed to adminer, not just
+	# stored: a page that renders because nothing was loaded would pass everything above.
+	if [ "$NAME" = "before-unload" ] && ! grep -q "editChanged = true" "$OUT"; then
+		echo "FAIL: $NAME was enabled but its script is not on the page"; exit 1
+	fi
+done
+rm -f "$SETTINGS"
+echo "ok: every shipped plugin boots ($(./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php"; echo count(Desktop\Settings\Plugins\PluginList::names());') of them)"
 
 echo "PASS"

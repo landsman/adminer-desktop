@@ -34,7 +34,6 @@ return [
 	'theme.builtin_design' => 'Adminer Desktop',
 
 	// Plugins panel.
-	'plugins.readonly' => 'Der Plugin-Ordner ist schreibgeschützt.',
 	'plugins.col_name' => 'Plugin',
 	'plugins.col_desc' => 'Funktion',
 

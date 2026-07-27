@@ -34,7 +34,6 @@ return [
 	'theme.builtin_design' => 'Adminer Desktop',
 
 	// Plugins panel.
-	'plugins.readonly' => 'Folder z wtyczkami jest tylko do odczytu.',
 	'plugins.col_name' => 'Wtyczka',
 	'plugins.col_desc' => 'Co robi',
 
