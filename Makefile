@@ -327,10 +327,31 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	cp $(ICON) "$(APP)"/Contents/Resources/
 	@echo "built "$(APP)" -- $$(du -sh "$(APP)" | cut -f1)"
 
+# One name shape for every artifact: adminer-desktop_<version>_<os>-<arch>.<ext>. A
+# release listing then sorts by version and each download says what it runs on, which
+# matters most on Linux, where the same version ships a tarball and a .deb and will grow
+# arm64 and a flatpak beside them. The .deb is the one exception, and dpkg dictates it:
+# <package>_<version>_<arch>.deb, no os segment, because that is what apt and every repo
+# tool parse.
+#
+# Debian versions must begin with a digit and reserve '-' as the upstream/revision
+# separator, so git's description is trimmed to its first digit and its dashes turned to
+# '~'. Every package shares that string, so the .deb and the tarball of one build can
+# never disagree about which version they are.
+#
+# amd64/arm64 rather than uname's x86_64/aarch64: it is dpkg's vocabulary and Go's, so the
+# .deb, the tarball and GOARCH all say the same word.
+PKG_VERSION = $(shell printf '%s' '$(VERSION)' | sed -E 's/^[^0-9]*//; s/-/~/g')
+PKG_ARCH    = $(if $(filter aarch64 arm64,$(UNAME_M)),arm64,amd64)
+PKG_OS      = $(if $(filter Darwin,$(UNAME_S)),macos,$(if $(filter Linux,$(UNAME_S)),linux,windows))
+PKG         = adminer-desktop_$(PKG_VERSION)_$(PKG_OS)-$(PKG_ARCH)
+
 # Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
+# The bundle inside keeps its display name, "Adminer Desktop.app"; only the archive is
+# renamed, so the download is greppable and the thing in /Applications still reads right.
 zip: bundle  ## Zip the macOS .app bundle
-	cd build && rm -f "Adminer Desktop.zip" && zip -qry "Adminer Desktop.zip" "Adminer Desktop.app"
-	@echo "built build/Adminer Desktop.zip -- $$(du -sh "build/Adminer Desktop.zip" | cut -f1)"
+	rm -f build/$(PKG).zip && cd build && zip -qry $(PKG).zip "Adminer Desktop.app"
+	@echo "built build/$(PKG).zip -- $$(du -sh "build/$(PKG).zip" | cut -f1)"
 
 # Linux and Windows get a plain directory rather than a bundle or an installer: the
 # layout resolve() looks for is "runtime and app/ next to the binary", which a folder
@@ -358,24 +379,22 @@ dist: build app/vendor  ## Stage the Linux/Windows folder layout
 
 # tar preserves the executable bit; zip on windows does not need it.
 tarball: dist  ## Package the Linux tarball
-	cd build/pkg && tar czf ../adminer-desktop-linux.tar.gz adminer-desktop
-	@echo "built build/adminer-desktop-linux.tar.gz -- $$(du -sh build/adminer-desktop-linux.tar.gz | cut -f1)"
+	cd build/pkg && tar czf ../$(PKG).tar.gz adminer-desktop
+	@echo "built build/$(PKG).tar.gz -- $$(du -sh build/$(PKG).tar.gz | cut -f1)"
 
 winzip: dist  ## Package the Windows zip
-	rm -f build/adminer-desktop-windows.zip && cd build/pkg && zip -qry ../adminer-desktop-windows.zip adminer-desktop
-	@echo "built build/adminer-desktop-windows.zip -- $$(du -sh build/adminer-desktop-windows.zip | cut -f1)"
+	rm -f build/$(PKG).zip && cd build/pkg && zip -qry ../$(PKG).zip adminer-desktop
+	@echo "built build/$(PKG).zip -- $$(du -sh build/$(PKG).zip | cut -f1)"
 
 # A .deb is the same flat layout dist stages, just rooted at /usr/lib instead of a folder:
 # resolve() reads os.Executable(), which follows the /usr/bin symlink back to the real
 # binary, so frankenphp and app/ beside it are found exactly as in the tarball. Arch comes
-# from dpkg since the go build is never cross-compiled here. Debian versions must begin
-# with a digit and reserve '-' as the upstream/revision separator, so git's description is
-# trimmed to its first digit and its dashes turned to '~'. --root-owner-group ships the
-# files as root:root without needing fakeroot.
-DEB         = build/deb
-DEB_ARCH    = $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
-DEB_VERSION = $(shell printf '%s' '$(VERSION)' | sed -E 's/^[^0-9]*//; s/-/~/g')
-DEB_FILE    = build/adminer-desktop_$(DEB_VERSION)_$(DEB_ARCH).deb
+# from dpkg rather than PKG_ARCH -- it is the authority on the machine that will install
+# the thing, and the go build is never cross-compiled here anyway.
+# --root-owner-group ships the files as root:root without needing fakeroot.
+DEB      = build/deb
+DEB_ARCH = $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
+DEB_FILE = build/adminer-desktop_$(PKG_VERSION)_$(DEB_ARCH).deb
 
 deb: dist  ## Package a Debian .deb (Linux)
 	rm -rf $(DEB)
@@ -392,7 +411,7 @@ deb: dist  ## Package a Debian .deb (Linux)
 		'Terminal=false' 'Categories=Development;Database;' 'StartupWMClass=adminer-desktop' \
 		> $(DEB)/usr/share/applications/adminer-desktop.desktop
 	printf '%s\n' \
-		'Package: adminer-desktop' 'Version: $(DEB_VERSION)' 'Architecture: $(DEB_ARCH)' \
+		'Package: adminer-desktop' 'Version: $(PKG_VERSION)' 'Architecture: $(DEB_ARCH)' \
 		'Maintainer: Michal Landsman <landsman@insuit.cz>' \
 		'Section: database' 'Priority: optional' \
 		'Depends: libgtk-3-0, libwebkit2gtk-4.1-0' \
