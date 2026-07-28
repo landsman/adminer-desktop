@@ -18,6 +18,7 @@ enum SettingKey: string {
 	// One per light/dark side; Mode::designKey() maps a side to its key.
 	case DesignLight = 'design_light';
 	case DesignDark = 'design_dark';
-	// The enabled plugins, as a list of catalogue names — see Settings\Plugins\PluginList.
+	// What the user answered about each plugin, name => on, and only where it differs from
+	// what the release ships — see Settings\Plugins\PluginList.
 	case Plugins = 'plugins';
 }

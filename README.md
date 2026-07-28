@@ -75,7 +75,8 @@ A gear button, bottom right — works before login, unlike upstream.
 
 - **Plugins** — the upstream ones that make sense on a desktop, hand-picked (adminer ships
   51; the rest want a reverse proxy, an MTA or a CDN, or duplicate a setting this app
-  already owns). None enabled by default; the enabled set lives in `settings.json`.
+  already owns). The table-list filter is on out of the box, the rest are yours to tick;
+  what you decide is remembered in `settings.json`, including what you turned off.
 - **Theme** — pick a light design and a dark one; the OS setting picks between them.
 
 ## Desktop behaviour

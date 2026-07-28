@@ -59,8 +59,11 @@ file in `src/Settings/Plugins/available/` to the class it declares; the whole up
 is downloaded but only these are offered. Adding one means checking it works here — nine of
 upstream's 51 cannot even be constructed without arguments, and others want a reverse proxy,
 an MTA or a CDN. `make check` boots every picked plugin in turn, which is what says so.
-Enabled state is a list of names in `settings.json` (`SettingKey::Plugins`); no version
-alongside them, because the plugins come out of the adminer release pinned in the Makefile.
+`PluginList::DEFAULT_ON` is what a fresh install has enabled; `settings.json`
+(`SettingKey::Plugins`) stores the user's answer per plugin, `name => on`, and only where it
+differs from that — so adding a default reaches everyone who never had an opinion, and never
+overrides someone who turned it off. No version alongside the names: the plugins come out of
+the adminer release pinned in the Makefile.
 
 **`lang()` runs strings through sprintf.** A `%d` meant for JavaScript is replaced with 0
 before the browser sees it. Use `{n}`.

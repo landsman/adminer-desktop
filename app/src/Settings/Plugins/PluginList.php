@@ -65,6 +65,21 @@ class PluginList {
 		'version-noverify' => \AdminerVersionNoverify::class,
 	];
 
+	/** Shipped on, until the user says otherwise.
+	*
+	* This is the list a release changes, and settings.json stores the user's answer against
+	* it rather than a bare set of names — so adding one here cannot switch it back on for
+	* someone who had turned it off.
+	*
+	* tables-filter to start with: a filter box over the table list is what every desktop
+	* database browser has, and the plugin is one `tablesPrint` hook, so it touches nothing
+	* until there is a list of tables to filter.
+	* @var array<string>
+	*/
+	private const array DEFAULT_ON = [
+		'tables-filter',
+	];
+
 	private \AdminerDesktop $desktop;
 	private UserSettings $settings;
 
@@ -81,17 +96,47 @@ class PluginList {
 		return array_keys(self::PICKED);
 	}
 
-	/** What the user turned on, in catalogue order.
-	*
-	* Only the enabled names are stored, and only the names: every plugin comes out of the
-	* adminer release pinned in the Makefile, so a version alongside them in settings.json
-	* could only ever disagree with the file actually loaded. Anything stored that we no
-	* longer ship drops out here rather than being carried around.
+	/** What is on, in catalogue order: the defaults, with the user's answers on top.
 	* @return array<string>
 	*/
 	function enabled(): array {
+		$answers = $this->answers();
+		return array_values(array_filter(
+			array_keys(self::PICKED),
+			fn(string $name): bool => $answers[$name] ?? in_array($name, self::DEFAULT_ON, true),
+		));
+	}
+
+	/** What the user said about each plugin, where it differs from what we ship — name => on.
+	*
+	* Both answers are stored, not just the yesses, because "off" is a real answer once we
+	* ship anything on by default: a name simply missing from an enabled-only list is
+	* indistinguishable from one the user turned off, and the next release would switch it
+	* back on under them.
+	*
+	* Only the differences, so a default we change later reaches everyone who never had an
+	* opinion about it — and a stored answer that agrees with the new default is dropped on
+	* the next save rather than pinning a preference nobody expressed.
+	*
+	* No version alongside the names: every plugin comes out of the adminer release pinned in
+	* the Makefile, so one here could only ever disagree with the file actually loaded.
+	* @return array<string, bool>
+	*/
+	private function answers(): array {
 		$stored = $this->settings->get(SettingKey::Plugins, []);
-		return array_values(array_intersect(array_keys(self::PICKED), is_array($stored) ? $stored : []));
+		$return = [];
+		foreach ((is_array($stored) ? $stored : []) as $name => $on) {
+			// A list of names is the shape this key had before it could say "off"; every
+			// name in one was a plugin turned on.
+			if (is_int($name)) {
+				$name = (string) $on;
+				$on = true;
+			}
+			if (isset(self::PICKED[$name])) { // anything we no longer ship drops out here
+				$return[$name] = (bool) $on;
+			}
+		}
+		return $return;
 	}
 
 	/** The plugin objects adminer should register, constructed by us.
@@ -174,13 +219,22 @@ class PluginList {
 		]);
 	}
 
-	/** Store exactly the plugins posted. */
+	/** Store what the dialog says about every plugin, keeping only the answers that differ
+	* from what we ship on by default.
+	*/
 	function apply(): void {
-		// Whitelist by construction: the catalogue is intersected with what was posted, so a
-		// name we do not ship is never stored and never reaches an include path.
+		// Whitelist by construction: we walk the catalogue and only ask whether each name of
+		// ours was posted, so nothing user-supplied is ever stored or reaches an include path.
 		// ?? []: unticking the last plugin posts no plugins[] at all, which is the case that
-		// has to clear the list, not be mistaken for "nothing was submitted".
-		$posted = (array) ($_POST["plugins"] ?? []);
-		$this->settings->set(SettingKey::Plugins, array_values(array_intersect(array_keys(self::PICKED), $posted)));
+		// has to turn them off, not be mistaken for "nothing was submitted".
+		$posted = array_flip((array) ($_POST["plugins"] ?? []));
+		$answers = [];
+		foreach (array_keys(self::PICKED) as $name) {
+			$on = isset($posted[$name]);
+			if ($on !== in_array($name, self::DEFAULT_ON, true)) {
+				$answers[$name] = $on;
+			}
+		}
+		$this->settings->set(SettingKey::Plugins, $answers);
 	}
 }

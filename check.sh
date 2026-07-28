@@ -92,27 +92,57 @@ JAR=$(mktemp)
 TOKEN=$(curl -s -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
 	-d "desktop_settings=1" -d "plugins[]=row-numbers" -d "token=$TOKEN" "$BASE/adminer.php"
-grep -q '"row-numbers"' "$SETTINGS" || {
+grep -q '"row-numbers": *true' "$SETTINGS" || {
 	echo "FAIL: ticking a plugin did not enable it"; rm -f "$JAR"; exit 1; }
+# That form left the default-on plugins unticked, so the answer stored for them is "off" —
+# which is the whole point of storing both answers rather than a list of the ones turned on.
+grep -q '"tables-filter": *false' "$SETTINGS" || {
+	echo "FAIL: unticking a default-on plugin was not stored"; rm -f "$JAR"; exit 1; }
 # ...and unticking must remove it again, which is the half that silently rots: an empty
 # form posts no plugins[] at all, and that is what has to clear the list.
 TOKEN=$(curl -s -b "$JAR" -c "$JAR" "$BASE/adminer.php" | grep -o "name='token' value='[^']*'" | head -1 | sed "s/.*value='//;s/'//")
 curl -s -b "$JAR" -c "$JAR" -L -o /dev/null \
 	-d "desktop_settings=1" -d "token=$TOKEN" "$BASE/adminer.php"
 rm -f "$JAR"
-if grep -q '"row-numbers"' "$SETTINGS"; then
+if grep -q '"row-numbers": *true' "$SETTINGS"; then
 	echo "FAIL: unticking a plugin did not disable it"; exit 1
 fi
 echo "ok: plugins toggle on and off"
+
+# Both answers are stored, so that shipping a plugin on by default cannot switch it back on
+# for someone who turned it off. Three shapes, one page load each: the plugin's own script is
+# the evidence, since it only reaches the page when adminer was handed the instance.
+plugin_on() { # 1: what to store, 2: does before-unload have to be on
+	printf '%s' "$1" > "$SETTINGS"
+	if curl -s "$BASE/adminer.php" | grep -q "editChanged = true"; then ON=yes; else ON=no; fi
+	[ "$ON" = "$2" ] || { echo "FAIL: stored $1 -> plugin on: $ON, expected $2"; exit 1; }
+}
+plugin_on '{"plugins":{"before-unload":true}}' yes
+plugin_on '{"plugins":{"before-unload":false}}' no
+# The shape this key had before it could say "off": a bare list of the ones turned on. Still
+# read, so an upgrade does not silently disable what the user had enabled.
+plugin_on '{"plugins":["before-unload"]}' yes
+echo "ok: an answer of \"off\" is stored, and the older list shape still reads"
 
 # Every plugin we ship, one at a time: enabled, the app still has to render. This is the
 # check that the catalogue is a list of things that actually work — a plugin needing
 # constructor arguments, a class name that a new adminer release renamed, or a second copy
 # of an already-included class all show up here as a broken page and nowhere else.
 # Settings are written straight to the file: the POST path is proven above, and 20-odd
-# CSRF round trips to prove it again would only make this slow.
-for NAME in $(./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php"; echo implode(" ", Desktop\Settings\Plugins\PluginList::names());'); do
-	printf '{"plugins":["%s"]}' "$NAME" > "$SETTINGS"
+# CSRF round trips to prove it again would only make this slow. Every other plugin is
+# answered "off" in the same write, defaults included, so a failure names the one plugin
+# that caused it instead of whatever it was loaded beside.
+PLUGINS=/tmp/adminer-desktop-plugins.tsv
+# shellcheck disable=SC2016  # the $names below are PHP's, and must not expand here
+./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php";
+	$names = Desktop\Settings\Plugins\PluginList::names();
+	foreach ($names as $name) {
+		$answers = array_fill_keys($names, false);
+		$answers[$name] = true;
+		echo $name, "\t", json_encode(["plugins" => $answers]), "\n";
+	}' > "$PLUGINS"
+while IFS="$(printf '\t')" read -r NAME JSON; do
+	printf '%s' "$JSON" > "$SETTINGS"
 	OUT=/tmp/adminer-desktop-plugin.html
 	CODE=$(curl -s -o "$OUT" -w '%{http_code}' "$BASE/adminer.php")
 	[ "$CODE" = "200" ] || { echo "FAIL: $NAME -> HTTP $CODE"; exit 1; }
@@ -133,8 +163,9 @@ for NAME in $(./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php"; ec
 	if [ "$NAME" = "before-unload" ] && ! grep -q "editChanged = true" "$OUT"; then
 		echo "FAIL: $NAME was enabled but its script is not on the page"; exit 1
 	fi
-done
+done < "$PLUGINS"
 rm -f "$SETTINGS"
-echo "ok: every shipped plugin boots ($(./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php"; echo count(Desktop\Settings\Plugins\PluginList::names());') of them)"
+echo "ok: every shipped plugin boots ($(wc -l < "$PLUGINS" | tr -d ' ') of them)"
+rm -f "$PLUGINS"
 
 echo "PASS"
