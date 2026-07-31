@@ -182,7 +182,10 @@ biome:
 # Not semgrep's own Docker Hub image — that rate-limits anonymous pulls. It comes from
 # the public GHCR mirror published by github.com/landsman/config, which every repo of
 # mine shares, so no repo mirrors it for itself.
-SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:1.172.0
+# The version is not written here: it is read out of .github/semgrep.Dockerfile, which
+# exists so Dependabot has something it can parse (it reads no Makefile) and can bump
+# the pin by itself. See that file for why it is shaped like a Dockerfile.
+SEMGREP_IMAGE = $(shell sed -n 's|^FROM ||p' .github/semgrep.Dockerfile)
 
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
