@@ -177,13 +177,24 @@ biome:
 
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
-# Pinned like everything else: on :latest a new rule turns a green build red with no
-# change of ours, which is the one thing pinning exists to prevent.
-SEMGREP_VERSION = 1.171.0
+# Not semgrep's own Docker Hub image — that rate-limits anonymous pulls. It comes from
+# the public GHCR mirror published by github.com/landsman/config, which every repo of
+# mine shares, so no repo mirrors it for itself.
+#
+# The one `latest` in this Makefile, and the exception is the mirror rather than
+# laziness: this tag does not follow semgrep's releases, it follows what that repo
+# last merged. A version reaches it only after Dependabot proposed it there, a
+# week-old cooldown passed, and the pull request was merged — so the deliberate
+# bump the rest of the pins get by hand happens once, centrally, instead of once
+# per repo that scans. Pinning a version here would only mean this repo drifts
+# behind that decision until someone remembers it.
+# What it costs, plainly: a merge over there can turn a build red here with no
+# commit of ours to point at. `git log` in landsman/config is where that lives.
+SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:latest
 
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
-	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep:$(SEMGREP_VERSION) semgrep \
+	docker run --rm -v "$$PWD:/src" -w /src $(SEMGREP_IMAGE) semgrep \
 		--config=p/php --config=p/golang --config=p/secrets \
 		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
