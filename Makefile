@@ -179,11 +179,14 @@ biome:
 # docker is not running, so `make security` is safe to chain locally.
 # Pinned like everything else: on :latest a new rule turns a green build red with no
 # change of ours, which is the one thing pinning exists to prevent.
-SEMGREP_VERSION = 1.171.0
+# Not semgrep's own Docker Hub image — that rate-limits anonymous pulls. It comes from
+# the public GHCR mirror published by github.com/landsman/config, which every repo of
+# mine shares, so no repo mirrors it for itself.
+SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:1.172.0
 
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
-	docker run --rm -v "$$PWD:/src" -w /src semgrep/semgrep:$(SEMGREP_VERSION) semgrep \
+	docker run --rm -v "$$PWD:/src" -w /src $(SEMGREP_IMAGE) semgrep \
 		--config=p/php --config=p/golang --config=p/secrets \
 		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
