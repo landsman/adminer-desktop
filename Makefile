@@ -177,15 +177,20 @@ biome:
 
 # Security scan. Docker rather than an install, and skipped rather than failed when
 # docker is not running, so `make security` is safe to chain locally.
-# Pinned like everything else: on :latest a new rule turns a green build red with no
-# change of ours, which is the one thing pinning exists to prevent.
 # Not semgrep's own Docker Hub image — that rate-limits anonymous pulls. It comes from
 # the public GHCR mirror published by github.com/landsman/config, which every repo of
 # mine shares, so no repo mirrors it for itself.
-# The version is not written here: it is read out of .github/semgrep.Dockerfile, which
-# exists so Dependabot has something it can parse (it reads no Makefile) and can bump
-# the pin by itself. See that file for why it is shaped like a Dockerfile.
-SEMGREP_IMAGE = $(shell sed -n 's|^FROM ||p' .github/semgrep.Dockerfile)
+#
+# The one `latest` in this Makefile, and the exception is the mirror rather than
+# laziness: this tag does not follow semgrep's releases, it follows what that repo
+# last merged. A version reaches it only after Dependabot proposed it there, a
+# week-old cooldown passed, and the pull request was merged — so the deliberate
+# bump the rest of the pins get by hand happens once, centrally, instead of once
+# per repo that scans. Pinning a version here would only mean this repo drifts
+# behind that decision until someone remembers it.
+# What it costs, plainly: a merge over there can turn a build red here with no
+# commit of ours to point at. `git log` in landsman/config is where that lives.
+SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:latest
 
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
