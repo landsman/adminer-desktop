@@ -1,0 +1,43 @@
+name: claude mentions
+
+# This repo's own caller, and the worked example of the stub every other repo
+# copies. The one difference is the `./` path: local, so a change to the
+# reusable workflow is exercised here on the same commit that makes it, rather
+# than after it reaches main.
+#
+# issue_comment covers both issue and pull request comments — GitHub delivers a
+# comment on a PR's conversation tab as an issue_comment, not a pull_request
+# event. pull_request_review_comment is the separate one: a comment left on a
+# line of the diff during review.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  claude:
+    # Two gates, and neither is the security boundary — the action itself
+    # refuses anyone without write access to this repo, which is what keeps a
+    # public repo's passers-by out. These are narrower than that on purpose:
+    #
+    # The login check makes it one person rather than everyone with write
+    # access, because the bill is a Claude subscription rather than a repo
+    # cost. A collaborator added later gets to push, not to spend.
+    #
+    # The phrase check is only about runner minutes. The action looks for
+    # @claude itself and exits early, but not before a runner is allocated;
+    # testing it here means an ordinary comment never starts a job at all.
+    if: >-
+      github.event.comment.user.login == 'landsman' &&
+      contains(github.event.comment.body, '@claude')
+    uses: landsman/config/.github/workflows/claude.yml@main
+    # The ceiling, not the grant — the called workflow narrows these to what it
+    # actually uses. Dropping one here is how you take a capability away.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
