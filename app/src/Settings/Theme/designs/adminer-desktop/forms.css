@@ -42,6 +42,13 @@ input.size {
 	width: calc(7ex + 10px);
 }
 
+/* The rows-per-page list (src/Assets/javascript/page-size.js) keeps the class it replaces, so
+   it inherits that width too — which is two digits and a number spinner, and a list needs room
+   for its longest option and a chevron of its own. */
+select.size {
+	width: auto;
+}
+
 /* The edit form's fields, on one width the user owns (src/Assets/javascript/edit-field-width.js).
    Adminer hardcodes cols='50' on every textarea, which is a terminal's idea of wide, not a
    desktop window's — so the column is driven by the property instead, and dragging any one
