@@ -194,10 +194,14 @@ biome:
 # commit of ours to point at. `git log` in landsman/config is where that lives.
 SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:latest
 
+# p/php, p/golang and p/secrets read the code we wrote. p/ci reads what runs it — the
+# workflows and .github/dependabot.yml — which is the half that had nothing looking at
+# it: it is what says an action pinned to a moving tag can be repointed under us, and
+# what would have caught a dependabot config with no cooldown on it.
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
 	docker run --rm -v "$$PWD:/src" -w /src $(SEMGREP_IMAGE) semgrep \
-		--config=p/php --config=p/golang --config=p/secrets \
+		--config=p/php --config=p/golang --config=p/secrets --config=p/ci \
 		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
 
