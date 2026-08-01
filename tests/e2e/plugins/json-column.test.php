@@ -27,10 +27,10 @@ declare(strict_types=1);
  * a missing element.
  *
  * Run via `make e2e` (tests/e2e/run.php runs it), or on its own with
- * ./bin/frankenphp php-cli tests/e2e/json-column.test.php.
+ * ./bin/frankenphp php-cli tests/e2e/plugins/json-column.test.php.
  */
 
-require __DIR__ . '/fixture.php';
+require dirname(__DIR__) . '/fixture.php';
 
 use Playwright\Playwright;
 

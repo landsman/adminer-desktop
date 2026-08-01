@@ -7,6 +7,9 @@ declare(strict_types=1);
  * its own app server, so one wedged check cannot leave state for the next. They run in
  * turn here; postgres is booted by the first (see fixture.php) and reused by the rest.
  * `make e2e` runs this.
+ *
+ * plugins/ holds one file per shipped plugin, which is the folder that grows — the rest of the
+ * app is a handful of surfaces, the catalogue is twenty-two names.
  */
 
 require dirname(__DIR__, 2) . '/app/vendor/autoload.php';
@@ -14,15 +17,17 @@ require dirname(__DIR__, 2) . '/app/vendor/autoload.php';
 use Symfony\Component\Process\Process;
 
 $root = dirname(__DIR__, 2);
-// Every *.test.php in this folder is a check — drop one in and it runs, no list to keep in
-// step. glob() returns them sorted, so the order is stable; each owns its own app server and
-// shares only the postgres the first boots (fixture.php).
-$checks = array_map('basename', glob(__DIR__ . '/*.test.php') ?: []);
+// Every *.test.php here or one folder down is a check — drop one in and it runs, no list to keep
+// in step. glob() returns them sorted, so the order is stable; each owns its own app server and
+// shares only the postgres the first boots (fixture.php). One level down and no deeper: the
+// folders are there to group by subject (plugins/), not to nest.
+$checks = array_merge(glob(__DIR__ . '/*.test.php') ?: [], glob(__DIR__ . '/*/*.test.php') ?: []);
 $failed = [];
 
-foreach ($checks as $check) {
+foreach ($checks as $path) {
+	$check = substr($path, strlen(dirname(__DIR__, 2)) + 1);
 	echo "── $check ──\n";
-	$p = new Process(['./bin/frankenphp', 'php-cli', "tests/e2e/$check"], $root);
+	$p = new Process(['./bin/frankenphp', 'php-cli', $check], $root);
 	$p->setTimeout(300);
 	$p->run(function ($type, $buffer) {
 		echo $buffer;

@@ -15,10 +15,10 @@ declare(strict_types=1);
  * argument never arrived and every edit form on a big table reads it whole.
  *
  * Run via `make e2e` (tests/e2e/run.php runs it), or on its own with
- * ./bin/frankenphp php-cli tests/e2e/plugins.test.php.
+ * ./bin/frankenphp php-cli tests/e2e/plugins/edit-foreign.test.php.
  */
 
-require __DIR__ . '/fixture.php';
+require dirname(__DIR__) . '/fixture.php';
 
 use Playwright\Playwright;
 
@@ -67,8 +67,8 @@ try {
 		$page->screenshot($fix['shots'] . "/plugins-edit-foreign-$table.png");
 	}
 } catch (Throwable $e) {
-	$failures[] = 'plugins: ' . $e->getMessage();
+	$failures[] = 'edit-foreign: ' . $e->getMessage();
 }
 
 @unlink($fix['data'] . '/settings.json');
-e2e_done($fix['server'], $failures, 'plugins');
+e2e_done($fix['server'], $failures, 'edit-foreign');
