@@ -94,7 +94,7 @@ jobs:
             artifact: adminer-desktop-linux-x86_64
           - os: windows-2025
             asset: frankenphp-windows-x86_64.zip
-            package: winzip
+            package: windows
             artifact: adminer-desktop-windows-x86_64
 
     runs-on: ${{ matrix.os }}

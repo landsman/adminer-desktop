@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball winzip deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -454,7 +454,7 @@ tarball: dist  ## Package the Linux tarball
 	cd build/pkg && tar czf ../$(PKG).tar.gz adminer-desktop
 	@echo "built build/$(PKG).tar.gz -- $$(du -sh build/$(PKG).tar.gz | cut -f1)"
 
-winzip: dist  ## Package the Windows zip
+windows: dist  ## Package the Windows zip
 	rm -f build/$(PKG).zip && cd build/pkg && zip -qry ../$(PKG).zip adminer-desktop
 	@echo "built build/$(PKG).zip -- $$(du -sh build/$(PKG).zip | cut -f1)"
 
