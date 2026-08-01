@@ -1,0 +1,51 @@
+/* Resizable data-list columns — the grips src/Assets/javascript/table-columns.js inserts into
+ * the header row.
+ *
+ * The same manners as the sidebar's handle: a thin gutter that stays out of the way, warms up
+ * when the pointer is anywhere in the header row so the edges read as something you can pull,
+ * and takes the accent under the pointer itself. Here rather than in the theme because every
+ * design has this table, unlike the sidebar, which only our own layout lays out in panels.
+ */
+
+#table th {
+	/* The containing block for the grip. Adminer's hover popup (.column) is absolutely
+	   positioned with auto offsets, so it stays where it is — this only anchors the grip. */
+	position: relative;
+}
+
+.ad-column-grip {
+	position: absolute;
+	inset: 0 0 0 auto;
+	width: 7px;
+	cursor: col-resize;
+	background: transparent;
+	/* The pointer events are the script's; the browser's own panning gesture is not. */
+	touch-action: none;
+	transition: background-color 0.12s ease;
+}
+
+/* Anywhere in the header row: the whole row's edges show at once, which is what says the
+   columns can be dragged at all. --lit is adminer's own, so this holds on every design. */
+#table tr:hover .ad-column-grip {
+	background: var(--ad-border, var(--lit));
+}
+
+.ad-column-grip:hover,
+.ad-column-grip:active {
+	background: var(--ad-accent-quiet, var(--lit));
+}
+
+/* Once the widths are pinned, a value wider than its column is clipped rather than pushing
+   the column back out — a width the user set is the point. */
+#table.ad-columns-sized td {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* And a width set is the width measured back: the script adds the columns up to tell the
+   table what it comes to, and content-box would add each cell's padding and borders on top of
+   every one of those numbers. */
+#table.ad-columns-sized th,
+#table.ad-columns-sized td {
+	box-sizing: border-box;
+}

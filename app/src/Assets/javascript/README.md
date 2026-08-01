@@ -4,7 +4,8 @@ Adminer runs here inside a native WebView, not a browser tab, and this is the sm
 of page scripts that make it feel like an app: restore the reload shortcut
 (`shortcuts.js`), drop the link context menu whose items make no sense here
 (`context-menu.js`), open a table's data on a double-click of its name, DataGrip-style
-(`table-nav.js`). Each file does one thing.
+(`table-nav.js`), drag a column of the data list to the width you want it
+(`table-columns.js`). Each file does one thing.
 
 Some gaps can't be closed from the page — the mouse's back/forward buttons never reach it,
 so those are wired in the native shell (`dialogs_darwin.m`) instead.
