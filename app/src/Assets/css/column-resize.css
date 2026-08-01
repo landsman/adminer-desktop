@@ -13,10 +13,21 @@
 	position: relative;
 }
 
+/* Adminer makes the header sticky but gives it no stacking order, so the rows paint over it —
+   and over the grips hanging off it, which then never see the press that lands on them. */
+#table thead {
+	z-index: 1;
+}
+
 .ad-column-grip {
 	position: absolute;
-	inset: 0 0 0 auto;
+	top: 0;
+	right: 0;
 	width: 7px;
+	/* The height is the script's: it runs down the column, not just the header, and how far
+	   depends on the table and the panel. Adminer makes the header sticky, so a grip hanging
+	   off it follows the rows in view on its own. */
+	z-index: 1;
 	cursor: col-resize;
 	background: transparent;
 	/* The pointer events are the script's; the browser's own panning gesture is not. */
@@ -24,9 +35,9 @@
 	transition: background-color 0.12s ease;
 }
 
-/* Anywhere in the header row: the whole row's edges show at once, which is what says the
-   columns can be dragged at all. --lit is adminer's own, so this holds on every design. */
-#table tr:hover .ad-column-grip {
+/* Anywhere in the header row: every column edge shows at once, which is what says they can be
+   dragged at all. --lit is adminer's own, so this holds on every design. */
+#table thead:hover .ad-column-grip {
 	background: var(--ad-border, var(--lit));
 }
 

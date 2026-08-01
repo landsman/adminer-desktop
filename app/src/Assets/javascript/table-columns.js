@@ -73,6 +73,63 @@ if (headers.length) {
 		table.style.width = `${total()}px`;
 	}
 
+	// A wider column is no use if the value was already cut to fit the old one: adminer shortens
+	// every text and json value server-side to the Text length box, so past that point a drag
+	// only buys whitespace. Widen a column past what that allows and the box is raised to what
+	// the new width holds — the value is fetched by the next Select, which is adminer's own way
+	// of applying that field, rather than a page reload nobody asked for on mouseup.
+	const lengthField = document.querySelector("input[name='text_length']");
+	const askForEnoughText = (th) => {
+		// This column's own cell, not any cell: a json value is rendered monospace and a plain
+		// one is not, and a character of each is a different number of pixels. Measured rather
+		// than assumed for the same reason — the density and scaling preferences move it too.
+		const cell = table.querySelector("tbody tr")?.cells[th.cellIndex];
+		if (!lengthField || !cell) {
+			return;
+		}
+		const probe = document.createElement("span");
+		probe.textContent = "0".repeat(100);
+		probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre";
+		cell.append(probe);
+		const perCharacter = probe.getBoundingClientRect().width / 100;
+		probe.remove();
+		const fits = Math.ceil(th.getBoundingClientRect().width / perCharacter);
+		// Only ever up: this is one setting for every column, so following a narrowed column back
+		// down would cut the values in all the others.
+		if (perCharacter > 0 && fits > Number(lengthField.value)) {
+			lengthField.value = String(fits);
+		}
+	};
+
+	// The grip runs the height of the column, not of its header — the edge is grabbable next to
+	// whichever row you are reading. It hangs off the header cell, which adminer makes sticky, so
+	// it rides down with the header as the list scrolls; what changes is how far it then has to
+	// reach, which is why this is measured rather than set once. It stops at whichever comes
+	// first below it — the end of the table, the bottom of the panel, or the top of the sticky
+	// row actions — so a grip never runs past the list it belongs to and over the buttons.
+	const panel = table.closest("#content");
+	// Adminer's own row actions, stuck to the bottom of the panel and floating over the last
+	// rows: the list ends where this begins, whatever the table's own box says. Its margin
+	// counts as part of it — the footer paints a shadow of solid background up through that gap
+	// to hide the rows passing behind, and a grip drawn over that reads as one hanging in air.
+	const footer = document.querySelector(".footer");
+	const footerMargin = footer
+		? Number.parseFloat(getComputedStyle(footer).marginTop)
+		: 0;
+	const stretch = () => {
+		const ends = [table.getBoundingClientRect().bottom];
+		if (panel) {
+			ends.push(panel.getBoundingClientRect().bottom);
+		}
+		if (footer) {
+			ends.push(footer.getBoundingClientRect().top - footerMargin);
+		}
+		const height = Math.min(...ends) - headers[0].getBoundingClientRect().top;
+		for (const grip of table.querySelectorAll(".ad-column-grip")) {
+			grip.style.height = `${Math.max(0, height)}px`;
+		}
+	};
+
 	for (const th of headers) {
 		const grip = document.createElement("div");
 		grip.className = "ad-column-grip";
@@ -112,6 +169,13 @@ if (headers.length) {
 					[name(th)]: Math.round(th.getBoundingClientRect().width),
 				}),
 			);
+			askForEnoughText(th);
 		});
 	}
+
+	stretch();
+	// Scrolling moves the sticky header down the table, so the reach to its last row changes with
+	// it; the window is what sizes the panel the reach is capped by.
+	panel?.addEventListener("scroll", stretch, { passive: true });
+	window.addEventListener("resize", stretch);
 }
