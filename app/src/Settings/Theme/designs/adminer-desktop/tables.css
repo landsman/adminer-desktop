@@ -82,3 +82,12 @@ tbody tr:hover th {
 	   in both states. */
 	box-shadow: none;
 }
+
+/* Adminer masks the rows behind the bar a second time, on the wrapper inside it, painted --bg
+   — which on the panel is the grid's dark laid back over the bar that just covered it. The bar
+   is opaque; the wrapper only has to sit on it. Its half-em of padding goes with it, since the
+   bar keeps its own. */
+.footer > div {
+	background: transparent;
+	padding: 0;
+}
