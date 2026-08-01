@@ -184,6 +184,12 @@ class AdminerDesktop extends Adminer\Plugin {
 		if (isset($_GET["import"])) {
 			echo '<meta name="ad-import-drop" content="' . Adminer\h($this->t('import.drop_hint')) . "\">\n";
 		}
+		// Same again for the pager's "1-20 of 50" (src/Assets/javascript/table-pager.js): the
+		// numbers are the page's, the word between them is ours to translate. Only on the data
+		// list, which is the only page with rows to count.
+		if (isset($_GET["select"])) {
+			echo '<meta name="ad-pager-of" content="' . Adminer\h($this->t('pager.of')) . "\">\n";
+		}
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 

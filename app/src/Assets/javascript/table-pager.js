@@ -44,6 +44,36 @@ if (pagerGrid && pagerBox) {
 		current,
 	);
 
+	/* --- Which rows those pages hold -------------------------------------------------- */
+
+	// How many rows a page is, off the field that sets it (src/Assets/javascript/page-size.js).
+	const perPage = Number(
+		document.querySelector("#form [name='limit']")?.value ?? 0,
+	);
+	// How many there are in total, off adminer's own "50 rows" checkbox. It is a translated
+	// string, so the number is what is read out of it — and adminer prefixes ~ when it could
+	// only estimate, which is carried through rather than dropped.
+	//
+	// The label's last child, not its text: adminer puts an inline script between the checkbox
+	// and the words, and that script has numbers of its own — reading the lot gave "5025050"
+	// for fifty rows.
+	const counted = document
+		.querySelector("#form [name='all'], .footer [name='all']")
+		?.closest("label")
+		?.lastChild?.textContent.trim();
+	const rows = Number((counted ?? "").replace(/\D/g, ""));
+	const about = (counted ?? "").includes("~") ? "~" : "";
+
+	/** The rows a page shows, as adminer numbers them: 1-20 of 50. Falls back to the page out
+	 * of the pages when the rows were never counted — nothing here is invented. */
+	const rangeOf = (page) => {
+		if (!perPage || !rows) {
+			return String(page + 1);
+		}
+		const from = page * perPage + 1;
+		return `${from}-${Math.min(from + perPage - 1, rows)}`;
+	};
+
 	/* --- The url of a page, which is this one with the number swapped ------------------ */
 
 	const urlOf = (page) => {
@@ -104,6 +134,10 @@ if (pagerGrid && pagerBox) {
 
 	const total = document.createElement("span");
 	total.className = "ad-page-total";
+	// The word between the rows on screen and the rows there are, translated server-side
+	// (AdminerDesktop::head) because this file has no language of its own.
+	const word =
+		document.querySelector('meta[name="ad-pager-of"]')?.content ?? "/";
 
 	/** Draw the row for the page we are on. Called again after each move, because every part of
 	 * it — which arrows lead anywhere, which page is selected — is that number. */
@@ -113,12 +147,18 @@ if (pagerGrid && pagerBox) {
 		pages.replaceChildren();
 		if (last < 1000) {
 			for (let i = 0; i <= last; i++) {
-				pages.append(new Option(String(i + 1), String(i), false, i === page));
+				pages.append(new Option(rangeOf(i), String(i), false, i === page));
 			}
 		} else {
-			pages.append(new Option(String(page + 1), String(page), false, true));
+			pages.append(new Option(rangeOf(page), String(page), false, true));
 		}
-		total.textContent = last > 0 ? `/ ${estimated ? "~" : ""}${last + 1}` : "";
+		// "of 50" when the rows were counted, "/ 5" when only the pages are known.
+		total.textContent =
+			perPage && rows
+				? `${word} ${about}${rows}`
+				: last > 0
+					? `/ ${estimated ? "~" : ""}${last + 1}`
+					: "";
 		pagerBox.replaceChildren(
 			pagerBox.querySelector("legend"),
 			arrow("first", page > 0 ? 0 : null, "1"),

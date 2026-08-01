@@ -18,6 +18,10 @@ return [
 	'settings.reset' => 'Przywróć domyślne',
 	'settings.reset_confirm' => 'Przywrócić wszystkie ustawienia do domyślnych? Wygląd, wtyczki i zmienione przez Ciebie szerokości zostaną zapomniane. Język i zapisane serwery Adminera pozostaną.',
 
+	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
+	// out of the rows there are.
+	'pager.of' => 'z',
+
 	// Theme panel.
 	'theme.appearance' => 'Tryb kolorów',
 	'theme.appearance_hint' => 'Adminer Desktop podąża za jasnym i ciemnym trybem systemu, albo można go ustawić na stałe na Jasny lub Ciemny. Każdy tryb używa motywu wybranego poniżej.',

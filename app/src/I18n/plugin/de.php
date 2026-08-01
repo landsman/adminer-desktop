@@ -18,6 +18,10 @@ return [
 	'settings.reset' => 'Auf Standard zurücksetzen',
 	'settings.reset_confirm' => 'Alle Einstellungen auf den Standard zurücksetzen? Design, Plugins und die von Ihnen angepassten Breiten gehen verloren. Adminers eigene Sprache und gespeicherte Server bleiben erhalten.',
 
+	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
+	// out of the rows there are.
+	'pager.of' => 'von',
+
 	// Theme panel.
 	'theme.appearance' => 'Erscheinungsbild',
 	'theme.appearance_hint' => 'Adminer Desktop folgt dem hellen und dunklen Modus des Systems, oder Sie legen ihn fest auf Hell oder Dunkel. Jeder Modus verwendet das unten gewählte Design.',

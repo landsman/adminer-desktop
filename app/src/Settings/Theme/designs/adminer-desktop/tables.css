@@ -192,10 +192,16 @@ a.ad-page-step:hover {
 	color: var(--fg);
 }
 
-/* The ends of the run: no page to go to, so no link — greyed rather than removed, because a
-   row of controls that changes width as you page through it is one you have to re-aim at. */
+/* One neutral family, not a row of links: adminer paints an <a> the accent colour, which here
+   would make the two arrows that lead somewhere shout at the two that do not. The ends are the
+   same mark, dimmer — greyed rather than removed, because a row of controls that changes width
+   as you page through it is one you have to re-aim at each time. */
+a.ad-page-step {
+	color: color-mix(in srgb, var(--fg) 72%, transparent);
+}
+
 span.ad-page-step {
-	color: color-mix(in srgb, var(--fg) 35%, transparent);
+	color: color-mix(in srgb, var(--fg) 30%, transparent);
 }
 
 .ad-page-total {

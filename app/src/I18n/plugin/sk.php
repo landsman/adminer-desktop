@@ -18,6 +18,10 @@ return [
 	'settings.reset' => 'Obnoviť predvolené',
 	'settings.reset_confirm' => 'Obnoviť všetky nastavenia na predvolené? Vzhľad, pluginy aj šírky, ktoré ste si upravili, sa zabudnú. Jazyk a uložené servery Admineru zostanú.',
 
+	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
+	// out of the rows there are.
+	'pager.of' => 'z',
+
 	// Theme panel.
 	'theme.appearance' => 'Farebný režim',
 	'theme.appearance_hint' => 'Adminer Desktop sa riadi svetlým a tmavým režimom systému, alebo ho môžete pripnúť na Svetlý či Tmavý. Každý režim použije vzhľad zvolený nižšie.',

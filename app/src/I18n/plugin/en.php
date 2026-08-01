@@ -26,6 +26,10 @@ return [
 	'settings.reset' => 'Reset to defaults',
 	'settings.reset_confirm' => 'Reset every setting back to its default? The theme, the plugins and the widths you resized are all forgotten. Adminer\'s own language and saved servers are kept.',
 
+	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
+	// out of the rows there are.
+	'pager.of' => 'of',
+
 	// Theme panel (theme-panel.latte, Theme.php).
 	'theme.appearance' => 'Appearance',
 	'theme.appearance_hint' => 'Adminer Desktop follows the system light and dark, or pin it to Light or Dark. Either scheme uses the design chosen for it below.',

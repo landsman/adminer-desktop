@@ -31,6 +31,8 @@ $measure = /** @lang JavaScript */ "() => {
 		pages: list ? list.options.length : 0,
 		at: list ? list.value : '',
 		total: (document.querySelector('.ad-page-total')?.textContent ?? '').trim(),
+		// What the chip reads: the rows this page holds, as adminer numbers them.
+		range: (list?.selectedOptions[0]?.textContent ?? '').trim(),
 		firstRow: (document.querySelector('#table tbody tr td:nth-child(3)')?.textContent ?? '').trim(),
 		page: location.search.match(/[?&]page=(\\d+)/)?.[1] ?? '0',
 		// Only a new document loses this, which is the thing paging is not supposed to do.
@@ -68,8 +70,12 @@ try {
 	if ($first['pages'] !== 10) {
 		$failures[] = sprintf('the page list offers %d pages, not 10', $first['pages']);
 	}
-	if (!str_contains($first['total'], '10')) {
-		$failures[] = "the count beside it reads '{$first['total']}'";
+	// Fifty rows in the table, five to a page: the chip counts rows, not pages.
+	if (!str_contains($first['total'], '50')) {
+		$failures[] = "the count beside it reads '{$first['total']}', which is not the 50 rows";
+	}
+	if ($first['range'] !== '1-5') {
+		$failures[] = "the first page reads '{$first['range']}', not the rows 1-5 it holds";
 	}
 	// On page one there is no first and no previous.
 	if (count($first['ends']) !== 2) {
@@ -87,6 +93,9 @@ try {
 	}
 	if ($next['page'] !== '1' || $next['at'] !== '1') {
 		$failures[] = "after one step the url says page={$next['page']} and the list says {$next['at']}";
+	}
+	if ($next['range'] !== '6-10') {
+		$failures[] = "after one step the chip reads '{$next['range']}', not the rows 6-10";
 	}
 	// And now both ends lead somewhere, since there is a page on either side.
 	if ($next['ends'] !== []) {
