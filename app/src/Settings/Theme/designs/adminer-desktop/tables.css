@@ -46,7 +46,7 @@ tbody tr:hover th {
 }
 
 .odds tbody tr {
-	background: var(--bg);
+	background: var(--ad-row);
 }
 
 .odds tbody tr:nth-child(2n) {
