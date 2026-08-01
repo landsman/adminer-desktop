@@ -86,10 +86,25 @@ tbody tr:hover th {
 /* Adminer masks the rows behind the bar a second time, on the wrapper inside it, painted --bg
    — which on the panel is the grid's dark laid back over the bar that just covered it. The bar
    is opaque; the wrapper only has to sit on it. Its half-em of padding goes with it, since the
-   bar keeps its own. */
+   bar keeps its own.
+
+   A row rather than a line of inline-blocks, so the boxes in it are one height: they hold a
+   checkbox, three buttons and a pair of selects, and left to their contents they step up and
+   down across the bar. */
 .footer > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: 0.5rem;
 	background: transparent;
 	padding: 0;
+}
+
+/* Each box centres what it holds, now that the box is taller than its contents. */
+.footer fieldset {
+	display: flex;
+	align-items: center;
+	margin: 0;
 }
 
 /* The pager, which is the one fieldset in that bar holding links of its own — the page numbers.
@@ -105,9 +120,6 @@ tbody tr:hover th {
  * "Whole result" would be the first fieldset instead. The legend's own link (it prompts for a
  * page to jump to) is inside <legend>, so > leaves it alone. */
 .footer fieldset:has(> a) {
-	/* inline-, so it still sits in the row with the fieldsets beside it rather than taking a
-	   line of its own. */
-	display: inline-flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 0.1rem;

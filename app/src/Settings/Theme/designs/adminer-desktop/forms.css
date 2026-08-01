@@ -35,6 +35,13 @@ textarea,
 	padding: 0.5em 0.65em;
 }
 
+/* Adminer's small numeric boxes — Limit, Text length — are 7ex wide, which is two digits and
+   a spinner with nothing to spare. Three digits is ordinary in both (a column dragged wide
+   writes them into Text length), and the spinner eats the third. */
+input.size {
+	width: calc(7ex + 10px);
+}
+
 /* The edit form's fields, on one width the user owns (src/Assets/javascript/edit-field-width.js).
    Adminer hardcodes cols='50' on every textarea, which is a terminal's idea of wide, not a
    desktop window's — so the column is driven by the property instead, and dragging any one
