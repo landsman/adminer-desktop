@@ -113,11 +113,30 @@ endif
 # no shasum. Both write the same "hash  file" format, so one checksums.txt serves all.
 SHA256 := $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo "shasum -a 256")
 
+# What upstream signed is the asset as released, which is not always the file we end up
+# running: mac and linux ship the bare binary, windows ships a zip and we keep the exe
+# out of it. Verify the thing that was attested, not the thing that was extracted.
+FRANKEN_DL = $(if $(filter .zip,$(suffix $(FRANKEN_ASSET))),.cache/frankenphp.zip,bin/frankenphp)
+
 # Hard fail on mismatch: means the release was re-uploaded or the download was tampered
-# with. Only the adminer artifacts are listed — frankenphp differs per platform, and a
-# per-OS checksum file would be four files to keep in step instead of one.
-verify: fetch  ## Checksum-verify the downloaded adminer files
+# with. Two artifacts, two mechanisms, because upstream offers different things.
+#
+# Adminer publishes no signatures, so checksums.txt is a hash we recorded ourselves at a
+# version we chose — it proves the download did not change since, and nothing more.
+#
+# frankenphp used to be skipped here, on the grounds that four per-OS checksum files were
+# more to keep in step than the check was worth. It never needed one: every release asset
+# carries GitHub build provenance, so one `gh attestation verify` covers all four and
+# proves *which workflow built it*, which a hash we wrote down ourselves cannot.
+#
+# gh is a hard requirement, not a nicety skipped when missing — a verify step that quietly
+# does nothing on the machine that lacks the tool is worse than no verify step, because it
+# still reports success. mise pins it and `mise run install` refuses to finish without it
+# authenticated, which is what the check needs: it reads the attestation over the API, so
+# an installed-but-logged-out gh fails here too.
+verify: fetch  ## Verify the downloads: adminer checksums, frankenphp build provenance
 	$(SHA256) -c checksums.txt
+	gh attestation verify $(FRANKEN_DL) --repo php/frankenphp
 
 # Regenerate after a deliberate version bump. Review the diff.
 checksums:

@@ -16,13 +16,22 @@
 [settings]
 activate_aggressive = true
 
+# gh is here because `make verify` needs it: frankenphp publishes no checksums, it
+# publishes GitHub build provenance, and `gh attestation verify` is what reads that. It is
+# a build dependency like any other — pinned rather than assumed to be on the machine.
 [tools]
 node = "22"
 go = "1.26.5"
+gh = "2"
 
 [tasks.install]
 description = "Fetch composer, install PHP + JS deps, and the Chromium e2e browser"
 run = [
+	# First, because it is the one thing here a download cannot fix: mise installs gh, but
+	# only you can log it in, and `gh attestation verify` reads the attestation over the API
+	# — so an installed-but-logged-out gh fails `make verify` just as a missing one would.
+	# Checked before the minutes spent on composer, npm and Chromium rather than after.
+	"gh auth status >/dev/null 2>&1 || { echo 'gh is installed but not authenticated. Run `gh auth login` — make verify needs it to check the frankenphp build provenance.'; exit 1; }",
 	# composer and its version pin live in the Makefile, because qa and the packaged app
 	# need vendor/ too — this would otherwise be the second place to bump it.
 	"make app/vendor",
