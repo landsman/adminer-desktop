@@ -33,6 +33,12 @@ body {
 /* Left panel: #menu lives inside #foot. Its width is a variable so the drag handle
    (sidebar-resize.js) and head()'s restored value can both drive it from one place. */
 #foot {
+	/* Named, so the cross-document transition (base.css) pairs this panel with itself in the
+	   next document instead of cross-fading it with everything else. The sidebar is the same
+	   list before and after a click — fading it out and back in is the drift you see when
+	   opening a table, and holding it still is what a native window does. #content is named
+	   for the same reason: what actually changed then animates on its own. */
+	view-transition-name: ad-sidebar;
 	order: -1;
 	position: static;
 	display: flex;
@@ -78,6 +84,9 @@ body {
 
 /* Right panel: the content. */
 #content {
+	/* Paired with itself across a navigation, so the panel that did change is the only thing
+	   that animates — see #foot above. */
+	view-transition-name: ad-content;
 	position: relative;
 	flex: 1;
 	min-width: 0;
