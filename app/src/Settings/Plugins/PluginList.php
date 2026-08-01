@@ -14,7 +14,7 @@ use Desktop\UserSettings;
 * and its rule of instantiating anything called Adminer* as a plugin.
 */
 class PluginList {
-	/** What we ship: the file in available/ => the class it declares.
+	/** What we ship, as the class each one declares.
 	*
 	* Hand-picked, not globbed. The release carries 51 and most of them answer a question a
 	* desktop app never asks. Nine cannot be constructed at all without arguments — adminer
@@ -23,34 +23,34 @@ class PluginList {
 	* editor from a CDN an offline app cannot reach, and some offer a second copy of a
 	* setting this app already owns. What is left is what works by ticking a box.
 	*
-	* The class name is written here rather than read back out of the file because we
-	* instantiate it ourselves (see instances()): one include, one `new`, and no guessing
-	* which of the declared classes was the plugin.
-	* @var array<string, class-string>
+	* The class is the one thing written down: we instantiate it ourselves (see instances()),
+	* and the file it lives in follows from it (see name()) rather than being spelled out
+	* beside it, where the two could disagree.
+	* @var array<class-string>
 	*/
 	private const array PICKED = [
-		'backward-keys' => \AdminerBackwardKeys::class,
-		'before-unload' => \AdminerBeforeUnload::class,
-		'dump-alter' => \AdminerDumpAlter::class,
-		'dump-bz2' => \AdminerDumpBz2::class,
-		'dump-date' => \AdminerDumpDate::class,
-		'dump-json' => \AdminerDumpJson::class,
-		'dump-php' => \AdminerDumpPhp::class,
-		'dump-xml' => \AdminerDumpXml::class,
-		'dump-zip' => \AdminerDumpZip::class,
-		'edit-foreign' => \AdminerEditForeign::class,
-		'edit-textarea' => \AdminerEditTextarea::class,
-		'editor-views' => \AdminerEditorViews::class,
-		'enum-option' => \AdminerEnumOption::class,
-		'foreign-system' => \AdminerForeignSystem::class,
-		'json-column' => \AdminerJsonColumn::class,
-		'pretty-json-column' => \AdminerPrettyJsonColumn::class,
-		'row-numbers' => \AdminerRowNumbers::class,
-		'slugify' => \AdminerSlugify::class,
-		'table-indexes-structure' => \AdminerTableIndexesStructure::class,
-		'table-structure' => \AdminerTableStructure::class,
-		'tables-filter' => \AdminerTablesFilter::class,
-		'translation' => \AdminerTranslation::class,
+		\AdminerBackwardKeys::class,
+		\AdminerBeforeUnload::class,
+		\AdminerDumpAlter::class,
+		\AdminerDumpBz2::class,
+		\AdminerDumpDate::class,
+		\AdminerDumpJson::class,
+		\AdminerDumpPhp::class,
+		\AdminerDumpXml::class,
+		\AdminerDumpZip::class,
+		\AdminerEditForeign::class,
+		\AdminerEditTextarea::class,
+		\AdminerEditorViews::class,
+		\AdminerEnumOption::class,
+		\AdminerForeignSystem::class,
+		\AdminerJsonColumn::class,
+		\AdminerPrettyJsonColumn::class,
+		\AdminerRowNumbers::class,
+		\AdminerSlugify::class,
+		\AdminerTableIndexesStructure::class,
+		\AdminerTableStructure::class,
+		\AdminerTablesFilter::class,
+		\AdminerTranslation::class,
 	];
 
 	/** On whatever the user picked, and not offered as a choice.
@@ -59,10 +59,10 @@ class PluginList {
 	* says otherwise, and answers with a version this app cannot install — the adminer we
 	* bundle is pinned in the Makefile. The plugin is three lines replacing verifyVersion()
 	* with a no-op, so the check never leaves the machine.
-	* @var array<string, class-string>
+	* @var array<class-string>
 	*/
 	private const array ALWAYS = [
-		'version-noverify' => \AdminerVersionNoverify::class,
+		\AdminerVersionNoverify::class,
 	];
 
 	/** Shipped on, until the user says otherwise.
@@ -71,14 +71,39 @@ class PluginList {
 	* it rather than a bare set of names — so adding one here cannot switch it back on for
 	* someone who had turned it off.
 	*
-	* tables-filter to start with: a filter box over the table list is what every desktop
-	* database browser has, and the plugin is one `tablesPrint` hook, so it touches nothing
-	* until there is a list of tables to filter.
-	* @var array<string>
+	* AdminerTablesFilter to start with: a filter box over the table list is what every
+	* desktop database browser has, and the plugin is one `tablesPrint` hook, so it touches
+	* nothing until there is a list of tables to filter.
+	* @var array<class-string>
 	*/
 	private const array DEFAULT_ON = [
-		'tables-filter',
+		\AdminerTablesFilter::class,
 	];
+
+	/** The file in available/ a plugin lives in: AdminerTablesFilter => tables-filter.
+	*
+	* Adminer builds both names out of the same words, so the file follows from the class and
+	* only the class has to be written down. A plugin that broke that rule would need a special
+	* case here, and nothing else would complain — a name answering to no file is skipped, not
+	* fatal, so the plugin would just stop being there. check.sh asserts every name has one.
+	* @param class-string $class
+	*/
+	private static function name(string $class): string {
+		return strtolower((string) preg_replace('~(?<!^)(?=[A-Z])~', "-", substr($class, strlen("Adminer"))));
+	}
+
+	/** The catalogue keyed by the file each class lives in — the shape everything below wants,
+	* because a filename is what settings.json stores and what the panel posts back.
+	* @param array<class-string> $classes
+	* @return array<string, class-string>
+	*/
+	private static function byName(array $classes): array {
+		$return = [];
+		foreach ($classes as $class) {
+			$return[self::name($class)] = $class;
+		}
+		return $return;
+	}
 
 	private \AdminerDesktop $desktop;
 	private UserSettings $settings;
@@ -93,7 +118,7 @@ class PluginList {
 	* @return array<string>
 	*/
 	static function names(): array {
-		return array_keys(self::PICKED);
+		return array_keys(self::byName(self::PICKED));
 	}
 
 	/** What is on, in catalogue order: the defaults, with the user's answers on top.
@@ -101,9 +126,10 @@ class PluginList {
 	*/
 	function enabled(): array {
 		$answers = $this->answers();
+		$on = self::byName(self::DEFAULT_ON);
 		return array_values(array_filter(
-			array_keys(self::PICKED),
-			fn(string $name): bool => $answers[$name] ?? in_array($name, self::DEFAULT_ON, true),
+			self::names(),
+			fn(string $name): bool => $answers[$name] ?? isset($on[$name]),
 		));
 	}
 
@@ -124,6 +150,7 @@ class PluginList {
 	*/
 	private function answers(): array {
 		$stored = $this->settings->get(SettingKey::Plugins, []);
+		$picked = self::byName(self::PICKED);
 		$return = [];
 		foreach ((is_array($stored) ? $stored : []) as $name => $on) {
 			// A list of names is the shape this key had before it could say "off"; every
@@ -132,7 +159,7 @@ class PluginList {
 				$name = (string) $on;
 				$on = true;
 			}
-			if (isset(self::PICKED[$name])) { // anything we no longer ship drops out here
+			if (isset($picked[$name])) { // anything we no longer ship drops out here
 				$return[$name] = (bool) $on;
 			}
 		}
@@ -151,7 +178,8 @@ class PluginList {
 	*/
 	function instances(): array {
 		$return = [];
-		foreach (self::ALWAYS + array_intersect_key(self::PICKED, array_flip($this->enabled())) as $name => $class) {
+		$picked = array_intersect_key(self::byName(self::PICKED), array_flip($this->enabled()));
+		foreach (self::byName(self::ALWAYS) + $picked as $name => $class) {
 			$filename = __DIR__ . "/available/$name.php";
 			// A name a later adminer release no longer ships is skipped rather than fatal:
 			// this runs before there is any UI to untick it with.
@@ -178,7 +206,7 @@ class PluginList {
 	*/
 	function descriptions(): array {
 		$return = [];
-		foreach (self::PICKED as $name => $class) {
+		foreach (self::byName(self::PICKED) as $name => $class) {
 			$filename = __DIR__ . "/available/$name.php";
 			if (!is_file($filename)) {
 				continue;
@@ -228,10 +256,11 @@ class PluginList {
 		// ?? []: unticking the last plugin posts no plugins[] at all, which is the case that
 		// has to turn them off, not be mistaken for "nothing was submitted".
 		$posted = array_flip((array) ($_POST["plugins"] ?? []));
+		$default = self::byName(self::DEFAULT_ON);
 		$answers = [];
-		foreach (array_keys(self::PICKED) as $name) {
+		foreach (self::names() as $name) {
 			$on = isset($posted[$name]);
-			if ($on !== in_array($name, self::DEFAULT_ON, true)) {
+			if ($on !== isset($default[$name])) {
 				$answers[$name] = $on;
 			}
 		}

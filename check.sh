@@ -137,6 +137,13 @@ PLUGINS=/tmp/adminer-desktop-plugins.tsv
 ./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php";
 	$names = Desktop\Settings\Plugins\PluginList::names();
 	foreach ($names as $name) {
+		// The name is derived from the class, and a file that does not answer to it would be
+		// skipped rather than fail — the plugin would simply stop being there, and every
+		// assertion below would still pass.
+		if (!is_file("app/src/Settings/Plugins/available/$name.php")) {
+			fwrite(STDERR, "FAIL: no available/$name.php to load that plugin from\n");
+			exit(1);
+		}
 		$answers = array_fill_keys($names, false);
 		$answers[$name] = true;
 		echo $name, "\t", json_encode(["plugins" => $answers]), "\n";
