@@ -35,18 +35,19 @@ textarea,
 	padding: 0.5em 0.65em;
 }
 
-/* Adminer's small numeric boxes — Limit, Text length — are 7ex wide, which is two digits and
-   a spinner with nothing to spare. Three digits is ordinary in both (a column dragged wide
-   writes them into Text length), and the spinner eats the third. */
-input.size {
-	width: calc(7ex + 10px);
-}
+/* Adminer's small boxes — Limit, Text length — are 7ex wide, which is two digits and a spinner
+   with nothing to spare. Three digits is ordinary in both: a column dragged wide writes them
+   into Text length itself, and Limit is a list of sizes up to 1000 now
+   (src/Assets/javascript/page-size.js).
 
-/* The rows-per-page list (src/Assets/javascript/page-size.js) keeps the class it replaces, so
-   it inherits that width too — which is two digits and a number spinner, and a list needs room
-   for its longest option and a chevron of its own. */
+   One width and one height for both, because they sit side by side in the toolbar and a native
+   select and a native number input do not agree on either by themselves — the select came out
+   2px shorter and 9px wider than the input beside it. */
+input.size,
 select.size {
-	width: auto;
+	box-sizing: border-box;
+	width: 4.75rem;
+	height: 2.3em;
 }
 
 /* The edit form's fields, on one width the user owns (src/Assets/javascript/edit-field-width.js).

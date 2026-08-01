@@ -107,37 +107,98 @@ tbody tr:hover th {
 	margin: 0;
 }
 
-/* The pager, which is the one fieldset in that bar holding links of its own — the page numbers.
- *
- * Adminer prints the page numbers as bare links with a space between them, so each one is a
- * target the width of its own digit — fine with a mouse on a web page, tiring in a window you
- * work in all day. Each link gets a square to be hit in, and the row is laid out rather than
- * left to word spacing.
- *
- * The current page is a bare text node, not an element, so nothing can be selected to mark it —
- * it ends up the plain number among the chips, which is the state it is anyway. Matched by what
- * it holds rather than by its position: a result that fits on one page prints no pager, and
- * "Whole result" would be the first fieldset instead. The legend's own link (it prompts for a
- * page to jump to) is inside <legend>, so > leaves it alone. */
-.footer fieldset:has(> a) {
+/* The pager (src/Assets/javascript/table-pager.js): first, previous, the page you are on out
+   of how many, next, last. Adminer's own run of numbered links is what it is built from, and
+   what it replaces — those were a target the width of a digit each, and to reach page 7 you
+   first had to find 7.
+
+   Matched by what it holds rather than by its position: a result that fits on one page prints
+   no pager at all, and "Whole result" would be the first fieldset instead. */
+.footer fieldset:has(> a),
+.footer fieldset:has(> .ad-page-select) {
 	flex-wrap: wrap;
-	align-items: center;
 	gap: 0.1rem;
 	/* Digits of one width, so the row does not shuffle as the numbers grow. */
 	font-variant-numeric: tabular-nums;
-	font-weight: 600;
 }
 
-.footer fieldset:has(> a) > a {
+/* The arrows, and the numbered links before this script has run on them. A square to be hit
+   in, rather than the width of the glyph inside it. */
+.footer fieldset > a,
+.ad-page-step {
 	min-width: 1.6em;
 	padding: 0.3em 0.5em;
 	border-radius: var(--ad-radius-sm);
-	font-weight: 400;
 	text-align: center;
 	text-decoration: none;
 }
 
-.footer fieldset:has(> a) > a:hover {
+/* The page chip: the number you are on, and the list of them behind it. A native select would
+   put a border, a background and a chevron of its own in the middle of a row of hairlines, so
+   it is stripped to its text and given the row's own chevron — laid over it, and deaf to the
+   pointer, so a click anywhere on the chip still opens the list. */
+.ad-page-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	border-radius: var(--ad-radius-sm);
+}
+
+.ad-page-chip:hover,
+.ad-page-chip:focus-within {
+	background: var(--ad-accent-quiet);
+}
+
+.ad-page-chip svg {
+	position: absolute;
+	right: 0.35em;
+	pointer-events: none;
+}
+
+.ad-page-select {
+	appearance: none;
+	width: auto;
+	min-height: 0;
+	padding: 0.3em 1.6em 0.3em 0.55em;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-variant-numeric: tabular-nums;
+}
+
+/* All four are drawn, not typed (src/Assets/javascript/table-pager.js): one stroke, one size,
+   the row's own colour, and the same on every platform — which a chevron glyph is not. */
+.ad-page-step {
+	display: inline-flex;
+	align-items: center;
+	line-height: 1;
+}
+
+.ad-page-step svg,
+.ad-page-chip svg {
+	width: 1.1em;
+	height: 1.1em;
+	fill: none;
+	stroke: currentcolor;
+	stroke-width: 1.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.footer fieldset > a:hover,
+a.ad-page-step:hover {
 	background: var(--ad-accent-quiet);
 	color: var(--fg);
+}
+
+/* The ends of the run: no page to go to, so no link — greyed rather than removed, because a
+   row of controls that changes width as you page through it is one you have to re-aim at. */
+span.ad-page-step {
+	color: color-mix(in srgb, var(--fg) 35%, transparent);
+}
+
+.ad-page-total {
+	padding-inline: 0.15em 0.35em;
+	color: color-mix(in srgb, var(--fg) 62%, transparent);
 }
