@@ -38,6 +38,7 @@ $measure = /** @lang JavaScript */ "() => {
 		table: Math.round(document.querySelector('#table').getBoundingClientRect().width),
 		contentScrolls: content.scrollWidth > content.clientWidth,
 		windowScrolls: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+		checked: [...document.querySelectorAll('#table input[type=checkbox]')].filter((c) => c.checked).length,
 	};
 }";
 
@@ -84,6 +85,11 @@ try {
 	// And the wider table scrolls in the panel, not by pushing the whole window sideways.
 	if (!$after['contentScrolls'] || $after['windowScrolls']) {
 		$failures[] = 'the widened table did not scroll inside the content panel';
+	}
+	// The drag is not a click on the header: adminer's tableClick is bound to the table, and a
+	// click reaching it from the grip ticks the header row's box, which is every row selected.
+	if ($after['checked'] > 0) {
+		$failures[] = sprintf('the drag selected rows (%d checkboxes ticked)', $after['checked']);
 	}
 
 	// A reload keeps it: sessionStorage lives as long as the window does.

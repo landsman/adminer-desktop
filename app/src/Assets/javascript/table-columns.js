@@ -78,6 +78,15 @@ if (headers.length) {
 		grip.className = "ad-column-grip";
 		th.append(grip);
 
+		// The table's own onclick is adminer's tableClick, which walks up from whatever was
+		// clicked to the row it is in and ticks that row's checkbox — on the header row, that is
+		// "select every row". A drag ends in a click on the grip like any other press, so the
+		// click stops here rather than reaching the table. dblclick too: it is bound as well,
+		// and two quick drags of the same edge are otherwise one.
+		for (const bubbling of ["click", "dblclick"]) {
+			grip.addEventListener(bubbling, (e) => e.stopPropagation());
+		}
+
 		let startX = 0;
 		let startWidth = 0;
 		grip.addEventListener("pointerdown", (e) => {
