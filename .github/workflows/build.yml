@@ -28,9 +28,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: stable
           cache-dependency-path: go.sum
@@ -41,7 +41,7 @@ jobs:
         run: make linux-deps
 
       - name: Cache pinned downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             bin
@@ -102,12 +102,12 @@ jobs:
       # named. Unshallow for the tags either way: VERSION is `git describe`, and the .deb
       # takes its version from it. Without the tags that is "dev", which DEB_VERSION
       # strips to nothing and dpkg-deb then refuses.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag }}
           fetch-depth: 0
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: stable
           cache-dependency-path: go.sum
@@ -122,7 +122,7 @@ jobs:
       # frankenphp is a ~180 MB download. It is pinned, so the key only has to change
       # when the pinned version does.
       - name: Cache pinned downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             bin
@@ -150,7 +150,7 @@ jobs:
       # which has no underscore.
       # All unsigned: macOS needs right-click > Open on first launch, and Windows shows a
       # SmartScreen warning. Signing needs paid certificates held as repository secrets.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: build/adminer-desktop_*
@@ -172,7 +172,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
