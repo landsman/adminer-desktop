@@ -44,8 +44,13 @@ try {
 
 	// Sort by title — the second column, so its heading link is the second sort link.
 	$page->evaluate("() => document.querySelectorAll('#table thead th a')[3].click()");
-	$page->waitForURL('**order**');
-	$after = $page->evaluate($measure);
+	// Wait for the rows themselves rather than for the url: the swap corrects the url a beat
+	// after it puts them on screen, so waiting on that raced the measurement below.
+	$after = $before;
+	for ($i = 0; $i < 40 && $after['first'] === $before['first']; $i++) {
+		usleep(100_000);
+		$after = $page->evaluate($measure);
+	}
 
 	if (!$after['sameDocument']) {
 		$failures[] = 'sorting rebuilt the page instead of swapping the rows';

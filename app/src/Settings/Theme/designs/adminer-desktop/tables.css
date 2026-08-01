@@ -86,46 +86,155 @@ tbody tr:hover th {
 /* Adminer masks the rows behind the bar a second time, on the wrapper inside it, painted --bg
    — which on the panel is the grid's dark laid back over the bar that just covered it. The bar
    is opaque; the wrapper only has to sit on it. Its half-em of padding goes with it, since the
-   bar keeps its own. */
+   bar keeps its own.
+
+   A row rather than a line of inline-blocks, so the boxes in it are one height: they hold a
+   checkbox, three buttons and a pair of selects, and left to their contents they step up and
+   down across the bar. */
 .footer > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: 0.5rem;
 	background: transparent;
 	padding: 0;
 }
 
-/* The pager, which is the one fieldset in that bar holding links of its own — the page numbers.
- *
- * Adminer prints the page numbers as bare links with a space between them, so each one is a
- * target the width of its own digit — fine with a mouse on a web page, tiring in a window you
- * work in all day. Each link gets a square to be hit in, and the row is laid out rather than
- * left to word spacing.
- *
- * The current page is a bare text node, not an element, so nothing can be selected to mark it —
- * it ends up the plain number among the chips, which is the state it is anyway. Matched by what
- * it holds rather than by its position: a result that fits on one page prints no pager, and
- * "Whole result" would be the first fieldset instead. The legend's own link (it prompts for a
- * page to jump to) is inside <legend>, so > leaves it alone. */
-.footer fieldset:has(> a) {
-	/* inline-, so it still sits in the row with the fieldsets beside it rather than taking a
-	   line of its own. */
-	display: inline-flex;
-	flex-wrap: wrap;
+/* Each box centres what it holds, now that the box is taller than its contents. */
+.footer fieldset {
+	display: flex;
 	align-items: center;
+	margin: 0;
+}
+
+/* The pager (src/Assets/javascript/table-pager.js): first, previous, the page you are on out
+   of how many, next, last. Adminer's own run of numbered links is what it is built from, and
+   what it replaces — those were a target the width of a digit each, and to reach page 7 you
+   first had to find 7.
+
+   Matched by what it holds rather than by its position: a result that fits on one page prints
+   no pager at all, and "Whole result" would be the first fieldset instead. */
+.footer fieldset:has(> a),
+.footer fieldset:has(> .ad-page-select) {
+	flex-wrap: wrap;
 	gap: 0.1rem;
 	/* Digits of one width, so the row does not shuffle as the numbers grow. */
 	font-variant-numeric: tabular-nums;
-	font-weight: 600;
 }
 
-.footer fieldset:has(> a) > a {
+/* The arrows, and the numbered links before this script has run on them. A square to be hit
+   in, rather than the width of the glyph inside it. */
+.footer fieldset > a,
+.ad-page-step {
 	min-width: 1.6em;
 	padding: 0.3em 0.5em;
 	border-radius: var(--ad-radius-sm);
-	font-weight: 400;
 	text-align: center;
 	text-decoration: none;
 }
 
-.footer fieldset:has(> a) > a:hover {
+/* The page chip: the number you are on, and the list of them behind it. A native select would
+   put a border, a background and a chevron of its own in the middle of a row of hairlines, so
+   it is stripped to its text and given the row's own chevron — laid over it, and deaf to the
+   pointer, so a click anywhere on the chip still opens the list. */
+.ad-page-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	border-radius: var(--ad-radius-sm);
+}
+
+.ad-page-chip:hover,
+.ad-page-chip:focus-within {
+	background: var(--ad-accent-quiet);
+}
+
+.ad-page-chip::after {
+	position: absolute;
+	right: 0.35em;
+	pointer-events: none;
+}
+
+.ad-page-select {
+	appearance: none;
+	width: auto;
+	min-height: 0;
+	padding: 0.3em 1.6em 0.3em 0.55em;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-variant-numeric: tabular-nums;
+}
+
+/* The marks: files in icons/ beside this stylesheet, masked rather than drawn as <img>, so
+   each takes the colour of the control it is in — one file, four states, no copy per colour.
+   Files rather than svg built in the script, so the browser caches them once instead of
+   parsing the same paths into every page.
+
+   Centred on both axes by the box itself: these are flex containers, and text-align has no
+   say over a flex item — the mark sat against the left edge of a target wider than it. */
+.ad-page-step {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
+.ad-page-step::before,
+.ad-page-chip::after {
+	content: "";
+	width: 1.1em;
+	height: 1.1em;
+	background: currentcolor;
+	-webkit-mask: center / contain no-repeat;
+	mask: center / contain no-repeat;
+}
+
+.ad-page-first::before {
+	-webkit-mask-image: url("icons/page-first.svg");
+	mask-image: url("icons/page-first.svg");
+}
+
+.ad-page-previous::before {
+	-webkit-mask-image: url("icons/page-previous.svg");
+	mask-image: url("icons/page-previous.svg");
+}
+
+.ad-page-next::before {
+	-webkit-mask-image: url("icons/page-next.svg");
+	mask-image: url("icons/page-next.svg");
+}
+
+.ad-page-last::before {
+	-webkit-mask-image: url("icons/page-last.svg");
+	mask-image: url("icons/page-last.svg");
+}
+
+.ad-page-chip::after {
+	-webkit-mask-image: url("icons/chevron-down.svg");
+	mask-image: url("icons/chevron-down.svg");
+}
+
+.footer fieldset > a:hover,
+a.ad-page-step:hover {
 	background: var(--ad-accent-quiet);
 	color: var(--fg);
+}
+
+/* One neutral family, not a row of links: adminer paints an <a> the accent colour, which here
+   would make the two arrows that lead somewhere shout at the two that do not. The ends are the
+   same mark, dimmer — greyed rather than removed, because a row of controls that changes width
+   as you page through it is one you have to re-aim at each time. */
+a.ad-page-step {
+	color: color-mix(in srgb, var(--fg) 72%, transparent);
+}
+
+span.ad-page-step {
+	color: color-mix(in srgb, var(--fg) 30%, transparent);
+}
+
+.ad-page-total {
+	padding-inline: 0.15em 0.35em;
+	color: color-mix(in srgb, var(--fg) 62%, transparent);
 }

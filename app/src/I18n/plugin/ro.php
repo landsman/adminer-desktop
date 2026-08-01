@@ -18,6 +18,10 @@ return [
 	'settings.reset' => 'Resetează la implicit',
 	'settings.reset_confirm' => 'Resetați toate setările la valorile implicite? Aspectul, pluginurile și lățimile modificate de dumneavoastră se pierd. Limba și serverele salvate în Adminer rămân.',
 
+	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
+	// out of the rows there are.
+	'pager.of' => 'din',
+
 	// Theme panel.
 	'theme.appearance' => 'Mod de culoare',
 	'theme.appearance_hint' => 'Adminer Desktop urmează modul luminos și întunecat al sistemului sau îl puteți fixa pe Luminos ori Întunecat. Fiecare mod folosește tema aleasă mai jos.',
