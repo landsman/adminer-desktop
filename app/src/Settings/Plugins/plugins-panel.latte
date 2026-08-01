@@ -1,18 +1,13 @@
 {* The plugin panel: one row per shipped plugin, with what it actually does.
 
-	51 bare names is a list you have to already know your way around; the descriptions are
+	A bare name is something you have to already know your way around; the descriptions are
 	the plugins' own, so they need no network and cannot go stale against the version we
 	bundle.
 *}
 {parameters
 	\AdminerDesktop $desktop,
-	array $plugins,
-	bool $writable
+	array $plugins
 }
-{* Closed, unlike adminer's own <p>: an n:attribute needs the element it sits on to end
-	somewhere, and latte says so rather than guessing. *}
-<p n:if="!$writable" class="error">{$desktop->t('plugins.readonly')}</p>
-
 {* class=odds is adminer's own zebra striping, and it is overridden in dark.css, so the
 	rows follow whichever design is active instead of us picking colours. *}
 <table class="odds">

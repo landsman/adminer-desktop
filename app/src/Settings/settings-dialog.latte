@@ -6,9 +6,8 @@
 *}
 {parameters
 	\AdminerDesktop $desktop,
-	\Desktop\Theme $theme,
-	\Desktop\PluginList $plugins,
-	bool $writable,
+	\Desktop\Settings\Theme\Theme $theme,
+	\Desktop\Settings\Plugins\PluginList $plugins,
 	string $unsaved
 }
 <button type="button" id="desktop-gear" title="{$desktop->t('settings.title')}">&#9881;</button>
@@ -40,7 +39,7 @@
 		{* The question the script asks before discarding edits, translated here because
 			this is where the translations are. *}
 		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('settings.close')}</button>
-		<button type="submit" id="desktop-save" n:attr="disabled: !$writable">{$desktop->t('settings.save')}</button>
+		<button type="submit" id="desktop-save">{$desktop->t('settings.save')}</button>
 	</div>
 </form>
 </dialog>

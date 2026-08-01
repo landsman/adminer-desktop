@@ -1,11 +1,15 @@
 -- Demo data for the e2e run (tests/e2e/run.php, `mise run e2e`).
 --
--- Idempotent: run.php applies it on every start, so editing this file and re-running the
--- e2e reseeds without recreating the container. Add tables here as the theme grows more
--- surfaces to test — keep the drops in dependency order (children first).
+-- Applied once, when the container is created — fixture.php reuses one that is already
+-- running and does not reseed it. So editing this file and re-running the e2e changes
+-- nothing until `make down` drops the container. Idempotent anyway, for the reseed that
+-- follows. Add tables here as the app grows more surfaces to test — keep the drops in
+-- dependency order (children first).
 
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS big_child;
+DROP TABLE IF EXISTS big_lookup;
 
 CREATE TABLE users (
 	id         serial PRIMARY KEY,
@@ -36,6 +40,22 @@ INSERT INTO orders (user_id, total, status) VALUES
 	(2,  320.50, 'pending'),
 	(3,   15.00, 'cancelled'),
 	(4,  880.00, 'paid');
+
+-- A foreign key pointing at more rows than AdminerEditForeign is allowed to put in a dropdown
+-- (PluginList::ARGUMENTS caps it at 100). orders.user_id is the other side of that test — six
+-- users, comfortably under — and this is the side where the plugin has to give up and leave
+-- Adminer's plain input alone instead of reading the whole table to fill a <select>.
+CREATE TABLE big_lookup (
+	id    serial PRIMARY KEY,
+	label text
+);
+INSERT INTO big_lookup (label) SELECT 'label ' || g FROM generate_series(1, 150) g;
+
+CREATE TABLE big_child (
+	id        serial PRIMARY KEY,
+	lookup_id int REFERENCES big_lookup(id)
+);
+INSERT INTO big_child (lookup_id) VALUES (1);
 
 -- Filler tables. Two tables fit in the sidebar without scrolling, which hides every problem
 -- that only shows on a real database: the sidebar keeping its scroll position across a

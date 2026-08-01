@@ -1,5 +1,4 @@
 
-!/app/adminer-plugins/.gitkeep
 /.cache
 /.idea/
 /out/
@@ -10,7 +9,6 @@
 /app/vendor/
 # e2e artifacts: screenshots the browser check writes.
 /tests/e2e/screenshots/
-/app/adminer-plugins/*
 /app/adminer.php
 /app/editor.php
 /app/src/Settings/Plugins/available

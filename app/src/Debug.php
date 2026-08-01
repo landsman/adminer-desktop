@@ -41,7 +41,7 @@ class Debug {
 		// Restored here for the files that ship verbatim from the adminer release only — in
 		// our own, a missing key or a deprecation is ours to look at.
 		$tracy = set_error_handler(function ($severity, $message, $file = '', $line = 0) use (&$tracy) {
-			if (preg_match('~/(adminer|editor)\.php$|/adminer-plugins/~', str_replace('\\', '/', $file))
+			if (preg_match('~/(adminer|editor)\.php$|/Plugins/available/~', str_replace('\\', '/', $file))
 				&& ($severity == E_DEPRECATED
 					|| (($severity & (E_WARNING | E_NOTICE)) && preg_match('~^Undefined (array key|offset|index)~', $message)))
 			) {

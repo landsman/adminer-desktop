@@ -15,10 +15,12 @@ parameters:
         # parent Adminer\Plugin, a symbol we only scan (below), never load.
         analyse:
             - app/vendor
+            # The plugin catalogue, same deal: not ours to report on, but the classes
+            # PluginList names have to resolve — it instantiates them by name.
+            - app/src/Settings/Plugins/available
         analyseAndScan:
             - app/adminer.php
             - app/editor.php
-            - app/src/Settings/Plugins/available
             - app/src/Settings/Theme/designs
 
     # Not analysed, only read for symbols: this is where Adminer\Plugin, Adminer\h(),

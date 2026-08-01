@@ -30,7 +30,6 @@ class Dialog {
 			"desktop" => $this->desktop,
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
-			"writable" => $this->plugins->writable(),
 			// {n}, not %d: lang() runs the string through sprintf, which would replace %d
 			// with 0 before the browser ever saw it. The script fills it in.
 			"unsaved" => $this->desktop->t('settings.unsaved'),

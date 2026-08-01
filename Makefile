@@ -81,14 +81,16 @@ app/editor.php:
 	mv .cache/src-tmp/adminer-$(ADMINER_VERSION) $@
 	rm -rf .cache/src-tmp
 
-# Shipped but NOT loaded. Everything in adminer-plugins/ is auto-enabled by
-# adminer (include/plugins.inc.php:17-19), so "available" has to live elsewhere.
+# The whole upstream set, shipped but not loaded: Settings\Plugins\PluginList picks the
+# ones that make sense here by name and instantiates those. It must not land anywhere
+# adminer globs — a directory called adminer-plugins/ at the document root is auto-included
+# and auto-enabled by it (include/plugins.inc.php:17-19), which is why there is not one.
 app/src/Settings/Plugins/available: .cache/adminer-src
 	@mkdir -p app/src/Settings/Plugins
 	rm -rf $@ && cp -R .cache/adminer-src/plugins $@
-	# adminer-plugins/ stays at the document root: adminer looks for it there and
-	# nowhere else (include/plugins.inc.php:18). Only the catalogue is ours to place.
-	@mkdir -p app/adminer-plugins
+	# Left over from when enabling a plugin meant symlinking it in here. A checkout that
+	# still has it would have adminer load and enable whatever is inside, behind the app's back.
+	@rm -rf app/adminer-plugins
 
 app/src/Settings/Theme/designs: .cache/adminer-src
 	@mkdir -p app/src/Settings/Theme

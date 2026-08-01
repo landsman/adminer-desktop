@@ -48,9 +48,22 @@ semgrep — run through Docker rather than being skipped.
 whose name starts with `Adminer` and registers it (`include/plugins.inc.php:33`). Helper
 classes live in the `Desktop\` namespace for that reason.
 
-**`app/adminer-plugins/` cannot move.** Adminer globs for it relative to the document
-root and nowhere else. The catalogue under `src/Settings/Plugins/available/` is ours; that
-directory is not.
+**Never create `app/adminer-plugins/`.** A directory by that name at the document root is
+globbed by adminer, and every file in it is included and enabled behind the app's back
+(`include/plugins.inc.php:17-19`) — with no way to pass constructor arguments, and a fatal
+redeclare the moment we include the same class from the catalogue. We hand adminer the
+instances instead: `PluginList::instances()`, returned from `adminer-plugins.php`.
+
+**Which plugins ship is a hand-picked list, not a glob.** `PluginList::PICKED` maps the
+file in `src/Settings/Plugins/available/` to the class it declares; the whole upstream set
+is downloaded but only these are offered. Adding one means checking it works here — nine of
+upstream's 51 cannot even be constructed without arguments, and others want a reverse proxy,
+an MTA or a CDN. `make check` boots every picked plugin in turn, which is what says so.
+`PluginList::DEFAULT_ON` is what a fresh install has enabled; `settings.json`
+(`SettingKey::Plugins`) stores the user's answer per plugin, `name => on`, and only where it
+differs from that — so adding a default reaches everyone who never had an opinion, and never
+overrides someone who turned it off. No version alongside the names: the plugins come out of
+the adminer release pinned in the Makefile.
 
 **`lang()` runs strings through sprintf.** A `%d` meant for JavaScript is replaced with 0
 before the browser sees it. Use `{n}`.
@@ -138,7 +151,7 @@ runs it; it stays out of `qa` because it is slow and needs docker.
 ## Layout
 
 ```
-app/adminer-plugins.php      the entry adminer includes: boots the autoloader, returns the plugin
+app/adminer-plugins.php      the entry adminer includes: boots the autoloader, returns ours + the enabled plugins
 app/AdminerDesktop.php       the plugin adminer sees (global namespace): hooks and all translations
 app/src/                     the Desktop\ namespace, PSR-4: everything we wrote
 app/src/Files.php            Desktop\Files - recursive file finding

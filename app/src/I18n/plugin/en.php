@@ -41,7 +41,6 @@ return [
 	'theme.builtin_design' => 'Adminer Desktop',
 
 	// Plugins panel (plugins-panel.latte).
-	'plugins.readonly' => 'The plugins folder is read-only.',
 	'plugins.col_name' => 'Plugin',
 	'plugins.col_desc' => 'What it does',
 
