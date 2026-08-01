@@ -33,8 +33,11 @@ GitHub Actions is billed on this private repo and macOS runners cost 10x, so CI 
 test harness to iterate against. The three-platform build only runs on manual dispatch.
 
 ```sh
+mise trust         # once per clone: mise.toml carries a [settings] block
+gh auth login      # once per machine: make verify reads frankenphp's attestation over the API
 mise run install   # once: node deps, composer deps, and the e2e browser
 make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
+make verify        # adminer checksums + proof frankenphp is the binary upstream built
 make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
 ```
@@ -130,12 +133,20 @@ line.
 
 ## The dev toolchain and e2e
 
-Run every tool through `mise` or `make`, never bare. mise pins the toolchain (go, node)
-and it is not on `PATH` — `go build` fails with "command not found", `make qa` and
-`mise run <task>` resolve it. Reach for a `make` target first, and `mise run`/`mise exec`
-for anything without one.
+Run every tool through `mise` or `make`, never bare. mise pins the toolchain (go, node), so
+`go build` on a machine without go fails with "command not found" while `make qa` and
+`mise run <task>` resolve it. The failure to watch for is the other one: a machine that
+*does* have its own go or node gets that one, quietly and at the wrong version. Reach for a
+`make` target first, and `mise run`/`mise exec` for anything without one.
 
-mise pins node and orchestrates the tooling; run `mise run install` once. There is no
+mise pins node and orchestrates the tooling; run `mise trust` then `mise run install` once
+— the trust is what a `[settings]` block in `mise.toml` costs, and that block
+(`activate_aggressive`) is what makes the pin actually win over a Homebrew node earlier in
+PATH, rather than being silently shadowed by it. `gh` is pinned there too, because
+`make verify` needs it: frankenphp publishes no checksums, it publishes GitHub build
+provenance, and `gh attestation verify` is what reads that. mise installs it, but only you
+can log it in — the check goes over the API, so `mise run install` stops on a logged-out
+`gh` rather than letting `verify` fail later. There is no
 second PHP — composer and the e2e run on the bundled frankenphp (`./bin/frankenphp
 php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `app/composer.json`
 and `package.json` with their lockfiles are the source of truth; `app/vendor/` and

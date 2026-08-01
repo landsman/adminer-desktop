@@ -132,8 +132,13 @@ jobs:
       - run: make fetch FRANKEN_ASSET=${{ matrix.asset }}
 
       # Before anything else: a mismatch means the release was re-uploaded or the
-      # download was tampered with, and neither should reach a build.
+      # download was tampered with, and neither should reach a build. The runner ships gh,
+      # but not logged in — the frankenphp provenance check reads the attestation over the
+      # API, so it needs a token. The default one is enough: php/frankenphp is public and
+      # this only ever reads.
       - run: make verify FRANKEN_ASSET=${{ matrix.asset }}
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - run: make qa FRANKEN_ASSET=${{ matrix.asset }}
 
