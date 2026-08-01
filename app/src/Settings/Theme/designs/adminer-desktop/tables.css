@@ -168,10 +168,14 @@ tbody tr:hover th {
 }
 
 /* All four are drawn, not typed (src/Assets/javascript/table-pager.js): one stroke, one size,
-   the row's own colour, and the same on every platform — which a chevron glyph is not. */
+   the row's own colour, and the same on every platform — which a chevron glyph is not.
+
+   Centred on both axes by the box itself: these are flex containers, and text-align has no
+   say over a flex item — the mark sat against the left edge of a target wider than it. */
 .ad-page-step {
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	line-height: 1;
 }
 
