@@ -8,7 +8,7 @@
 	right: 0.5em;
 	/* Above the content panel, which the islands layout gives its own stacking context. */
 	z-index: 10;
-	font-size: 1.2em;
+	font-size: 1.4em;
 	line-height: 1;
 	padding: var(--ad-cell-padding);
 	cursor: pointer;
@@ -169,6 +169,13 @@ body:has(#desktop-settings[open]) {
 
 #desktop-actions button:hover:not(:disabled) {
 	background: var(--dim);
+}
+
+/* Reset alone on the left: the row is flex-end, so pushing the gap after this button takes
+   it to the other side of the dialog — away from the two people press without reading, which
+   is where every platform puts the action that throws something away. */
+#desktop-reset {
+	margin-right: auto;
 }
 
 /* AccentColor is whatever the user picked in System Settings, so the confirm button

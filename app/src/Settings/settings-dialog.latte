@@ -36,6 +36,11 @@
 	{* Cancel first, primary action last: that is the order every mac dialog uses, and
 		muscle memory puts the confirm button in the bottom right corner. *}
 	<div id="desktop-actions">
+		{* Its own submit button, named: a named submit posts its own name, so nothing here
+			needs a hidden field or a line of script to say which button was pressed. Left of
+			the others, away from the one people press without reading. *}
+		<button type="submit" name="desktop_reset" value="1" id="desktop-reset"
+			data-confirm="{$desktop->t('settings.reset_confirm')}">{$desktop->t('settings.reset')}</button>
 		{* The question the script asks before discarding edits, translated here because
 			this is where the translations are. *}
 		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('settings.close')}</button>

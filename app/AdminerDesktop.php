@@ -155,14 +155,22 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head(): ?string {
 		$this->styles->link();
 		$this->javascript->link();
-		// Restore the sidebar to the width the user last dragged it to, before the body paints,
-		// so a cold start opens at that width instead of flashing the default then jumping. The
-		// stored value is already a clamped integer (src/Settings/sidebar-width.php); cast again
-		// so nothing but a number can reach the stylesheet. The CSP has no style-src, so an
-		// inline <style> needs no nonce — and only our own islands layout reads the property.
-		$width = $this->userSettings->get(SettingKey::SidebarWidth);
-		if ($width !== null) {
-			echo "<style>:root{--ad-sidebar-width:" . (int) $width . "px}</style>\n";
+		// Restore the sizes the user set themselves — the sidebar, and the edit form's fields —
+		// before the body paints, so a cold start opens at them instead of flashing the default
+		// then jumping. Each is a property the theme reads, named by what the api stored
+		// (Api\ResizePreference). The stored values are already clamped integers; cast again so
+		// nothing but a number can reach the stylesheet. The CSP has no style-src, so an inline
+		// <style> needs no nonce — and only our own theme reads the properties.
+		$properties = ['sidebar' => '--ad-sidebar-width', 'edit_field' => '--ad-edit-field-width'];
+		$resized = $this->userSettings->get(SettingKey::UserResized, []);
+		$css = '';
+		foreach (is_array($resized) ? $resized : [] as $what => $size) {
+			if (isset($properties[$what])) {
+				$css .= $properties[$what] . ':' . (int) $size . 'px;';
+			}
+		}
+		if ($css !== '') {
+			echo "<style>:root{" . $css . "}</style>\n";
 		}
 		// `make demo` forwards the throwaway connection here; src/Assets/javascript/demo-login.js
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
@@ -241,8 +249,15 @@ class AdminerDesktop extends Adminer\Plugin {
 			return;
 		}
 		Adminer\restart_session();
-		$this->theme->apply();
-		$this->plugins->apply();
+		// Reset instead of applying, never as well as: the same post carries every field the
+		// dialog had open, so applying them after the file is gone would write the old answers
+		// straight back and reset nothing.
+		if (!empty($_POST["desktop_reset"])) {
+			$this->userSettings->reset();
+		} else {
+			$this->theme->apply();
+			$this->plugins->apply();
+		}
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
 

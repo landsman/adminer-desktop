@@ -89,21 +89,36 @@ function e2e_boot(int $appPort = 18080): array
 	return compact('root', 'pgPort', 'shots', 'server', 'base', 'select', 'data');
 }
 
-/** Log a page into the demo database. */
+/** Log a page into the demo database.
+ *
+ * Verified and retried, because the 400ms below is a guess: adminer rebuilds the driver's
+ * fields on change, and a fill that lands mid-rebuild posts an empty field and comes back as
+ * the login page. Whatever the check does next then fails on an empty page, which reads as
+ * anything but a login problem — the failure it produced was "the edit form has no fields".
+ */
 function e2e_login($page, string $base, int $pgPort): void
 {
-	$page->goto($base);
-	$page->locator('select[name="auth[driver]"]')->selectOption('pgsql');
-	usleep(400_000); // Adminer rebuilds the driver's fields on change; let that settle
-	$page->locator('input[name="auth[server]"]')->fill("127.0.0.1:$pgPort");
-	$page->locator('input[name="auth[username]"]')->fill('postgres');
-	$page->locator('input[name="auth[password]"]')->fill('demo');
-	$page->locator('input[name="auth[db]"]')->fill('demo');
-	// Submit the login form directly rather than clicking: headless Adminer rebuilds the
-	// driver's fields on change, which leaves the submit button intermittently "not
-	// actionable", and this is independent of the button's markup and label.
-	$page->evaluate("() => document.querySelector('[name=\"auth[driver]\"]').form.requestSubmit()");
-	$page->waitForLoadState('networkidle');
+	for ($attempt = 1; $attempt <= 3; $attempt++) {
+		$page->goto($base);
+		$page->locator('select[name="auth[driver]"]')->selectOption('pgsql');
+		usleep(400_000 * $attempt); // let the rebuild settle, and wait longer each time round
+		$page->locator('input[name="auth[server]"]')->fill("127.0.0.1:$pgPort");
+		$page->locator('input[name="auth[username]"]')->fill('postgres');
+		$page->locator('input[name="auth[password]"]')->fill('demo');
+		$page->locator('input[name="auth[db]"]')->fill('demo');
+		// Submit the login form directly rather than clicking: headless Adminer rebuilds the
+		// driver's fields on change, which leaves the submit button intermittently "not
+		// actionable", and this is independent of the button's markup and label.
+		$page->evaluate("() => document.querySelector('[name=\"auth[driver]\"]').form.requestSubmit()");
+		$page->waitForLoadState('networkidle');
+		// A rejected login comes back as the login page, and its title says so. The title is a
+		// driver call, unlike an evaluate, which throws when it lands while adminer's answer to
+		// a good login is still committing.
+		if (!str_starts_with($page->title(), 'Login')) {
+			return;
+		}
+	}
+	throw new RuntimeException('could not log in after 3 attempts');
 }
 
 /** Stop the server and report one check file's result, exiting with its status. */

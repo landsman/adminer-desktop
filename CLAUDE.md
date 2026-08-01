@@ -27,6 +27,12 @@ PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but
 because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to
 the page and nowhere else. `make logs` or the Open Logs menu item opens the folder.
 
+**What the api did is in `<data dir>/log/api.log`**, under `-debug` only: `app/api.php`
+writes the action, the status and what was posted, one line per request. Tracy's bar cannot
+help there — the answer is a 204 to a `sendBeacon` fired as the page is being torn down, so
+there is no page left to render a bar on, and a preference that silently failed to save looks
+exactly like one that saved.
+
 ## Verify before pushing
 
 GitHub Actions is billed on this private repo and macOS runners cost 10x, so CI is not a
@@ -102,8 +108,8 @@ well as macOS. The namespace mirrors the folders, so a new class needs no list a
 Two things sit outside the tree. `AdminerDesktop` is global-namespace on purpose — adminer
 registers every `Adminer*` class as a plugin — so it stays at the doc root as
 `AdminerDesktop.php`, `require`d (not autoloaded) by `adminer-plugins.php`, which also
-`require`s `vendor/autoload.php` to turn the loader on. And the two bare endpoints that don't
-boot adminer — `Settings/sidebar-width.php`, `Settings/Theme/screenshot.php` — each `require`
+`require`s `vendor/autoload.php` to turn the loader on. And the two bare entries that don't
+boot adminer — `api.php`, `Settings/Theme/screenshot.php` — each `require`
 `vendor/autoload.php` themselves. What used to be free functions is now methods
 (`Env::DataDir->get()`, `Latte::engine()`, `Debug::enable()`), so there are no function files
 to special-case — PSR-4 covers everything.
@@ -161,7 +167,8 @@ runs it; it stays out of `qa` because it is slow and needs docker.
 
 Every `*.test.php` there or one folder down is a check — drop one in and it runs, no list to
 keep in step. One per surface at the top (`theme`, `settings`, `sidebar-resize`,
-`drag-drop-import`), and one per plugin under `plugins/`, which is the folder that grows:
+`edit-field-width`, `drag-drop-import`), and one per plugin under `plugins/`, which is the
+folder that grows:
 `check.sh` only proves a plugin boots on the login page, so anything a plugin does to a form
 is only ever asserted here. `seed.sql` is applied when the container is **created** —
 `make destroy` (not `down`, which leaves the data volume) is what makes a changed seed reach
@@ -172,7 +179,9 @@ the database.
 ```
 app/adminer-plugins.php      the entry adminer includes: boots the autoloader, returns ours + the enabled plugins
 app/AdminerDesktop.php       the plugin adminer sees (global namespace): hooks and all translations
+app/api.php                  the one URL the page's own scripts post to: ?action= routes to src/Api/
 app/src/                     the Desktop\ namespace, PSR-4: everything we wrote
+app/src/Api/                 one class per action; ResizePreference stores a dragged width
 app/src/Files.php            Desktop\Files - recursive file finding
 app/src/Latte.php            Desktop\Latte::engine() - the engine every *.latte is rendered by
 app/src/Debug.php            Desktop\Debug::enable() - Tracy, and only under -debug
@@ -214,7 +223,7 @@ adminer's untyped shape (a phpdoc `@param`/`@return`, or a `phpcs:ignore` on the
 because PHP forbids narrowing an inherited signature. Class files are PSR-4: a PascalCase
 filename matching the class, in folders matching the namespace (`Settings\Theme\Theme` →
 `src/Settings/Theme/Theme.php`). Only non-class files stay lowercase — the `.latte` templates,
-the `css/`/`javascript/` assets, and the two bare endpoints served by URL.
+the `css/`/`javascript/` assets, and the two bare entries served by URL.
 
 Commit messages say why, not what. No Claude or AI attribution anywhere — not in
 commits, PR text, comments or docs.

@@ -15,6 +15,8 @@ return [
 	'settings.save' => 'Zapisz',
 	'settings.close' => 'Zamknij',
 	'settings.unsaved' => 'Niezapisane zmiany: {n}. Zamknąć mimo to?',
+	'settings.reset' => 'Przywróć domyślne',
+	'settings.reset_confirm' => 'Przywrócić wszystkie ustawienia do domyślnych? Wygląd, wtyczki i zmienione przez Ciebie szerokości zostaną zapomniane. Język i zapisane serwery Adminera pozostaną.',
 
 	// Theme panel.
 	'theme.appearance' => 'Tryb kolorów',

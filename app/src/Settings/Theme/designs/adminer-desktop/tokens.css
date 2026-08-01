@@ -42,6 +42,13 @@ html {
 	   while dragging, and head() re-emits the dragged value on the next load, so this is
 	   only the starting point before the user has ever touched the handle. */
 	--ad-sidebar-width: 19em;
+
+	/* Edit form field width — the default the form opens at, about 800px at the standard
+	   scale. Adminer's own cols='50' lands near 44em, a terminal's idea of wide and thin for
+	   a JSON payload in a desktop window. In em so it follows the scaling preference;
+	   edit-field-width.js overrides it when the user drags a field's grip, and head()
+	   re-emits that on the next load. */
+	--ad-edit-field-width: 66em;
 	--ad-zebra: light-dark(
 		color-mix(in srgb, var(--fg) 3%, transparent),
 		color-mix(in srgb, #ffffff 4%, transparent)

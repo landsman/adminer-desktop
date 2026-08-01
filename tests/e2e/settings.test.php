@@ -159,6 +159,31 @@ try {
 	$page->waitForLoadState('networkidle');
 
 	$page->screenshot($fix['shots'] . '/settings.png');
+
+	// 6. Reset to defaults -> the file goes, and the page comes back at the defaults. Last,
+	// because it throws away everything the cases above saved. A dragged width goes in first:
+	// the reset has to forget what the api stored too, not only the dialog's own fields.
+	$page->evaluate("() => navigator.sendBeacon(window.desktopApi.resize, new URLSearchParams({what: 'sidebar', width: '420'}))");
+	$openDialog($page);
+	$page->locator('input[name="density"][value="compact"]')->check(['force' => true]);
+	$page->locator('#desktop-save')->click();
+	$page->waitForLoadState('networkidle');
+	// Playwright dismisses a native confirm() by default, which would answer no; this is the
+	// user pressing yes.
+	$page->evaluate("() => { window.confirm = () => true; }");
+	$openDialog($page);
+	$page->locator('#desktop-reset')->click();
+	$page->waitForLoadState('networkidle');
+	usleep(300_000); // the redirect lands before the unlink is visible to this process
+	clearstatcache(true, $settingsFile);
+	if (is_file($settingsFile)) {
+		$failures[] = 'reset: settings.json survived (' . (string) file_get_contents($settingsFile) . ')';
+	}
+	$resetBody = (string) $page->evaluate("() => document.body.className");
+	if (!str_contains($resetBody, 'density-cozy')) {
+		$failures[] = "reset: the page did not come back at the defaults (body class: $resetBody)";
+	}
+
 	$context->close();
 } catch (\Throwable $e) {
 	$failures[] = 'settings: ' . $e->getMessage();

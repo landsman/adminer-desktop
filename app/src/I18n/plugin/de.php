@@ -15,6 +15,8 @@ return [
 	'settings.save' => 'Speichern',
 	'settings.close' => 'Schließen',
 	'settings.unsaved' => 'Ungespeicherte Änderungen: {n}. Trotzdem schließen?',
+	'settings.reset' => 'Auf Standard zurücksetzen',
+	'settings.reset_confirm' => 'Alle Einstellungen auf den Standard zurücksetzen? Design, Plugins und die von Ihnen angepassten Breiten gehen verloren. Adminers eigene Sprache und gespeicherte Server bleiben erhalten.',
 
 	// Theme panel.
 	'theme.appearance' => 'Erscheinungsbild',
