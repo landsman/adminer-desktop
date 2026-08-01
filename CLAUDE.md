@@ -27,6 +27,12 @@ PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but
 because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to
 the page and nowhere else. `make logs` or the Open Logs menu item opens the folder.
 
+**What the api did is in `<data dir>/log/api.log`**, under `-debug` only: `app/api.php`
+writes the action, the status and what was posted, one line per request. Tracy's bar cannot
+help there — the answer is a 204 to a `sendBeacon` fired as the page is being torn down, so
+there is no page left to render a bar on, and a preference that silently failed to save looks
+exactly like one that saved.
+
 ## Verify before pushing
 
 GitHub Actions is billed on this private repo and macOS runners cost 10x, so CI is not a
