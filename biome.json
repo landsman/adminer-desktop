@@ -19,7 +19,8 @@
 			"app/src/Settings/Theme/designs/adminer-desktop/**/*.css",
 			"app/src/Assets/css/**/*.css",
 			"app/src/Assets/javascript/**/*.js",
-			"tests/**/*.js"
+			"tests/**/*.js",
+			"!.claude"
 		]
 	}
 }
