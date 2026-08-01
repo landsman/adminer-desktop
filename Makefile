@@ -194,10 +194,21 @@ biome:
 # commit of ours to point at. `git log` in landsman/config is where that lives.
 SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:latest
 
+# p/php, p/golang and p/secrets read the code we wrote. p/ci reads what runs it — the
+# workflows and .github/dependabot.yml — which is the half that had nothing looking at
+# it, and is what would have caught a dependabot config with no cooldown on it.
+#
+# The one rule we turn off: it wants every `uses:` pinned to a commit sha rather than
+# @v5. That trades a readable diff for a 40-character hash on eight lines, and the
+# threat it answers — GitHub's own actions org repointing a release tag at malicious
+# code — is not one worth reading hashes over. Revisit for a third-party action.
+SEMGREP_SKIP = yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
 	docker run --rm -v "$$PWD:/src" -w /src $(SEMGREP_IMAGE) semgrep \
-		--config=p/php --config=p/golang --config=p/secrets \
+		--config=p/php --config=p/golang --config=p/secrets --config=p/ci \
+		--exclude-rule=$(SEMGREP_SKIP) \
 		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
 
