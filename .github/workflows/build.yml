@@ -55,6 +55,12 @@ jobs:
       # php syntax and style, phpstan, golangci-lint, gofmt, go vet, shell syntax.
       - run: make qa FRANKEN_ASSET=frankenphp-linux-x86_64
 
+      # Every native-shell string translated in every locale. Deliberately here and not in
+      # `qa`: adding an English string is the first half of the work, and a local `qa` that
+      # goes red until all five translations exist would be red for the whole of the second
+      # half. A pull request is where the pair has to be complete.
+      - run: make i18n-check FRANKEN_ASSET=frankenphp-linux-x86_64
+
       # shellcheck is already on the runner and says far more than `sh -n` does.
       - run: shellcheck check.sh
 
