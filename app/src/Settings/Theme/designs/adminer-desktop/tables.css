@@ -58,9 +58,27 @@ tbody tr:hover th {
 	background: var(--lit);
 }
 
-/* Adminer haloes the row actions with a --bg shadow, to mask the rows scrolling under them.
-   The panel they are stuck to is its own colour now, so the halo follows it — otherwise it
-   smears the grid's dark over the lighter surface around it. */
+/* The row actions, stuck to the bottom of the content panel.
+ *
+ * Adminer leaves half an em below them and pulls them 20px past the right edge only, which in
+ * a panel reads as a bar floating with rows showing underneath and a notch cut out of its left
+ * side. Pinned to the bottom and spanning the full width instead — the same negative margins
+ * the breadcrumb uses to escape the panel's padding, and the mirror of it at the other end.
+ *
+ * A background of its own rather than adminer's shadow pretending to be one: the shadow was
+ * --bg, which now smears the grid's dark across the lighter surface it sits on. What is left
+ * of the shadow only says the rows continue behind it. */
 .footer {
-	box-shadow: 0 -5px 10px 10px var(--ad-panel);
+	/* Sticky sticks to the scrollport, which is the panel's padding box — so without this the
+	   bar comes to rest one padding above the bottom, with rows showing under it. */
+	bottom: calc(-1 * var(--ad-panel-pad));
+	margin: 0.6rem calc(-1 * var(--ad-panel-pad)) 0;
+	padding: 0.6rem var(--ad-panel-pad);
+	background: var(--ad-panel);
+	border-top: 1px solid var(--ad-border);
+	/* Adminer's halo is gone rather than recoloured: an opaque bar already hides the rows
+	   passing behind it, and a shadow that says they are there reads as a mistake on the
+	   pages short enough that the bar never leaves the flow. The border says the same thing
+	   in both states. */
+	box-shadow: none;
 }
