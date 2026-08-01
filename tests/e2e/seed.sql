@@ -2,7 +2,7 @@
 --
 -- Applied once, when the container is created — fixture.php reuses one that is already
 -- running and does not reseed it. So editing this file and re-running the e2e changes
--- nothing until `make down` drops the container. Idempotent anyway, for the reseed that
+-- nothing until `make destroy` drops the container. Idempotent anyway, for the reseed that
 -- follows. Add tables here as the app grows more surfaces to test — keep the drops in
 -- dependency order (children first).
 

@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down bundle zip dist tarball winzip deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball winzip deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -296,6 +296,16 @@ demo: build app/vendor  ## Run against seeded demo data, opened logged in (needs
 # Kill the demo database container `make demo` left running.
 down:  ## Stop the demo database container
 	-docker rm -f $(DEMO_PG)
+
+# The same, plus the anonymous volume postgres keeps its data in — which plain `rm -f` leaves
+# behind, dangling and named after nothing. Reach for this when tests/e2e/seed.sql changed: the
+# e2e fixture reuses a container that is already up and never reseeds, so a new table only
+# reaches the database when one is created from scratch.
+#
+# `rm -v` and not `volume prune`, which would take every other project's anonymous volumes on
+# this machine with it — this removes the ones attached to our container and nothing else.
+destroy:  ## Remove the demo database container and its data volume
+	-docker rm -fv $(DEMO_PG)
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
