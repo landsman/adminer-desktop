@@ -1,0 +1,48 @@
+version: 2
+
+# Four manifests, four ecosystems. composer lives in app/, not the root — see CLAUDE.md.
+# One grouped PR per ecosystem per week: this is a one-maintainer repo, and a PR per
+# package would mean five open at a time for a repo with two runtime dependencies.
+#
+# Not covered here, because dependabot cannot see them: adminer, frankenphp, composer,
+# phpstan and golangci-lint are version pins in the Makefile, checksum-verified.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+    groups:
+      npm:
+        patterns: ["*"]
+
+  - package-ecosystem: composer
+    directory: /app
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+    groups:
+      composer:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+    groups:
+      go:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+    groups:
+      actions:
+        patterns: ["*"]
