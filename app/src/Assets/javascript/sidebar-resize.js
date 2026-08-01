@@ -4,9 +4,10 @@
  *
  * The width rides on the --ad-sidebar-width custom property that the islands layout's #foot
  * reads (theme/designs/adminer-desktop/layout.css). This inserts a grab handle between the
- * two panels, updates the property live while dragging, and posts the final width to
- * src/Settings/sidebar-width.php, which stores it in the app's durable config. head() reads it
- * back and emits it before paint, so the next launch opens at the same width with no jump.
+ * two panels, updates the property live while dragging, and posts the final width to the
+ * resize action (src/Api/ResizePreference.php), which stores it in the app's durable config.
+ * head() reads it back and emits it before paint, so the next launch opens at the same width
+ * with no jump.
  *
  * Only the adminer-desktop theme lays the panels out as side-by-side flex columns, so the
  * handle is added only when that layout is in effect; every other design is left untouched.
@@ -19,7 +20,7 @@ const foot = document.querySelector("#foot");
 // to resize (a plain adminer design, or the login page before the sidebar exists).
 if (content && foot && getComputedStyle(document.body).display === "flex") {
 	const root = document.documentElement;
-	// Keep in step with the clamp in src/Settings/sidebar-width.php.
+	// Keep in step with the clamp in src/Api/ResizePreference.php.
 	const MIN = 180;
 	const MAX = 640;
 	const STEP = 16;
@@ -33,8 +34,11 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	// torn down by the very next navigation.
 	const persist = () => {
 		navigator.sendBeacon(
-			window.desktopApi.sidebarWidth,
-			new URLSearchParams({ width: String(clamp(Math.round(width()))) }),
+			window.desktopApi.resize,
+			new URLSearchParams({
+				what: "sidebar",
+				width: String(clamp(Math.round(width()))),
+			}),
 		);
 	};
 
