@@ -135,6 +135,17 @@ echo "ok: an answer of \"off\" is stored, and the older list shape still reads"
 PLUGINS=/tmp/adminer-desktop-plugins.tsv
 # shellcheck disable=SC2016  # the $names below are PHP's, and must not expand here
 ./bin/frankenphp php-cli -r 'require "app/vendor/autoload.php";
+	$class = new ReflectionClass(Desktop\Settings\Plugins\PluginList::class);
+	// Constructor arguments are keyed by class name, and a key naming a class we do not ship
+	// is not an error — it simply never matches, and the plugin quietly goes back to the
+	// upstream default the argument was there to override.
+	$shipped = array_merge($class->getConstant("PICKED"), $class->getConstant("ALWAYS"));
+	foreach (array_keys($class->getConstant("ARGUMENTS")) as $configured) {
+		if (!in_array($configured, $shipped, true)) {
+			fwrite(STDERR, "FAIL: ARGUMENTS configures $configured, which is not a plugin we ship\n");
+			exit(1);
+		}
+	}
 	$names = Desktop\Settings\Plugins\PluginList::names();
 	foreach ($names as $name) {
 		// The name is derived from the class, and a file that does not answer to it would be

@@ -80,6 +80,23 @@ class PluginList {
 		\AdminerTablesFilter::class,
 	];
 
+	/** What we construct a plugin with, where its own default is not the one we want.
+	*
+	* AdminerEditForeign turns a foreign key into a <select>, and upstream's default limit of 0
+	* means no LIMIT at all — every row of the referenced table, fetched to fill a dropdown, on
+	* a form the user only wanted to edit one row in. Past the limit the plugin returns nothing
+	* and adminer's plain input stands, so 100 is "a dropdown for a small lookup table, and no
+	* stall on a big one".
+	*
+	* This is the seam adminer's own loader does not have (include/plugins.inc.php:38 refuses
+	* anything it would have to guess an argument for), and where a plugin wanting a real
+	* setting — a log file under the data dir, a timeout from the UI — would read UserSettings.
+	* @var array<class-string, array<mixed>>
+	*/
+	private const array ARGUMENTS = [
+		\AdminerEditForeign::class => [100],
+	];
+
 	/** The file in available/ a plugin lives in: AdminerTablesFilter => tables-filter.
 	*
 	* Adminer builds both names out of the same words, so the file follows from the class and
@@ -171,9 +188,8 @@ class PluginList {
 	* Adminer instantiates every Adminer* class that happens to be declared, so the
 	* catalogue is not somewhere it can find and nothing includes it wholesale; only what
 	* is enabled is included, and adminer gets the instances (adminer-plugins.php). That is
-	* also the seam for a plugin that needs constructor arguments: a line here, reading
-	* whatever it needs off UserSettings, rather than the error adminer shows when it has
-	* to guess.
+	* also the seam for a plugin that needs constructor arguments (see ARGUMENTS): a line
+	* here, rather than the error adminer shows when it has to guess one.
 	* @return array<object>
 	*/
 	function instances(): array {
@@ -185,7 +201,7 @@ class PluginList {
 			// this runs before there is any UI to untick it with.
 			if (is_file($filename)) {
 				include_once $filename;
-				$return[] = new $class();
+				$return[] = new $class(...(self::ARGUMENTS[$class] ?? []));
 			}
 		}
 		return $return;
