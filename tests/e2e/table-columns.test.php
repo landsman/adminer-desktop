@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 /** Browser end-to-end check for the resizable data-list columns.
  *
- * Drags a column header's grip and confirms the column widened, that the ones beside it did
- * not pay for it, that the table grew and scrolls inside the content panel rather than the
- * window, and that a reload comes back to the same width — from sessionStorage, with nothing
- * written to settings.json, which is the whole point of where it is kept.
+ * Two drags, because they do different things. A narrow column first: the grip is grabbed
+ * beside a data row rather than on the header, the column widens while its neighbours keep
+ * what they had, the table grows and scrolls inside the panel, no row gets selected, and a
+ * reload comes back to the same width — from sessionStorage, with nothing written to
+ * settings.json, which is the whole point of where it is kept. Then the json column, whose
+ * values were already cut to fit the width it had: that one has to raise Text length and
+ * re-run the query, or the new space comes back empty.
  *
  * Run via `make e2e` (tests/e2e/run.php runs it), or on its own with
  * ./bin/frankenphp php-cli tests/e2e/table-columns.test.php.
@@ -25,33 +28,34 @@ $settings = $fix['data'] . '/settings.json';
 // documents has a json column wide enough to squeeze the others, which is the case this is for.
 $select = str_replace('select=users', 'select=documents', $fix['select']);
 
-/** Every header cell's width, plus where to grab the second column's right edge. */
-$measure = /** @lang JavaScript */ "() => {
+/** Every header cell's width, and where to grab one column's right edge. */
+$measure = /** @lang JavaScript */ "(column) => {
 	const ths = [...document.querySelectorAll('#table tr:first-child th')];
-	// The json column: the widest one, and the one the whole feature is for.
-	const grip = ths[2].querySelector('.ad-column-grip');
+	const grip = ths[column].querySelector('.ad-column-grip');
 	if (!grip) { return null; }
 	const box = grip.getBoundingClientRect();
 	const content = document.querySelector('#content');
+	const footer = document.querySelector('.footer');
 	return {
 		widths: ths.map((th) => Math.round(th.getBoundingClientRect().width)),
 		// Deliberately not the header: the grip runs the height of the column, and grabbing it
 		// beside a data row well below the header is the point of that.
 		grip: { x: box.right - 1, y: box.top + Math.min(200, box.height - 10) },
 		gripHeight: Math.round(box.height),
-		// How far the grip runs past adminer's sticky row actions, which float over the last
-		// rows — the list ends where they begin, margin included: that gap is the footer's own
+		// How far it runs past adminer's sticky row actions, which float over the last rows —
+		// the list ends where they begin, margin included: that gap is the footer's own
 		// background shadow, painted over the rows behind it.
-		pastFooter: (() => {
-			const footer = document.querySelector('.footer');
-			const margin = Number.parseFloat(getComputedStyle(footer).marginTop);
-			return Math.round(box.bottom - (footer.getBoundingClientRect().top - margin));
-		})(),
+		pastFooter: Math.round(
+			box.bottom - (footer.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(footer).marginTop))
+		),
 		textLength: Number(document.querySelector(\"input[name='text_length']\").value),
 		table: Math.round(document.querySelector('#table').getBoundingClientRect().width),
 		contentScrolls: content.scrollWidth > content.clientWidth,
 		windowScrolls: document.documentElement.scrollWidth > document.documentElement.clientWidth,
 		checked: [...document.querySelectorAll('#table input[type=checkbox]')].filter((c) => c.checked).length,
+		// The longest value on show: what raising Text length is actually for.
+		longestValue: Math.max(...[...document.querySelectorAll('#table tbody tr')]
+			.map((tr) => (tr.cells[column + 1]?.textContent ?? '').length)),
 	};
 }";
 
@@ -60,29 +64,33 @@ try {
 	$page = $context->newPage();
 	$page->setViewportSize(1600, 900);
 
+	$drag = static function (array $at, int $by) use ($page): void {
+		$mouse = $page->mouse();
+		$mouse->move($at['x'], $at['y']);
+		$mouse->down();
+		$mouse->move($at['x'] + $by, $at['y'], ['steps' => 10]);
+		$mouse->up();
+	};
+
 	e2e_login($page, $fix['base'], $fix['pgPort']);
 	$page->goto($select);
 	$page->waitForLoadState('networkidle');
 
-	$before = $page->evaluate($measure);
+	// 1. title: 150px wider is still fewer characters than Text length already allows, so this
+	// is the resize on its own, with no query behind it.
+	$before = $page->evaluate($measure, 1);
 	if (!is_array($before)) {
 		$failures[] = 'no resize grip was added to the column headers';
 		e2e_done($fix['server'], $failures, 'table-columns');
 	}
+	$drag($before['grip'], 150);
+	$after = $page->evaluate($measure, 1);
 
-	// Drag the json column 150px wider.
-	$mouse = $page->mouse();
-	$mouse->move($before['grip']['x'], $before['grip']['y']);
-	$mouse->down();
-	$mouse->move($before['grip']['x'] + 150, $before['grip']['y'], ['steps' => 10]);
-	$mouse->up();
-
-	$after = $page->evaluate($measure);
-	if ($after['widths'][2] - $before['widths'][2] < 120) {
-		$failures[] = sprintf('the drag did not widen the column (%d -> %d)', $before['widths'][2], $after['widths'][2]);
+	if ($after['widths'][1] - $before['widths'][1] < 120) {
+		$failures[] = sprintf('the drag did not widen the column (%d -> %d)', $before['widths'][1], $after['widths'][1]);
 	}
 	// The neighbours keep what they had: the table grows instead of them shrinking.
-	foreach ([0, 1, 3] as $other) {
+	foreach ([0, 2, 3] as $other) {
 		if (abs($after['widths'][$other] - $before['widths'][$other]) > 2) {
 			$failures[] = sprintf(
 				'column %d moved with the drag (%d -> %d)',
@@ -109,24 +117,15 @@ try {
 	if ($before['gripHeight'] < 200) {
 		$failures[] = sprintf('the grip is only %dpx tall, not the column', $before['gripHeight']);
 	}
-	// And it stops there rather than running down over the buttons.
+	// And it stops where the list does rather than running down over the buttons.
 	if ($before['pastFooter'] > 1) {
 		$failures[] = sprintf('the grip runs %dpx past the row actions', $before['pastFooter']);
 	}
-	// A wider column needs more text fetched into it, or it is wider whitespace. The number is
-	// the column's width in its own characters, so it has to clear the width in the widest
-	// plausible ones — a bad measurement (the checkbox column's font, say) reads as a pass at
-	// 101, and this json column is a good deal more than that.
-	if ($after['textLength'] < $after['widths'][2] / 12) {
+	// This much text already fits, so nothing is re-fetched and nothing reloads.
+	if ($after['textLength'] !== $before['textLength']) {
 		$failures[] = sprintf(
-			'Text length %d is too small for a %dpx column',
-			$after['textLength'],
-			$after['widths'][2],
-		);
-	}
-	if ($after['textLength'] <= $before['textLength']) {
-		$failures[] = sprintf(
-			'the widened column did not raise Text length (still %d)',
+			'a column that already fits raised Text length anyway (%d -> %d)',
+			$before['textLength'],
 			$after['textLength'],
 		);
 	}
@@ -134,9 +133,45 @@ try {
 	// A reload keeps it: sessionStorage lives as long as the window does.
 	$page->goto($select);
 	$page->waitForLoadState('networkidle');
-	$reloaded = $page->evaluate($measure);
-	if (abs($reloaded['widths'][2] - $after['widths'][2]) > 2) {
-		$failures[] = sprintf('the reload lost the width (%d, not %d)', $reloaded['widths'][2], $after['widths'][2]);
+	$reloaded = $page->evaluate($measure, 1);
+	if (abs($reloaded['widths'][1] - $after['widths'][1]) > 2) {
+		$failures[] = sprintf('the reload lost the width (%d, not %d)', $reloaded['widths'][1], $after['widths'][1]);
+	}
+
+	// 2. payload: json, and already cut to fit the width it had. Widening it raises Text length
+	// and runs the query again — in place, so there is a url to wait for but no new document.
+	$wide = $page->evaluate($measure, 2);
+	$drag($wide['grip'], 200);
+	$page->waitForURL('**text_length=**');
+	$refetched = $page->evaluate($measure, 2);
+
+	if ($refetched['textLength'] <= $wide['textLength']) {
+		$failures[] = sprintf('the widened json column did not raise Text length (still %d)', $refetched['textLength']);
+	}
+	// The number is the column's width in its own characters, so it has to clear that width in
+	// the widest plausible ones — measuring the wrong column's font reads as a pass at 101.
+	if ($refetched['textLength'] < $refetched['widths'][2] / 12) {
+		$failures[] = sprintf(
+			'Text length %d is too small for a %dpx column',
+			$refetched['textLength'],
+			$refetched['widths'][2],
+		);
+	}
+	// Raising the number is no use unless the query runs again — and the proof of that is on
+	// screen: the values in the widened column are longer than the ones it replaced.
+	if ($refetched['longestValue'] <= $wide['longestValue']) {
+		$failures[] = sprintf(
+			'the re-run fetched no more text (longest value still %d characters)',
+			$refetched['longestValue'],
+		);
+	}
+	// And the column that caused it comes back at the width it was dragged to.
+	if (abs($refetched['widths'][2] - ($wide['widths'][2] + 200)) > 4) {
+		$failures[] = sprintf(
+			'the re-run lost the dragged width (%d, not %d)',
+			$refetched['widths'][2],
+			$wide['widths'][2] + 200,
+		);
 	}
 
 	// But it is only the session's: nothing about columns reaches the durable file.

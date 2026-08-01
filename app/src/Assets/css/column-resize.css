@@ -46,6 +46,12 @@
 	background: var(--ad-accent-quiet, var(--lit));
 }
 
+/* Text length, which a drag of a column now writes into: adminer sizes it at 7ex, which is
+   two digits and a spinner and no room for what this puts there. */
+input.size[name="text_length"] {
+	width: calc(7ex + 10px);
+}
+
 /* Once the widths are pinned, a value wider than its column is clipped rather than pushing
    the column back out — a width the user set is the point. */
 #table.ad-columns-sized td {

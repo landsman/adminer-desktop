@@ -1,10 +1,11 @@
 /**
- * Drag the edge of a column header on the data list to set that column's width.
+ * Drag the edge of a column on the data list to set its width.
  *
  * Adminer sizes the columns from their contents, which on a table with a json or a text
  * column means one column takes the window and the rest are squeezed into what is left. This
- * hands the decision over: a grip on each header's right edge, dragged like any other column
- * in a file manager or a spreadsheet.
+ * hands the decision over: a grip down the right edge of each column, dragged like any other
+ * column in a file manager or a spreadsheet, and the values re-fetched at the length the new
+ * width can show.
  *
  * The widths live in sessionStorage, not in settings.json — a column width is about the query
  * in front of you, not a preference to carry into next week, and this way a look at one wide
@@ -76,8 +77,7 @@ if (headers.length) {
 	// A wider column is no use if the value was already cut to fit the old one: adminer shortens
 	// every text and json value server-side to the Text length box, so past that point a drag
 	// only buys whitespace. Widen a column past what that allows and the box is raised to what
-	// the new width holds — the value is fetched by the next Select, which is adminer's own way
-	// of applying that field, rather than a page reload nobody asked for on mouseup.
+	// the new width holds, and the rows fetched again to fill it.
 	const lengthField = document.querySelector("input[name='text_length']");
 	const askForEnoughText = (th) => {
 		// This column's own cell, not any cell: a json value is rendered monospace and a plain
@@ -98,6 +98,38 @@ if (headers.length) {
 		// down would cut the values in all the others.
 		if (perCharacter > 0 && fits > Number(lengthField.value)) {
 			lengthField.value = String(fits);
+			refetch();
+		}
+	};
+
+	// Run the query again for the longer values, without leaving the page. Adminer's options
+	// form is a GET, so the request a submit would make is that form's own fields — and the
+	// answer's rows go straight into the tbody that is already here. Nothing else moves: the
+	// click handlers are bound to the table rather than to the rows (adminer's tableClick), the
+	// header row that carries the widths is untouched, and there is no document swap to flash.
+	// The url is corrected after, so a reload asks for the same thing.
+	const refetch = async () => {
+		const form = lengthField?.form;
+		const body = table.tBodies[0];
+		if (!form || !body) {
+			return;
+		}
+		const url = `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
+		try {
+			const answer = await fetch(url);
+			const page = new DOMParser().parseFromString(
+				await answer.text(),
+				"text/html",
+			);
+			const fresh = page.querySelector("#table tbody");
+			if (!fresh) {
+				throw new Error("no rows in the answer");
+			}
+			body.replaceWith(fresh);
+			history.replaceState(null, "", url);
+		} catch {
+			// Whatever went wrong, adminer's own way still works: press Select for them.
+			form.requestSubmit();
 		}
 	};
 
