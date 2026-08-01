@@ -57,3 +57,37 @@ tbody tr:hover th {
 .js .checkable .checked th {
 	background: var(--lit);
 }
+
+/* The row actions, stuck to the bottom of the content panel.
+ *
+ * Adminer leaves half an em below them and pulls them 20px past the right edge only, which in
+ * a panel reads as a bar floating with rows showing underneath and a notch cut out of its left
+ * side. Pinned to the bottom and spanning the full width instead — the same negative margins
+ * the breadcrumb uses to escape the panel's padding, and the mirror of it at the other end.
+ *
+ * A background of its own rather than adminer's shadow pretending to be one: the shadow was
+ * --bg, which now smears the grid's dark across the lighter surface it sits on. What is left
+ * of the shadow only says the rows continue behind it. */
+.footer {
+	/* Sticky sticks to the scrollport, which is the panel's padding box — so without this the
+	   bar comes to rest one padding above the bottom, with rows showing under it. */
+	bottom: calc(-1 * var(--ad-panel-pad));
+	margin: 0.6rem calc(-1 * var(--ad-panel-pad)) 0;
+	padding: 0.6rem var(--ad-panel-pad);
+	background: var(--ad-panel);
+	border-top: 1px solid var(--ad-border);
+	/* Adminer's halo is gone rather than recoloured: an opaque bar already hides the rows
+	   passing behind it, and a shadow that says they are there reads as a mistake on the
+	   pages short enough that the bar never leaves the flow. The border says the same thing
+	   in both states. */
+	box-shadow: none;
+}
+
+/* Adminer masks the rows behind the bar a second time, on the wrapper inside it, painted --bg
+   — which on the panel is the grid's dark laid back over the bar that just covered it. The bar
+   is opaque; the wrapper only has to sit on it. Its half-em of padding goes with it, since the
+   bar keeps its own. */
+.footer > div {
+	background: transparent;
+	padding: 0;
+}

@@ -33,6 +33,12 @@ body {
 /* Left panel: #menu lives inside #foot. Its width is a variable so the drag handle
    (sidebar-resize.js) and head()'s restored value can both drive it from one place. */
 #foot {
+	/* Named, so the cross-document transition (base.css) pairs this panel with itself in the
+	   next document instead of cross-fading it with everything else. The sidebar is the same
+	   list before and after a click — fading it out and back in is the drift you see when
+	   opening a table, and holding it still is what a native window does. #content is named
+	   for the same reason: what actually changed then animates on its own. */
+	view-transition-name: ad-sidebar;
 	order: -1;
 	position: static;
 	display: flex;
@@ -78,17 +84,20 @@ body {
 
 /* Right panel: the content. */
 #content {
+	/* Paired with itself across a navigation, so the panel that did change is the only thing
+	   that animates — see #foot above. */
+	view-transition-name: ad-content;
 	position: relative;
 	flex: 1;
 	min-width: 0;
 	min-height: 0;
 	margin: 0;
-	padding: 0 1.2rem 1.2rem;
+	padding: 0 var(--ad-panel-pad) var(--ad-panel-pad);
 	/* Both axes: a wide result table or a long line of SQL scrolls inside the panel.
 	   With overflow-y alone it spills out of the panel and the window scrolls instead,
 	   taking the sidebar with it. */
 	overflow: auto;
-	background: var(--bg);
+	background: var(--ad-panel);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius);
 }
@@ -98,9 +107,9 @@ body {
 	position: sticky;
 	inset: 0 auto auto 0;
 	width: auto;
-	margin: 0 -1.2rem 0.6rem;
-	padding: 0.55rem 1.2rem;
-	background: var(--bg);
+	margin: 0 calc(-1 * var(--ad-panel-pad)) 0.6rem;
+	padding: 0.55rem var(--ad-panel-pad);
+	background: var(--ad-panel);
 	border-bottom: 1px solid var(--ad-border);
 	z-index: 3;
 }

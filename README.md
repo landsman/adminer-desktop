@@ -1,103 +1,42 @@
 # adminer-desktop
 
-[Adminer](https://www.adminer.org) as a desktop app. No PHP install, no web server, no
-browser tab.
+[Adminer](https://www.adminer.org) as a desktop app. Download it, open it, connect, and start
+working. Everything you need is included, so there's nothing to install, configure, or keep
+running in the background.
 
-Adminer is neither modified nor forked: this downloads the released `adminer.php` at a
-pinned version, verifies its checksum, and runs it in a native window. Not affiliated
+Adminer itself is not modified or forked. This app runs the official Adminer release in a
+native desktop window and adds a few desktop-friendly improvements around it. Not affiliated
 with the Adminer project.
 
-## Run
+## What it adds
 
-```sh
-make run                            # build and open the window
-make bundle                         # build/Adminer Desktop.app (icon, menu bar)
-make zip                            # ...zipped, to hand to someone else
-```
+- Install it like any other app. No PHP, no web server, no browser.
+- Works well with Docker. Sensible defaults make connecting to containerized databases easier.
+- Stays logged in between launches.
+- Settings are available before you connect.
+- Light and dark mode, with themes for both.
+- Language, scaling, row density, and plugins are all in one place.
+- Choose the plugins you want. Your selection is remembered.
+- Reset everything back to the default settings with one click.
+- Resizable sidebar that remembers its width.
+- Resizable table columns for easier browsing.
+- Larger edit forms that remember your layout.
+- Double-click a table to open its data.
+- Drag and drop `.sql` files onto the import page.
+- Exports download as files, with progress.
+- Confirmation dialogs before destructive actions.
+- Desktop navigation with Back/Forward buttons, trackpad gestures, Cmd/Ctrl+R, and F5.
+- Browse tables without losing your place in the sidebar.
+- Sorting and resizing refresh the rows in place, without the page rebuilding itself.
 
-Other targets: `editor`, `qa`, `security`, `check`, `logs`, `serve`, `clean`.
+## Documentation
 
-`make check` is the one that matters — Adminer streams dumps with `ob_flush(); flush()`,
-so it asserts long responses neither buffer nor time out.
-
-## Platforms
-
-| | |
-| --- | --- |
-| macOS, Apple Silicon | works |
-| Linux x86_64 | works (`make tarball` / `make deb`); `make linux-deps` for the GTK/WebKit headers |
-| Windows | builds, but CI is red — not usable yet |
-
-## Installing on Debian / Ubuntu
-
-Releases carry a `.deb` on the
-[releases page](https://github.com/landsman/adminer-desktop/releases) — beta, so they are
-marked pre-release.
-
-```sh
-sudo apt install ./adminer-desktop_0.4_amd64.deb
-```
-
-`apt` pulls in GTK and WebKit; the app then appears in the launcher. Upgrading means
-downloading the next `.deb` — there is no repository to subscribe to, and
-[.docs/releases-linux.md](.docs/releases-linux.md) says why not.
-
-## Installing on another Mac
-
-The app is unsigned, so macOS blocks it on first launch. Terminal route:
-
-```sh
-unzip adminer-desktop_0.4_macos-arm64.zip
-mv "Adminer Desktop.app" /Applications/
-xattr -dr com.apple.quarantine "/Applications/Adminer Desktop.app"
-open "/Applications/Adminer Desktop.app"
-```
-
-Without the terminal: double-click it, let it be blocked, then
-**System Settings → Privacy & Security → Open Anyway**. On macOS 15 and newer the old
-right-click → Open shortcut no longer works for unsigned apps.
-
-Signing it properly needs a paid Apple Developer account.
-
-## Versions are pinned
-
-```make
-ADMINER_VERSION    = 5.5.1
-FRANKENPHP_VERSION = 1.12.6
-```
-
-`adminer.php`, `editor.php`, 51 plugins and 26 designs all come from that one Adminer
-tag, so they cannot drift apart. Nothing ever resolves "latest".
-
-## Settings
-
-A gear button, bottom right — works before login, unlike upstream.
-
-- **Plugins** — the upstream ones that make sense on a desktop, hand-picked (adminer ships
-  51; the rest want a reverse proxy, an MTA or a CDN, or duplicate a setting this app
-  already owns). The table-list filter is on out of the box, the rest are yours to tick;
-  what you decide is remembered in `settings.json`, including what you turned off.
-- **Theme** — pick a light design and a dark one; the OS setting picks between them.
-
-## Desktop behaviour
-
-One plugin, `app/desktop.php`, no changes to `adminer.php`:
-
-- Server prefilled with `127.0.0.1` — the stock empty value means a Unix socket, which
-  a Docker database never has.
-- Permanent login survives restarts; upstream keeps its key where macOS deletes it.
-- Logs in `~/Library/Logs/Adminer Desktop/`.
-
-See [PLAN.md](PLAN.md) for why any of this is the way it is.
-
-## Develop
-
-`make install` sets a fresh checkout up in one command: the toolchain via mise (node, go,
-composer + npm deps, the Chromium browser the e2e drives) plus the pinned Adminer and
-frankenphp downloads. On Linux it also runs `make linux-deps` — the one step that needs
-apt, for the GTK/WebKit dev headers the webview links against.
+- **[Installing](.docs/install.md)** — macOS, Debian/Ubuntu, which platforms work, and where
+  it keeps your settings.
+- **[Developing](.docs/development.md)** — building it yourself, the checks, what is pinned.
+- **[Linux releases](.docs/releases-linux.md)** — why there is a `.deb` and no apt repository.
 
 ## Licence
 
-Adminer is Apache-2.0 / GPL-2.0. This wrapper is MIT. The Adminer logo, used as the app
-icon, belongs to the Adminer project.
+Adminer is Apache-2.0 / GPL-2.0. This wrapper is MIT. The Adminer logo, used as the app icon,
+belongs to the Adminer project.

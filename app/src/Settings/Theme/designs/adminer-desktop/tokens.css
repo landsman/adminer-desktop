@@ -49,6 +49,16 @@ html {
 	   edit-field-width.js overrides it when the user drags a field's grip, and head()
 	   re-emits that on the next load. */
 	--ad-edit-field-width: 66em;
+	/* The content panel the data sits on. On white it is the page. On a dark one it is the
+	   lighter grey that makes the grid read as a surface of its own — the data stays the
+	   darkest thing on screen and the chrome around it lifts, which is the way every dark IDE
+	   does it and the way round that works: lifting the rows instead leaves the values sitting
+	   on the brightest surface, which is where the eye should not be pulled. */
+	--ad-panel: light-dark(#ffffff, #1e2229);
+	/* How far the content panel holds its contents off its own edges. Named because three
+	   rules have to agree on it: the panel's padding, and the breadcrumb and row actions that
+	   escape it to span the full width. */
+	--ad-panel-pad: 1.2rem;
 	--ad-zebra: light-dark(
 		color-mix(in srgb, var(--fg) 3%, transparent),
 		color-mix(in srgb, #ffffff 4%, transparent)

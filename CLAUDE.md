@@ -167,8 +167,8 @@ runs it; it stays out of `qa` because it is slow and needs docker.
 
 Every `*.test.php` there or one folder down is a check — drop one in and it runs, no list to
 keep in step. One per surface at the top (`theme`, `settings`, `sidebar-resize`,
-`edit-field-width`, `drag-drop-import`), and one per plugin under `plugins/`, which is the
-folder that grows:
+`edit-field-width`, `table-columns`, `drag-drop-import`), and one per plugin under
+`plugins/`, which is the folder that grows:
 `check.sh` only proves a plugin boots on the login page, so anything a plugin does to a form
 is only ever asserted here. `seed.sql` is applied when the container is **created** —
 `make destroy` (not `down`, which leaves the data volume) is what makes a changed seed reach
