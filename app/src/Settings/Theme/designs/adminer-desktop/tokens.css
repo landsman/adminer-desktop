@@ -49,11 +49,12 @@ html {
 	   edit-field-width.js overrides it when the user drags a field's grip, and head()
 	   re-emits that on the next load. */
 	--ad-edit-field-width: 66em;
-	/* The data grid's own surface. On white there is nothing to say — a table on a white page
-	   reads by its rules alone. On a dark one it does not: rows painted the page's colour make
-	   the grid a set of hairlines floating on the panel, so the rows are lifted a little to sit
-	   on it instead. Small on purpose — the header (--dim) has to stay the lightest row. */
-	--ad-row: light-dark(var(--bg), color-mix(in srgb, var(--bg) 97%, #ffffff));
+	/* The content panel the data sits on. On white it is the page. On a dark one it is the
+	   lighter grey that makes the grid read as a surface of its own — the data stays the
+	   darkest thing on screen and the chrome around it lifts, which is the way every dark IDE
+	   does it and the way round that works: lifting the rows instead leaves the values sitting
+	   on the brightest surface, which is where the eye should not be pulled. */
+	--ad-panel: light-dark(#ffffff, #1e2229);
 	--ad-zebra: light-dark(
 		color-mix(in srgb, var(--fg) 3%, transparent),
 		color-mix(in srgb, #ffffff 4%, transparent)

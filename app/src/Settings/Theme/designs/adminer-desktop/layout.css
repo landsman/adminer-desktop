@@ -97,7 +97,7 @@ body {
 	   With overflow-y alone it spills out of the panel and the window scrolls instead,
 	   taking the sidebar with it. */
 	overflow: auto;
-	background: var(--bg);
+	background: var(--ad-panel);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius);
 }
@@ -109,7 +109,7 @@ body {
 	width: auto;
 	margin: 0 -1.2rem 0.6rem;
 	padding: 0.55rem 1.2rem;
-	background: var(--bg);
+	background: var(--ad-panel);
 	border-bottom: 1px solid var(--ad-border);
 	z-index: 3;
 }

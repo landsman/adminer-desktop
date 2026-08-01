@@ -46,7 +46,7 @@ tbody tr:hover th {
 }
 
 .odds tbody tr {
-	background: var(--ad-row);
+	background: var(--bg);
 }
 
 .odds tbody tr:nth-child(2n) {
@@ -56,4 +56,11 @@ tbody tr:hover th {
 .js .checkable .checked td,
 .js .checkable .checked th {
 	background: var(--lit);
+}
+
+/* Adminer haloes the row actions with a --bg shadow, to mask the rows scrolling under them.
+   The panel they are stuck to is its own colour now, so the halo follows it — otherwise it
+   smears the grid's dark over the lighter surface around it. */
+.footer {
+	box-shadow: 0 -5px 10px 10px var(--ad-panel);
 }
