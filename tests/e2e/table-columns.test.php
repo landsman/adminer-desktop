@@ -53,6 +53,9 @@ $measure = /** @lang JavaScript */ "(column) => {
 		contentScrolls: content.scrollWidth > content.clientWidth,
 		windowScrolls: document.documentElement.scrollWidth > document.documentElement.clientWidth,
 		checked: [...document.querySelectorAll('#table input[type=checkbox]')].filter((c) => c.checked).length,
+		// Highlighted values, so a swapped-in row is not plain text where the one it replaced
+		// was coloured.
+		highlighted: document.querySelectorAll('#table tbody code span.jush-js_val, #table tbody code span[class^=jush]').length,
 		// The longest value on show: what raising Text length is actually for.
 		longestValue: Math.max(...[...document.querySelectorAll('#table tbody tr')]
 			.map((tr) => (tr.cells[column + 1]?.textContent ?? '').length)),
@@ -163,6 +166,15 @@ try {
 		$failures[] = sprintf(
 			'the re-run fetched no more text (longest value still %d characters)',
 			$refetched['longestValue'],
+		);
+	}
+	// The rows that arrived are highlighted like the ones they replaced — adminer colours the
+	// values once at load, so anything swapped in afterwards is plain text unless asked.
+	if ($refetched['highlighted'] < $wide['highlighted']) {
+		$failures[] = sprintf(
+			'the re-run lost the syntax highlighting (%d highlighted spans, was %d)',
+			$refetched['highlighted'],
+			$wide['highlighted'],
 		);
 	}
 	// And the column that caused it comes back at the width it was dragged to.

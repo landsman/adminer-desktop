@@ -125,6 +125,12 @@ if (headers.length) {
 			if (!fresh) {
 				throw new Error("no rows in the answer");
 			}
+			// Adminer highlights the values once at load, so rows that arrive later are plain
+			// text until this is called on them — its own hook for exactly that, used the same
+			// way in selectLoadMore() when it appends the next page of rows.
+			if (typeof adminerHighlighter === "function") {
+				adminerHighlighter(fresh.querySelectorAll("code"));
+			}
 			body.replaceWith(fresh);
 			history.replaceState(null, "", url);
 		} catch {
