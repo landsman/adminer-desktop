@@ -1,12 +1,11 @@
-<p align="center">
-    <img src="https://raw.githubusercontent.com/landsman/adminer-desktop/refs/heads/main/assets/logo.png" height="64" alt="adminer desktop logo"/>
-</p>
+<h1 align="center">
+    <img src="https://raw.githubusercontent.com/landsman/adminer-desktop/refs/heads/main/assets/logo.png" height="32" alt="adminer desktop logo"/>
+    <span align="center">Adminer Desktop</span>
+</h1>
 
-<h1 align="center">Adminer Desktop</h1>
-
-<h4 align="center">
+<h3 align="center">
     Download it, open it, connect to your favourite database, and start working.
-</h4>
+</h3>
 
 ----
 
@@ -37,16 +36,12 @@ with the Adminer project.
 - Browse tables without losing your place in the sidebar.
 - Sorting and resizing refresh the rows in place, without the page rebuilding itself.
 
----
-
 ## Documentation
 
 - **[Installing](.docs/install.md)** — macOS, Debian/Ubuntu, which platforms work, and where
   it keeps your settings.
 - **[Developing](.docs/development.md)** — building it yourself, the checks, what is pinned.
 - **[Linux releases](.docs/releases-linux.md)** — why there is a `.deb` and no apt repository.
-
----
 
 ## Licence
 
