@@ -91,3 +91,41 @@ tbody tr:hover th {
 	background: transparent;
 	padding: 0;
 }
+
+/* The pager, which is the one fieldset in that bar holding links of its own — the page numbers.
+ *
+ * Adminer prints the page numbers as bare links with a space between them, so each one is a
+ * target the width of its own digit — fine with a mouse on a web page, tiring in a window you
+ * work in all day. Each link gets a square to be hit in, and the row is laid out rather than
+ * left to word spacing.
+ *
+ * The current page is a bare text node, not an element, so nothing can be selected to mark it —
+ * it ends up the plain number among the chips, which is the state it is anyway. Matched by what
+ * it holds rather than by its position: a result that fits on one page prints no pager, and
+ * "Whole result" would be the first fieldset instead. The legend's own link (it prompts for a
+ * page to jump to) is inside <legend>, so > leaves it alone. */
+.footer fieldset:has(> a) {
+	/* inline-, so it still sits in the row with the fieldsets beside it rather than taking a
+	   line of its own. */
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.1rem;
+	/* Digits of one width, so the row does not shuffle as the numbers grow. */
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.footer fieldset:has(> a) > a {
+	min-width: 1.6em;
+	padding: 0.3em 0.5em;
+	border-radius: var(--ad-radius-sm);
+	font-weight: 400;
+	text-align: center;
+	text-decoration: none;
+}
+
+.footer fieldset:has(> a) > a:hover {
+	background: var(--ad-accent-quiet);
+	color: var(--fg);
+}
