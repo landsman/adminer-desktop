@@ -7,6 +7,15 @@
 # tracks go.mod's `go` directive. The tasks below are the single entry point for
 # install / format / lint / e2e.
 
+# Without this the pin is decorative. mise appends its tool dirs to the end of PATH, so a
+# Homebrew node earlier in PATH wins and `npm` inside a task below is the system one — how
+# a lockfile written by npm 11 reached a repo pinned to node 22 (npm 10). `mise doctor`
+# reports it as "shims are shadowed by executables earlier in PATH". Aggressive activation
+# puts the pinned tools first, which is the only way the pin holds without asking every
+# developer to fix their own PATH.
+[settings]
+activate_aggressive = true
+
 [tools]
 node = "22"
 go = "1.26.5"
