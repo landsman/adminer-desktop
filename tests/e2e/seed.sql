@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS big_child;
 DROP TABLE IF EXISTS big_lookup;
+DROP TABLE IF EXISTS documents;
 
 CREATE TABLE users (
 	id         serial PRIMARY KEY,
@@ -56,6 +57,26 @@ CREATE TABLE big_child (
 	lookup_id int REFERENCES big_lookup(id)
 );
 INSERT INTO big_child (lookup_id) VALUES (1);
+
+-- The JSON plugins (AdminerPrettyJsonColumn, AdminerJsonColumn) only do anything to a value that
+-- starts with { or [ and parses, so all three columns are the check (json-column.test.php).
+--
+-- `notes` is text holding JSON on purpose, and it is the column that proves pretty-json-column:
+-- the plugins sniff the value, not the column type, whereas Adminer already gives a real jsonb
+-- column its own jush-js editor. So `payload` shows the plugins on the type they are named for,
+-- `notes` is where only a plugin can be doing the work, and `title` is the plain text they have
+-- to leave alone. Both JSON values are nested and carry unicode — pretty-printing is the whole
+-- point, and the stored value is one line.
+CREATE TABLE documents (
+	id      serial PRIMARY KEY,
+	title   text,
+	payload jsonb,
+	notes   text
+);
+
+INSERT INTO documents (title, payload, notes) VALUES
+	('Smlouva', '{"customer":{"name":"Anna Nováková","id":1},"items":[{"sku":"A-1","qty":2}],"paid":true}', '{"author":{"name":"Bára Dvořáková"},"revision":3}'),
+	('Faktura', '{"total":1299,"currency":"CZK"}', 'not json at all');
 
 -- Filler tables. Two tables fit in the sidebar without scrolling, which hides every problem
 -- that only shows on a real database: the sidebar keeping its scroll position across a
