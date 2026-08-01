@@ -12,6 +12,8 @@ namespace Desktop;
 */
 enum SettingKey: string {
 	case SidebarWidth = 'sidebar_width';
+	// The width the edit form's fields were last dragged to, by the textarea's own grip.
+	case EditFieldWidth = 'edit_field_width';
 	case Appearance = 'appearance';
 	case Density = 'density';
 	case Scaling = 'scaling';

@@ -35,6 +35,17 @@ textarea,
 	padding: 0.5em 0.65em;
 }
 
+/* The edit form's fields, on one width the user owns (src/Assets/javascript/edit-field-width.js).
+   Adminer hardcodes cols='50' on every textarea, which is a terminal's idea of wide, not a
+   desktop window's — so the column is driven by the property instead, and dragging any one
+   textarea's native grip moves all of them. Bounded by what is actually on screen, so a
+   width dragged wide on a big display can't push the form off a small one. */
+#form > table.layout textarea {
+	box-sizing: border-box;
+	width: var(--ad-edit-field-width);
+	max-width: calc(100vw - var(--ad-sidebar-width) - 6em);
+}
+
 input:hover,
 select:hover,
 textarea:hover {

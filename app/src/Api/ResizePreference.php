@@ -6,20 +6,22 @@ namespace Desktop\Api;
 use Desktop\SettingKey;
 use Desktop\UserSettings;
 
-/** Persist a width the user dragged something to — so far the sidebar (issue #11).
+/** Persist a width the user dragged something to: the sidebar (issue #11), or the edit form's
+* fields.
 *
-* A table rather than one handler each, because the job is identical down to the clamp: only
-* the key and its range differ. The page posts on release
-* (src/Assets/javascript/sidebar-resize.js) and AdminerDesktop::head() reads it back and emits
-* it before paint, so a cold start opens at what was dragged rather than flashing the default
-* and jumping.
+* One handler for both, because the job is identical down to the clamp — only the key and its
+* range differ, and those are the table below. The page posts on release
+* (src/Assets/javascript/sidebar-resize.js, edit-field-width.js) and AdminerDesktop::head()
+* reads them back and emits them before paint, so a cold start opens at what was dragged
+* rather than flashing the default and jumping.
 */
 class ResizePreference {
 	/** what may be resized, and the pixel range each is clamped to — keep in step with the
-	* clamps in the scripts that post here.
+	* clamps in the two scripts that post here.
 	* @var array<string,array{SettingKey,int,int}> */
 	private const WIDTHS = [
 		'sidebar' => [SettingKey::SidebarWidth, 180, 640],
+		'edit-field' => [SettingKey::EditFieldWidth, 240, 2000],
 	];
 
 	/** @return int the HTTP status to answer with */

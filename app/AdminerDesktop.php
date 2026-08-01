@@ -155,14 +155,22 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head(): ?string {
 		$this->styles->link();
 		$this->javascript->link();
-		// Restore the sidebar to the width the user last dragged it to, before the body paints,
-		// so a cold start opens at that width instead of flashing the default then jumping. The
-		// stored value is already a clamped integer (src/Settings/sidebar-width.php); cast again
-		// so nothing but a number can reach the stylesheet. The CSP has no style-src, so an
-		// inline <style> needs no nonce — and only our own islands layout reads the property.
-		$width = $this->userSettings->get(SettingKey::SidebarWidth);
-		if ($width !== null) {
-			echo "<style>:root{--ad-sidebar-width:" . (int) $width . "px}</style>\n";
+		// Restore the widths the user last dragged — the sidebar, and the edit form's fields —
+		// before the body paints, so a cold start opens at them instead of flashing the default
+		// then jumping. The stored values are already clamped integers (src/Settings/width.php);
+		// cast again so nothing but a number can reach the stylesheet. The CSP has no style-src,
+		// so an inline <style> needs no nonce — and only our own theme reads the properties.
+		$widths = [
+			'--ad-sidebar-width' => $this->userSettings->get(SettingKey::SidebarWidth),
+			'--ad-edit-field-width' => $this->userSettings->get(SettingKey::EditFieldWidth),
+		];
+		$widths = array_filter($widths, fn($width) => $width !== null);
+		if ($widths) {
+			$css = '';
+			foreach ($widths as $property => $width) {
+				$css .= "$property:" . (int) $width . "px;";
+			}
+			echo "<style>:root{" . $css . "}</style>\n";
 		}
 		// `make demo` forwards the throwaway connection here; src/Assets/javascript/demo-login.js
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
