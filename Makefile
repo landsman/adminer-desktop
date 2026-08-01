@@ -26,9 +26,15 @@ endif
 
 # Self-documenting: every target with a `## ` comment lists itself here, so this
 # stays in step with the Makefile instead of being a second list to maintain.
+# A `##@ ` line opens a group, and targets list under whichever one they follow —
+# so the grouping is the file's own order, not a second list to keep in step either.
+##@ General
 help:  ## Show this help
-	@grep -hE '^[a-z][a-zA-Z-]*:.*## ' $(MAKEFILE_LIST) \
-		| sort | awk -F':.*## ' '{printf "  \033[1m%-10s\033[0m %s\n", $$1, $$2}'
+	@awk 'BEGIN { FS = ":.*## " } \
+		/^##@ / { printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next } \
+		/^[a-z][a-zA-Z0-9-]*:.*## / { printf "  \033[1m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+##@ Setup
 
 # mise owns the dev toolchain (node, go, composer + npm deps, the Chromium e2e browser) —
 # one entry point so its version pins stay in one place. On Linux the webview also needs
@@ -141,6 +147,8 @@ verify: fetch  ## Verify the downloads: adminer checksums, frankenphp build prov
 # Regenerate after a deliberate version bump. Review the diff.
 checksums:
 	$(SHA256) app/adminer.php app/editor.php > checksums.txt
+
+##@ Quality
 
 # Analysis tools are pinned like everything else, so a green build stays green for a
 # reason rather than because a linter happened not to ship a new rule today.
@@ -267,6 +275,15 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 check: fetch  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
 	./check.sh
 
+# Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
+# writes screenshots to tests/e2e/screenshots/. Needs docker (a throwaway postgres) and
+# the Playwright browser from `mise run install`. Kept out of `qa` because it is slow and
+# needs docker; run it on its own.
+e2e: fetch  ## Browser check: login + theme in light and dark (needs docker)
+	mise run e2e
+
+##@ Build & run
+
 # About reads these, so it can never disagree with what is actually bundled.
 VERSION = $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS = -X main.version=$(VERSION) \
@@ -340,6 +357,8 @@ destroy:  ## Remove the demo database container and its data volume
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
 	./build/adminer-desktop$(EXE) -headless
+
+##@ Package
 
 APP = build/Adminer Desktop.app
 ICON = build/AdminerDesktop.icns
@@ -475,6 +494,8 @@ deb: dist  ## Package a Debian .deb (Linux)
 	dpkg-deb --build --root-owner-group $(DEB) $(DEB_FILE)
 	@echo "built $(DEB_FILE) -- $$(du -sh $(DEB_FILE) | cut -f1)"
 
+##@ Misc
+
 # PHP errors, adminer warnings and caddy's access log all land in one file, in the
 # place macOS users and Console.app already look.
 logs:  ## Open the log folder (macOS)
@@ -483,13 +504,6 @@ logs:  ## Open the log folder (macOS)
 # Just the server, no window. Handy for poking at it with curl.
 serve: fetch  ## Serve app/ with no window, for poking at with curl
 	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
-
-# Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
-# writes screenshots to tests/e2e/screenshots/. Needs docker (a throwaway postgres) and
-# the Playwright browser from `mise run install`. Kept out of `qa` because it is slow and
-# needs docker; run it on its own.
-e2e: fetch  ## Browser check: login + theme in light and dark (needs docker)
-	mise run e2e
 
 clean:  ## Remove downloaded and built files (app/, bin/, .cache/)
 	rm -rf app bin .cache
