@@ -98,44 +98,9 @@ if (headers.length) {
 		// down would cut the values in all the others.
 		if (perCharacter > 0 && fits > Number(lengthField.value)) {
 			lengthField.value = String(fits);
-			refetch();
-		}
-	};
-
-	// Run the query again for the longer values, without leaving the page. Adminer's options
-	// form is a GET, so the request a submit would make is that form's own fields — and the
-	// answer's rows go straight into the tbody that is already here. Nothing else moves: the
-	// click handlers are bound to the table rather than to the rows (adminer's tableClick), the
-	// header row that carries the widths is untouched, and there is no document swap to flash.
-	// The url is corrected after, so a reload asks for the same thing.
-	const refetch = async () => {
-		const form = lengthField?.form;
-		const body = table.tBodies[0];
-		if (!form || !body) {
-			return;
-		}
-		const url = `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
-		try {
-			const answer = await fetch(url);
-			const page = new DOMParser().parseFromString(
-				await answer.text(),
-				"text/html",
-			);
-			const fresh = page.querySelector("#table tbody");
-			if (!fresh) {
-				throw new Error("no rows in the answer");
-			}
-			// Adminer highlights the values once at load, so rows that arrive later are plain
-			// text until this is called on them — its own hook for exactly that, used the same
-			// way in selectLoadMore() when it appends the next page of rows.
-			if (typeof adminerHighlighter === "function") {
-				adminerHighlighter(fresh.querySelectorAll("code"));
-			}
-			body.replaceWith(fresh);
-			history.replaceState(null, "", url);
-		} catch {
-			// Whatever went wrong, adminer's own way still works: press Select for them.
-			form.requestSubmit();
+			// The query has to run again for the longer values, but nobody asked for a new page:
+			// refresh.js swaps the rows in where they are, highlighting and all.
+			window.desktopRefresh();
 		}
 	};
 

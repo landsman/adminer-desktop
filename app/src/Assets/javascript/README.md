@@ -15,5 +15,17 @@ and Linux at once instead of one accelerator per platform. `Desktop\Javascript` 
 automatically — drop a `.js` in and it is emitted with the CSP nonce Adminer requires and
 a cache-buster; nothing lists them by name.
 
+## Shared by name, not by import
+
+These are plain scripts, not modules, so what one file offers another it offers on `window`,
+and the file that defines it sorts earlier by name — `api.js` before its callers, `refresh.js`
+before `table-columns.js`. Two so far:
+
+- `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
+- `window.desktopRefresh()` — re-run the page's query and swap the rows in without reloading
+  the document, adminer's highlighting re-applied. Change a field on the options form first
+  and this applies it. Falls back to submitting the form if anything goes wrong, and says
+  which happened.
+
 Put here only what closes a gap between the WebView and a real browser — app behaviour.
 Database features belong in an Adminer plugin, and styling in `app/styles/`.
