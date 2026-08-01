@@ -33,6 +33,10 @@ $measure = /** @lang JavaScript */ "() => {
 		total: (document.querySelector('.ad-page-total')?.textContent ?? '').trim(),
 		// What the chip reads: the rows this page holds, as adminer numbers them.
 		range: (list?.selectedOptions[0]?.textContent ?? '').trim(),
+		// Each mark is an icon file, masked so it takes the row's colour. A path that stopped
+		// resolving would leave the buttons blank and everything else here still passing.
+		drawn: steps.filter((s) => (getComputedStyle(s, '::before').maskImage || '').includes('icons/')).length,
+		chevron: (getComputedStyle(document.querySelector('.ad-page-chip'), '::after').maskImage || '').includes('icons/'),
 		firstRow: (document.querySelector('#table tbody tr td:nth-child(3)')?.textContent ?? '').trim(),
 		page: location.search.match(/[?&]page=(\\d+)/)?.[1] ?? '0',
 		// Only a new document loses this, which is the thing paging is not supposed to do.
@@ -76,6 +80,10 @@ try {
 	}
 	if ($first['range'] !== '1-5') {
 		$failures[] = "the first page reads '{$first['range']}', not the rows 1-5 it holds";
+	}
+	// Every mark is drawn from its own file, and so is the chip's chevron.
+	if ($first['drawn'] !== 4 || !$first['chevron']) {
+		$failures[] = sprintf('%d of 4 marks are drawn from icons/, chevron: %s', $first['drawn'], $first['chevron'] ? 'yes' : 'no');
 	}
 	// On page one there is no first and no previous.
 	if (count($first['ends']) !== 2) {

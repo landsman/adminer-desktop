@@ -149,7 +149,7 @@ tbody tr:hover th {
 	background: var(--ad-accent-quiet);
 }
 
-.ad-page-chip svg {
+.ad-page-chip::after {
 	position: absolute;
 	right: 0.35em;
 	pointer-events: none;
@@ -167,8 +167,10 @@ tbody tr:hover th {
 	font-variant-numeric: tabular-nums;
 }
 
-/* All four are drawn, not typed (src/Assets/javascript/table-pager.js): one stroke, one size,
-   the row's own colour, and the same on every platform — which a chevron glyph is not.
+/* The marks: files in icons/ beside this stylesheet, masked rather than drawn as <img>, so
+   each takes the colour of the control it is in — one file, four states, no copy per colour.
+   Files rather than svg built in the script, so the browser caches them once instead of
+   parsing the same paths into every page.
 
    Centred on both axes by the box itself: these are flex containers, and text-align has no
    say over a flex item — the mark sat against the left edge of a target wider than it. */
@@ -179,15 +181,39 @@ tbody tr:hover th {
 	line-height: 1;
 }
 
-.ad-page-step svg,
-.ad-page-chip svg {
+.ad-page-step::before,
+.ad-page-chip::after {
+	content: "";
 	width: 1.1em;
 	height: 1.1em;
-	fill: none;
-	stroke: currentcolor;
-	stroke-width: 1.5;
-	stroke-linecap: round;
-	stroke-linejoin: round;
+	background: currentcolor;
+	-webkit-mask: center / contain no-repeat;
+	mask: center / contain no-repeat;
+}
+
+.ad-page-first::before {
+	-webkit-mask-image: url("icons/page-first.svg");
+	mask-image: url("icons/page-first.svg");
+}
+
+.ad-page-previous::before {
+	-webkit-mask-image: url("icons/page-previous.svg");
+	mask-image: url("icons/page-previous.svg");
+}
+
+.ad-page-next::before {
+	-webkit-mask-image: url("icons/page-next.svg");
+	mask-image: url("icons/page-next.svg");
+}
+
+.ad-page-last::before {
+	-webkit-mask-image: url("icons/page-last.svg");
+	mask-image: url("icons/page-last.svg");
+}
+
+.ad-page-chip::after {
+	-webkit-mask-image: url("icons/chevron-down.svg");
+	mask-image: url("icons/chevron-down.svg");
 }
 
 .footer fieldset > a:hover,

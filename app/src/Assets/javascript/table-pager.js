@@ -87,32 +87,13 @@ if (pagerGrid && pagerBox) {
 
 	/* --- The controls ------------------------------------------------------------------ */
 
-	// Drawn rather than typed. A chevron is a font glyph, and the three platforms this app runs
-	// on hand back three different ones — different weight, different width, and "|‹" kerned
-	// differently again. Four paths of the same stroke are the same four marks everywhere, at
-	// whatever size the row is scaled to, in whatever colour it inherits.
-	const ARROWS = {
-		first: "M11 3.5 7 8l4 4.5M5 3.5v9",
-		previous: "M10 3.5 6 8l4 4.5",
-		next: "M6 3.5 10 8l-4 4.5",
-		last: "M5 3.5 9 8l-4 4.5M11 3.5v9",
-	};
-
-	/** One stroked path in a 16x16 box: every mark in this row is one of these. */
-	const mark = (d) => {
-		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-		svg.setAttribute("viewBox", "0 0 16 16");
-		svg.setAttribute("aria-hidden", "true");
-		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-		path.setAttribute("d", d);
-		svg.append(path);
-		return svg;
-	};
-
+	// The marks are files the stylesheet draws (designs/adminer-desktop/icons/, masked so they
+	// take the row's colour): a chevron is a font glyph, and the three platforms this app runs
+	// on hand back three different ones. Files rather than svg built here, so the browser
+	// caches them once instead of parsing the same paths into every page.
 	const arrow = (which, page, title) => {
 		const step = document.createElement(page === null ? "span" : "a");
-		step.className = "ad-page-step";
-		step.append(mark(ARROWS[which]));
+		step.className = `ad-page-step ad-page-${which}`;
 		if (page !== null) {
 			step.href = urlOf(page);
 			step.title = title;
@@ -125,12 +106,11 @@ if (pagerGrid && pagerBox) {
 	pages.title = pagerBox.querySelector("legend")?.textContent.trim() ?? "";
 
 	// A native select brings a border, a background and a chevron of its own, none of which
-	// belong in a row of hairline arrows. Stripped to its text (the stylesheet does that) and
-	// given the same chevron the arrows are drawn with, laid over it and deaf to the pointer so
-	// the whole chip still opens the list.
+	// belong in a row of hairline arrows. Stripped to its text and given the row's own chevron,
+	// both by the stylesheet.
 	const chip = document.createElement("span");
 	chip.className = "ad-page-chip";
-	chip.append(pages, mark("M4 6.5 8 10.5l4-4"));
+	chip.append(pages);
 
 	const total = document.createElement("span");
 	total.className = "ad-page-total";
