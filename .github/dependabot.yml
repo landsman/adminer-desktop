@@ -6,11 +6,18 @@ version: 2
 #
 # Not covered here, because dependabot cannot see them: adminer, frankenphp, composer,
 # phpstan and golangci-lint are version pins in the Makefile, checksum-verified.
+#
+# Every entry waits a week before proposing a release (`cooldown`). A compromised
+# package is caught and yanked within days, and the whole point of automating a bump is
+# that nobody reads the diff — so the automation must not be the thing that races the
+# registry. Cooldown applies to version updates only: a CVE fix still arrives at once.
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: deps
     groups:
@@ -21,6 +28,8 @@ updates:
     directory: /app
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: deps
     groups:
@@ -31,6 +40,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: deps
     groups:
@@ -41,6 +52,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: deps
     groups:
