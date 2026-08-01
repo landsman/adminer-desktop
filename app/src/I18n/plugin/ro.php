@@ -15,6 +15,8 @@ return [
 	'settings.save' => 'Salvează',
 	'settings.close' => 'Închide',
 	'settings.unsaved' => 'Modificări nesalvate: {n}. Închideți oricum?',
+	'settings.reset' => 'Resetează la implicit',
+	'settings.reset_confirm' => 'Resetați toate setările la valorile implicite? Aspectul, pluginurile și lățimile modificate de dumneavoastră se pierd. Limba și serverele salvate în Adminer rămân.',
 
 	// Theme panel.
 	'theme.appearance' => 'Mod de culoare',

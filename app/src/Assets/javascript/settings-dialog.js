@@ -13,6 +13,17 @@
 const gear = document.querySelector("#desktop-gear");
 const dialog = document.querySelector("#desktop-settings");
 const cancel = document.querySelector("#desktop-close");
+const reset = document.querySelector("#desktop-reset");
+
+// Reset throws away every preference the app stores, so it asks first — and the question is
+// translated, so it arrives on the button like the one above.
+if (reset) {
+	reset.onclick = (event) => {
+		if (!confirm(reset.dataset.confirm)) {
+			event.preventDefault();
+		}
+	};
+}
 
 if (gear && dialog && cancel) {
 	gear.onclick = () => dialog.showModal();

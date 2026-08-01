@@ -249,8 +249,15 @@ class AdminerDesktop extends Adminer\Plugin {
 			return;
 		}
 		Adminer\restart_session();
-		$this->theme->apply();
-		$this->plugins->apply();
+		// Reset instead of applying, never as well as: the same post carries every field the
+		// dialog had open, so applying them after the file is gone would write the old answers
+		// straight back and reset nothing.
+		if (!empty($_POST["desktop_reset"])) {
+			$this->userSettings->reset();
+		} else {
+			$this->theme->apply();
+			$this->plugins->apply();
+		}
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
 

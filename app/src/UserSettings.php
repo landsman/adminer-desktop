@@ -58,6 +58,24 @@ class UserSettings {
 		}
 	}
 
+	/** Throw the whole file away: every preference back to what a fresh install has.
+	*
+	* Deleted rather than rewritten with the defaults, because there is no list of defaults to
+	* write — each one lives as the fallback in the code that reads its key, so an unset key and
+	* a key set to its default are the same thing, and only one of them can go stale. The file
+	* comes back on the next preference the user changes.
+	*
+	* This is our file only. Adminer's own state — the language, the saved servers, the
+	* permanent-login key — is adminer's, kept elsewhere, and is not a preference this dialog
+	* ever set.
+	*/
+	function reset(): void {
+		if ($this->file !== null) {
+			@unlink($this->file);
+		}
+		$this->cache = [];
+	}
+
 	/** Everything stored, for inspection (the Tracy panel prints it under -debug).
 	* @return array<string,mixed> */
 	function all(): array {

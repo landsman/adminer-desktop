@@ -15,6 +15,8 @@ return [
 	'settings.save' => 'Uložiť',
 	'settings.close' => 'Zavrieť',
 	'settings.unsaved' => 'Neuložené zmeny: {n}. Napriek tomu zavrieť?',
+	'settings.reset' => 'Obnoviť predvolené',
+	'settings.reset_confirm' => 'Obnoviť všetky nastavenia na predvolené? Vzhľad, pluginy aj šírky, ktoré ste si upravili, sa zabudnú. Jazyk a uložené servery Admineru zostanú.',
 
 	// Theme panel.
 	'theme.appearance' => 'Farebný režim',
