@@ -17,11 +17,11 @@ use Desktop\UserSettings;
 */
 class ResizePreference {
 	/** what may be resized, and the pixel range each is clamped to — keep in step with the
-	* clamps in the two scripts that post here.
-	* @var array<string,array{SettingKey,int,int}> */
+	* clamps in the two scripts that post here. The names are also the keys on disk.
+	* @var array<string,array{int,int}> */
 	private const WIDTHS = [
-		'sidebar' => [SettingKey::SidebarWidth, 180, 640],
-		'edit-field' => [SettingKey::EditFieldWidth, 240, 2000],
+		'sidebar' => [180, 640],
+		'edit_field' => [240, 2000],
 	];
 
 	/** @return int the HTTP status to answer with */
@@ -33,8 +33,14 @@ class ResizePreference {
 		}
 		// Clamp to the same range the drag enforces, so a crafted post can't wedge the sidebar
 		// off-screen or a field down to nothing.
-		[$key, $min, $max] = self::WIDTHS[$what];
-		(new UserSettings())->set($key, max($min, min($max, $width)));
+		[$min, $max] = self::WIDTHS[$what];
+		$settings = new UserSettings();
+		// Read, set the one that moved, write back: they share a key, so the others have to
+		// survive a save of this one.
+		$sizes = $settings->get(SettingKey::UserResized, []);
+		$sizes = is_array($sizes) ? $sizes : [];
+		$sizes[$what] = max($min, min($max, $width));
+		$settings->set(SettingKey::UserResized, $sizes);
 		return 204;
 	}
 }

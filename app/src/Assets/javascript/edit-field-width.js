@@ -57,7 +57,7 @@ if (fields) {
 		// survives the page being torn down by the very next navigation.
 		navigator.sendBeacon(
 			window.desktopApi.resize,
-			new URLSearchParams({ what: "edit-field", width: String(clamp(width)) }),
+			new URLSearchParams({ what: "edit_field", width: String(clamp(width)) }),
 		);
 	});
 }

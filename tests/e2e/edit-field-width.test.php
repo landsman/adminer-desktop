@@ -32,8 +32,8 @@ $storedWidth = static function () use ($settings): ?int {
 	for ($i = 0; $i < 30; $i++) {
 		if (is_file($settings)) {
 			$data = json_decode((string) file_get_contents($settings), true);
-			if (is_array($data) && isset($data['edit_field_width'])) {
-				return (int) $data['edit_field_width'];
+			if (is_array($data) && isset($data['user_resized_px']['edit_field'])) {
+				return (int) $data['user_resized_px']['edit_field'];
 			}
 		}
 		usleep(100_000);

@@ -6,14 +6,16 @@ namespace Desktop;
 /** The keys UserSettings can store — the whole set of persisted preferences in one list.
 *
 * An enum rather than free strings so a key is written once and reused (head() reads the same
-* SidebarWidth the endpoint wrote), a typo is a type error, and what the app persists is
-* visible at a glance. The backing values are the JSON keys on disk, so they must stay stable
-* once shipped.
+* UserResized the api wrote), a typo is a type error, and what the app persists is visible at
+* a glance. The backing values are the JSON keys on disk, so they must stay stable once
+* shipped.
 */
 enum SettingKey: string {
-	case SidebarWidth = 'sidebar_width';
-	// The width the edit form's fields were last dragged to, by the textarea's own grip.
-	case EditFieldWidth = 'edit_field_width';
+	// Every size the user changed themselves, in pixels: what => px, under the same names the
+	// api takes (sidebar, edit_field — Api\ResizePreference). One key rather than one per
+	// widget, because there is nothing to say about any of them individually and the next
+	// resizable thing should not need a new key on disk.
+	case UserResized = 'user_resized_px';
 	case Appearance = 'appearance';
 	case Density = 'density';
 	case Scaling = 'scaling';

@@ -11,6 +11,6 @@
 
 window.desktopApi = Object.freeze({
 	// Persists a width the user dragged — which one is the posted "what" (sidebar,
-	// edit-field); read back by head() on the next load.
+	// edit_field); read back by head() on the next load.
 	resize: "api.php?action=resize",
 });

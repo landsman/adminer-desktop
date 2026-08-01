@@ -155,21 +155,21 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head(): ?string {
 		$this->styles->link();
 		$this->javascript->link();
-		// Restore the widths the user last dragged — the sidebar, and the edit form's fields —
+		// Restore the sizes the user set themselves — the sidebar, and the edit form's fields —
 		// before the body paints, so a cold start opens at them instead of flashing the default
-		// then jumping. The stored values are already clamped integers (src/Settings/width.php);
-		// cast again so nothing but a number can reach the stylesheet. The CSP has no style-src,
-		// so an inline <style> needs no nonce — and only our own theme reads the properties.
-		$widths = [
-			'--ad-sidebar-width' => $this->userSettings->get(SettingKey::SidebarWidth),
-			'--ad-edit-field-width' => $this->userSettings->get(SettingKey::EditFieldWidth),
-		];
-		$widths = array_filter($widths, fn($width) => $width !== null);
-		if ($widths) {
-			$css = '';
-			foreach ($widths as $property => $width) {
-				$css .= "$property:" . (int) $width . "px;";
+		// then jumping. Each is a property the theme reads, named by what the api stored
+		// (Api\ResizePreference). The stored values are already clamped integers; cast again so
+		// nothing but a number can reach the stylesheet. The CSP has no style-src, so an inline
+		// <style> needs no nonce — and only our own theme reads the properties.
+		$properties = ['sidebar' => '--ad-sidebar-width', 'edit_field' => '--ad-edit-field-width'];
+		$resized = $this->userSettings->get(SettingKey::UserResized, []);
+		$css = '';
+		foreach (is_array($resized) ? $resized : [] as $what => $size) {
+			if (isset($properties[$what])) {
+				$css .= $properties[$what] . ':' . (int) $size . 'px;';
 			}
+		}
+		if ($css !== '') {
 			echo "<style>:root{" . $css . "}</style>\n";
 		}
 		// `make demo` forwards the throwaway connection here; src/Assets/javascript/demo-login.js
