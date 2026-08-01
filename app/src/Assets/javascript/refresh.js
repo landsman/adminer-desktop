@@ -19,18 +19,21 @@
  * always works. The answer says which happened: true if the rows were swapped in place.
  */
 
-window.desktopRefresh = async () => {
+window.desktopRefresh = async (href) => {
 	// The results table, and the form the query's options live in — the select page has both,
-	// and a page with either missing has nothing to refresh.
+	// and a page without the rows has nothing to refresh.
 	const table = document.querySelector("#table");
 	const form = document.querySelector("#form");
 	const body = table?.tBodies[0];
-	if (!form || !body) {
+	if (!body || (!form && !href)) {
 		return false;
 	}
 
-	// The request a submit would make: the form's own fields, as adminer's GET expects them.
-	const url = `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
+	// A link's own url when given one — sorting is a link, and it asks for the same page in a
+	// different order. Otherwise the request a submit would make: the form's own fields, as
+	// adminer's GET expects them.
+	const url =
+		href ?? `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
 	try {
 		const answer = await fetch(url);
 		const page = new DOMParser().parseFromString(
@@ -50,7 +53,14 @@ window.desktopRefresh = async () => {
 		history.replaceState(null, "", url);
 		return true;
 	} catch {
-		form.requestSubmit();
+		// Whatever went wrong, do what the browser would have done unaided: follow the link, or
+		// press Select. Both work, and neither leaves the page showing something that is no
+		// longer true.
+		if (href) {
+			location.assign(href);
+		} else {
+			form.requestSubmit();
+		}
 		return false;
 	}
 };
