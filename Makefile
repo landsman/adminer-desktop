@@ -62,7 +62,7 @@ linux-deps:  ## Install the Linux webview build deps (GTK/WebKit dev headers, De
 	@pkg-config --exists webkit2gtk-4.0 2>/dev/null || printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
 		| sudo tee /usr/lib/$(UNAME_M)-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
-fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
+fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
 
 app/adminer.php:
 	@mkdir -p app
@@ -86,6 +86,9 @@ app/editor.php:
 	unzip -qo $< -d .cache/src-tmp
 	mv .cache/src-tmp/adminer-$(ADMINER_VERSION) $@
 	rm -rf .cache/src-tmp
+	# unzip restores the mtimes stored in the archive and mv keeps them, so without this the
+	# extracted tree is older than the zip it came from and every `make fetch` re-extracts it.
+	@touch $@
 
 # The whole upstream set, shipped but not loaded: Settings\Plugins\PluginList picks the
 # ones that make sense here by name and instantiates those. It must not land anywhere
@@ -98,9 +101,15 @@ app/src/Settings/Plugins/available: .cache/adminer-src
 	# still has it would have adminer load and enable whatever is inside, behind the app's back.
 	@rm -rf app/adminer-plugins
 
-app/src/Settings/Theme/designs: .cache/adminer-src
-	@mkdir -p app/src/Settings/Theme
-	rm -rf $@ && cp -R .cache/adminer-src/designs $@
+# Marked by the README inside rather than by the directory itself, because adminer-desktop/
+# is our own theme and is committed in there: the directory exists in a fresh checkout, make
+# calls it up to date and no gallery design is ever copied. That is how CI shipped a designs
+# list of one and `make check` failed on a design it had been offered. Same reason there is
+# no rm -rf here, and why it copies the contents (designs/.) rather than the folder — the
+# folder is half ours.
+app/src/Settings/Theme/designs/README.md: .cache/adminer-src
+	@mkdir -p app/src/Settings/Theme/designs
+	cp -R .cache/adminer-src/designs/. app/src/Settings/Theme/designs/
 
 bin/frankenphp$(EXE):
 	@mkdir -p bin .cache
