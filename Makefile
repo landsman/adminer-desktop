@@ -501,11 +501,6 @@ windows: dist  ## Package the Windows zip
 # --root-owner-group ships the files as root:root without needing fakeroot.
 DEB      = build/deb
 DEB_ARCH = $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
-# linux-deb- rather than dpkg's bare architecture: two of the four release assets are for
-# Linux, and only the tarball said so. The third field is conventionally the architecture
-# alone, so this disagrees with `Architecture:` in the control file — cosmetically only,
-# since dpkg reads that file and never the name. It would matter to a repository tool like
-# reprepro, which parses filenames; nothing here publishes into one.
 DEB_FILE = build/adminer-desktop_$(PKG_VERSION)_linux-deb-$(DEB_ARCH).deb
 
 deb: dist  ## Package a Debian .deb (Linux)
