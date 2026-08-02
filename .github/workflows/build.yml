@@ -1,8 +1,10 @@
 name: build
 
 on:
-  push:
-    branches: [main]
+  # No push trigger. Everything reaches main as a squash-merge of a pull request that was
+  # already linted green, so a push event only ever re-runs the checks the merge was allowed
+  # on. The trade is that a commit pushed straight to main is never checked — which is the
+  # honest cost of never opening a pull request for it.
   pull_request:
     # ready_for_review is not in the default set, so marking a draft ready would
     # otherwise never trigger anything and the checks would sit there as skipped.
@@ -21,9 +23,11 @@ jobs:
   # Kept separate from build so a lint failure reads as a lint failure rather than as a
   # broken build, and so it reports in ~2 minutes instead of waiting on the matrix.
   # A draft PR is work in progress and says so; running the checks on every push to one
-  # spends minutes to tell you about code you already know is unfinished.
+  # spends minutes to tell you about code you already know is unfinished. And a manual
+  # dispatch asks for packages off a commit that has already been through this on its way
+  # to main, so it is the pull request and nothing else that gets linted.
   quality:
-    if: github.event.pull_request.draft != true
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -146,8 +150,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - run: make qa FRANKEN_ASSET=${{ matrix.asset }}
-
+      # No `qa` here: this job packages, and the linters have nothing to say about a
+      # commit that is already on main. `check` stays — it boots the thing being packaged.
       # ~2 minutes, and deliberately not shortened. The point is to outlast the ordinary
       # 60s server write timeout, so a faster run would stop proving the thing it exists
       # to prove.

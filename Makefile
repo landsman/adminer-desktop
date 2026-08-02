@@ -62,7 +62,7 @@ linux-deps:  ## Install the Linux webview build deps (GTK/WebKit dev headers, De
 	@pkg-config --exists webkit2gtk-4.0 2>/dev/null || printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
 		| sudo tee /usr/lib/$(UNAME_M)-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
-fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
+fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
 
 app/adminer.php:
 	@mkdir -p app
@@ -86,6 +86,9 @@ app/editor.php:
 	unzip -qo $< -d .cache/src-tmp
 	mv .cache/src-tmp/adminer-$(ADMINER_VERSION) $@
 	rm -rf .cache/src-tmp
+	# unzip restores the mtimes stored in the archive and mv keeps them, so without this the
+	# extracted tree is older than the zip it came from and every `make fetch` re-extracts it.
+	@touch $@
 
 # The whole upstream set, shipped but not loaded: Settings\Plugins\PluginList picks the
 # ones that make sense here by name and instantiates those. It must not land anywhere
@@ -98,9 +101,15 @@ app/src/Settings/Plugins/available: .cache/adminer-src
 	# still has it would have adminer load and enable whatever is inside, behind the app's back.
 	@rm -rf app/adminer-plugins
 
-app/src/Settings/Theme/designs: .cache/adminer-src
-	@mkdir -p app/src/Settings/Theme
-	rm -rf $@ && cp -R .cache/adminer-src/designs $@
+# Marked by the README inside rather than by the directory itself, because adminer-desktop/
+# is our own theme and is committed in there: the directory exists in a fresh checkout, make
+# calls it up to date and no gallery design is ever copied. That is how CI shipped a designs
+# list of one and `make check` failed on a design it had been offered. Same reason there is
+# no rm -rf here, and why it copies the contents (designs/.) rather than the folder — the
+# folder is half ours.
+app/src/Settings/Theme/designs/README.md: .cache/adminer-src
+	@mkdir -p app/src/Settings/Theme/designs
+	cp -R .cache/adminer-src/designs/. app/src/Settings/Theme/designs/
 
 bin/frankenphp$(EXE):
 	@mkdir -p bin .cache
@@ -164,13 +173,32 @@ COMPOSER_VERSION = 2.10.2
 	@mkdir -p .cache
 	curl -fsSL --retry 3 --retry-delay 2 -o $@ https://getcomposer.org/download/$(COMPOSER_VERSION)/composer.phar
 
+# Composer reaches packagist over https, and the windows frankenphp is the official PHP
+# build for Windows: openssl is a DLL sitting unloaded in ext/, because that build reads no
+# php.ini and nothing here writes one. Without it composer refuses to run at all ("the
+# openssl extension is required for SSL/TLS protection"). The mac and linux binaries are
+# static with openssl compiled in, so the flags are windows-only -- and composer is the only
+# thing here that goes over the network through PHP.
+# Handed over as an ini file and not as `-d extension=...`: frankenphp's php-cli takes its
+# first argument as the script to run, so a -d in front of composer.phar becomes a filename
+# it fails to open ("Failed opening required '-d'"). PHP_INI_SCAN_DIR is read by PHP itself
+# at startup, before any argument parsing, so it lands whatever the SAPI does with argv.
+WIN_INI  = .cache/php-ini
+COMPOSER = $(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) ./bin/frankenphp$(EXE) php-cli .cache/composer.phar
+
+# Both paths are relative to the directory make runs in, which is the repo root; composer's
+# --working-dir only chdirs later, long after PHP has loaded its extensions.
+$(WIN_INI)/openssl.ini:
+	@mkdir -p $(dir $@)
+	printf 'extension_dir=bin/ext\nextension=php_openssl.dll\n' > $@
+
 # The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
 # needs them as much as the app does -- phpstan resolves those classes through vendor/,
 # and the template linter is one of the packages. composer.json lives in app/ so vendor/
 # lands beside the code it autoloads (and out of Go's way at the module root), hence
 # --working-dir.
-app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar
-	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-interaction --working-dir=app
+app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar $(if $(EXE),$(WIN_INI)/openssl.ini)
+	$(COMPOSER) install --no-interaction --working-dir=app
 	@touch app/vendor
 
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
@@ -271,8 +299,10 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	@$(MAKE) --no-print-directory biome && echo "biome ok"
 
 # Boot the app and assert the desktop plugin's before-login behaviour — prefill, refresh
-# shortcut, design switch, plugin toggle — against the real login page.
-check: fetch  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
+# shortcut, design switch, plugin toggle — against the real login page. app/vendor is a
+# prerequisite because the app does not boot without the autoloader Latte renders through;
+# it used to be there only because `qa` happened to have run first.
+check: fetch app/vendor  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
 	./check.sh
 
 # Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
@@ -445,8 +475,7 @@ dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	cp -R app $(DIST)/app   # includes app/vendor, the autoloader Latte renders through
 	# Strip the dev tooling app/vendor carries for qa (phpcs, slevomat, playwright — ~9 MB the
 	# shipped app never runs), reconciling the copied tree down to production deps in place.
-	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-dev --no-interaction \
-		--working-dir=$(DIST)/app
+	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(DIST)/app
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.
@@ -454,8 +483,14 @@ tarball: dist  ## Package the Linux tarball
 	cd build/pkg && tar czf ../$(PKG).tar.gz adminer-desktop
 	@echo "built build/$(PKG).tar.gz -- $$(du -sh build/$(PKG).tar.gz | cut -f1)"
 
+# The one platform whose own package cannot be made with the tool named after it: git bash
+# on windows ships no zip(1), which is the only thing the whole build was ever missing there.
+# 7-Zip is on the runner and on most windows machines, and writes the same archive.
 windows: dist  ## Package the Windows zip
-	rm -f build/$(PKG).zip && cd build/pkg && zip -qry ../$(PKG).zip adminer-desktop
+	rm -f build/$(PKG).zip
+	cd build/pkg && { command -v zip >/dev/null 2>&1 \
+		&& zip -qry ../$(PKG).zip adminer-desktop \
+		|| 7z a -tzip -bso0 ../$(PKG).zip adminer-desktop; }
 	@echo "built build/$(PKG).zip -- $$(du -sh build/$(PKG).zip | cut -f1)"
 
 # A .deb is the same flat layout dist stages, just rooted at /usr/lib instead of a folder:
