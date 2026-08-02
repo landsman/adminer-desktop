@@ -179,15 +179,25 @@ COMPOSER_VERSION = 2.10.2
 # openssl extension is required for SSL/TLS protection"). The mac and linux binaries are
 # static with openssl compiled in, so the flags are windows-only -- and composer is the only
 # thing here that goes over the network through PHP.
-COMPOSER = ./bin/frankenphp$(EXE) php-cli \
-	$(if $(EXE),-d extension_dir=bin/ext -d extension=php_openssl.dll) .cache/composer.phar
+# Handed over as an ini file and not as `-d extension=...`: frankenphp's php-cli takes its
+# first argument as the script to run, so a -d in front of composer.phar becomes a filename
+# it fails to open ("Failed opening required '-d'"). PHP_INI_SCAN_DIR is read by PHP itself
+# at startup, before any argument parsing, so it lands whatever the SAPI does with argv.
+WIN_INI  = .cache/php-ini
+COMPOSER = $(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) ./bin/frankenphp$(EXE) php-cli .cache/composer.phar
+
+# Both paths are relative to the directory make runs in, which is the repo root; composer's
+# --working-dir only chdirs later, long after PHP has loaded its extensions.
+$(WIN_INI)/openssl.ini:
+	@mkdir -p $(dir $@)
+	printf 'extension_dir=bin/ext\nextension=php_openssl.dll\n' > $@
 
 # The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
 # needs them as much as the app does -- phpstan resolves those classes through vendor/,
 # and the template linter is one of the packages. composer.json lives in app/ so vendor/
 # lands beside the code it autoloads (and out of Go's way at the module root), hence
 # --working-dir.
-app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar
+app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar $(if $(EXE),$(WIN_INI)/openssl.ini)
 	$(COMPOSER) install --no-interaction --working-dir=app
 	@touch app/vendor
 
