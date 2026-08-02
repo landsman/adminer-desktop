@@ -483,8 +483,14 @@ tarball: dist  ## Package the Linux tarball
 	cd build/pkg && tar czf ../$(PKG).tar.gz adminer-desktop
 	@echo "built build/$(PKG).tar.gz -- $$(du -sh build/$(PKG).tar.gz | cut -f1)"
 
+# The one platform whose own package cannot be made with the tool named after it: git bash
+# on windows ships no zip(1), which is the only thing the whole build was ever missing there.
+# 7-Zip is on the runner and on most windows machines, and writes the same archive.
 windows: dist  ## Package the Windows zip
-	rm -f build/$(PKG).zip && cd build/pkg && zip -qry ../$(PKG).zip adminer-desktop
+	rm -f build/$(PKG).zip
+	cd build/pkg && { command -v zip >/dev/null 2>&1 \
+		&& zip -qry ../$(PKG).zip adminer-desktop \
+		|| 7z a -tzip -bso0 ../$(PKG).zip adminer-desktop; }
 	@echo "built build/$(PKG).zip -- $$(du -sh build/$(PKG).zip | cut -f1)"
 
 # A .deb is the same flat layout dist stages, just rooted at /usr/lib instead of a folder:
