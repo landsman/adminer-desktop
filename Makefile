@@ -501,7 +501,7 @@ windows: dist  ## Package the Windows zip
 # --root-owner-group ships the files as root:root without needing fakeroot.
 DEB      = build/deb
 DEB_ARCH = $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
-DEB_FILE = build/adminer-desktop_$(PKG_VERSION)_linux-deb-$(DEB_ARCH).deb
+DEB_FILE = build/adminer-desktop_$(PKG_VERSION)_linux-$(DEB_ARCH)-deb.deb
 
 deb: dist  ## Package a Debian .deb (Linux)
 	rm -rf $(DEB)
