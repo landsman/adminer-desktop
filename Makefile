@@ -289,8 +289,10 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	@$(MAKE) --no-print-directory biome && echo "biome ok"
 
 # Boot the app and assert the desktop plugin's before-login behaviour — prefill, refresh
-# shortcut, design switch, plugin toggle — against the real login page.
-check: fetch  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
+# shortcut, design switch, plugin toggle — against the real login page. app/vendor is a
+# prerequisite because the app does not boot without the autoloader Latte renders through;
+# it used to be there only because `qa` happened to have run first.
+check: fetch app/vendor  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
 	./check.sh
 
 # Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
