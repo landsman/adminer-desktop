@@ -173,13 +173,22 @@ COMPOSER_VERSION = 2.10.2
 	@mkdir -p .cache
 	curl -fsSL --retry 3 --retry-delay 2 -o $@ https://getcomposer.org/download/$(COMPOSER_VERSION)/composer.phar
 
+# Composer reaches packagist over https, and the windows frankenphp is the official PHP
+# build for Windows: openssl is a DLL sitting unloaded in ext/, because that build reads no
+# php.ini and nothing here writes one. Without it composer refuses to run at all ("the
+# openssl extension is required for SSL/TLS protection"). The mac and linux binaries are
+# static with openssl compiled in, so the flags are windows-only -- and composer is the only
+# thing here that goes over the network through PHP.
+COMPOSER = ./bin/frankenphp$(EXE) php-cli \
+	$(if $(EXE),-d extension_dir=bin/ext -d extension=php_openssl.dll) .cache/composer.phar
+
 # The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
 # needs them as much as the app does -- phpstan resolves those classes through vendor/,
 # and the template linter is one of the packages. composer.json lives in app/ so vendor/
 # lands beside the code it autoloads (and out of Go's way at the module root), hence
 # --working-dir.
 app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar
-	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-interaction --working-dir=app
+	$(COMPOSER) install --no-interaction --working-dir=app
 	@touch app/vendor
 
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
@@ -454,8 +463,7 @@ dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	cp -R app $(DIST)/app   # includes app/vendor, the autoloader Latte renders through
 	# Strip the dev tooling app/vendor carries for qa (phpcs, slevomat, playwright — ~9 MB the
 	# shipped app never runs), reconciling the copied tree down to production deps in place.
-	./bin/frankenphp$(EXE) php-cli .cache/composer.phar install --no-dev --no-interaction \
-		--working-dir=$(DIST)/app
+	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(DIST)/app
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.
