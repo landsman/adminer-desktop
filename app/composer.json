@@ -4,6 +4,7 @@
     "license": "Apache-2.0",
     "type": "project",
     "require-dev": {
+        "behat/behat": "^3.32",
         "dg/composer-cleaner": "^2.2",
         "nette/tester": "^2.5",
         "playwright-php/playwright": "^1.2",
@@ -24,6 +25,17 @@
     "autoload": {
         "psr-4": {
             "Desktop\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Desktop\\Tests\\": "../tests/e2e/bootstrap/"
+        }
+    },
+    "extra": {
+        "cleaner-ignore": {
+            "behat/behat": true,
+            "behat/gherkin": true
         }
     }
 }
