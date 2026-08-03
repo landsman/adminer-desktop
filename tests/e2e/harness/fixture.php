@@ -198,6 +198,23 @@ function e2e_boot(): array
 	return compact('root', 'data', 'artifacts', 'server', 'base', 'database', 'driver');
 }
 
+/** The fixture for the driver this process is testing, booted once.
+ *
+ * Every context calls this rather than booting its own: the suites run in one process, and a
+ * second server would mean a second data dir, which is the file half the scenarios assert on.
+ *
+ * @return array<string, mixed>
+ */
+function e2e_fixture(): array
+{
+	static $fixtures = [];
+	$name = getenv('ADMINER_DESKTOP_E2E_DRIVER') ?: 'pgsql';
+	if (!isset($fixtures[$name])) {
+		$fixtures[$name] = e2e_boot();
+	}
+	return $fixtures[$name];
+}
+
 /** Get a port nothing is listening on yet, starting from the one asked for. */
 function e2e_free_port(int $port): int
 {

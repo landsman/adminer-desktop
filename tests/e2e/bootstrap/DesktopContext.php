@@ -35,9 +35,6 @@ use RuntimeException;
 class DesktopContext implements Context
 {
 
-	/** @var array<string, array<string, mixed>> what e2e_boot() returned, per driver */
-	private static array $fixtures = [];
-
 	/** @var array<string, mixed> */
 	private array $fix;
 
@@ -63,10 +60,7 @@ class DesktopContext implements Context
 	public function open(): void
 	{
 		putenv("ADMINER_DESKTOP_E2E_DRIVER=$this->driver"); // read by e2e_driver()
-		if (!isset(self::$fixtures[$this->driver])) {
-			self::$fixtures[$this->driver] = e2e_boot();
-		}
-		$this->fix = self::$fixtures[$this->driver];
+		$this->fix = e2e_fixture();
 		$this->page = $this->newPage();
 	}
 
