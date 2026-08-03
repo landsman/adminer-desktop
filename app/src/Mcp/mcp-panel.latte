@@ -1,0 +1,32 @@
+{* Letting an agent query the open database: the switch, and the command to register it.
+
+	The command is generated rather than documented because only the app knows where it was
+	installed — see Panel::command(). It is rendered in a readonly input rather than a <pre> so
+	it can be selected and copied without a script, and so a long bundle path scrolls instead of
+	stretching the dialog.
+*}
+{parameters
+	\AdminerDesktop $desktop,
+	bool $enabled,
+	string $os,
+	string $command,
+	array $status
+}
+<p>
+	<input type="checkbox" name="mcp" value="1" id="desktop-mcp" n:attr="checked: $enabled">
+	<label for="desktop-mcp">{$desktop->t('mcp.enable')}</label>
+
+<p class="ad-mcp-note">{$desktop->t('mcp.description')}
+
+<p><b>{$status['ready'] ? '●' : '○'}</b> {$status['text']}
+
+<fieldset>
+	<legend>{$desktop->t('mcp.register_on')|noescape} {$os}</legend>
+	{* readonly, not disabled: a disabled input cannot be selected, which is the one thing this
+		field exists for. *}
+	<input type="text" readonly value="{$command}" style="width: 100%; font-family: monospace"
+		onclick="this.select()" aria-label="{$desktop->t('mcp.register_on')} {$os}">
+	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}
+</fieldset>
+
+<p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}

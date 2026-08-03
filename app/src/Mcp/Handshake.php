@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Desktop\Mcp;
 
 use Desktop\Env;
+use Desktop\Os;
 
 /** Where the MCP client learns how to reach this window, and as whom.
 *
@@ -42,20 +43,8 @@ class Handshake {
 	* for the others. It must stay in step with launcher/prefs.go dataDir().
 	*/
 	private static function platformDir(): ?string {
-		$name = 'Adminer Desktop';
-		if (PHP_OS_FAMILY === 'Windows') {
-			$base = getenv('AppData');
-		} elseif (PHP_OS_FAMILY === 'Darwin') {
-			$home = getenv('HOME');
-			$base = $home !== false ? "$home/Library/Application Support" : false;
-		} else {
-			$base = getenv('XDG_CONFIG_HOME');
-			if ($base === false || $base === '') {
-				$home = getenv('HOME');
-				$base = $home !== false ? "$home/.config" : false;
-			}
-		}
-		return is_string($base) && $base !== '' ? "$base/$name" : null;
+		$base = Os::current()->configDir();
+		return $base !== null ? "$base/Adminer Desktop" : null;
 	}
 
 	/** @return string|null the path, or null when the app has no durable home (`make serve`) */
