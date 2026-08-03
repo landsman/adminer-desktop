@@ -22,20 +22,10 @@
 	color: var(--ad-accent);
 }
 
-/* Primary action: our accent, not the OS AccentColor, so it matches the rest of the theme. */
-#desktop-save {
-	background: var(--ad-accent);
-	color: var(--ad-accent-fg);
-	border-color: transparent;
-}
-
-#desktop-save:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--ad-accent) 88%, #000);
-}
-
-#desktop-save:active:not(:disabled) {
-	background: color-mix(in srgb, var(--ad-accent) 76%, #000);
-}
+/* Save is deliberately NOT accented here any more. The base sheet makes it green and Reset red,
+   which is a pair: the button that keeps your settings and the one that throws them away have to
+   be told apart at a glance, and the theme's indigo says "default action" without saying which.
+   Anything restated here would only have to be kept in step with it. */
 
 #desktop-actions button:focus-visible {
 	outline-color: var(--ad-accent);
