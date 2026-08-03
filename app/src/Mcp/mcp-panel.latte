@@ -39,6 +39,11 @@
 
 <p n:class="'ad-mcp-note', $write ? 'ad-mcp-warn'">{$desktop->t($write ? 'mcp.write_on' : 'mcp.write_off')}</p>
 
+{* Directly under the line it qualifies. It sat at the very bottom, past the register commands,
+	where the caveat to "rolled back, so they have no effect" arrived long after the decision it
+	is meant to inform — and the sentence above ends on exactly the word it corrects. *}
+<p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>
+
 {* Only once it is saved on. The status is computed from the stored setting, so between ticking
 	the box and pressing Save it would still read "Off. Nothing can reach the database." directly
 	under a ticked switch — the one place in this panel where the saved value and the box on
@@ -64,6 +69,9 @@
 	— see .ad-mcp-register. *}
 <fieldset class="ad-mcp-register">
 	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
+	{* What to do with the commands, before the commands rather than after them: three copy
+		fields is a long way to scroll to find out they are meant for a terminal. *}
+	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
 	{* One per agent: the command is the same but each CLI registers it under its own name, and
 		guessing which one the reader uses is how the panel ended up looking Claude-specific. *}
 	<div n:foreach="$commands as $agent => $command" class="ad-mcp-agent">
@@ -75,10 +83,9 @@
 			copied: $desktop->t('mcp.copied'),
 			rows: 3}
 	</div>
-	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
+	{* This one stays at the bottom: it is for the reader who did not find their agent in the
+		list above, so it only makes sense once the list has been read. *}
 	<p class="ad-mcp-note">{$desktop->t('mcp.register_manual')}</p>
 </fieldset>
-
-<p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>
 
 </div>
