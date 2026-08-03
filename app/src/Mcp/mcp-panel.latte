@@ -1,0 +1,97 @@
+{* Letting an agent query the open database: the switch, and the command to register it.
+
+	The command is generated rather than documented because only the app knows where it was
+	installed — see Panel::command(). It sits in a readonly input rather than a <pre> so it can
+	be selected and copied, and so a long bundle path scrolls instead of stretching the dialog;
+	selecting it on click is src/Assets/javascript/mcp-panel.js, bound by id. Not an onclick
+	attribute: the page's CSP carries strict-dynamic, which makes the 'unsafe-inline' beside it
+	ignored, so an inline handler would work under -debug and nowhere else.
+*}
+{parameters
+	\AdminerDesktop $desktop,
+	bool $enabled,
+	bool $write,
+	string $os,
+	array $commands,
+	array $status,
+	?string $lastUsed,
+	?string $target
+}
+<p>
+	<input type="checkbox" name="mcp" value="1" id="desktop-mcp" n:attr="checked: $enabled">
+	<label for="desktop-mcp">{$desktop->t('mcp.enable')}</label>
+</p>
+
+<p class="ad-mcp-note">{$desktop->t('mcp.description')}</p>
+
+{* Everything below the switch is about an access that is currently switched off, so with the
+	box unticked it is a page of instructions for something that cannot happen. Hidden by CSS
+	keyed off the checkbox itself (.ad-mcp-when-on), not by $enabled: $enabled is what was saved,
+	and the panel has to follow the box as it is ticked, before anyone presses Save. *}
+<div class="ad-mcp-when-on">
+
+{* Its own decision, and its own line: reading your database and rewriting it are not the same
+	permission, so ticking the first must not quietly grant the second. *}
+<p>
+	<input type="checkbox" name="mcp_write" value="1" id="desktop-mcp-write" n:attr="checked: $write">
+	<label for="desktop-mcp-write">{$desktop->t('mcp.write_enable')}</label>
+</p>
+
+<p n:class="'ad-mcp-note', $write ? 'ad-mcp-warn'">{$desktop->t($write ? 'mcp.write_on' : 'mcp.write_off')}</p>
+
+{* Directly under the line it qualifies. It sat at the very bottom, past the register commands,
+	where the caveat to "rolled back, so they have no effect" arrived long after the decision it
+	is meant to inform — and the sentence above ends on exactly the word it corrects. *}
+<p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>
+
+{* Its own card, because these three lines answer one question — is it working, and for what —
+	and that is a different kind of thing from the switches above it, which are decisions to make.
+	Loose in the stack they read as three more notes about the checkbox above them.
+
+	Only once it is saved on. The status is computed from the stored setting, so between ticking
+	the box and pressing Save it would still read "Off. Nothing can reach the database." directly
+	under a ticked switch — the one place in this panel where the saved value and the box on
+	screen visibly disagree. *}
+<div n:if="$enabled" class="ad-mcp-state">
+	<p class="ad-mcp-status">
+		{* Both classes go through n:class — Latte rejects a plain class attribute beside it. *}
+		<span n:class="'ad-mcp-dot', $status['ready'] ? 'ad-mcp-on'">&#9679;</span>
+		{$status['text']}
+	</p>
+
+	{* Which connection, because the agent follows the window: browsing to another database
+		repoints it, and with several servers open in turn that is not obvious from anywhere else. *}
+	<p n:if="$target !== null" class="ad-mcp-note">
+		{$desktop->t('mcp.target')} <span class="ad-mcp-target">{$target}</span>
+	</p>
+
+	{* Only once something has actually called: "never used" is the default and saying so on every
+		open would be noise. Seeing a recent query you did not ask for is the point. *}
+	<p n:if="$lastUsed !== null" class="ad-mcp-note">{$lastUsed}</p>
+</div>
+
+{* The class is not decoration: adminer's default.css renders every fieldset `display: inline`,
+	which shrink-wraps it. Right for its filter boxes, wrong for a box holding commands that wrap
+	— see .ad-mcp-register. *}
+<fieldset class="ad-mcp-register">
+	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
+	{* What to do with the commands, before the commands rather than after them: three copy
+		fields is a long way to scroll to find out they are meant for a terminal. *}
+	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
+	{* One per agent: the command is the same but each CLI registers it under its own name, and
+		guessing which one the reader uses is how the panel ended up looking Claude-specific. *}
+	<div n:foreach="$commands as $agent => $command" class="ad-mcp-agent">
+		<p class="ad-mcp-agent-name">{$agent}</p>
+		{include '../Assets/copy-field.latte',
+			value: $command,
+			label: $agent,
+			copy: $desktop->t('mcp.copy'),
+			copied: $desktop->t('mcp.copied'),
+			rows: 3}
+	</div>
+	{* This one stays at the bottom: it is for the reader who did not find their agent in the
+		list above, so it only makes sense once the list has been read. *}
+	<p class="ad-mcp-note">{$desktop->t('mcp.register_manual')}</p>
+</fieldset>
+
+</div>

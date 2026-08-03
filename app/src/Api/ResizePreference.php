@@ -17,9 +17,8 @@ use Desktop\UserSettings;
 */
 class ResizePreference {
 	/** what may be resized, and the pixel range each is clamped to — keep in step with the
-	* clamps in the two scripts that post here. The names are also the keys on disk.
-	* @var array<string,array{int,int}> */
-	private const WIDTHS = [
+	* clamps in the two scripts that post here. The names are also the keys on disk. */
+	private const array WIDTHS = [
 		'sidebar' => [180, 640],
 		'edit_field' => [240, 2000],
 	];

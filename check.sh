@@ -186,4 +186,19 @@ rm -f "$SETTINGS"
 echo "ok: every shipped plugin boots ($(wc -l < "$PLUGINS" | tr -d ' ') of them)"
 rm -f "$PLUGINS"
 
+# The AI-access panel offers one register command per agent, not just Claude Code's. A
+# hardcoded `claude` is exactly the regression this catches, and it is drawn on the login page
+# so curl can see it. The toast stylesheet is checked here for the same reason it once
+# shipped unstyled: desktop.css only @imports it, so nothing else would notice it missing.
+PANEL=/tmp/adminer-desktop-panel.html
+curl -s "$BASE/adminer.php" > "$PANEL"
+for AGENT in claude codex gemini; do
+	grep -q "$AGENT mcp add adminer-desktop" "$PANEL" || {
+		echo "FAIL: no register command for $AGENT in the AI-access panel"; exit 1; }
+done
+grep -q '@import "toast.css"' app/src/Assets/css/desktop.css || {
+	echo "FAIL: toast.css is not imported, so toasts render unstyled"; exit 1; }
+rm -f "$PANEL"
+echo "ok: every agent's register command is offered, and the toast styles are loaded"
+
 echo "PASS"

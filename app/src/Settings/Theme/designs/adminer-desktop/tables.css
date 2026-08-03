@@ -11,6 +11,41 @@ th,
 	border-color: var(--ad-border);
 }
 
+/* Rounded corners on the grid, macOS only.
+ *
+ * It costs nothing structurally: adminer already draws its tables with border-spacing: 0 and
+ * split borders — `table { border-width: 1px 0 0 1px }`, `td, th { border-width: 0 1px 1px 0 }`
+ * — which is the separated-border model a radius needs. No overflow: hidden, which would make
+ * the table its own scroll container and quietly kill the sticky <thead>.
+ *
+ * The corner cells are rounded as well as the table: the cell backgrounds paint over the
+ * table's own rounded corner otherwise, and square off exactly the corner being rounded.
+ * `> :first-child` is the section (thead/tbody — the browser inserts one either way), so this
+ * finds the true first and last row whether or not the table has a header.
+ *
+ * macOS only, because a rounded grid is a macOS idiom rather than a house style: Windows and
+ * Linux keep the square corners their own tables have, which is what os-mac not matching
+ * leaves them with. */
+.os-mac table {
+	border-radius: var(--ad-radius);
+}
+
+.os-mac table > :first-child > tr:first-child > :first-child {
+	border-top-left-radius: var(--ad-radius);
+}
+
+.os-mac table > :first-child > tr:first-child > :last-child {
+	border-top-right-radius: var(--ad-radius);
+}
+
+.os-mac table > :last-child > tr:last-child > :first-child {
+	border-bottom-left-radius: var(--ad-radius);
+}
+
+.os-mac table > :last-child > tr:last-child > :last-child {
+	border-bottom-right-radius: var(--ad-radius);
+}
+
 td,
 th {
 	padding: var(--ad-row-py) var(--ad-row-px);

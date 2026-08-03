@@ -37,6 +37,11 @@ if (slot && select && token) {
 		tokenField.value = tokenValue;
 		form.append(langField, tokenField);
 		document.body.append(form);
+		// Come back with the dialog open on this tab. The POST redirects, which is a navigation
+		// rather than a reload, and settings-dialog.js restores across reloads only — so it has
+		// to be asked. Without this, changing the language dropped you back on the page with the
+		// settings you were in the middle of gone.
+		window.adReopenSettings?.();
 		form.submit();
 	};
 	select.removeAttribute("name");

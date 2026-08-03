@@ -16,6 +16,8 @@ use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
 use Desktop\Import;
+use Desktop\Mcp;
+use Desktop\Os;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
 use Desktop\Settings\Plugins\PluginList;
@@ -31,6 +33,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	private Theme $theme;
 	private PluginList $plugins;
 	private Dialog $dialog;
+	private Mcp\Panel $mcp;
 	private UserSettings $userSettings;
 
 	function __construct() {
@@ -47,7 +50,21 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->javascript = new Javascript($this->dir() . "/src/Assets/javascript");
 		$this->theme = new Theme($this, $this->userSettings);
 		$this->plugins = new PluginList($this, $this->userSettings);
-		$this->dialog = new Dialog($this, $this->theme, $this->plugins);
+		$this->mcp = new Mcp\Panel($this, $this->userSettings);
+		$this->dialog = new Dialog($this, $this->theme, $this->plugins, $this->mcp);
+	}
+
+	/** Answer an agent's MCP call, and keep the handshake that let it find us current.
+	*
+	* headers() is the earliest hook that runs with a live connection — sql-gemini.php answers
+	* its own POST from here for the same reason — and it runs before adminer has produced any
+	* page, so writing a JSON body and exiting leaves nothing half-rendered behind. The work is
+	* in Desktop\Mcp\Endpoint; this stays a map of what is hooked.
+	*
+	* @return null always: this hook has no opinion for other plugins, and the MCP path exits
+	*/
+	function headers(): ?string {
+		return (new Mcp\Endpoint($this->userSettings))->serve();
 	}
 
 	/** The catalogue, so adminer-plugins.php can hand adminer the enabled plugins.
@@ -226,8 +243,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @return void
 	*/
 	function bodyClass(): void {
-		$os = ["Darwin" => "os-mac", "Windows" => "os-windows", "Linux" => "os-linux"];
-		echo " " . ($os[PHP_OS_FAMILY] ?? "os-linux");
+		echo " " . Os::current()->bodyClass();
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
 		if (Env::Debug->get()) {
@@ -263,6 +279,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		} else {
 			$this->theme->apply();
 			$this->plugins->apply();
+			$this->mcp->apply();
 		}
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}

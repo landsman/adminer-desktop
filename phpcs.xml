@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <ruleset name="AdminerDesktop">
 	<description>
-		Type-safety rules for the PHP we wrote: native property types and short array syntax.
+		Type-safety rules for the PHP we wrote: native property and constant types, and short
+		array syntax.
 		phpstan (level 6) owns parameter/return/value types; this owns what phpstan cannot say
-		— a property must be a native declaration, not a bare @var — and the [] vs array()
+		— a property or constant must be a native declaration, not a bare @var — and the [] vs array()
 		style phpstan does not judge. Everything that ships verbatim from the adminer release
 		is excluded: it keeps its own conventions and is not ours to report on.
 	</description>
@@ -31,4 +32,11 @@
 	     cannot (it overrides an untyped one in adminer's base class) opts out with a
 	     phpcs:ignore comment on the line. -->
 	<rule ref="SlevomatCodingStandard.TypeHints.PropertyTypeHint"/>
+
+	<!-- Same for class constants, and phpstan cannot say this either: its level-6
+	     missing-type rule for constants only looks *inside* a type that is already written
+	     (an array with no value type, an ungenericised generic), so `const MAX = 2000` with
+	     no type at all is invisible to it. Constants have carried native types since PHP
+	     8.3, so there is no reason for ours not to. -->
+	<rule ref="SlevomatCodingStandard.TypeHints.ClassConstantTypeHint"/>
 </ruleset>
