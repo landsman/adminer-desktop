@@ -63,7 +63,7 @@ return [
 	'mcp.copy' => 'Kopiuj',
 	'mcp.copied' => 'Skopiowano',
 	'mcp.target' => 'Agent odpytywałby:',
-	'mcp.write_enable' => 'Pozwól też zmieniać dane (INSERT, UPDATE, DELETE)',
+	'mcp.write_enable' => 'Zezwól na trwałą zmianę i usuwanie danych (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Zapisy są zatwierdzane. Agent sam dobiera polecenia, a błędnego DELETE nie da się stąd cofnąć.',
 	'mcp.write_off' => 'Tylko odczyt. Polecenia, które zapisywałyby dane, są wykonywane i wycofywane, więc nie mają efektu.',
 

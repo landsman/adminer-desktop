@@ -63,7 +63,7 @@ return [
 	'mcp.copy' => 'Kopírovat',
 	'mcp.copied' => 'Zkopírováno',
 	'mcp.target' => 'Agent by se ptal:',
-	'mcp.write_enable' => 'Povolit také měnit data (INSERT, UPDATE, DELETE)',
+	'mcp.write_enable' => 'Povolit trvalé změny a mazání dat (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Zápisy se potvrzují. Agent si příkazy volí sám a chybný DELETE odsud vrátit nelze.',
 	'mcp.write_off' => 'Jen pro čtení. Příkazy, které by zapisovaly, se provedou a vrátí zpět, takže nemají žádný účinek.',
 

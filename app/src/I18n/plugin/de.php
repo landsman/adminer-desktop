@@ -63,7 +63,7 @@ return [
 	'mcp.copy' => 'Kopieren',
 	'mcp.copied' => 'Kopiert',
 	'mcp.target' => 'Der Agent würde abfragen:',
-	'mcp.write_enable' => 'Auch Daten ändern lassen (INSERT, UPDATE, DELETE)',
+	'mcp.write_enable' => 'Daten dauerhaft ändern und löschen lassen (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Schreibvorgänge werden bestätigt. Der Agent wählt seine Anweisungen selbst, und ein falsches DELETE ist von hier aus nicht wiederherstellbar.',
 	'mcp.write_off' => 'Nur Lesen. Anweisungen, die schreiben würden, werden ausgeführt und dann zurückgerollt, haben also keine Wirkung.',
 

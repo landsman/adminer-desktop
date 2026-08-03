@@ -70,7 +70,7 @@ return [
 	'mcp.copy' => 'Copy',
 	'mcp.copied' => 'Copied',
 	'mcp.target' => 'The agent would query:',
-	'mcp.write_enable' => 'Also let it change data (INSERT, UPDATE, DELETE)',
+	'mcp.write_enable' => 'Let it change and permanently delete data (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Writes are committed. The agent decides its own statements, and a wrong DELETE is not recoverable from here.',
 	'mcp.write_off' => 'Read-only. Statements that would write are run and then rolled back, so they have no effect.',
 
