@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e e2e-visual i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -305,12 +305,17 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 check: fetch app/vendor  ## Boot the app, assert before-login behaviour (prefill, design, plugins)
 	./check.sh
 
-# Browser end-to-end check: logs in, asserts the theme applies in light and dark, and
-# writes screenshots to tests/e2e/screenshots/. Needs docker (a throwaway postgres) and
-# the Playwright browser from `mise run install`. Kept out of `qa` because it is slow and
-# needs docker; run it on its own.
-e2e: fetch  ## Browser check: login + theme in light and dark (needs docker)
+# The end-to-end scenarios: Behat driving a real browser through the app, against a throwaway
+# postgres and mysql in docker. app/vendor because behat and playwright live there. Kept out of
+# `qa` because it is slow and needs docker; run it on its own. A failed step leaves the page it
+# failed on in tests/e2e/artifacts/, which the workflow uploads.
+e2e: fetch app/vendor  ## Every scenario, against both drivers (needs docker)
 	mise run e2e
+
+# The same, in a browser you can watch: this is how a scenario is written, and how a failing one
+# is understood. `make e2e-visual SUITE=mysql` or `ARGS='--name "Sorting"'` narrows it down.
+e2e-visual: fetch app/vendor  ## The same, in a browser you can watch (needs docker)
+	mise run e2e-visual
 
 ##@ Build & run
 
@@ -360,29 +365,33 @@ debug: build  ## Run with Safari's Web Inspector attached
 # a shipped build never auto-logs-in. `make down` kills the container when you are done.
 # vendor/ because dev serves app/ and Latte renders from it. The seed drops and recreates,
 # so re-running just refreshes the data.
+# The postgres one is shared with the e2e (tests/e2e/harness/fixture.php names it), so `make demo`
+# and a run reuse each other's database rather than each leaving one behind. DEMO_MYSQL is only
+# ever started by the e2e; it is named here so `down` and `destroy` can clean up after it.
 DEMO_PG = adminer-demo-pg
+DEMO_MYSQL = adminer-demo-mysql
 
 demo: build app/vendor  ## Run against seeded demo data, opened logged in (needs docker)
 	@docker start $(DEMO_PG) >/dev/null 2>&1 || docker run -d --name $(DEMO_PG) \
 		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 55432:5432 postgres:18-alpine >/dev/null
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
-	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed.sql >/dev/null
+	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed/pgsql.sql >/dev/null
 	@echo "demo data ready on 127.0.0.1:55432 (postgres / demo / demo)"
 	ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 postgres demo demo' ./build/adminer-desktop$(EXE) -dev
 
-# Kill the demo database container `make demo` left running.
-down:  ## Stop the demo database container
-	-docker rm -f $(DEMO_PG)
+# Kill the database containers `make demo` and the e2e left running.
+down:  ## Stop the demo database containers
+	-docker rm -f $(DEMO_PG) $(DEMO_MYSQL)
 
-# The same, plus the anonymous volume postgres keeps its data in — which plain `rm -f` leaves
-# behind, dangling and named after nothing. Reach for this when tests/e2e/seed.sql changed: the
-# e2e fixture reuses a container that is already up and never reseeds, so a new table only
-# reaches the database when one is created from scratch.
+# The same, plus the anonymous volumes the databases keep their data in — which plain `rm -f`
+# leaves behind, dangling and named after nothing. Rarely needed now that the fixture reseeds on
+# every run: an edited seed reaches the database without this. Reach for it when a container is
+# wedged, or to get the disk back.
 #
 # `rm -v` and not `volume prune`, which would take every other project's anonymous volumes on
-# this machine with it — this removes the ones attached to our container and nothing else.
-destroy:  ## Remove the demo database container and its data volume
-	-docker rm -fv $(DEMO_PG)
+# this machine with it — this removes the ones attached to our containers and nothing else.
+destroy:  ## Remove the demo database containers and their data volumes
+	-docker rm -fv $(DEMO_PG) $(DEMO_MYSQL)
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
