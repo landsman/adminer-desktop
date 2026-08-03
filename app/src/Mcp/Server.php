@@ -30,11 +30,9 @@ class Server {
 	private const PROTOCOL = '2025-11-25';
 
 	private Tools $tools;
-	private bool $write;
 
 	function __construct(?Tools $tools = null, bool $write = false) {
 		$this->tools = $tools ?? new Tools($write);
-		$this->write = $write;
 	}
 
 	/** Handle one JSON-RPC message.
