@@ -35,6 +35,11 @@ if (reset) {
 // would reopen the dialog on every link you click. sessionStorage rather than the settings file
 // — this is where you were a second ago, not a preference, and it should not outlive the window.
 const OPEN_KEY = "ad-settings-open";
+// The exception to "reloads only": something inside the dialog navigating on purpose. Changing
+// the language POSTs and adminer redirects, which is an ordinary navigation, so the rule above
+// would drop the dialog — and that switch lives *in* the dialog, so you are certainly still
+// using it. One shot, consumed on read, set through window.adReopenSettings below.
+const REOPEN_KEY = "ad-settings-reopen";
 const reloaded =
 	performance.getEntriesByType("navigation")[0]?.type === "reload";
 
@@ -46,7 +51,12 @@ if (gear && dialog && cancel) {
 	};
 
 	gear.onclick = () => {
-		dialog.showModal();
+		// showModal() on an open dialog throws InvalidStateError, and since the restore above
+		// the gear can be clicked while it is already open — the gear sits behind the backdrop,
+		// but a script or a synthetic click still reaches it.
+		if (!dialog.open) {
+			dialog.showModal();
+		}
 		remember();
 	};
 	// Every way out at once: escape, the Cancel button, and submitting the form all fire close.
@@ -57,7 +67,16 @@ if (gear && dialog && cancel) {
 		}
 	});
 
-	if (reloaded) {
+	// For anything in the dialog that navigates deliberately — language.js is the one caller.
+	// It records the tab as well, so you come back to the panel you were on.
+	window.adReopenSettings = () => {
+		remember();
+		sessionStorage.setItem(REOPEN_KEY, "1");
+	};
+
+	const asked = sessionStorage.getItem(REOPEN_KEY) !== null;
+	sessionStorage.removeItem(REOPEN_KEY); // one shot, whether or not it is used
+	if (reloaded || asked) {
 		const tab = sessionStorage.getItem(OPEN_KEY);
 		if (tab !== null) {
 			// A tab id that no longer exists (a panel removed between reloads) leaves the

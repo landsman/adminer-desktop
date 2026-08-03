@@ -21,10 +21,17 @@ $fix = e2e_boot();
 $failures = [];
 
 /** Open the settings dialog and let showModal() settle — its contents are display:none
- * until the modal is actually open, so anything reaching inside races the animation. */
+ * until the modal is actually open, so anything reaching inside races the animation.
+ *
+ * Only if it is closed. Changing the language reopens it (settings-dialog.js restores the
+ * dialog across the reload the switch causes), and clicking the gear while the modal is up
+ * means clicking an element behind the backdrop, which never becomes actionable — the whole
+ * check timed out there rather than failing on anything it asserts. */
 $openDialog = function ($page) {
-	$page->locator('#desktop-gear')->click();
-	usleep(300_000);
+	if (!$page->evaluate("() => document.querySelector('#desktop-settings').open")) {
+		$page->locator('#desktop-gear')->click();
+		usleep(300_000);
+	}
 };
 
 try {
