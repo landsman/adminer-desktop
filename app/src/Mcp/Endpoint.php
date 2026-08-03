@@ -25,11 +25,13 @@ class Endpoint {
 	private UserSettings $settings;
 	private Handshake $handshake;
 	private Server $server;
+	private Activity $activity;
 
-	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null) {
+	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null) {
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
 		$this->server = $server ?? new Server();
+		$this->activity = $activity ?? new Activity();
 	}
 
 	/** The hook body. Returns null so the hook has no opinion for other plugins; the MCP path
@@ -53,7 +55,11 @@ class Endpoint {
 			return null;
 		}
 		header("Content-Type: application/json");
-		$answer = $this->answer((string) file_get_contents("php://input"), $connected);
+		$input = (string) file_get_contents("php://input");
+		// Before answering, so a call that goes on to fail still shows up: "something asked me
+		// this and it broke" is exactly as worth seeing as a call that worked.
+		$this->activity->record($this->method($input), time());
+		$answer = $this->answer($input, $connected);
 		if ($answer === null) {
 			// A JSON-RPC notification is answered with silence, not an empty body with a 200.
 			http_response_code(204);
@@ -89,6 +95,19 @@ class Endpoint {
 		$script = str_replace("\\", "/", (string) ($server["SCRIPT_NAME"] ?? "/"));
 		$dir = rtrim(dirname($script), "/");
 		return "http://$host$dir/" . $me;
+	}
+
+	/** The JSON-RPC method a request is asking for, for the record of what an agent did.
+	*
+	* Its own tiny parse rather than reaching into Server: this runs whether or not we are
+	* connected, and a malformed body still counts as an agent having called.
+	*/
+	private function method(string $input): string {
+		$message = json_decode($input, true);
+		$method = is_array($message) && isset($message['method']) && is_string($message['method'])
+			? $message['method']
+			: '';
+		return $method !== '' ? $method : 'unknown';
 	}
 
 	/** The body to answer an MCP request with, or null for 204.
