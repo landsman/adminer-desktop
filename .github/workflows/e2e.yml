@@ -1,0 +1,77 @@
+name: e2e
+
+# Nightly, not per pull request. The browser checks boot a postgres, a server and a chromium
+# per file — minutes, on every push, to re-prove what the last run already proved about code
+# that mostly does not touch the UI. Once a night catches the same regression by morning,
+# and the Actions tab has the button for when you want it now.
+#
+# Its own workflow rather than a job in build.yml: nothing here shares a step with the
+# packaging matrix, and a schedule bolted onto that file would have every job in it carrying
+# an `if:` to say which trigger it answers to.
+on:
+  schedule:
+    # 21:30 UTC — 23:30 in Prague through the summer, 22:30 once the clocks go back. GitHub
+    # cron is UTC and has no timezone, so the choice is which half of the year to be right in.
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+  # Only when this file itself changes. A nightly that has never run is a nightly nobody
+  # knows is broken, and the first honest run must not be at 21:30 unwatched.
+  pull_request:
+    paths: [".github/workflows/e2e.yml"]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    # docker pull, then 15 checks each with its own server and browser — ~5 minutes in
+    # practice. The default is 6 hours, which is what a wedged run costs before anyone looks.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      # The same toolchain a developer gets: node for the browser Playwright drives, and gh,
+      # which `mise run install` checks is logged in before it spends anything.
+      - uses: jdx/mise-action@v4
+
+      # frankenphp is a ~180 MB download, pinned in the Makefile — so is everything else
+      # under .cache, and the key only has to change when a pin does.
+      - name: Cache pinned downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            bin
+            .cache
+          key: pinned-frankenphp-linux-x86_64-${{ hashFiles('Makefile') }}
+
+      # Before `mise run install`: composer runs on the bundled frankenphp, so app/vendor
+      # cannot be built until the binary is here.
+      - run: make fetch FRANKEN_ASSET=frankenphp-linux-x86_64
+
+      # composer deps, npm deps, and the chromium Playwright launches.
+      - run: mise run install
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Playwright ships its own chromium but not the system libraries it links against, and
+      # the runner image only has the ones its own Chrome needs. A no-op when they all happen
+      # to be there, which is why it is not worth guessing. Deliberately not in
+      # `mise run install`: that runs on developer machines, and this installs with sudo apt.
+      - name: Playwright system libraries
+        working-directory: app/vendor/playwright-php/playwright/bin
+        run: npx --no-install playwright install-deps chromium
+
+      # Boots its own postgres in docker (tests/e2e/fixture.php), so there is no service to
+      # declare here. Linux only, and that is the whole story: the checks drive frankenphp
+      # and a headless chromium, never the native shell, so a second platform would re-run
+      # the same assertions — at 10x on macOS.
+      - run: make e2e FRANKEN_ASSET=frankenphp-linux-x86_64
+
+      # A failed assertion names the check and the selector; the screenshot is the only way
+      # to see what the page actually looked like on a runner nobody was watching.
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-screenshots
+          path: tests/e2e/screenshots
+          if-no-files-found: ignore
