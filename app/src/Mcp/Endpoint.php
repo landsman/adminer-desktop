@@ -1,0 +1,110 @@
+<?php
+declare(strict_types=1);
+
+namespace Desktop\Mcp;
+
+use Desktop\SettingKey;
+use Desktop\UserSettings;
+
+/** The MCP endpoint as adminer sees it: what AdminerDesktop::headers() delegates to.
+*
+* It has to be a hook rather than an action in api.php, and that is not a preference. api.php
+* boots the autoloader and nothing else, so a handler there has no connection and no Adminer\
+* functions; and adminer.php cannot be included to get one, because it terminates the request —
+* control never returns to the line after the include. A hook is the seam adminer provides for
+* running inside a request it has already authenticated and connected, which is exactly what
+* this needs.
+*
+* Two jobs, both only ever on such a request: refresh the handshake so the agent can still find
+* this window, and answer ?mcp=1 as JSON-RPC instead of HTML.
+*
+* serve() does the I/O and exits; url() and answer() are the decisions behind it, kept separate
+* so they can be checked without a request to make or a process to end.
+*/
+class Endpoint {
+	private UserSettings $settings;
+	private Handshake $handshake;
+	private Server $server;
+
+	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null) {
+		$this->settings = $settings;
+		$this->handshake = $handshake ?? new Handshake();
+		$this->server = $server ?? new Server();
+	}
+
+	/** The hook body. Returns null so the hook has no opinion for other plugins; the MCP path
+	* never returns at all.
+	*/
+	function serve(): ?string {
+		if (!$this->settings->get(SettingKey::Mcp, false)) {
+			// Off, or turned off since the last run: a handshake left on disk would still name
+			// a live session, so retract it rather than merely ignoring it.
+			$this->handshake->clear();
+			return null;
+		}
+		$connected = \Adminer\driver() !== null;
+		$url = $this->url($_SERVER, $connected, \Adminer\ME);
+		if ($url !== null) {
+			/** @var array<string,string> $cookies */
+			$cookies = array_filter($_COOKIE, 'is_string');
+			$this->handshake->write($url, $cookies);
+		}
+		if (!isset($_GET["mcp"])) {
+			return null;
+		}
+		header("Content-Type: application/json");
+		$answer = $this->answer((string) file_get_contents("php://input"), $connected);
+		if ($answer === null) {
+			// A JSON-RPC notification is answered with silence, not an empty body with a 200.
+			http_response_code(204);
+		} else {
+			echo $answer;
+		}
+		exit;
+	}
+
+	/** The absolute URL to record, or null when there is nothing worth recording.
+	*
+	* Adminer\ME rather than the script name, and that is load-bearing: adminer takes the server
+	* and database from the query string rather than the session, so a bare adminer.php reaches
+	* a driverless adminer that can answer nothing. ME is the prefix adminer builds its own
+	* links from — this script with the connection already in it.
+	*
+	* Not connected means not logged in, so the handshake exists only while there is a session
+	* worth borrowing.
+	*
+	* @param array<string,mixed> $server $_SERVER, passed in so this can be checked directly
+	* @param string $me Adminer\ME, likewise: a constant only defined once adminer is loaded,
+	*                   so taking it as an argument is what lets this be checked without it
+	*/
+	function url(array $server, bool $connected, string $me): ?string {
+		$host = (string) ($server["HTTP_HOST"] ?? "");
+		if (!$connected || $host === "") {
+			return null;
+		}
+		// Normalise the separators *before* dirname(), not after. On a POSIX host dirname() does
+		// not treat a backslash as a separator, so a Windows SCRIPT_NAME like \tools\adminer.php
+		// is one long filename to it and it answers "." — which then builds http://host./…
+		// rather than a path. Doing it in this order is the whole of the fix.
+		$script = str_replace("\\", "/", (string) ($server["SCRIPT_NAME"] ?? "/"));
+		$dir = rtrim(dirname($script), "/");
+		return "http://$host$dir/" . $me;
+	}
+
+	/** The body to answer an MCP request with, or null for 204.
+	*
+	* @param string $input the raw JSON-RPC request
+	*/
+	function answer(string $input, bool $connected): ?string {
+		if (!$connected) {
+			// Cookies good enough to reach us, but no connection — a handshake outliving the
+			// login it was written for. Say so in JSON: the agent is not reading HTML, and
+			// falling through would crash on a null driver instead.
+			return (string) json_encode(["jsonrpc" => "2.0", "id" => null, "error" => [
+				"code" => -32000,
+				"message" => "Adminer Desktop is not connected to a database. Log in again in the app.",
+			]]);
+		}
+		return $this->server->dispatch($input);
+	}
+}

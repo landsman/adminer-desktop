@@ -16,8 +16,7 @@ use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
 use Desktop\Import;
-use Desktop\Mcp\Handshake;
-use Desktop\Mcp\Server as McpServer;
+use Desktop\Mcp\Endpoint;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
 use Desktop\Settings\Plugins\PluginList;
@@ -34,7 +33,6 @@ class AdminerDesktop extends Adminer\Plugin {
 	private PluginList $plugins;
 	private Dialog $dialog;
 	private UserSettings $userSettings;
-	private Handshake $handshake;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
@@ -51,66 +49,19 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->theme = new Theme($this, $this->userSettings);
 		$this->plugins = new PluginList($this, $this->userSettings);
 		$this->dialog = new Dialog($this, $this->theme, $this->plugins);
-		$this->handshake = new Handshake();
 	}
 
 	/** Answer an agent's MCP call, and keep the handshake that let it find us current.
 	*
 	* headers() is the earliest hook that runs with a live connection — sql-gemini.php answers
 	* its own POST from here for the same reason — and it runs before adminer has produced any
-	* page, so writing a JSON body and exiting leaves nothing half-rendered behind.
-	*
-	* Two things happen here, and only ever on a request adminer has already authenticated:
-	* every such request refreshes the handshake (the port changes per launch and the cookies
-	* rotate), and one that carries ?mcp=1 is answered as JSON-RPC instead of HTML. An
-	* unauthenticated request never reaches either — adminer serves the login page first, which
-	* is the whole of the access control.
+	* page, so writing a JSON body and exiting leaves nothing half-rendered behind. The work is
+	* in Desktop\Mcp\Endpoint; this stays a map of what is hooked.
 	*
 	* @return null always: this hook has no opinion for other plugins, and the MCP path exits
 	*/
 	function headers(): ?string {
-		if (!$this->userSettings->get(SettingKey::Mcp, false)) {
-			// Off, or turned off since the last run: make sure a handshake from a previous
-			// session cannot still point at a live window.
-			$this->handshake->clear();
-			return null;
-		}
-		// Only while connected, and that is not a detail: adminer takes the server and database
-		// from the URL rather than the session, so a bare adminer.php reaches a driverless
-		// adminer that can answer nothing. Adminer\ME is the prefix its own links are built
-		// from — the current script with the connection already in the query string — so
-		// recording it is what makes the agent's request land on the same database this window
-		// is looking at. driver() being null is also exactly "not logged in", so the handshake
-		// exists only while there is a session worth borrowing.
-		$host = (string) ($_SERVER["HTTP_HOST"] ?? "");
-		if ($host !== "" && \Adminer\driver() !== null) {
-			$dir = rtrim(str_replace("\\", "/", dirname((string) ($_SERVER["SCRIPT_NAME"] ?? "/"))), "/");
-			/** @var array<string,string> $cookies */
-			$cookies = array_filter($_COOKIE, 'is_string');
-			$this->handshake->write("http://$host$dir/" . \Adminer\ME, $cookies);
-		}
-		if (!isset($_GET["mcp"])) {
-			return null;
-		}
-		header("Content-Type: application/json");
-		if (\Adminer\driver() === null) {
-			// Cookies good enough to get here, but no connection — a handshake outliving the
-			// login it was written for. Say so in JSON: the agent is not reading HTML, and
-			// letting it fall through would crash on a null driver instead.
-			echo (string) json_encode(["jsonrpc" => "2.0", "id" => null, "error" => [
-				"code" => -32000,
-				"message" => "Adminer Desktop is not connected to a database. Log in again in the app.",
-			]]);
-			exit;
-		}
-		$response = (new McpServer())->dispatch((string) file_get_contents("php://input"));
-		if ($response === null) {
-			// A JSON-RPC notification is answered with silence, not an empty body with a 200.
-			http_response_code(204);
-		} else {
-			echo $response;
-		}
-		exit;
+		return (new Endpoint($this->userSettings))->serve();
 	}
 
 	/** The catalogue, so adminer-plugins.php can hand adminer the enabled plugins.
