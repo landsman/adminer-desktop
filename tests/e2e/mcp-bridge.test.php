@@ -37,6 +37,18 @@ $contains = function (string $what, ?string $actual, string $needle) use (&$fail
     }
 };
 
+// 0. The bridge has to find the data dir with no environment of ours. An agent spawns it as a
+//    bare child process, so if this ever depends on ADMINER_DESKTOP_DATA again it reports the
+//    app as not running while it is open in front of you — which is exactly what it did, and
+//    the end-to-end check could not see it because that check sets the variable itself.
+putenv('ADMINER_DESKTOP_DATA');
+$found = (new Handshake())->path();
+if ($found === null) {
+    $failures[] = 'with no ADMINER_DESKTOP_DATA the bridge finds no data dir at all';
+} elseif (!str_ends_with($found, 'Adminer Desktop/mcp.json')) {
+    $failures[] = 'the fallback data dir is not the launcher’s: ' . $found;
+}
+
 $request = (string) json_encode(['jsonrpc' => '2.0', 'id' => 7, 'method' => 'tools/list']);
 $notification = (string) json_encode(['jsonrpc' => '2.0', 'method' => 'notifications/initialized']);
 $unreachable = fn(): bool => false;

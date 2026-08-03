@@ -26,8 +26,36 @@ class Handshake {
 	private ?string $file;
 
 	function __construct(?string $dir = null) {
-		$dir = $dir ?? (Env::DataDir->get() ?: null);
+		$dir = $dir ?? (Env::DataDir->get() ?: self::platformDir());
 		$this->file = $dir !== null ? "$dir/mcp.json" : null;
+	}
+
+	/** Where the data directory is when nobody told us — mirroring Go's os.UserConfigDir().
+	*
+	* Every other reader of the data dir runs inside the server, where the launcher passes
+	* ADMINER_DESKTOP_DATA in, and guessing there would be wrong: an unset variable means
+	* `make serve`, which is meant to persist nothing. The bridge is the exception. An agent
+	* spawns it as a bare child process with no environment of ours, so without this it finds no
+	* handshake and reports the app as not running while it is open in front of you.
+	*
+	* Kept here rather than on Env for that reason — it is right for this one caller and wrong
+	* for the others. It must stay in step with launcher/prefs.go dataDir().
+	*/
+	private static function platformDir(): ?string {
+		$name = 'Adminer Desktop';
+		if (PHP_OS_FAMILY === 'Windows') {
+			$base = getenv('AppData');
+		} elseif (PHP_OS_FAMILY === 'Darwin') {
+			$home = getenv('HOME');
+			$base = $home !== false ? "$home/Library/Application Support" : false;
+		} else {
+			$base = getenv('XDG_CONFIG_HOME');
+			if ($base === false || $base === '') {
+				$home = getenv('HOME');
+				$base = $home !== false ? "$home/.config" : false;
+			}
+		}
+		return is_string($base) && $base !== '' ? "$base/$name" : null;
 	}
 
 	/** @return string|null the path, or null when the app has no durable home (`make serve`) */
