@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip notarize dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -393,6 +393,19 @@ check-app: build
 APP = build/Adminer Desktop.app
 ICON = build/AdminerDesktop.icns
 
+# Unset means ad-hoc, which is the signature the go linker already puts on the binary — but
+# applied to the *bundle*, which is the part that was missing and the whole of the bug: an
+# executable whose signature says it seals resources, inside a bundle with no _CodeSignature
+# to seal them, is not an unsigned app to Gatekeeper, it is a damaged one, and a damaged one
+# is killed rather than offered as right-click > Open. Ad-hoc names no developer and still
+# warns, so CI passes the real Developer ID in.
+#
+# The same flags either way: ad-hoc silently ignores --timestamp (no network, no timestamp in
+# the signature) and does honour --options runtime, so there is nothing for a conditional to
+# buy. Both are notarization requirements on the identity that has them.
+SIGN_ID = $(if $(MACOS_SIGN_ID),$(MACOS_SIGN_ID),-)
+CODESIGN = codesign --force --timestamp --options runtime --sign "$(SIGN_ID)"
+
 # sips and iconutil ship with macOS, so the icon needs no image tooling installed.
 # ponytail: the source is adminer's own 57px pictogram, the largest that exists —
 # so the big sizes are upscaled and soft. Swap in a vector if upstream ever has one.
@@ -427,6 +440,13 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
 	cp $(ICON) "$(APP)"/Contents/Resources/
+	# Last, because a signature seals the tree as it stands and composer above is the final
+	# thing to write into it. Nested code first and no --deep (which Apple deprecated): the
+	# outer seal hashes frankenphp's signature, so signing the bundle first would seal a
+	# hash that the next line invalidates.
+	$(CODESIGN) "$(APP)"/Contents/MacOS/frankenphp
+	$(CODESIGN) "$(APP)"
+	codesign --verify --strict --verbose=2 "$(APP)"
 	@echo "built "$(APP)" -- $$(du -sh "$(APP)" | cut -f1)"
 
 # One name shape for every artifact: adminer-desktop_<version>_<os>-<arch>.<ext>. A
@@ -448,12 +468,35 @@ PKG_ARCH    = $(if $(filter aarch64 arm64,$(UNAME_M)),arm64,amd64)
 PKG_OS      = $(if $(filter Darwin,$(UNAME_S)),macos,$(if $(filter Linux,$(UNAME_S)),linux,windows))
 PKG         = adminer-desktop_$(PKG_VERSION)_$(PKG_OS)-$(PKG_ARCH)
 
-# Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
 # The bundle inside keeps its display name, "Adminer Desktop.app"; only the archive is
 # renamed, so the download is greppable and the thing in /Applications still reads right.
+#
+# ditto rather than zip(1): it is the archiver notarytool documents, and it preserves the
+# symlinks and extended attributes the signature was computed over. Named once because
+# notarize has to build the same archive a second time, after stapling.
+ZIP_APP = rm -f build/$(PKG).zip && cd build && ditto -c -k --keepParent "Adminer Desktop.app" $(PKG).zip
+
 zip: bundle  ## Zip the macOS .app bundle
-	rm -f build/$(PKG).zip && cd build && zip -qry $(PKG).zip "Adminer Desktop.app"
+	$(ZIP_APP)
 	@echo "built build/$(PKG).zip -- $$(du -sh "build/$(PKG).zip" | cut -f1)"
+
+# What turns "unidentified developer, right-click > Open" into a plain double-click. Needs a
+# Developer ID signature to notarize, so MACOS_SIGN_ID has to have been set for the bundle
+# too — an ad-hoc one is rejected.
+#
+# Stapling is the half that is easy to skip and expensive to have skipped: without the
+# ticket written into the bundle, Gatekeeper asks Apple at first launch, and a machine that
+# is offline or behind a filter refuses the app. notarytool takes an archive but stapler
+# writes into the .app, hence the second $(ZIP_APP).
+notarize: zip  ## Notarize the macOS zip with Apple and staple the ticket (needs NOTARY_*)
+	xcrun notarytool submit build/$(PKG).zip --wait \
+		--key "$(NOTARY_KEY)" --key-id "$(NOTARY_KEY_ID)" --issuer "$(NOTARY_ISSUER)"
+	xcrun stapler staple "$(APP)"
+	$(ZIP_APP)
+	# The end state rather than the build log: source=Notarized Developer ID is the only
+	# output that means a downloaded copy opens.
+	spctl -a -vvv "$(APP)"
+	@echo "notarized build/$(PKG).zip -- $$(du -sh "build/$(PKG).zip" | cut -f1)"
 
 # Linux and Windows get a plain directory rather than a bundle or an installer: the
 # layout resolve() looks for is "runtime and app/ next to the binary", which a folder
