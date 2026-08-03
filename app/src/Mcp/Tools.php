@@ -33,11 +33,11 @@ class Tools {
 	}
 
 	/** Rows returned before we stop and say there were more. */
-	private const MAX_ROWS = 200;
+	private const int MAX_ROWS = 200;
 
 	/** Cells are truncated at this many characters — a BLOB column should not be able to push
 	* the useful columns out of the answer. */
-	private const MAX_CELL = 2000;
+	private const int MAX_CELL = 2000;
 
 	/** The tables in the current database, with their type.
 	* @return array<string,string> name => "table"|"view"|…

@@ -166,7 +166,7 @@ class Theme {
 		echo " scale-" . (in_array($scaling, self::SCALINGS, true) ? $scaling : "100");
 	}
 
-	/** @var list<string> */ private const APPEARANCES = ["auto", "light", "dark"];
-	/** @var list<string> */ private const DENSITIES = ["compact", "cozy", "comfortable"];
-	/** @var list<string> */ private const SCALINGS = ["100", "125", "150", "175", "200"];
+	private const array APPEARANCES = ["auto", "light", "dark"];
+	private const array DENSITIES = ["compact", "cozy", "comfortable"];
+	private const array SCALINGS = ["100", "125", "150", "175", "200"];
 }

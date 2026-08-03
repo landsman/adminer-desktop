@@ -27,7 +27,7 @@ class Server {
 	* Naming a version we do not implement would be the actual bug: `tools/list` and
 	* `tools/call` are all we serve, and they are unchanged across every handshake revision.
 	*/
-	private const PROTOCOL = '2025-11-25';
+	private const string PROTOCOL = '2025-11-25';
 
 	private Tools $tools;
 
