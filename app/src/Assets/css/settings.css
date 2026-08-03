@@ -173,6 +173,26 @@ body:has(#desktop-settings[open]) {
 	font-family: var(--ad-mono, ui-monospace, monospace);
 }
 
+/* Off means there is nothing to register, so the whole lower half of the panel goes away rather
+   than sitting there as instructions for an access that cannot happen. Keyed off the checkbox
+   through :has(), like the tabs above: the panel then follows the box as it is ticked, which the
+   saved value cannot do — it is one Save behind. */
+#desktop-panel-mcp:not(:has(#desktop-mcp:checked)) .ad-mcp-when-on {
+	display: none;
+}
+
+/* Adminer's default.css sets `fieldset { display: inline }`, which shrink-wraps the box to its
+   widest line. That suits its one-control filter boxes and not this one: the content is a
+   command long enough to wrap, so the fieldset settled at about a third of the dialog with the
+   text stacked inside it while the space beside it sat empty. Block, and take the width. */
+.ad-mcp-register {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	/* adminer's `margin: .8em .5em 0 0` would keep it half an em short of the right edge. */
+	margin-right: 0;
+}
+
 /* One block per agent in the register fieldset: the name, then its command. */
 .ad-mcp-agent + .ad-mcp-agent {
 	margin-top: var(--ad-gap-lg);

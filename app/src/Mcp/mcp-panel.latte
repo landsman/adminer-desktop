@@ -24,6 +24,12 @@
 
 <p class="ad-mcp-note">{$desktop->t('mcp.description')}</p>
 
+{* Everything below the switch is about an access that is currently switched off, so with the
+	box unticked it is a page of instructions for something that cannot happen. Hidden by CSS
+	keyed off the checkbox itself (.ad-mcp-when-on), not by $enabled: $enabled is what was saved,
+	and the panel has to follow the box as it is ticked, before anyone presses Save. *}
+<div class="ad-mcp-when-on">
+
 {* Its own decision, and its own line: reading your database and rewriting it are not the same
 	permission, so ticking the first must not quietly grant the second. *}
 <p>
@@ -33,7 +39,11 @@
 
 <p n:class="'ad-mcp-note', $write ? 'ad-mcp-warn'">{$desktop->t($write ? 'mcp.write_on' : 'mcp.write_off')}</p>
 
-<p class="ad-mcp-status">
+{* Only once it is saved on. The status is computed from the stored setting, so between ticking
+	the box and pressing Save it would still read "Off. Nothing can reach the database." directly
+	under a ticked switch — the one place in this panel where the saved value and the box on
+	screen visibly disagree. *}
+<p n:if="$enabled" class="ad-mcp-status">
 	{* Both classes go through n:class — Latte rejects a plain class attribute beside it. *}
 	<span n:class="'ad-mcp-dot', $status['ready'] ? 'ad-mcp-on'">&#9679;</span>
 	{$status['text']}
@@ -49,7 +59,10 @@
 
 <p n:if="$lastUsed !== null" class="ad-mcp-note">{$lastUsed}</p>
 
-<fieldset>
+{* The class is not decoration: adminer's default.css renders every fieldset `display: inline`,
+	which shrink-wraps it. Right for its filter boxes, wrong for a box holding commands that wrap
+	— see .ad-mcp-register. *}
+<fieldset class="ad-mcp-register">
 	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
 	{* One per agent: the command is the same but each CLI registers it under its own name, and
 		guessing which one the reader uses is how the panel ended up looking Claude-specific. *}
@@ -67,3 +80,5 @@
 </fieldset>
 
 <p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>
+
+</div>
