@@ -12,7 +12,7 @@ use Desktop\Env;
 * stdio has no browser and no cookie jar, so it cannot be logged in on its own account.
 *
 * Both problems are one file. While a connected request is being served, the plugin drops the
-* base URL and this session's cookies here; mcp-stdio.php reads them back and replays them, so
+* base URL and this session's cookies here; mcp.php reads them back and replays them, so
 * the agent queries exactly the database this window is logged into — for as long as that stays
 * true, and no longer.
 *
@@ -64,7 +64,7 @@ class Handshake {
 		}
 	}
 
-	/** What mcp-stdio.php reads back.
+	/** What mcp.php reads back.
 	* @return array{url:string,cookies:array<string,string>}|null null when absent or unusable
 	*/
 	function read(): ?array {

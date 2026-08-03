@@ -10,7 +10,7 @@ namespace Desktop\Mcp;
 * library here because there is nothing to a library: the transport is the HTTP request we are
 * already inside, and the framing is json_decode.
 *
-* The agent reaches this over stdio through mcp-stdio.php, which replays the window's cookies —
+* The agent reaches this over stdio through mcp.php, which replays the window's cookies —
 * so by the time dispatch() runs, Adminer has connected as the logged-in user and Tools can
 * simply ask. If the cookies were missing or stale, this code never runs at all: Adminer answers
 * the login page instead, which is exactly the failure we want.

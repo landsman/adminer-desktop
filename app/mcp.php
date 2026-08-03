@@ -14,16 +14,16 @@ declare(strict_types=1);
 * Installed on macOS (mind the space in the bundle name):
 *
 *     claude mcp add adminer -- "/Applications/Adminer Desktop.app/Contents/MacOS/frankenphp" \
-*         php-cli "/Applications/Adminer Desktop.app/Contents/Resources/app/mcp-stdio.php"
+*         php-cli "/Applications/Adminer Desktop.app/Contents/Resources/app/mcp.php"
 *
 * Installed from the .deb:
 *
 *     claude mcp add adminer -- /usr/lib/adminer-desktop/frankenphp \
-*         php-cli /usr/lib/adminer-desktop/app/mcp-stdio.php
+*         php-cli /usr/lib/adminer-desktop/app/mcp.php
 *
 * From a checkout, with absolute paths — the agent does not run this from the repo root:
 *
-*     claude mcp add adminer -- "$PWD/bin/frankenphp" php-cli "$PWD/app/mcp-stdio.php"
+*     claude mcp add adminer -- "$PWD/bin/frankenphp" php-cli "$PWD/app/mcp.php"
 *
 * Nothing is answered until the feature is switched on in the app's settings, and only ever
 * against the database the window is currently logged into.

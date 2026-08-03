@@ -5,7 +5,7 @@ declare(strict_types=1);
  * logged into.
  *
  * There is no browser here — the thing under test is an HTTP session being borrowed by a second
- * process, so the check logs in with curl and then drives app/mcp-stdio.php exactly as an agent
+ * process, so the check logs in with curl and then drives app/mcp.php exactly as an agent
  * would, over its stdin and stdout.
  *
  * The assertion that earns its keep is the last one. execute_query runs inside a transaction
@@ -159,7 +159,7 @@ try {
 
     // 4. The shim: the same call, but through stdin/stdout as an agent would run it.
     $shim = new Process(
-        [$fix['root'] . '/bin/frankenphp', 'php-cli', $fix['root'] . '/app/mcp-stdio.php'],
+        [$fix['root'] . '/bin/frankenphp', 'php-cli', $fix['root'] . '/app/mcp.php'],
         null,
         ['ADMINER_DESKTOP_DATA' => $data],
     );

@@ -12,7 +12,7 @@ declare(strict_types=1);
  * It lives here because tests/e2e is where run.php's glob looks, and one file is not worth a
  * second harness.
  *
- * Run standalone: ./bin/frankenphp php-cli tests/e2e/mcp-stdio.test.php
+ * Run standalone: ./bin/frankenphp php-cli tests/e2e/mcp-bridge.test.php
  */
 
 require dirname(__DIR__, 2) . '/app/vendor/autoload.php';
@@ -21,7 +21,7 @@ use Desktop\Mcp\Handshake;
 use Desktop\Mcp\Stdio;
 
 $failures = [];
-$dir = sys_get_temp_dir() . '/adminer-mcp-stdio-' . getmypid();
+$dir = sys_get_temp_dir() . '/adminer-mcp-bridge-' . getmypid();
 @mkdir($dir, 0700, true);
 $handshake = new Handshake($dir);
 
@@ -106,8 +106,8 @@ array_map('unlink', glob("$dir/*") ?: []);
 
 if ($failures !== []) {
     echo implode("\n", $failures), "\n";
-    echo 'mcp-stdio: ' . count($failures) . " failure(s)\n";
+    echo 'mcp-bridge: ' . count($failures) . " failure(s)\n";
     exit(1);
 }
-echo "mcp-stdio ok\n";
+echo "mcp-bridge ok\n";
 exit(0);
