@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\I18n\Strings;
 use Desktop\SettingKey;
 use Desktop\UserSettings;
 
@@ -156,7 +157,7 @@ class Endpoint {
 			// falling through would crash on a null driver instead.
 			return (string) json_encode(["jsonrpc" => "2.0", "id" => null, "error" => [
 				"code" => -32000,
-				"message" => "Adminer Desktop is not connected to a database. Log in again in the app.",
+				"message" => Strings::t('mcp.agent_not_connected'),
 			]]);
 		}
 		return $this->server->dispatch($input);

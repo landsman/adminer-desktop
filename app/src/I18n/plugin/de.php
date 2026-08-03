@@ -66,4 +66,21 @@ return [
 	'mcp.write_enable' => 'Auch Daten ändern lassen (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Schreibvorgänge werden bestätigt. Der Agent wählt seine Anweisungen selbst, und ein falsches DELETE ist von hier aus nicht wiederherstellbar.',
 	'mcp.write_off' => 'Nur Lesen. Anweisungen, die schreiben würden, werden ausgeführt und dann zurückgerollt, haben also keine Wirkung.',
+
+	'mcp.register_manual' => 'Jeder andere Agent funktioniert ebenfalls: Tragen Sie denselben Befehl als stdio-MCP-Server in seine eigene Konfigurationsdatei ein.',
+
+	// Was der Agent erfährt, nicht was das Panel zeigt (Mcp\Stdio, Server, Tools, Endpoint).
+	// Ein Mensch liest es über den Agenten, deshalb übersetzt; die Namen der Werkzeuge und
+	// ihre Beschreibungen nicht — siehe Desktop\I18n\Strings.
+	'mcp.agent_not_running' => 'Adminer Desktop läuft nicht, oder der Datenbankzugriff für Agenten ist in den Einstellungen abgeschaltet. Öffnen Sie die App, melden Sie sich an und schalten Sie ihn unter Einstellungen > KI-Zugriff ein — verbinden Sie diesen Server danach neu, denn die Werkzeugliste wird nur beim Verbindungsaufbau gelesen.',
+	'mcp.agent_window_closed' => 'Adminer Desktop antwortet nicht mehr — das Fenster wurde vermutlich geschlossen. Öffnen Sie es erneut und verbinden Sie diesen Server neu; die Registrierung selbst bleibt bestehen.',
+	'mcp.agent_session_expired' => 'Die Sitzung von Adminer Desktop ist abgelaufen. Melden Sie sich in der App erneut an der Datenbank an und verbinden Sie diesen Server dann neu.',
+	'mcp.agent_not_connected' => 'Adminer Desktop ist mit keiner Datenbank verbunden. Melden Sie sich in der App erneut an.',
+	'mcp.agent_note_committed' => 'Schreibzugriffe sind erlaubt: Was diese Anweisung geändert hat, wurde festgeschrieben.',
+	'mcp.agent_note_rolled_back' => 'Dies lief in einer Transaktion, die zurückgerollt wurde. Es wurde nichts geschrieben. Eine von RETURNING gelieferte id stammt aus einer Sequenz und bezeichnet keine gespeicherte Zeile.',
+	'mcp.agent_no_result' => 'die Anweisung lieferte keine Ergebnismenge',
+	'mcp.agent_parse_error' => 'Parse-Fehler',
+	'mcp.agent_unknown_method' => 'unbekannte Methode',
+	'mcp.agent_unknown_tool' => 'unbekanntes Werkzeug',
+	'mcp.agent_missing_argument' => 'erforderliches Argument fehlt',
 ];

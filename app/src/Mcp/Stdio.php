@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\I18n\Strings;
+
 /** The bridge an agent talks to: newline-delimited JSON-RPC on stdio, the running window on HTTP.
 *
 * MCP's stdio transport expects to *start* its server as a child process. This app is already
@@ -60,13 +62,13 @@ class Stdio {
 
 		$config = $this->handshake->read();
 		if ($config === null) {
-			return $this->unavailable($id, $method, 'Adminer Desktop is not running, or database access for agents is switched off in its settings. Open the app, log in, and switch it on under Settings > AI access — then reconnect this server, because the tool list is read once when the connection opens.');
+			return $this->unavailable($id, $method, Strings::t('mcp.agent_not_running'));
 		}
 		$url = $config['url'] . (str_contains($config['url'], '?') ? '&' : '?') . 'mcp=1';
 		$body = ($this->send)($url, $line, $config['cookies']);
 
 		if ($body === false) {
-			return $this->unavailable($id, $method, 'Adminer Desktop stopped answering — the window was probably closed. Open it again and reconnect this server; the registration itself keeps working.');
+			return $this->unavailable($id, $method, Strings::t('mcp.agent_window_closed'));
 		}
 		if ($body === '') {
 			return null; // the app answered 204: a notification, and nothing to forward
@@ -74,7 +76,7 @@ class Stdio {
 		// Adminer answers HTML when the session behind the handshake has expired. Say that,
 		// rather than handing the agent a page of markup to guess at.
 		if ($body[0] !== '{' && $body[0] !== '[') {
-			return $this->unavailable($id, $method, 'The Adminer Desktop session has expired. Log in to the database again in the app, then reconnect this server.');
+			return $this->unavailable($id, $method, Strings::t('mcp.agent_session_expired'));
 		}
 		return $body;
 	}

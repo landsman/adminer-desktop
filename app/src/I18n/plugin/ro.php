@@ -66,4 +66,21 @@ return [
 	'mcp.write_enable' => 'Permite-i și să modifice datele (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Scrierile sunt confirmate. Agentul își alege singur instrucțiunile, iar un DELETE greșit nu poate fi recuperat de aici.',
 	'mcp.write_off' => 'Doar citire. Instrucțiunile care ar scrie sunt rulate și apoi anulate, deci nu au niciun efect.',
+
+	'mcp.register_manual' => 'Funcționează și orice alt agent: dați-i aceeași comandă drept server MCP pe stdio, în propriul lui fișier de configurare.',
+
+	// Ce află agentul, nu ce arată panoul (Mcp\Stdio, Server, Tools, Endpoint). Este citit de
+	// un om prin intermediul agentului, deci se traduce; numele uneltelor și descrierile lor
+	// nu — vezi Desktop\I18n\Strings.
+	'mcp.agent_not_running' => 'Adminer Desktop nu rulează sau accesul agenților la bază este dezactivat în setările sale. Deschideți aplicația, autentificați-vă și activați-l din Setări > Acces AI — apoi reconectați acest server, fiindcă lista de unelte este citită o singură dată, la deschiderea conexiunii.',
+	'mcp.agent_window_closed' => 'Adminer Desktop a încetat să răspundă — fereastra a fost probabil închisă. Deschideți-o din nou și reconectați acest server; înregistrarea în sine rămâne valabilă.',
+	'mcp.agent_session_expired' => 'Sesiunea Adminer Desktop a expirat. Autentificați-vă din nou la baza de date în aplicație, apoi reconectați acest server.',
+	'mcp.agent_not_connected' => 'Adminer Desktop nu este conectat la nicio bază de date. Autentificați-vă din nou în aplicație.',
+	'mcp.agent_note_committed' => 'Scrierile sunt permise: tot ce a modificat această instrucțiune a fost confirmat.',
+	'mcp.agent_note_rolled_back' => 'Aceasta a rulat într-o tranzacție anulată. Nu s-a scris nimic. Orice id returnat de RETURNING provine dintr-o secvență și nu identifică un rând stocat.',
+	'mcp.agent_no_result' => 'instrucțiunea nu a returnat niciun set de rezultate',
+	'mcp.agent_parse_error' => 'eroare de analiză',
+	'mcp.agent_unknown_method' => 'metodă necunoscută',
+	'mcp.agent_unknown_tool' => 'unealtă necunoscută',
+	'mcp.agent_missing_argument' => 'lipsește un argument obligatoriu',
 ];

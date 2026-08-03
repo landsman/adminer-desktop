@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\I18n\Strings;
+
 /** The MCP endpoint: JSON-RPC in, JSON-RPC out, over the request Adminer already authenticated.
 *
 * Model Context Protocol is JSON-RPC 2.0 with three methods that matter — `initialize` to agree
@@ -44,7 +46,7 @@ class Server {
 	function dispatch(string $body): ?string {
 		$request = json_decode($body, true);
 		if (!is_array($request)) {
-			return $this->error(null, -32700, 'parse error');
+			return $this->error(null, -32700, Strings::t('mcp.agent_parse_error'));
 		}
 		$id = $request['id'] ?? null;
 		$method = is_string($request['method'] ?? null) ? $request['method'] : '';
@@ -66,7 +68,7 @@ class Server {
 				'tools/list' => $this->result($id, ['tools' => $this->catalogue()]),
 				'tools/call' => $this->result($id, $this->call($params)),
 				'ping' => $this->result($id, new \stdClass()),
-				default => $this->error($id, -32601, "unknown method: $method"),
+				default => $this->error($id, -32601, Strings::t('mcp.agent_unknown_method') . ": $method"),
 			};
 		} catch (McpError $e) {
 			// The agent's problem, not ours: hand it back as a tool result it can react to.
@@ -162,7 +164,7 @@ class Server {
 				$this->required(is_string($args['sql'] ?? null) ? $args['sql'] : '', 'sql'),
 				$limit ?? 200,
 			),
-			default => throw new McpError("unknown tool: $name"),
+			default => throw new McpError(Strings::t('mcp.agent_unknown_tool') . ": $name"),
 		};
 
 		// JSON in a text block: every MCP client renders it, and the model reads structured data
@@ -175,7 +177,7 @@ class Server {
 
 	private function required(string $value, string $name): string {
 		if ($value === '') {
-			throw new McpError("missing required argument: $name");
+			throw new McpError(Strings::t('mcp.agent_missing_argument') . ": $name");
 		}
 		return $value;
 	}

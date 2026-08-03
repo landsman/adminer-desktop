@@ -73,4 +73,21 @@ return [
 	'mcp.write_enable' => 'Also let it change data (INSERT, UPDATE, DELETE)',
 	'mcp.write_on' => 'Writes are committed. The agent decides its own statements, and a wrong DELETE is not recoverable from here.',
 	'mcp.write_off' => 'Read-only. Statements that would write are run and then rolled back, so they have no effect.',
+
+	'mcp.register_manual' => 'Any other agent works too: give it the same command as a stdio MCP server in its own configuration file.',
+
+	// What an agent is told, rather than what the panel shows (Mcp\Stdio, Server, Tools,
+	// Endpoint). Read by a person through the agent, so translated; the tool names and their
+	// descriptions are not — see Desktop\I18n\Strings.
+	'mcp.agent_not_running' => 'Adminer Desktop is not running, or database access for agents is switched off in its settings. Open the app, log in, and switch it on under Settings > AI access — then reconnect this server, because the tool list is read once when the connection opens.',
+	'mcp.agent_window_closed' => 'Adminer Desktop stopped answering — the window was probably closed. Open it again and reconnect this server; the registration itself keeps working.',
+	'mcp.agent_session_expired' => 'The Adminer Desktop session has expired. Log in to the database again in the app, then reconnect this server.',
+	'mcp.agent_not_connected' => 'Adminer Desktop is not connected to a database. Log in again in the app.',
+	'mcp.agent_note_committed' => 'Writes are enabled: anything this statement changed has been committed.',
+	'mcp.agent_note_rolled_back' => 'This ran inside a transaction that was rolled back. Nothing was written. Any id returned by RETURNING came from a sequence and does not identify a stored row.',
+	'mcp.agent_no_result' => 'the statement returned no result set',
+	'mcp.agent_parse_error' => 'parse error',
+	'mcp.agent_unknown_method' => 'unknown method',
+	'mcp.agent_unknown_tool' => 'unknown tool',
+	'mcp.agent_missing_argument' => 'missing required argument',
 ];

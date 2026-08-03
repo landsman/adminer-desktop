@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\I18n\Strings;
+
 /** What an agent may actually do to the database, and the limits it does it under.
 *
 * Every method here runs inside a request Adminer has already authenticated and connected, so
@@ -91,12 +93,8 @@ class Tools {
 	function query(string $sql, int $limit = self::MAX_ROWS): array {
 		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)));
 		return $result + ($this->write
-			? ['rolled_back' => false, 'note' => 'Writes are enabled: anything this statement changed has been committed.']
-			: [
-				'rolled_back' => true,
-				'note' => 'This ran inside a transaction that was rolled back. Nothing was written. '
-					. 'Any id returned by RETURNING came from a sequence and does not identify a stored row.',
-			]);
+			? ['rolled_back' => false, 'note' => Strings::t('mcp.agent_note_committed')]
+			: ['rolled_back' => true, 'note' => Strings::t('mcp.agent_note_rolled_back')]);
 	}
 
 	/** What this window is connected to — the answer to "which database am I even looking at".
@@ -125,7 +123,7 @@ class Tools {
 				// No result set: either it failed, or it was a statement that returns nothing.
 				// Both are worth saying out loud rather than answering with zero rows.
 				$error = (string) ($connection->error ?? '');
-				throw new McpError($error !== '' ? $error : 'the statement returned no result set');
+				throw new McpError($error !== '' ? $error : Strings::t('mcp.agent_no_result'));
 			}
 			$rows = [];
 			$truncated = false;
