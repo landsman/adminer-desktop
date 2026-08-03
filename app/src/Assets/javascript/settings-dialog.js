@@ -25,8 +25,50 @@ if (reset) {
 	};
 }
 
+// Survive a reload with the dialog as it was — open, on the tab you were reading.
+//
+// `-dev` reloads the window on every change under app/ (launcher/main.go, watchAndReload), so
+// editing the CSS behind an open settings dialog closed it every single time, and the way back
+// was gear, tab, scroll. Cmd+R does the same thing deliberately.
+//
+// Only on a reload, which is the point: adminer is a multi-page app, so restoring on any load
+// would reopen the dialog on every link you click. sessionStorage rather than the settings file
+// — this is where you were a second ago, not a preference, and it should not outlive the window.
+const OPEN_KEY = "ad-settings-open";
+const reloaded =
+	performance.getEntriesByType("navigation")[0]?.type === "reload";
+
 if (gear && dialog && cancel) {
-	gear.onclick = () => dialog.showModal();
+	const tabs = document.querySelector("#desktop-tabs");
+	const remember = () => {
+		const tab = tabs?.querySelector("input:checked");
+		sessionStorage.setItem(OPEN_KEY, tab ? tab.id : "");
+	};
+
+	gear.onclick = () => {
+		dialog.showModal();
+		remember();
+	};
+	// Every way out at once: escape, the Cancel button, and submitting the form all fire close.
+	dialog.addEventListener("close", () => sessionStorage.removeItem(OPEN_KEY));
+	tabs?.addEventListener("change", () => {
+		if (dialog.open) {
+			remember();
+		}
+	});
+
+	if (reloaded) {
+		const tab = sessionStorage.getItem(OPEN_KEY);
+		if (tab !== null) {
+			// A tab id that no longer exists (a panel removed between reloads) leaves the
+			// default tab checked rather than none of them.
+			const input = tab && document.getElementById(tab);
+			if (input) {
+				input.checked = true;
+			}
+			dialog.showModal();
+		}
+	}
 
 	cancel.onclick = () => {
 		// Same rule the stylesheet highlights rows by: defaultChecked is the attribute as
