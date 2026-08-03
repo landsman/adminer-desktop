@@ -16,7 +16,7 @@ return [
 
 	// Settings dialog shell (settings-dialog.latte, Dialog.php).
 	'settings.title' => 'Settings',
-	'settings.tab_theme' => 'Theme',
+	'settings.tab_theme' => 'Appearance',
 	'settings.tab_plugins' => 'Plugins',
 	'settings.save' => 'Save',
 	'settings.close' => 'Cancel',
