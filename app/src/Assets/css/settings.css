@@ -89,6 +89,22 @@ body:has(#desktop-settings[open]) {
 	overflow: hidden;
 }
 
+/* `#menu p, #logins, #tables { padding: .8em 1em; margin: 0; border-bottom: 1px solid }` styles
+   the sidebar's paragraphs as menu rows, and the settings dialog is printed inside #menu — so
+   every paragraph in the dialog was drawing a separator line meant for the sidebar, and carrying
+   its padding. Adminer's default.css says it and our own theme restates it in --ad-border.
+
+   `dialog#` rather than plain `#desktop-settings p`, which was the first attempt and lost: it ties
+   with `#menu p` on specificity, and the design's stylesheet loads last so the tie went to the
+   sidebar. The extra type selector settles it by specificity instead of by load order, which also
+   covers the downloaded designs — several of them style `#menu p` too, and they all load after
+   this file. */
+dialog#desktop-settings p {
+	margin: 0 0 var(--ad-gap);
+	padding: 0;
+	border-bottom: 0;
+}
+
 /* --- Tabs --------------------------------------------------------------------- */
 
 /* No JS: hidden radios drive the panels through :has(). A checked radio is also the
@@ -150,7 +166,6 @@ body:has(#desktop-settings[open]) {
 .ad-mcp-note {
 	color: var(--ad-fg-quiet);
 	font-size: 0.9em;
-	max-width: 60ch;
 }
 
 /* The status dot: quiet until the feature is actually reachable, so "on" and "working" are
