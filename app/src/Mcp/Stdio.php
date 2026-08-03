@@ -121,7 +121,16 @@ class Stdio {
 				'capabilities' => ['tools' => new \stdClass()],
 				'serverInfo' => ['name' => 'adminer-desktop', 'version' => 'offline'],
 			]),
-			'tools/list' => $this->result($id, ['tools' => []]),
+			// One tool, whose name and description are the whole message. An empty list was the
+			// first attempt and it is a dead end: a client shows "connected, no tools" and there
+			// is then nothing to call, so the explanation can never be reached. This puts the
+			// reason in the tool list itself, where it is visible without calling anything, and
+			// still answers with it if the model does call.
+			'tools/list' => $this->result($id, ['tools' => [[
+				'name' => 'adminer_desktop_unavailable',
+				'description' => $message,
+				'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()],
+			]]]),
 			'ping' => $this->result($id, new \stdClass()),
 			// tools/call and anything else: an error the model can read and repeat to the user.
 			default => $this->result($id, [

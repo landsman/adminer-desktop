@@ -62,8 +62,12 @@ $init = json_decode((string) $stdio->exchange((string) json_encode(
     ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize'],
 )), true);
 $is('initialize succeeds while unavailable', $init['result']['protocolVersion'] ?? null, '2025-11-25');
+// Not an empty list: "connected, no tools" leaves nothing to call, so the reason can never be
+// reached. The one tool advertised is the reason, readable in the client's tool list.
 $list = json_decode((string) $stdio->exchange($request), true);
-$is('tools/list answers empty, not an error', $list['result']['tools'] ?? null, []);
+$is('advertises exactly one tool while unavailable', count($list['result']['tools'] ?? []), 1);
+$is('named for the state', $list['result']['tools'][0]['name'] ?? null, 'adminer_desktop_unavailable');
+$contains('described with what to do', $list['result']['tools'][0]['description'] ?? null, 'AI access');
 
 // The explanation belongs where a client renders it: a tool result, not a transport error.
 $call = json_decode((string) $stdio->exchange((string) json_encode(
