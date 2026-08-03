@@ -16,7 +16,7 @@ use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
 use Desktop\Import;
-use Desktop\Mcp\Endpoint;
+use Desktop\Mcp;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
 use Desktop\Settings\Plugins\PluginList;
@@ -61,7 +61,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @return null always: this hook has no opinion for other plugins, and the MCP path exits
 	*/
 	function headers(): ?string {
-		return (new Endpoint($this->userSettings))->serve();
+		return (new Mcp\Endpoint($this->userSettings))->serve();
 	}
 
 	/** The catalogue, so adminer-plugins.php can hand adminer the enabled plugins.

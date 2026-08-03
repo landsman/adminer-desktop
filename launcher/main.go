@@ -51,6 +51,21 @@ func resolve() (php string, root string, err error) {
 	return "", "", fmt.Errorf("could not find frankenphp and app/ (run `make fetch`)")
 }
 
+// serveMCP runs the stdio bridge an agent talks to, and nothing else -- no window, no server.
+//
+// It exists so registering the app with an agent is one path instead of two: we already know
+// where frankenphp and app/ are, and the agent should not have to. It also passes the data
+// directory in, which is where the bridge finds the handshake naming the running window.
+func serveMCP(php, root string) error {
+	cmd := exec.Command(php, "php-cli", filepath.Join(root, "mcp.php"))
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	cmd.Env = os.Environ()
+	if dir, err := dataDir(); err == nil {
+		cmd.Env = append(cmd.Env, "ADMINER_DESKTOP_DATA="+dir)
+	}
+	return cmd.Run()
+}
+
 // iconPath finds the window icon: beside the binary in the shipped layout (dist and the
 // .deb put logo.png next to the executable), or assets/ when running from the dev tree.
 // Empty when neither exists, which just leaves the platform default.
@@ -175,11 +190,20 @@ func main() {
 	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
 	headless := flag.Bool("headless", false, "start the server, verify it serves, exit (used by `make check-app`)")
 	dev := flag.Bool("dev", false, "reload the window whenever a file under app/ changes")
+	mcp := flag.Bool("mcp", false, "serve MCP over stdio for an agent, and exit (no window)")
 	flag.Parse()
 
 	php, root, err := resolve()
 	if err != nil {
 		log.Fatal(err)
+	}
+	// Before the banner below, and before any window: this mode owns stdout, and a stray line
+	// on it corrupts the agent's JSON-RPC stream.
+	if *mcp {
+		if err := serveMCP(php, root); err != nil {
+			os.Exit(1)
+		}
+		return
 	}
 	port, err := freePort()
 	if err != nil {

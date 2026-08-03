@@ -7,21 +7,17 @@ declare(strict_types=1);
 * autoloader on itself and hands straight over to Desktop\Mcp\Stdio. The work lives there so it
 * can be tested without a process to spawn; what stays here is how to register it.
 *
+* Nothing spawns this directly. The launcher's -mcp flag does, because it already knows where
+* frankenphp and app/ are and the agent should not have to:
+*
+*     claude mcp add adminer -- adminer-desktop -mcp                      # .deb, on PATH
+*     claude mcp add adminer -- "/Applications/Adminer Desktop.app/Contents/MacOS/adminer-desktop" -mcp
+*
 * Register it once and it keeps working across restarts, because the thing that changes — the
 * port the launcher binds — is read fresh on every message rather than baked into the config.
-* Two arguments, because this is a PHP script with no shebang: the bundled interpreter, then us.
 *
-* Installed on macOS (mind the space in the bundle name):
-*
-*     claude mcp add adminer -- "/Applications/Adminer Desktop.app/Contents/MacOS/frankenphp" \
-*         php-cli "/Applications/Adminer Desktop.app/Contents/Resources/app/mcp.php"
-*
-* Installed from the .deb:
-*
-*     claude mcp add adminer -- /usr/lib/adminer-desktop/frankenphp \
-*         php-cli /usr/lib/adminer-desktop/app/mcp.php
-*
-* From a checkout, with absolute paths — the agent does not run this from the repo root:
+* From a checkout there is no installed binary to point at, so run this the long way, from the
+* repo root (resolve() looks for bin/ and app/ relative to it):
 *
 *     claude mcp add adminer -- "$PWD/bin/frankenphp" php-cli "$PWD/app/mcp.php"
 *
