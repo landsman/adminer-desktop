@@ -11,8 +11,8 @@
 # truth; the trees themselves are built by `mise run install`, not committed.
 /node_modules
 /app/vendor/
-# e2e artifacts: screenshots the browser check writes.
-/tests/e2e/screenshots/
+# What a failed step left behind: the picture and the HTML of the page it failed on.
+/tests/e2e/artifacts/
 /app/adminer.php
 /app/editor.php
 /app/src/Settings/Plugins/available
