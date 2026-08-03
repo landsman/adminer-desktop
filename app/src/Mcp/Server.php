@@ -16,9 +16,18 @@ namespace Desktop\Mcp;
 * the login page instead, which is exactly the failure we want.
 */
 class Server {
-	/** The MCP revision we speak. Clients send their own in `initialize`; every one in the wild
-	* accepts being answered with a version it did not ask for, and pinning ours is honest. */
-	private const PROTOCOL = '2024-11-05';
+	/** The newest MCP revision we implement.
+	*
+	* MCP versions are dates, and 2025-11-25 is the last of the `initialize`-handshake ones —
+	* which is the whole protocol as far as this server is concerned. From 2026-07-28 the
+	* version instead rides every request in `_meta`, alongside a mandatory `server/discover`
+	* RPC we do not answer; the spec keeps a documented backward-compatibility path to the
+	* handshake for exactly this case, so a newer client still negotiates down and works.
+	*
+	* Naming a version we do not implement would be the actual bug: `tools/list` and
+	* `tools/call` are all we serve, and they are unchanged across every handshake revision.
+	*/
+	private const PROTOCOL = '2025-11-25';
 
 	private Tools $tools;
 
@@ -50,7 +59,7 @@ class Server {
 		try {
 			return match ($method) {
 				'initialize' => $this->result($id, [
-					'protocolVersion' => self::PROTOCOL,
+					'protocolVersion' => $this->negotiate($params),
 					'capabilities' => ['tools' => new \stdClass()],
 					'serverInfo' => ['name' => 'adminer-desktop', 'version' => \Adminer\VERSION],
 				]),
@@ -68,6 +77,21 @@ class Server {
 		} catch (\Throwable $e) {
 			return $this->error($id, -32603, $e->getMessage());
 		}
+	}
+
+	/** Answer `initialize` with the newest revision both sides speak.
+	*
+	* Versions are ISO dates, so "older" is a string comparison. A client asking for something
+	* newer than us is told what we actually implement and negotiates down; one asking for
+	* something older is met where it is, because nothing we serve changed in between. Claiming
+	* the client's version back unconditionally would be the tempting bug — it reads as
+	* agreeable and promises whatever that revision added.
+	*
+	* @param array<string,mixed> $params
+	*/
+	private function negotiate(array $params): string {
+		$asked = is_string($params['protocolVersion'] ?? null) ? $params['protocolVersion'] : '';
+		return ($asked !== '' && $asked < self::PROTOCOL) ? $asked : self::PROTOCOL;
 	}
 
 	/** What `tools/list` advertises. Descriptions are written for the model, not for us — they

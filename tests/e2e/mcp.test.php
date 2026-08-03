@@ -113,8 +113,30 @@ try {
 
     // 2. initialize and tools/list, straight at the endpoint.
     [$init] = $rpc(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize', 'params' => []], $cookies, $mcpUrl);
-    if (($init['result']['protocolVersion'] ?? '') === '') {
+    $ours = $init['result']['protocolVersion'] ?? '';
+    if ($ours === '') {
         $failures[] = 'initialize returned no protocolVersion: ' . json_encode($init);
+    }
+
+    // Negotiation, both directions. A client newer than us must be told what we actually
+    // implement rather than agreeably echoed — otherwise we promise whatever that revision
+    // added. A client older than us gets met where it is.
+    [$newer] = $rpc([
+        'jsonrpc' => '2.0', 'id' => 11, 'method' => 'initialize',
+        'params' => ['protocolVersion' => '2099-01-01'],
+    ], $cookies, $mcpUrl);
+    if (($newer['result']['protocolVersion'] ?? '') !== $ours) {
+        $failures[] = 'a newer client was echoed its own version instead of ours: '
+            . json_encode($newer['result']['protocolVersion'] ?? null);
+    }
+
+    [$older] = $rpc([
+        'jsonrpc' => '2.0', 'id' => 12, 'method' => 'initialize',
+        'params' => ['protocolVersion' => '2024-11-05'],
+    ], $cookies, $mcpUrl);
+    if (($older['result']['protocolVersion'] ?? '') !== '2024-11-05') {
+        $failures[] = 'an older client was not met at its own version: '
+            . json_encode($older['result']['protocolVersion'] ?? null);
     }
 
     [$list] = $rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list', 'params' => []], $cookies, $mcpUrl);
