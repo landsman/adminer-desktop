@@ -12,7 +12,7 @@
 	bool $enabled,
 	bool $write,
 	string $os,
-	string $command,
+	array $commands,
 	array $status,
 	?string $lastUsed,
 	?string $target
@@ -51,13 +51,19 @@
 
 <fieldset>
 	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
-	{include '../Assets/copy-field.latte',
-		value: $command,
-		label: $desktop->t('mcp.register_on') . ' ' . $os,
-		copy: $desktop->t('mcp.copy'),
-		copied: $desktop->t('mcp.copied'),
-		rows: 3}
+	{* One per agent: the command is the same but each CLI registers it under its own name, and
+		guessing which one the reader uses is how the panel ended up looking Claude-specific. *}
+	<div n:foreach="$commands as $agent => $command" class="ad-mcp-agent">
+		<p class="ad-mcp-agent-name">{$agent}</p>
+		{include '../Assets/copy-field.latte',
+			value: $command,
+			label: $agent,
+			copy: $desktop->t('mcp.copy'),
+			copied: $desktop->t('mcp.copied'),
+			rows: 3}
+	</div>
 	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
+	<p class="ad-mcp-note">{$desktop->t('mcp.register_manual')}</p>
 </fieldset>
 
 <p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>

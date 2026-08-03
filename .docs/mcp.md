@@ -15,11 +15,14 @@ until the window is logged in to a database.
 
 ## Register it with your agent
 
-The same tab prints the command for **this** install, ready to copy — the app knows where it was
-put, which differs by platform and by how it was installed, so there is nothing to look up:
+The same tab prints the command for **this** install, ready to copy — one per agent, because the
+command is identical and only the CLI in front of it differs. The app knows where it was put,
+which differs by platform and by how it was installed, so there is nothing to look up:
 
 ```sh
 claude mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
+codex   mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
+gemini  mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
 ```
 
 Point the agent at the app itself. There is no PHP to install and no interpreter to find: the
@@ -30,7 +33,14 @@ message, so it keeps working across restarts without touching the config again.
 
 Windows is not covered yet — see the platform table in [install.md](install.md).
 
-For other MCP clients, the command is the same; only the way you register it differs.
+For other MCP clients, the command is the same; only the way you register it differs — most want
+it written into a config file as a stdio server rather than added from a CLI.
+
+What the agent is told when something is wrong — the app not running, the window closed, the
+session expired — is translated into the app's language, so the answer that reaches you is in the
+language the rest of the app is in. The tool names and their descriptions stay English: those are
+instructions to the model, and a tool that is called something different per locale is one no
+shared prompt can refer to.
 
 ## What the agent can do
 
