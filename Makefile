@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy bundle zip notarize dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e i18n i18n-check build run dev editor debug demo down destroy keychain keychain-clean bundle zip notarize dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -267,6 +267,8 @@ security:
 		--exclude=adminer.php --exclude=editor.php --exclude=available \
 		--exclude=designs --metrics=off --error
 
+SHELL_SRC = check.sh $(wildcard cli/*.sh)
+
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
 qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js lint + formatting)
@@ -285,9 +287,10 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 		{ grep -lq "func $$f(" launcher/*_linux.go && grep -lq "func $$f(" launcher/*_other.go; } \
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
+	@# A glob, not a list: drop a script in cli/ and it is linted, with nothing to keep in step.
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck $(SHELL_SRC) && echo "shellcheck ok"; } \
+		|| { for s in $(SHELL_SRC); do sh -n $$s || exit 1; done; echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
@@ -405,6 +408,15 @@ ICON = build/AdminerDesktop.icns
 # buy. Both are notarization requirements on the identity that has them.
 SIGN_ID = $(if $(MACOS_SIGN_ID),$(MACOS_SIGN_ID),-)
 CODESIGN = codesign --force --timestamp --options runtime --sign "$(SIGN_ID)"
+
+# Only for rehearsing the CI path, or for a machine the certificate is not installed on. Your
+# own Mac needs neither: double-click the .cer once and codesign finds it in the login
+# keychain, so `make notarize MACOS_SIGN_ID=...` is the whole story. See cli/keychain.sh.
+keychain:  ## Import MACOS_CERT_P12 into a temporary keychain, so bundle can sign with it
+	cli/keychain.sh
+
+keychain-clean:  ## Remove that temporary keychain
+	cli/keychain.sh remove
 
 # sips and iconutil ship with macOS, so the icon needs no image tooling installed.
 # ponytail: the source is adminer's own 57px pictogram, the largest that exists —

@@ -65,8 +65,10 @@ jobs:
       # half. A pull request is where the pair has to be complete.
       - run: make i18n-check FRANKEN_ASSET=frankenphp-linux-x86_64
 
-      # shellcheck is already on the runner and says far more than `sh -n` does.
-      - run: shellcheck check.sh
+      # shellcheck is already on the runner and says far more than `sh -n` does. `qa` globs
+      # cli/*.sh into the same check, but only reaches shellcheck when it is installed —
+      # here it always is, so this is the run that cannot silently degrade to `sh -n`.
+      - run: shellcheck check.sh cli/*.sh
 
       # Security rules for php, go and leaked secrets. Docker is on the runner and the
       # Makefile pulls semgrep from the public GHCR mirror, so this needs nothing
@@ -167,27 +169,17 @@ jobs:
       # — only a certificate, which has to come from a paid Apple Developer Program
       # membership and so lives in this environment's secrets.
       #
-      # A throwaway keychain, not the login one: a fresh keychain is the only one that can be
-      # unlocked non-interactively, and the runner is destroyed after the job anyway. Skipped
-      # when the secret is absent — a fork, or a dispatch from before the certificate
-      # existed, then keeps the ad-hoc signature `make bundle` applies regardless.
+      # In a script rather than inline here, so the signing path can be rehearsed on a laptop
+      # before it is debugged on a runner that bills at 10x — and so shellcheck sees it, which
+      # nothing in a YAML `run:` block ever is. Skipped when the secret is absent: a fork, or a
+      # dispatch from before the certificate existed, then keeps the ad-hoc signature
+      # `make bundle` applies regardless.
       - name: Import the Developer ID certificate
         if: runner.os == 'macOS' && env.MACOS_CERT_P12 != ''
         env:
           MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
           MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
-        run: |
-          echo "$MACOS_CERT_P12" | base64 -d > "$RUNNER_TEMP/cert.p12"
-          security create-keychain -p runner "$RUNNER_TEMP/build.keychain"
-          security default-keychain -s "$RUNNER_TEMP/build.keychain"
-          security unlock-keychain -p runner "$RUNNER_TEMP/build.keychain"
-          security import "$RUNNER_TEMP/cert.p12" -k "$RUNNER_TEMP/build.keychain" \
-            -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
-          # Without this codesign asks for the keychain password on first use, which on a
-          # runner means the job hangs until it times out rather than failing.
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k runner \
-            "$RUNNER_TEMP/build.keychain" >/dev/null
-          rm "$RUNNER_TEMP/cert.p12"
+        run: make keychain
 
       # Empty on every platform but macOS, and empty there too until the secret exists, which
       # is what makes `bundle` fall back to ad-hoc rather than fail.
