@@ -63,10 +63,10 @@ class Panel {
 	function command(): string {
 		$exe = Env::Exe->get();
 		if (is_string($exe) && $exe !== "") {
-			return 'claude mcp add adminer -- "' . $exe . '" -mcp';
+			return 'claude mcp add adminer-desktop -- "' . $exe . '" -mcp';
 		}
 		$root = dirname(__DIR__, 2); // app/
-		return 'claude mcp add adminer -- "' . dirname($root) . '/bin/frankenphp" php-cli "' . $root . '/mcp.php"';
+		return 'claude mcp add adminer-desktop -- "' . dirname($root) . '/bin/frankenphp" php-cli "' . $root . '/mcp.php"';
 	}
 
 	/** Which connection an agent would reach, or null when there is no handshake to say.

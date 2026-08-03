@@ -12,7 +12,7 @@ declare(strict_types=1);
 * no PHP to install and nothing on PATH to find — the launcher's -mcp flag resolves both and
 * the agent is pointed at the app itself:
 *
-*     claude mcp add adminer -- adminer-desktop -mcp
+*     claude mcp add adminer-desktop -- adminer-desktop -mcp
 *
 * The per-platform commands are in .docs/mcp.md, along with how to switch the feature on, and
 * they live there rather than here so there is one copy to keep true — only the .deb puts the
@@ -26,7 +26,7 @@ declare(strict_types=1);
 * gitignored, and a fresh clone has none until then. Both paths absolute, so the agent's
 * working directory does not matter:
 *
-*     claude mcp add adminer -- "$PWD/bin/frankenphp" php-cli "$PWD/app/mcp.php"
+*     claude mcp add adminer-desktop -- "$PWD/bin/frankenphp" php-cli "$PWD/app/mcp.php"
 *
 * The built launcher would work too, but only from the repo root: resolve()'s dev case looks
 * for bin/ and app/ relative to the working directory, and an agent does not promise one.

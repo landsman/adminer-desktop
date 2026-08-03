@@ -19,7 +19,7 @@ The same tab prints the command for **this** install, ready to copy — the app 
 put, which differs by platform and by how it was installed, so there is nothing to look up:
 
 ```sh
-claude mcp add adminer -- "<the path the settings tab shows>" -mcp
+claude mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
 ```
 
 Point the agent at the app itself. There is no PHP to install and no interpreter to find: the
@@ -47,15 +47,15 @@ turns out to write leaves nothing behind — that is the database refusing, not 
 and guessing. Results are capped at 200 rows and long values are truncated, so one wide column
 cannot crowd out the answer.
 
-One caveat worth knowing: rollback undoes writes, but on MySQL a schema change (`CREATE TABLE`,
-`ALTER TABLE`) commits itself and cannot be undone. If you want writes to be *impossible* rather
-than undone, log the window in as a read-only database user.
+One caveat worth knowing: rollback undoes data changes, but some databases commit a schema
+change (`CREATE TABLE`, `ALTER TABLE`) immediately, so on those it cannot be undone. If you want
+writes to be *impossible* rather than undone, log the window in as a read-only database user.
 
 ## Answers you might get instead
 
 | Message | What it means |
 | --- | --- |
-| *"not running, or database access for agents is switched off"* | the app is closed, or `"mcp": true` is not set |
+| *"not running, or database access for agents is switched off"* | the app is closed, or the AI access tab is not switched on |
 | *"stopped answering — the window was probably closed"* | it was running when you registered; it is not now |
 | *"not connected to a database"* / *"session has expired"* | the app is open but logged out — log in again |
 
@@ -80,7 +80,7 @@ recorded. The file is readable only by your account.
 
 ## Turning it off
 
-Set `"mcp": false`, or delete the key. The next page you load in the app retracts the handshake
+Untick it in **Settings → AI access** and Save. The next page you load retracts the handshake
 file, so nothing can reach the database through it afterwards — turning it off removes the
 pointer rather than just declining to honour it.
 
