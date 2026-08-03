@@ -162,14 +162,61 @@ jobs:
       # to prove.
       - run: make check FRANKEN_ASSET=${{ matrix.asset }}
 
+      # codesign, notarytool, stapler and ditto all ship with the Xcode command line tools
+      # that are already on the runner, so signing adds no install and no third-party action
+      # — only a certificate, which has to come from a paid Apple Developer Program
+      # membership and so lives in this environment's secrets.
+      #
+      # A throwaway keychain, not the login one: a fresh keychain is the only one that can be
+      # unlocked non-interactively, and the runner is destroyed after the job anyway. Skipped
+      # when the secret is absent — a fork, or a dispatch from before the certificate
+      # existed, then keeps the ad-hoc signature `make bundle` applies regardless.
+      - name: Import the Developer ID certificate
+        if: runner.os == 'macOS' && env.MACOS_CERT_P12 != ''
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          echo "$MACOS_CERT_P12" | base64 -d > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p runner "$RUNNER_TEMP/build.keychain"
+          security default-keychain -s "$RUNNER_TEMP/build.keychain"
+          security unlock-keychain -p runner "$RUNNER_TEMP/build.keychain"
+          security import "$RUNNER_TEMP/cert.p12" -k "$RUNNER_TEMP/build.keychain" \
+            -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          # Without this codesign asks for the keychain password on first use, which on a
+          # runner means the job hangs until it times out rather than failing.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k runner \
+            "$RUNNER_TEMP/build.keychain" >/dev/null
+          rm "$RUNNER_TEMP/cert.p12"
+
+      # Empty on every platform but macOS, and empty there too until the secret exists, which
+      # is what makes `bundle` fall back to ad-hoc rather than fail.
       - run: make ${{ matrix.package }} FRANKEN_ASSET=${{ matrix.asset }}
+        env:
+          MACOS_SIGN_ID: ${{ secrets.MACOS_SIGN_ID }}
+
+      # Its own step rather than swapping matrix.package to `notarize`, so a run without the
+      # notary key still uploads a signed zip instead of dying on a missing credential. The
+      # cost is that the phony bundle > zip chain runs a second time; fold it into
+      # matrix.package once the secrets are permanent.
+      - name: Notarize and staple
+        if: runner.os == 'macOS' && env.NOTARY_KEY_ID != ''
+        env:
+          MACOS_SIGN_ID: ${{ secrets.MACOS_SIGN_ID }}
+          NOTARY_KEY_B64: ${{ secrets.NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: |
+          echo "$NOTARY_KEY_B64" | base64 -d > "$RUNNER_TEMP/notary.p8"
+          make notarize FRANKEN_ASSET=${{ matrix.asset }} NOTARY_KEY="$RUNNER_TEMP/notary.p8"
 
       # One glob for all three platforms, because every package is now named
       # adminer-desktop_<version>_<os>-<arch>.<ext> (see PKG in the Makefile). It picks up
       # the .deb beside the tarball and never the bare `build/adminer-desktop` binary,
       # which has no underscore.
-      # All unsigned: macOS needs right-click > Open on first launch, and Windows shows a
-      # SmartScreen warning. Signing needs paid certificates held as repository secrets.
+      # macOS is signed, and notarized and stapled when the secrets are set, so it opens on
+      # a double-click. Windows is still bare and still shows SmartScreen — the same problem
+      # wanting a different (and dearer) certificate, and nobody has asked yet.
       - uses: actions/upload-artifact@v7
         with:
           name: adminer-desktop-${{ matrix.platform }}
