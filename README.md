@@ -20,6 +20,7 @@ with the Adminer project.
 - Install it like any other app. No PHP, no web server, no browser.
 - Works well with Docker. Sensible defaults make connecting to containerized databases easier.
 - Stays logged in between launches.
+- MCP Server support.
 - Settings are available before you connect.
 - Light and dark mode, with themes for both.
 - Language, scaling, row density, and plugins are all in one place.
@@ -40,8 +41,7 @@ with the Adminer project.
 
 - **[Installing](.docs/install.md)** — macOS, Debian/Ubuntu, which platforms work, and where
   it keeps your settings.
-- **[Letting an agent query your database](.docs/mcp.md)** — the MCP server: turning it on,
-  registering it, and what it will and will not do.
+- **[MCP Server](.docs/mcp.md)** — turning it on and let Claude or Codex access to your database for read or write, up to you! 
 - **[Developing](.docs/development.md)** — building it yourself, the checks, what is pinned.
 - **[Linux releases](.docs/releases-linux.md)** — why there is a `.deb` and no apt repository.
 
