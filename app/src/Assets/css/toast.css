@@ -4,19 +4,38 @@
  * them — so this file styles nodes that only ever exist at runtime.
  */
 
+/* Top right, over everything. The z-index is the maximum, but on its own it was never enough:
+   a modal <dialog> paints in the top layer, which no z-index outside it can reach across. What
+   actually puts the toast above the settings dialog is toast.js — the container moves into the
+   open dialog and is shown as a popover, both of which are the top layer. The z-index still
+   matters for the ordinary case of no dialog being open. */
 #ad-toasts {
 	position: fixed;
-	bottom: 1.2em;
-	left: 50%;
-	transform: translateX(-50%);
-	/* Above the settings dialog, which sits in the top layer: a confirmation of something done
-	   inside the dialog has to be visible over it. */
+	/* Shorthand, not top/right: a [popover] gets `inset: 0` from the UA stylesheet, and the
+	   longhands would leave its `bottom`/`left` in place and stretch this across the viewport. */
+	inset: 1.2em 1.2em auto auto;
 	z-index: 2147483647;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
+	align-items: flex-end;
 	gap: var(--ad-gap);
 	pointer-events: none;
+	/* The rest of what the UA gives a popover. This element is only a positioner — the toasts
+	   inside it carry the styling. */
+	width: auto;
+	height: auto;
+	max-width: min(28em, calc(100vw - 2.4em));
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	overflow: visible;
+}
+
+/* Closed popovers are display:none; ours is only ever shown, but a stale [popover] attribute on
+   a container that has not been shown yet must not hide the non-popover path. */
+#ad-toasts:not(:popover-open) {
+	display: flex;
 }
 
 .ad-toast {
