@@ -61,17 +61,17 @@ jobs:
         working-directory: app/vendor/playwright-php/playwright/bin
         run: npx --no-install playwright install-deps chromium
 
-      # Boots its own postgres in docker (tests/e2e/fixture.php), so there is no service to
-      # declare here. Linux only, and that is the whole story: the checks drive frankenphp
-      # and a headless chromium, never the native shell, so a second platform would re-run
-      # the same assertions — at 10x on macOS.
+      # Boots its own postgres and mysql in docker (tests/e2e/harness/fixture.php), so there is
+      # no service to declare here. Linux only, and that is the whole story: the scenarios drive
+      # frankenphp and a headless chromium, never the native shell, so a second platform would
+      # re-run the same assertions — at 10x on macOS.
       - run: make e2e FRANKEN_ASSET=frankenphp-linux-x86_64
 
-      # A failed assertion names the check and the selector; the screenshot is the only way
-      # to see what the page actually looked like on a runner nobody was watching.
+      # A failed step names the scenario and the step; the picture and the HTML beside it are the
+      # only way to see what the page actually looked like on a runner nobody was watching.
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-screenshots
-          path: tests/e2e/screenshots
+          name: e2e-artifacts
+          path: tests/e2e/artifacts
           if-no-files-found: ignore

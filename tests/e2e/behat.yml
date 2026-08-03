@@ -1,0 +1,43 @@
+# One suite per driver, so `make e2e` covers both in one run.
+#
+# What decides where a feature goes is whether the driver could change the answer:
+#
+#   features/data/   the data list and the edit form — Adminer talking to a database through us.
+#                    A column type, a JSON value or a foreign key reads differently per driver, so
+#                    these run against every one of them.
+#   features/shell/  the desktop's own chrome: the theme, the settings dialog, the sidebar, the
+#                    import dropzone, the MCP endpoint. None of it asks the database anything, so a
+#                    second suite would spend a second browser proving the same CSS. pgsql only.
+#
+# A feature that only one driver has would go in features/<driver>/, which is the same rule one
+# step further. There is none yet.
+#
+# The driver is handed to the contexts; each suite serves the app on a port of its own, because
+# the suites share a process (harness/fixture.php picks the next free one from there).
+
+# The contexts are autoloaded by composer, not by Behat's own loader: app/composer.json maps
+# Desktop\Tests\ to bootstrap/ under autoload-dev, so they resolve the same way every other class
+# in this repository does — and phpstan and the IDE see them too.
+default:
+  suites:
+    pgsql:
+      paths:
+        - "%paths.base%/features/data"
+        - "%paths.base%/features/shell"
+        - "%paths.base%/features/pgsql"
+      contexts:
+        - Desktop\Tests\DesktopContext:
+            driver: pgsql
+        - Desktop\Tests\McpContext:
+            driver: pgsql
+
+    mysql:
+      paths:
+        - "%paths.base%/features/data"
+      contexts:
+        - Desktop\Tests\DesktopContext:
+            driver: mysql
+
+  formatters:
+    pretty:
+      paths: false # the steps all live in three files, naming them after each step says nothing
