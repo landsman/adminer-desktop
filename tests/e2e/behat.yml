@@ -28,6 +28,8 @@ default:
       contexts:
         - Desktop\Tests\DesktopContext:
             driver: pgsql
+        - Desktop\Tests\McpContext:
+            driver: pgsql
 
     mysql:
       paths:
