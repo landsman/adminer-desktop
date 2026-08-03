@@ -42,6 +42,7 @@ class Panel {
 			"command" => $this->command(),
 			"status" => $this->status($enabled),
 			"lastUsed" => $this->lastUsed(time()),
+			"target" => $this->target(),
 		]);
 	}
 
@@ -66,6 +67,19 @@ class Panel {
 		}
 		$root = dirname(__DIR__, 2); // app/
 		return 'claude mcp add adminer -- "' . dirname($root) . '/bin/frankenphp" php-cli "' . $root . '/mcp.php"';
+	}
+
+	/** Which connection an agent would reach, or null when there is no handshake to say.
+	*
+	* The agent follows the window: the handshake is rewritten on every connected request, so
+	* browsing to another database repoints it. That is the intended behaviour — it is "the
+	* database this window is logged into" — but it is invisible unless the panel says so, and
+	* with several servers open in turn the answer is genuinely not obvious.
+	*/
+	function target(): ?string {
+		$handshake = $this->handshake->read();
+		$target = $handshake['target'] ?? '';
+		return $target !== '' ? $target : null;
 	}
 
 	/** When an agent last asked for something, in words — or null if none ever has.

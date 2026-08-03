@@ -49,7 +49,7 @@ class Endpoint {
 		if ($url !== null) {
 			/** @var array<string,string> $cookies */
 			$cookies = array_filter($_COOKIE, 'is_string');
-			$this->handshake->write($url, $cookies);
+			$this->handshake->write($url, $cookies, $this->target());
 		}
 		if (!isset($_GET["mcp"])) {
 			return null;
@@ -95,6 +95,20 @@ class Endpoint {
 		$script = str_replace("\\", "/", (string) ($server["SCRIPT_NAME"] ?? "/"));
 		$dir = rtrim(dirname($script), "/");
 		return "http://$host$dir/" . $me;
+	}
+
+	/** The connection an agent reaching us would land on, in the form a person recognises.
+	*
+	* Read here rather than in the panel because only a connected request knows it: the panel is
+	* drawn on the login page too, where these constants say nothing.
+	*/
+	private function target(): string {
+		$server = \Adminer\SERVER !== '' ? \Adminer\SERVER : 'localhost';
+		return \Adminer\DRIVER . ' ' . $server . ($this->database() !== '' ? ' / ' . $this->database() : '');
+	}
+
+	private function database(): string {
+		return \Adminer\DB;
 	}
 
 	/** The JSON-RPC method a request is asking for, for the record of what an agent did.

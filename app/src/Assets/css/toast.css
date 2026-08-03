@@ -1,0 +1,40 @@
+/* Toasts: brief confirmations, created only by src/Assets/javascript/toast.js.
+ *
+ * There is no markup for these anywhere in a template — window.adToast() builds and removes
+ * them — so this file styles nodes that only ever exist at runtime.
+ */
+
+#ad-toasts {
+	position: fixed;
+	bottom: 1.2em;
+	left: 50%;
+	transform: translateX(-50%);
+	/* Above the settings dialog, which sits in the top layer: a confirmation of something done
+	   inside the dialog has to be visible over it. */
+	z-index: 2147483647;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--ad-gap);
+	pointer-events: none;
+}
+
+.ad-toast {
+	background: var(--fg);
+	color: var(--bg);
+	padding: var(--ad-button-padding);
+	border-radius: var(--ad-radius);
+	font-size: 0.9em;
+	box-shadow: 0 2px 12px rgb(0 0 0 / 35%);
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.ad-toast {
+		transition: opacity 0.25s ease;
+	}
+}
+
+.ad-toast-leaving {
+	opacity: 0;
+}

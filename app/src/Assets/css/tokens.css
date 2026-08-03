@@ -25,6 +25,19 @@
 	/* Derived from Adminer's --fg so borders stay legible on any design */
 	--ad-border: color-mix(in srgb, var(--fg) 25%, transparent);
 
+	/* Secondary prose — explanatory lines that should read as quieter than the control they
+	   describe. Derived from --fg for the same reason as the border above: it has to stay
+	   legible on any design and in both schemes.
+
+	   Explicitly NOT Adminer's --dim, which reads like a muted-text token and is a *background*
+	   one: light-dark(#f1f3f6, #21252e). Using it for text puts #21252e on a #1e2229 panel in
+	   dark mode, which is invisible. */
+	--ad-fg-quiet: color-mix(in srgb, var(--fg) 68%, transparent);
+
+	/* Status dots: off is quiet, on has to read as a positive state on both schemes. */
+	--ad-status-off: color-mix(in srgb, var(--fg) 45%, transparent);
+	--ad-status-on: #067647;
+
 	/* Row with an edit that has not been saved yet */
 	--ad-unsaved: #fdf6ba;
 }
@@ -32,5 +45,8 @@
 @media (prefers-color-scheme: dark) {
 	:root {
 		--ad-unsaved: #4a3f12;
+		/* The light green is too dark to read on a dark panel; this is the theme's own
+		   dark-side --ad-ok value, kept in step. */
+		--ad-status-on: #6fe0a1;
 	}
 }

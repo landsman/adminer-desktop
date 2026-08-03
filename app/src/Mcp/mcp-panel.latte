@@ -13,7 +13,8 @@
 	string $os,
 	string $command,
 	array $status,
-	?string $lastUsed
+	?string $lastUsed,
+	?string $target
 }
 <p>
 	<input type="checkbox" name="mcp" value="1" id="desktop-mcp" n:attr="checked: $enabled">
@@ -30,14 +31,22 @@
 
 {* Only once something has actually called: "never used" is the default and saying so on every
 	open would be noise. Seeing a recent query you did not ask for is the point. *}
+{* Which connection, because the agent follows the window: browsing to another database
+	repoints it, and with several servers open in turn that is not obvious from anywhere else. *}
+<p n:if="$target !== null" class="ad-mcp-note">
+	{$desktop->t('mcp.target')} <span class="ad-mcp-target">{$target}</span>
+</p>
+
 <p n:if="$lastUsed !== null" class="ad-mcp-note">{$lastUsed}</p>
 
 <fieldset>
 	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
-	{* readonly, not disabled: a disabled input cannot be selected, which is the one thing this
-		field exists for. *}
-	<input type="text" id="desktop-mcp-command" class="ad-mcp-command" readonly value="{$command}"
-		aria-label="{$desktop->t('mcp.register_on')} {$os}">
+	{include '../Assets/copy-field.latte',
+		value: $command,
+		label: $desktop->t('mcp.register_on') . ' ' . $os,
+		copy: $desktop->t('mcp.copy'),
+		copied: $desktop->t('mcp.copied'),
+		rows: 3}
 	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
 </fieldset>
 

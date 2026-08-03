@@ -148,25 +148,64 @@ body:has(#desktop-settings[open]) {
    rather than competing with it. --dim is adminer's own muted colour, so it follows the
    design the user picked instead of us choosing one. */
 .ad-mcp-note {
-	color: var(--dim);
+	color: var(--ad-fg-quiet);
 	font-size: 0.9em;
 	max-width: 60ch;
 }
 
-/* The status dot: grey until the feature is actually reachable, so "on" and "working" are
+/* The status dot: quiet until the feature is actually reachable, so "on" and "working" are
    not the same signal — the panel can be ticked while the window is logged out. */
 .ad-mcp-dot {
-	color: var(--dim);
+	color: var(--ad-status-off);
 }
 
 .ad-mcp-on {
-	color: green;
+	color: var(--ad-status-on);
 }
 
-/* Full width so a bundle path scrolls inside the field instead of widening the dialog. */
-.ad-mcp-command {
-	width: 100%;
-	font-family: monospace;
+/* What the agent currently sees. Monospace because it is a connection string, not prose. */
+.ad-mcp-target {
+	font-family: var(--ad-mono, ui-monospace, monospace);
+}
+
+/* --- Copy field (src/Assets/copy-field.latte) ---------------------------------- */
+
+.ad-copy {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--ad-gap);
+}
+
+/* Wraps rather than scrolls: these hold absolute paths that run past any field width, and a
+   command you can only see one field-width of is a command you cannot check before running. */
+.ad-copy-value {
+	flex: 1;
+	min-width: 0;
+	font-family: var(--ad-mono, ui-monospace, monospace);
+	font-size: 0.9em;
+	resize: vertical;
+	white-space: pre-wrap;
+	word-break: break-all;
+	background: var(--bg);
+	color: var(--fg);
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius-sm);
+	padding: var(--ad-cell-padding);
+}
+
+.ad-copy-button {
+	font: inherit;
+	white-space: nowrap;
+	padding: var(--ad-button-padding);
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+	background: var(--bg);
+	color: var(--fg);
+	cursor: pointer;
+}
+
+.ad-copy-button:hover {
+	background: var(--dim);
 }
 
 /* --- Buttons ------------------------------------------------------------------ */

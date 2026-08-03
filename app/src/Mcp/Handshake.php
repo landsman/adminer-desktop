@@ -59,8 +59,11 @@ class Handshake {
 	* cached, and the alternative is a handshake that goes stale without anything noticing.
 	*
 	* @param array<string,string> $cookies
+	* @param string $target which connection this points at, for the settings panel to show —
+	*                       the agent follows wherever the window last was, and that is worth
+	*                       being able to see rather than infer
 	*/
-	function write(string $url, array $cookies): void {
+	function write(string $url, array $cookies, string $target = ''): void {
 		if ($this->file === null) {
 			return;
 		}
@@ -68,7 +71,7 @@ class Handshake {
 		if (!is_dir($dir)) {
 			@mkdir($dir, 0700, true);
 		}
-		$payload = json_encode(['url' => $url, 'cookies' => $cookies], JSON_PRETTY_PRINT);
+		$payload = json_encode(['url' => $url, 'cookies' => $cookies, 'target' => $target], JSON_PRETTY_PRINT);
 		if ($payload === false) {
 			return;
 		}
@@ -82,7 +85,8 @@ class Handshake {
 	}
 
 	/** What mcp.php reads back.
-	* @return array{url:string,cookies:array<string,string>}|null null when absent or unusable
+	* @return array{url:string,cookies:array<string,string>,target:string}|null null when absent
+	*         or unusable
 	*/
 	function read(): ?array {
 		if ($this->file === null || !is_file($this->file)) {
@@ -98,7 +102,8 @@ class Handshake {
 		}
 		/** @var array<string,string> $cookies */
 		$cookies = array_filter($data['cookies'], 'is_string');
-		return ['url' => $data['url'], 'cookies' => $cookies];
+		$target = isset($data['target']) && is_string($data['target']) ? $data['target'] : '';
+		return ['url' => $data['url'], 'cookies' => $cookies, 'target' => $target];
 	}
 
 	/** Drop the handshake — nothing may reach the database through it after this.

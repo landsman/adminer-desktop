@@ -1,0 +1,27 @@
+{* A block of text the user is meant to take away: shown in full, selectable, with a copy button.
+
+	A textarea rather than an input because the things that end up here are long — an absolute
+	path into a macOS bundle runs well past any sensible field width, and an input shows one
+	field-width of it with no hint there is more. A textarea wraps, so the whole command is visible
+	without scrolling it horizontally.
+
+	readonly, not disabled: a disabled control cannot be selected or copied, which is the only
+	thing this exists for. Its rows come from the caller, since only the caller knows how long
+	the content runs.
+
+	The button is wired by src/Assets/javascript/copy-field.js, which binds every instance on the
+	page by data attribute — no id to keep unique, and no inline handler, which the app's CSP
+	would refuse anyway (strict-dynamic makes the 'unsafe-inline' beside it ignored).
+*}
+{parameters
+	string $value,
+	string $label,
+	string $copy,
+	string $copied,
+	int $rows = 2
+}
+<div class="ad-copy" data-copy-field>
+	<textarea class="ad-copy-value" readonly rows="{$rows}" aria-label="{$label}"
+		data-copy-value>{$value}</textarea>
+	<button type="button" class="ad-copy-button" data-copy-button data-copied="{$copied}">{$copy}</button>
+</div>
