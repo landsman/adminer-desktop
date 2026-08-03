@@ -10,6 +10,13 @@ declare(strict_types=1);
 * The table is also the allowlist: an action that is not in it is a 404, so nothing under
 * src/Api/ is reachable by guessing a class name. Its mirror on the page is
 * src/Assets/javascript/api.js.
+*
+* One endpoint deliberately is not here: MCP, which an agent reaches at adminer.php?mcp=1 and
+* which is answered by AdminerDesktop::headers(). It cannot be an action in the table, because
+* this entry boots the autoloader and nothing else — a handler here has no connection, no
+* driver and none of the Adminer\ functions, which is the whole of what MCP has to offer. It
+* has to run inside a request adminer has already authenticated and connected, and that is a
+* hook. See Desktop\Mcp.
 */
 
 require_once __DIR__ . "/vendor/autoload.php";
