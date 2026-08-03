@@ -89,19 +89,24 @@ jobs:
           - os: macos-15
             asset: frankenphp-mac-arm64
             package: zip
-            artifact: adminer-desktop-macos-arm64
+            platform: macos-arm64
           # Both linux packages off one build: `deb` only re-roots what `dist` already
           # staged, so it costs a dpkg-deb call rather than a second compile.
           - os: ubuntu-24.04
             asset: frankenphp-linux-x86_64
             package: tarball deb
-            artifact: adminer-desktop-linux-x86_64
+            platform: linux-x86_64
           - os: windows-2025
             asset: frankenphp-windows-x86_64.zip
             package: windows
-            artifact: adminer-desktop-windows-x86_64
+            platform: windows-x86_64
 
     runs-on: ${{ matrix.os }}
+    # One environment per platform, so the Environments sidebar reads as three independent
+    # deployment states rather than one build that was either green or not. `matrix.platform`
+    # and not `matrix.os`, which names the runner image and so changes at the next bump —
+    # and renaming an environment loses its deployment history.
+    environment: ${{ matrix.platform }}
     defaults:
       run:
         # The Makefile is written for a POSIX shell; bash ships with the windows runner.
@@ -167,7 +172,7 @@ jobs:
       # SmartScreen warning. Signing needs paid certificates held as repository secrets.
       - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact }}
+          name: adminer-desktop-${{ matrix.platform }}
           path: build/adminer-desktop_*
           if-no-files-found: error
 
