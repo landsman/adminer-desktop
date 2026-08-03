@@ -240,6 +240,12 @@ func main() {
 	if dir, err := dataDir(); err == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 	}
+	// Our own path, so the settings dialog can print the exact `claude mcp add` line for this
+	// install rather than making the user work out where the app landed. Only the launcher
+	// knows it: PHP sees the app/ root, which is three different shapes across the packages.
+	if exe, err := os.Executable(); err == nil {
+		srv.Env = append(srv.Env, "ADMINER_DESKTOP_EXE="+exe)
+	}
 	// -debug reaches the page too: the plugin tags <body> with it, and the desktop scripts
 	// that smooth over the WebView (the link context-menu block) stand down so the inspector's
 	// own right-click menu, Inspect Element and the rest are all there.

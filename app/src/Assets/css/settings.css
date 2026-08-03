@@ -138,8 +138,35 @@ body:has(#desktop-settings[open]) {
 }
 
 #desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
+#desktop-settings:has(#desktop-tab-mcp:checked) #desktop-panel-mcp,
 #desktop-settings:has(#desktop-tab-themes:checked) #desktop-panel-themes {
 	display: block;
+}
+
+/* The explanatory lines in the AI-access panel: this is the one panel that has to say what
+   it does before the user decides, so the prose needs to read as secondary to the control
+   rather than competing with it. --dim is adminer's own muted colour, so it follows the
+   design the user picked instead of us choosing one. */
+.ad-mcp-note {
+	color: var(--dim);
+	font-size: 0.9em;
+	max-width: 60ch;
+}
+
+/* The status dot: grey until the feature is actually reachable, so "on" and "working" are
+   not the same signal — the panel can be ticked while the window is logged out. */
+.ad-mcp-dot {
+	color: var(--dim);
+}
+
+.ad-mcp-on {
+	color: green;
+}
+
+/* Full width so a bundle path scrolls inside the field instead of widening the dialog. */
+.ad-mcp-command {
+	width: 100%;
+	font-family: monospace;
 }
 
 /* --- Buttons ------------------------------------------------------------------ */

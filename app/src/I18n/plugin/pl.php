@@ -45,4 +45,19 @@ return [
 
 	// Whole-page import dropzone.
 	'import.drop_hint' => 'Upuść tutaj plik SQL, aby go zaimportować',
+
+	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
+	'settings.tab_mcp' => 'Dostęp AI',
+	'mcp.enable' => 'Pozwól agentowi AI odpytywać tę bazę danych',
+	'mcp.description' => 'Zarejestrowany poniżej agent może czytać bazę danych, do której zalogowane jest to okno — strukturę oraz zapytania, o które go poprosisz. Nie może zapisywać: każde zapytanie działa w transakcji, która jest wycofywana. Dostęp trwa tylko wtedy, gdy to okno jest otwarte i zalogowane.',
+	'mcp.status_off' => 'Wyłączone. Nic nie dosięgnie bazy danych.',
+	'mcp.status_waiting' => 'Włączone, ale jeszcze niedostępne — zaloguj się do bazy danych, a agent będzie mógł ją odpytywać.',
+	'mcp.status_ready' => 'Gotowe. Zarejestrowany agent może odpytywać bazę danych, do której jesteś zalogowany.',
+	'mcp.register_on' => 'Zarejestruj u swojego agenta w',
+	'mcp.register_hint' => 'Kliknij, aby zaznaczyć, a potem uruchom raz w terminalu. Działa również po ponownym uruchomieniu.',
+	'mcp.readonly_note' => 'Zmiany struktury w MySQL zatwierdzają się same i nie można ich wycofać. Aby zapis był niemożliwy, a nie tylko cofany, zaloguj się jako użytkownik bazy tylko do odczytu.',
+	'mcp.used_moments' => 'Ostatnie zapytanie: przed chwilą.',
+	'mcp.used_minutes' => 'Ostatnie zapytanie: w ciągu ostatniej godziny.',
+	'mcp.used_hours' => 'Ostatnie zapytanie: dzisiaj.',
+	'mcp.used_days' => 'Ostatnie zapytanie: ponad dobę temu.',
 ];

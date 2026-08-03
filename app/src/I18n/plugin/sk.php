@@ -45,4 +45,19 @@ return [
 
 	// Whole-page import dropzone.
 	'import.drop_hint' => 'Presuňte sem SQL súbor na import',
+
+	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
+	'settings.tab_mcp' => 'Prístup pre AI',
+	'mcp.enable' => 'Povoliť AI agentovi dopytovať sa tejto databázy',
+	'mcp.description' => 'Agent, ktorého nižšie zaregistrujete, môže čítať databázu, do ktorej je toto okno prihlásené — štruktúru aj dopyty, o ktoré ho požiadate. Zapisovať nemôže: každý dopyt beží v transakcii, ktorá sa vráti späť. Prístup trvá len počas toho, kým je okno otvorené a prihlásené.',
+	'mcp.status_off' => 'Vypnuté. K databáze sa nič nedostane.',
+	'mcp.status_waiting' => 'Zapnuté, ale zatiaľ nedostupné — prihláste sa k databáze a agent sa môže pýtať.',
+	'mcp.status_ready' => 'Pripravené. Zaregistrovaný agent sa môže pýtať databázy, do ktorej ste prihlásení.',
+	'mcp.register_on' => 'Zaregistrovať u agenta na',
+	'mcp.register_hint' => 'Kliknite pre označenie a spustite raz v termináli. Funguje aj po reštarte.',
+	'mcp.readonly_note' => 'Zmeny štruktúry v MySQL sa potvrdia samy a nedajú sa vrátiť. Ak chcete zápis úplne znemožniť, prihláste sa ako používateľ s právom len na čítanie.',
+	'mcp.used_moments' => 'Posledný dopyt: pred chvíľou.',
+	'mcp.used_minutes' => 'Posledný dopyt: počas poslednej hodiny.',
+	'mcp.used_hours' => 'Posledný dopyt: dnes.',
+	'mcp.used_days' => 'Posledný dopyt: pred viac ako dňom.',
 ];

@@ -6,10 +6,10 @@
 // handler never runs. It would have looked fine in testing: -debug strips strict-dynamic
 // (AdminerDesktop::csp), so the attribute works while you are debugging and silently does
 // nothing for everyone else.
-document.addEventListener('DOMContentLoaded', () => {
-	const field = document.getElementById('desktop-mcp-command');
+document.addEventListener("DOMContentLoaded", () => {
+	const field = document.getElementById("desktop-mcp-command");
 	if (field) {
-		field.addEventListener('focus', () => field.select());
-		field.addEventListener('click', () => field.select());
+		field.addEventListener("focus", () => field.select());
+		field.addEventListener("click", () => field.select());
 	}
 });

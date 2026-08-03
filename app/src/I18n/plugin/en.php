@@ -52,4 +52,19 @@ return [
 
 	// Whole-page import dropzone (AdminerDesktop::head()).
 	'import.drop_hint' => 'Drop the SQL file to import',
+
+	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
+	'settings.tab_mcp' => 'AI access',
+	'mcp.enable' => 'Let an AI agent query this database',
+	'mcp.description' => 'An agent you register below can read the database this window is logged into — the schema, and queries you ask it to run. It cannot write: every query runs in a transaction that is rolled back. Access lasts only while this window is open and logged in.',
+	'mcp.status_off' => 'Off. Nothing can reach the database.',
+	'mcp.status_waiting' => 'On, but not reachable yet — log in to a database and the agent can query it.',
+	'mcp.status_ready' => 'Ready. A registered agent can query the database you are logged into.',
+	'mcp.register_on' => 'Register with your agent on',
+	'mcp.register_hint' => 'Click to select, then run it once in a terminal. It keeps working after a restart.',
+	'mcp.readonly_note' => 'Schema changes on MySQL commit themselves and cannot be rolled back. To make writes impossible rather than undone, log in as a read-only database user.',
+	'mcp.used_moments' => 'Last query: moments ago.',
+	'mcp.used_minutes' => 'Last query: within the hour.',
+	'mcp.used_hours' => 'Last query: today.',
+	'mcp.used_days' => 'Last query: over a day ago.',
 ];

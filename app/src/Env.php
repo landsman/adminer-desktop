@@ -16,6 +16,9 @@ enum Env: string {
 	case Debug = 'ADMINER_DESKTOP_DEBUG';
 	/** `make demo` only: the throwaway connection demo-login.js fills and submits. */
 	case Demo = 'ADMINER_DESKTOP_DEMO';
+	/** The launcher's own path (Go's os.Executable), so the MCP panel can print the exact
+	* registration command for this install. Unset when app/ is served without the launcher. */
+	case Exe = 'ADMINER_DESKTOP_EXE';
 
 	/** The value of this environment variable, or false when it is not set (getenv's contract). */
 	function get(): string|false {

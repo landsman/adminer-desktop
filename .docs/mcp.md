@@ -9,39 +9,24 @@ cannot write.
 
 ## Turn it on
 
-There is no switch in the settings dialog yet, so for now it is one line in the preferences
-file — the same file the dialog writes:
-
-| | |
-| --- | --- |
-| macOS | `~/Library/Application Support/Adminer Desktop/settings.json` |
-| Linux | `~/.config/Adminer Desktop/settings.json` |
-
-```json
-{ "mcp": true }
-```
-
-If the file already exists, add the `"mcp": true` key rather than replacing what is there.
-Restart is not needed — the next page you load in the app picks it up.
+**Settings → AI access → “Let an AI agent query this database”**, then Save. The tab also shows
+whether it is actually reachable: on is not the same as working, because nothing can be queried
+until the window is logged in to a database.
 
 ## Register it with your agent
 
-Point the agent at the app itself. There is no PHP to install and no path to hunt for: the
-launcher ships its own and finds it.
+The same tab prints the command for **this** install, ready to copy — the app knows where it was
+put, which differs by platform and by how it was installed, so there is nothing to look up:
 
 ```sh
-# Linux, installed from the .deb (the only one already on PATH)
-claude mcp add adminer -- adminer-desktop -mcp
-
-# macOS
-claude mcp add adminer -- "/Applications/Adminer Desktop.app/Contents/MacOS/adminer-desktop" -mcp
-
-# Linux, unpacked from the tarball — wherever you put it
-claude mcp add adminer -- ~/adminer-desktop/adminer-desktop -mcp
+claude mcp add adminer -- "<the path the settings tab shows>" -mcp
 ```
 
-Register it once. The port the app listens on changes every start, but the agent re-reads it
-per message, so it keeps working across restarts without touching the config again.
+Point the agent at the app itself. There is no PHP to install and no interpreter to find: the
+launcher ships its own and resolves it.
+
+Register it once. The port the app listens on changes every start, but the agent re-reads it per
+message, so it keeps working across restarts without touching the config again.
 
 Windows is not covered yet — see the platform table in [install.md](install.md).
 

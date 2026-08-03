@@ -45,4 +45,19 @@ return [
 
 	// Whole-page import dropzone.
 	'import.drop_hint' => 'SQL-Datei zum Importieren hier ablegen',
+
+	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
+	'settings.tab_mcp' => 'KI-Zugriff',
+	'mcp.enable' => 'Einem KI-Agenten erlauben, diese Datenbank abzufragen',
+	'mcp.description' => 'Ein unten registrierter Agent kann die Datenbank lesen, in der dieses Fenster angemeldet ist — die Struktur und Abfragen, um die Sie ihn bitten. Schreiben kann er nicht: Jede Abfrage läuft in einer Transaktion, die zurückgerollt wird. Der Zugriff besteht nur, solange dieses Fenster geöffnet und angemeldet ist.',
+	'mcp.status_off' => 'Aus. Nichts erreicht die Datenbank.',
+	'mcp.status_waiting' => 'An, aber noch nicht erreichbar — melden Sie sich an einer Datenbank an, dann kann der Agent sie abfragen.',
+	'mcp.status_ready' => 'Bereit. Ein registrierter Agent kann die Datenbank abfragen, in der Sie angemeldet sind.',
+	'mcp.register_on' => 'Beim Agenten registrieren unter',
+	'mcp.register_hint' => 'Zum Markieren klicken, dann einmal im Terminal ausführen. Funktioniert auch nach einem Neustart.',
+	'mcp.readonly_note' => 'Strukturänderungen in MySQL bestätigen sich selbst und lassen sich nicht zurückrollen. Damit Schreibzugriffe unmöglich statt rückgängig gemacht werden, melden Sie sich als schreibgeschützter Datenbankbenutzer an.',
+	'mcp.used_moments' => 'Letzte Abfrage: gerade eben.',
+	'mcp.used_minutes' => 'Letzte Abfrage: innerhalb der letzten Stunde.',
+	'mcp.used_hours' => 'Letzte Abfrage: heute.',
+	'mcp.used_days' => 'Letzte Abfrage: vor über einem Tag.',
 ];

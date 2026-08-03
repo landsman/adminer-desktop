@@ -1,32 +1,44 @@
 {* Letting an agent query the open database: the switch, and the command to register it.
 
 	The command is generated rather than documented because only the app knows where it was
-	installed — see Panel::command(). It is rendered in a readonly input rather than a <pre> so
-	it can be selected and copied without a script, and so a long bundle path scrolls instead of
-	stretching the dialog.
+	installed — see Panel::command(). It sits in a readonly input rather than a <pre> so it can
+	be selected and copied, and so a long bundle path scrolls instead of stretching the dialog;
+	selecting it on click is src/Assets/javascript/mcp-panel.js, bound by id. Not an onclick
+	attribute: the page's CSP carries strict-dynamic, which makes the 'unsafe-inline' beside it
+	ignored, so an inline handler would work under -debug and nowhere else.
 *}
 {parameters
 	\AdminerDesktop $desktop,
 	bool $enabled,
 	string $os,
 	string $command,
-	array $status
+	array $status,
+	?string $lastUsed
 }
 <p>
 	<input type="checkbox" name="mcp" value="1" id="desktop-mcp" n:attr="checked: $enabled">
 	<label for="desktop-mcp">{$desktop->t('mcp.enable')}</label>
+</p>
 
-<p class="ad-mcp-note">{$desktop->t('mcp.description')}
+<p class="ad-mcp-note">{$desktop->t('mcp.description')}</p>
 
-<p><b>{$status['ready'] ? '●' : '○'}</b> {$status['text']}
+<p class="ad-mcp-status">
+	{* Both classes go through n:class — Latte rejects a plain class attribute beside it. *}
+	<span n:class="'ad-mcp-dot', $status['ready'] ? 'ad-mcp-on'">&#9679;</span>
+	{$status['text']}
+</p>
+
+{* Only once something has actually called: "never used" is the default and saying so on every
+	open would be noise. Seeing a recent query you did not ask for is the point. *}
+<p n:if="$lastUsed !== null" class="ad-mcp-note">{$lastUsed}</p>
 
 <fieldset>
-	<legend>{$desktop->t('mcp.register_on')|noescape} {$os}</legend>
+	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
 	{* readonly, not disabled: a disabled input cannot be selected, which is the one thing this
 		field exists for. *}
-	<input type="text" readonly value="{$command}" style="width: 100%; font-family: monospace"
-		onclick="this.select()" aria-label="{$desktop->t('mcp.register_on')} {$os}">
-	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}
+	<input type="text" id="desktop-mcp-command" class="ad-mcp-command" readonly value="{$command}"
+		aria-label="{$desktop->t('mcp.register_on')} {$os}">
+	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
 </fieldset>
 
-<p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}
+<p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>

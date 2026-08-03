@@ -24,11 +24,13 @@ class Panel {
 	private \AdminerDesktop $desktop;
 	private UserSettings $settings;
 	private Handshake $handshake;
+	private Activity $activity;
 
-	function __construct(\AdminerDesktop $desktop, UserSettings $settings, ?Handshake $handshake = null) {
+	function __construct(\AdminerDesktop $desktop, UserSettings $settings, ?Handshake $handshake = null, ?Activity $activity = null) {
 		$this->desktop = $desktop;
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
+		$this->activity = $activity ?? new Activity();
 	}
 
 	function panel(): void {
@@ -39,6 +41,7 @@ class Panel {
 			"os" => Os::current()->label(),
 			"command" => $this->command(),
 			"status" => $this->status($enabled),
+			"lastUsed" => $this->lastUsed(time()),
 		]);
 	}
 
@@ -63,6 +66,26 @@ class Panel {
 		}
 		$root = dirname(__DIR__, 2); // app/
 		return 'claude mcp add adminer -- "' . dirname($root) . '/bin/frankenphp" php-cli "' . $root . '/mcp.php"';
+	}
+
+	/** When an agent last asked for something, in words — or null if none ever has.
+	*
+	* Relative rather than a timestamp: the question is "was that just now, or last week", and
+	* nobody reads a clock time to answer it.
+	*/
+	function lastUsed(int $now): ?string {
+		$last = $this->activity->last();
+		if ($last === null) {
+			return null;
+		}
+		$ago = max(0, $now - $last['at']);
+		$when = match (true) {
+			$ago < 60 => $this->desktop->t('mcp.used_moments'),
+			$ago < 3600 => $this->desktop->t('mcp.used_minutes'),
+			$ago < 86400 => $this->desktop->t('mcp.used_hours'),
+			default => $this->desktop->t('mcp.used_days'),
+		};
+		return $when;
 	}
 
 	/** What is stopping it working, in the order the user has to fix them.
