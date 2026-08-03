@@ -20,7 +20,7 @@ with the Adminer project.
 - Install it like any other app. No PHP, no web server, no browser.
 - Works well with Docker. Sensible defaults make connecting to containerized databases easier.
 - Stays logged in between launches.
-- MCP Server support.
+- MCP Server support. ![new](https://img.shields.io/badge/new-16a34a?style=flat-square)
 - Settings are available before you connect.
 - Light and dark mode, with themes for both.
 - Language, scaling, row density, and plugins are all in one place.
