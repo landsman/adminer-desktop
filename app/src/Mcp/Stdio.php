@@ -56,16 +56,17 @@ class Stdio {
 	function exchange(string $line): ?string {
 		$message = json_decode($line, true);
 		$id = is_array($message) ? ($message['id'] ?? null) : null;
+		$method = is_array($message) && is_string($message['method'] ?? null) ? $message['method'] : '';
 
 		$config = $this->handshake->read();
 		if ($config === null) {
-			return $this->error($id, 'Adminer Desktop is not running, or database access for agents is switched off in its settings. Open the app, log in, and enable it under Settings.');
+			return $this->unavailable($id, $method, 'Adminer Desktop is not running, or database access for agents is switched off in its settings. Open the app, log in, and switch it on under Settings > AI access.');
 		}
 		$url = $config['url'] . (str_contains($config['url'], '?') ? '&' : '?') . 'mcp=1';
 		$body = ($this->send)($url, $line, $config['cookies']);
 
 		if ($body === false) {
-			return $this->error($id, 'Adminer Desktop stopped answering — the window was probably closed.');
+			return $this->unavailable($id, $method, 'Adminer Desktop stopped answering — the window was probably closed. Open it again and the same registration keeps working.');
 		}
 		if ($body === '') {
 			return null; // the app answered 204: a notification, and nothing to forward
@@ -73,7 +74,7 @@ class Stdio {
 		// Adminer answers HTML when the session behind the handshake has expired. Say that,
 		// rather than handing the agent a page of markup to guess at.
 		if ($body[0] !== '{' && $body[0] !== '[') {
-			return $this->error($id, 'The Adminer Desktop session has expired. Log in again in the app.');
+			return $this->unavailable($id, $method, 'The Adminer Desktop session has expired. Log in to the database again in the app.');
 		}
 		return $body;
 	}
@@ -98,15 +99,40 @@ class Stdio {
 		return @file_get_contents($url, false, $context);
 	}
 
-	/** A JSON-RPC error for the failures that happen before the app is ever reached. */
-	private function error(mixed $id, string $message): ?string {
+	/** Answer when the app cannot be reached, without failing the connection.
+	*
+	* Failing `initialize` is what a client reports as a dead server: it prints the JSON-RPC code
+	* and drops the message, so the sentence explaining exactly what to do never reaches anyone.
+	* The observed symptom was a bare "-32000" and a server listed as failed, for the entirely
+	* ordinary case of the feature not being switched on yet.
+	*
+	* So the handshake always succeeds — we are a working server whose backend happens to be
+	* unavailable — and the explanation is delivered as a tool *result* instead, which clients
+	* render into the conversation where somebody will read it. tools/list answers with nothing
+	* rather than an error for the same reason: an empty toolbox is a state, not a breakage.
+	*/
+	private function unavailable(mixed $id, string $method, string $message): ?string {
 		if ($id === null) {
-			return null;
+			return null; // a notification: answered with silence whatever the state
 		}
-		return (string) json_encode([
-			'jsonrpc' => '2.0',
-			'id' => $id,
-			'error' => ['code' => -32000, 'message' => $message],
-		]);
+		return match ($method) {
+			'initialize' => $this->result($id, [
+				'protocolVersion' => '2025-11-25',
+				'capabilities' => ['tools' => new \stdClass()],
+				'serverInfo' => ['name' => 'adminer-desktop', 'version' => 'offline'],
+			]),
+			'tools/list' => $this->result($id, ['tools' => []]),
+			'ping' => $this->result($id, new \stdClass()),
+			// tools/call and anything else: an error the model can read and repeat to the user.
+			default => $this->result($id, [
+				'content' => [['type' => 'text', 'text' => $message]],
+				'isError' => true,
+			]),
+		};
+	}
+
+	/** @param array<string,mixed>|\stdClass $result */
+	private function result(mixed $id, array|\stdClass $result): string {
+		return (string) json_encode(['jsonrpc' => '2.0', 'id' => $id, 'result' => $result]);
 	}
 }

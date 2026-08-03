@@ -53,11 +53,24 @@ $request = (string) json_encode(['jsonrpc' => '2.0', 'id' => 7, 'method' => 'too
 $notification = (string) json_encode(['jsonrpc' => '2.0', 'method' => 'notifications/initialized']);
 $unreachable = fn(): bool => false;
 
-// 1. No handshake at all: the app is not running, or the feature is off.
+// 1. No handshake at all: the app is not running, or the feature is off. The connection must
+//    still come up — failing initialize is reported by clients as a dead server, printing the
+//    JSON-RPC code and dropping the message, so the sentence saying what to do never arrives.
 $handshake->clear();
 $stdio = new Stdio($handshake, $unreachable);
-$contains('no handshake', $stdio->exchange($request), 'not running');
-$contains('no handshake names the setting', $stdio->exchange($request), 'Settings');
+$init = json_decode((string) $stdio->exchange((string) json_encode(
+    ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize'],
+)), true);
+$is('initialize succeeds while unavailable', $init['result']['protocolVersion'] ?? null, '2025-11-25');
+$list = json_decode((string) $stdio->exchange($request), true);
+$is('tools/list answers empty, not an error', $list['result']['tools'] ?? null, []);
+
+// The explanation belongs where a client renders it: a tool result, not a transport error.
+$call = json_decode((string) $stdio->exchange((string) json_encode(
+    ['jsonrpc' => '2.0', 'id' => 3, 'method' => 'tools/call', 'params' => ['name' => 'list_tables']],
+)), true);
+$is('a call while unavailable is a tool error', $call['result']['isError'] ?? null, true);
+$contains('and it says what to do', $call['result']['content'][0]['text'] ?? null, 'AI access');
 
 // 2. Same, but the message was a notification. JSON-RPC answers those with silence — an error
 //    here would be a protocol violation that strict clients complain about.
@@ -67,8 +80,10 @@ $is('notification with no handshake stays silent', $stdio->exchange($notificatio
 $handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', ['adminer_sid' => 'abc']);
 
 // 3. The window was closed: the transport fails outright.
-$stdio = new Stdio($handshake, $unreachable);
-$contains('window closed', $stdio->exchange($request), 'stopped answering');
+$closed = json_decode((string) (new Stdio($handshake, $unreachable))->exchange((string) json_encode(
+    ['jsonrpc' => '2.0', 'id' => 4, 'method' => 'tools/call', 'params' => ['name' => 'list_tables']],
+)), true);
+$contains('window closed', $closed['result']['content'][0]['text'] ?? null, 'stopped answering');
 
 // 4. A 204: the app had nothing to say, and neither have we.
 $is('empty body forwards nothing', (new Stdio($handshake, fn(): string => ''))->exchange($request), null);
@@ -76,7 +91,10 @@ $is('empty body forwards nothing', (new Stdio($handshake, fn(): string => ''))->
 // 5. HTML back means the session behind the handshake expired. The agent must be told that,
 //    not handed a login page to parse.
 $html = new Stdio($handshake, fn(): string => "<!doctype html><title>Login</title>");
-$contains('expired session', $html->exchange($request), 'expired');
+$expired = json_decode((string) $html->exchange((string) json_encode(
+    ['jsonrpc' => '2.0', 'id' => 5, 'method' => 'tools/call', 'params' => ['name' => 'list_tables']],
+)), true);
+$contains('expired session', $expired['result']['content'][0]['text'] ?? null, 'expired');
 
 // 6. A JSON answer is forwarded verbatim — the bridge must not reshape what the server said.
 $answer = '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}';
