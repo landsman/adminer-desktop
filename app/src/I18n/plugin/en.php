@@ -59,7 +59,7 @@ return [
 	'mcp.description' => 'An agent you register below can read the database this window is logged into — the schema, and queries you ask it to run. It cannot write: every query runs in a transaction that is rolled back. Access lasts only while this window is open and logged in.',
 	'mcp.status_off' => 'Off. Nothing can reach the database.',
 	'mcp.status_waiting' => 'On, but not reachable yet — log in to a database and the agent can query it.',
-	'mcp.status_ready' => 'Ready. A registered agent can query the database you are logged into.',
+	'mcp.status_ready' => 'Ready. A registered agent can query the database you are logged into — reconnect it if it was already running.',
 	'mcp.register_on' => 'Register with your agent on',
 	'mcp.register_hint' => 'Copy it, then run it once in a terminal. It keeps working after a restart.',
 	'mcp.readonly_note' => 'Rollback undoes data changes. Some databases commit a schema change immediately, so on those it cannot be undone. To make writes impossible rather than undone, log in as a read-only database user.',

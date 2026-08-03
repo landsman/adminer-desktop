@@ -52,7 +52,7 @@ return [
 	'mcp.description' => 'Ein unten registrierter Agent kann die Datenbank lesen, in der dieses Fenster angemeldet ist — die Struktur und Abfragen, um die Sie ihn bitten. Schreiben kann er nicht: Jede Abfrage läuft in einer Transaktion, die zurückgerollt wird. Der Zugriff besteht nur, solange dieses Fenster geöffnet und angemeldet ist.',
 	'mcp.status_off' => 'Aus. Nichts erreicht die Datenbank.',
 	'mcp.status_waiting' => 'An, aber noch nicht erreichbar — melden Sie sich an einer Datenbank an, dann kann der Agent sie abfragen.',
-	'mcp.status_ready' => 'Bereit. Ein registrierter Agent kann die Datenbank abfragen, in der Sie angemeldet sind.',
+	'mcp.status_ready' => 'Bereit. Ein registrierter Agent kann die Datenbank abfragen, in der Sie angemeldet sind — verbinden Sie ihn neu, falls er bereits lief.',
 	'mcp.register_on' => 'Beim Agenten registrieren unter',
 	'mcp.register_hint' => 'Kopieren und einmal im Terminal ausführen. Funktioniert auch nach einem Neustart.',
 	'mcp.readonly_note' => 'Ein Rollback macht Datenänderungen rückgängig. Manche Datenbanken bestätigen eine Strukturänderung sofort, dort lässt sie sich nicht zurücknehmen. Damit Schreibzugriffe unmöglich statt rückgängig gemacht werden, melden Sie sich als schreibgeschützter Datenbankbenutzer an.',

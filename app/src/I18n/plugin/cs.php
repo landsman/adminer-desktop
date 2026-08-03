@@ -52,7 +52,7 @@ return [
 	'mcp.description' => 'Agent, kterého níže zaregistrujete, může číst databázi, do které je toto okno přihlášeno — strukturu i dotazy, o které ho požádáte. Zapisovat nemůže: každý dotaz běží v transakci, která se vrátí zpět. Přístup trvá jen po dobu, kdy je okno otevřené a přihlášené.',
 	'mcp.status_off' => 'Vypnuto. K databázi se nic nedostane.',
 	'mcp.status_waiting' => 'Zapnuto, ale zatím nedostupné — přihlaste se k databázi a agent se může ptát.',
-	'mcp.status_ready' => 'Připraveno. Zaregistrovaný agent se může ptát databáze, do které jste přihlášeni.',
+	'mcp.status_ready' => 'Připraveno. Zaregistrovaný agent se může ptát databáze, do které jste přihlášeni — pokud už běžel, znovu ho připojte.',
 	'mcp.register_on' => 'Zaregistrovat u agenta na',
 	'mcp.register_hint' => 'Zkopírujte a spusťte jednou v terminálu. Funguje i po restartu.',
 	'mcp.readonly_note' => 'Vrácení transakce vrátí změny dat. Některé databáze potvrdí změnu struktury okamžitě, takže u nich ji vrátit nelze. Chcete-li zápis zcela znemožnit místo vracení, přihlaste se jako uživatel s právem jen ke čtení.',

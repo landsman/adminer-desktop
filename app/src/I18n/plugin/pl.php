@@ -52,7 +52,7 @@ return [
 	'mcp.description' => 'Zarejestrowany poniżej agent może czytać bazę danych, do której zalogowane jest to okno — strukturę oraz zapytania, o które go poprosisz. Nie może zapisywać: każde zapytanie działa w transakcji, która jest wycofywana. Dostęp trwa tylko wtedy, gdy to okno jest otwarte i zalogowane.',
 	'mcp.status_off' => 'Wyłączone. Nic nie dosięgnie bazy danych.',
 	'mcp.status_waiting' => 'Włączone, ale jeszcze niedostępne — zaloguj się do bazy danych, a agent będzie mógł ją odpytywać.',
-	'mcp.status_ready' => 'Gotowe. Zarejestrowany agent może odpytywać bazę danych, do której jesteś zalogowany.',
+	'mcp.status_ready' => 'Gotowe. Zarejestrowany agent może odpytywać bazę danych, do której jesteś zalogowany — połącz go ponownie, jeśli już działał.',
 	'mcp.register_on' => 'Zarejestruj u swojego agenta w',
 	'mcp.register_hint' => 'Skopiuj i uruchom raz w terminalu. Działa również po ponownym uruchomieniu.',
 	'mcp.readonly_note' => 'Wycofanie transakcji cofa zmiany danych. Niektóre bazy zatwierdzają zmianę struktury natychmiast, więc tam nie da się jej cofnąć. Aby zapis był niemożliwy, a nie tylko cofany, zaloguj się jako użytkownik bazy tylko do odczytu.',

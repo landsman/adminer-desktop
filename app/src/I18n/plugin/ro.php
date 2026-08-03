@@ -52,7 +52,7 @@ return [
 	'mcp.description' => 'Un agent înregistrat mai jos poate citi baza de date în care este autentificată această fereastră — structura și interogările pe care i le ceri. Nu poate scrie: fiecare interogare rulează într-o tranzacție care este anulată. Accesul durează doar cât timp fereastra este deschisă și autentificată.',
 	'mcp.status_off' => 'Oprit. Nimic nu ajunge la baza de date.',
 	'mcp.status_waiting' => 'Pornit, dar încă inaccesibil — autentifică-te la o bază de date și agentul o va putea interoga.',
-	'mcp.status_ready' => 'Gata. Un agent înregistrat poate interoga baza de date în care ești autentificat.',
+	'mcp.status_ready' => 'Gata. Un agent înregistrat poate interoga baza de date în care ești autentificat — reconectează-l dacă rula deja.',
 	'mcp.register_on' => 'Înregistrează la agentul tău pe',
 	'mcp.register_hint' => 'Copiază-l și rulează-l o dată în terminal. Funcționează și după repornire.',
 	'mcp.readonly_note' => 'Anularea tranzacției revine asupra modificărilor de date. Unele baze de date confirmă imediat o modificare de structură, așa că acolo nu poate fi anulată. Pentru ca scrierile să fie imposibile, nu doar anulate, autentifică-te ca utilizator de bază de date doar cu drept de citire.',
