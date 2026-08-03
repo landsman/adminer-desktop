@@ -127,7 +127,7 @@ class Stdio {
 			// reason in the tool list itself, where it is visible without calling anything, and
 			// still answers with it if the model does call.
 			'tools/list' => $this->result($id, ['tools' => [[
-				'name' => 'adminer_desktop_unavailable',
+				'name' => 'need_attention_read_me',
 				'description' => $message,
 				'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()],
 			]]]),

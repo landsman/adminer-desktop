@@ -66,7 +66,7 @@ $is('initialize succeeds while unavailable', $init['result']['protocolVersion'] 
 // reached. The one tool advertised is the reason, readable in the client's tool list.
 $list = json_decode((string) $stdio->exchange($request), true);
 $is('advertises exactly one tool while unavailable', count($list['result']['tools'] ?? []), 1);
-$is('named for the state', $list['result']['tools'][0]['name'] ?? null, 'adminer_desktop_unavailable');
+$is('named for the state', $list['result']['tools'][0]['name'] ?? null, 'need_attention_read_me');
 $contains('described with what to do', $list['result']['tools'][0]['description'] ?? null, 'AI access');
 
 // The explanation belongs where a client renders it: a tool result, not a transport error.
