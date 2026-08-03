@@ -40,6 +40,8 @@ with the Adminer project.
 
 - **[Installing](.docs/install.md)** — macOS, Debian/Ubuntu, which platforms work, and where
   it keeps your settings.
+- **[Letting an agent query your database](.docs/mcp.md)** — the MCP server: turning it on,
+  registering it, and what it will and will not do.
 - **[Developing](.docs/development.md)** — building it yourself, the checks, what is pinned.
 - **[Linux releases](.docs/releases-linux.md)** — why there is a `.deb` and no apt repository.
 

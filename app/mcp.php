@@ -12,8 +12,11 @@ declare(strict_types=1);
 * no PHP to install and nothing on PATH to find — the launcher's -mcp flag resolves both and
 * the agent is pointed at the app itself:
 *
-*     claude mcp add adminer -- adminer-desktop -mcp                      # .deb, on PATH
-*     claude mcp add adminer -- "/Applications/Adminer Desktop.app/Contents/MacOS/adminer-desktop" -mcp
+*     claude mcp add adminer -- adminer-desktop -mcp
+*
+* The per-platform commands are in .docs/mcp.md, along with how to switch the feature on, and
+* they live there rather than here so there is one copy to keep true — only the .deb puts the
+* launcher on PATH, and the rest sit wherever the user unpacked them.
 *
 * Register it once and it keeps working across restarts, because the thing that changes — the
 * port the launcher binds — is read fresh on every message rather than baked into the config.
