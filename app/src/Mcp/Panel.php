@@ -38,6 +38,7 @@ class Panel {
 		Latte::engine()->render(__DIR__ . "/mcp-panel.latte", [
 			"desktop" => $this->desktop,
 			"enabled" => $enabled,
+			"write" => (bool) $this->settings->get(SettingKey::McpWrite, false),
 			"os" => Os::current()->label(),
 			"command" => $this->command(),
 			"status" => $this->status($enabled),
@@ -51,6 +52,7 @@ class Panel {
 	*/
 	function apply(): void {
 		$this->settings->set(SettingKey::Mcp, isset($_POST["mcp"]));
+		$this->settings->set(SettingKey::McpWrite, isset($_POST["mcp_write"]));
 	}
 
 	/** The registration command for this install, ready to paste.

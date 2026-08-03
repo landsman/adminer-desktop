@@ -244,6 +244,34 @@ try {
         $failures[] = "READ-ONLY BROKEN: the INSERT survived (found $left row(s) named $marker)";
     }
 
+    // 5b. Writes on: the same statement must now persist, and the answer must stop claiming a
+    //     rollback. Both directions matter — a read-only mode that silently commits is the
+    //     dangerous failure, and a write mode that silently discards is a confusing one.
+    file_put_contents($data . '/settings.json', (string) json_encode(['mcp' => true, 'mcp_write' => true]));
+    $kept = $marker . '-committed';
+    [$w] = $rpc([
+        'jsonrpc' => '2.0', 'id' => 6, 'method' => 'tools/call',
+        'params' => ['name' => 'execute_query', 'arguments' => [
+            'sql' => "INSERT INTO users (name) VALUES ('$kept') RETURNING id",
+        ]],
+    ], $cookies, $mcpUrl);
+    $wp = json_decode($w['result']['content'][0]['text'] ?? '', true);
+    if (($wp['rolled_back'] ?? null) !== false) {
+        $failures[] = 'with writes on the answer still claims a rollback: ' . json_encode($wp);
+    }
+    $kc = new Process([
+        'docker', 'exec', 'adminer-demo-pg', 'psql', '-U', 'postgres', '-d', 'demo',
+        '-tAc', "SELECT count(*) FROM users WHERE name = '$kept'",
+    ]);
+    $kc->run();
+    if (trim($kc->getOutput()) !== '1') {
+        $failures[] = 'writes were enabled but the row did not persist: ' . trim($kc->getOutput());
+    }
+    (new Process([
+        'docker', 'exec', 'adminer-demo-pg', 'psql', '-U', 'postgres', '-d', 'demo',
+        '-tAc', "DELETE FROM users WHERE name = '$kept'",
+    ]))->run();
+
     // 6. Turning it off must retract the handshake, not just stop honouring it.
     file_put_contents($data . '/settings.json', (string) json_encode(['mcp' => false]));
     $ch = curl_init($base);

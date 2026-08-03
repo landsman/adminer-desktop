@@ -63,4 +63,7 @@ return [
 	'mcp.copy' => 'Copiază',
 	'mcp.copied' => 'Copiat',
 	'mcp.target' => 'Agentul ar interoga:',
+	'mcp.write_enable' => 'Permite-i și să modifice datele (INSERT, UPDATE, DELETE)',
+	'mcp.write_on' => 'Scrierile sunt confirmate. Agentul își alege singur instrucțiunile, iar un DELETE greșit nu poate fi recuperat de aici.',
+	'mcp.write_off' => 'Doar citire. Instrucțiunile care ar scrie sunt rulate și apoi anulate, deci nu au niciun efect.',
 ];

@@ -30,4 +30,8 @@ enum SettingKey: string {
 	// it on hands read access to whatever this window is connected to, so it is a decision
 	// somebody makes, never one a release makes for them.
 	case Mcp = 'mcp';
+	// Whether that agent may also change data. Separate from Mcp and off on its own, because
+	// letting something read your database and letting it rewrite your database are not the
+	// same decision — see Desktop\Mcp\Tools.
+	case McpWrite = 'mcp_write';
 }

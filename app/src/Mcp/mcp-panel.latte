@@ -10,6 +10,7 @@
 {parameters
 	\AdminerDesktop $desktop,
 	bool $enabled,
+	bool $write,
 	string $os,
 	string $command,
 	array $status,
@@ -22,6 +23,15 @@
 </p>
 
 <p class="ad-mcp-note">{$desktop->t('mcp.description')}</p>
+
+{* Its own decision, and its own line: reading your database and rewriting it are not the same
+	permission, so ticking the first must not quietly grant the second. *}
+<p>
+	<input type="checkbox" name="mcp_write" value="1" id="desktop-mcp-write" n:attr="checked: $write">
+	<label for="desktop-mcp-write">{$desktop->t('mcp.write_enable')}</label>
+</p>
+
+<p n:class="'ad-mcp-note', $write ? 'ad-mcp-warn'">{$desktop->t($write ? 'mcp.write_on' : 'mcp.write_off')}</p>
 
 <p class="ad-mcp-status">
 	{* Both classes go through n:class — Latte rejects a plain class attribute beside it. *}

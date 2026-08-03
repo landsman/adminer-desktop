@@ -31,7 +31,7 @@ class Endpoint {
 	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null) {
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
-		$this->server = $server ?? new Server();
+		$this->server = $server ?? new Server(null, (bool) $settings->get(SettingKey::McpWrite, false));
 		$this->activity = $activity ?? new Activity();
 		$this->log = $log ?? new RequestLog();
 	}

@@ -25,6 +25,13 @@ namespace Desktop\Mcp;
 * somebody's context window.
 */
 class Tools {
+	/** Whether a statement that writes is kept. Off unless the user said otherwise. */
+	private bool $write;
+
+	function __construct(bool $write = false) {
+		$this->write = $write;
+	}
+
 	/** Rows returned before we stop and say there were more. */
 	private const MAX_ROWS = 200;
 
@@ -82,11 +89,14 @@ class Tools {
 	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,rolled_back:bool,note:string}
 	*/
 	function query(string $sql, int $limit = self::MAX_ROWS): array {
-		return $this->select($sql, max(1, min($limit, self::MAX_ROWS))) + [
-			'rolled_back' => true,
-			'note' => 'This ran inside a transaction that was rolled back. Nothing was written. '
-				. 'Any id returned by RETURNING came from a sequence and does not identify a stored row.',
-		];
+		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)));
+		return $result + ($this->write
+			? ['rolled_back' => false, 'note' => 'Writes are enabled: anything this statement changed has been committed.']
+			: [
+				'rolled_back' => true,
+				'note' => 'This ran inside a transaction that was rolled back. Nothing was written. '
+					. 'Any id returned by RETURNING came from a sequence and does not identify a stored row.',
+			]);
 	}
 
 	/** What this window is connected to — the answer to "which database am I even looking at".
@@ -132,7 +142,14 @@ class Tools {
 			// finally, not after the return: a query that throws must still not leave a
 			// transaction open on the connection the user is browsing in.
 			if ($began) {
-				$driver->rollback();
+				// commit() only when the user asked for it. Note the transaction wraps the
+				// statement either way: with writes on this is an ordinary commit, with them
+				// off it is what undoes anything the statement did.
+				if ($this->write) {
+					$driver->commit();
+				} else {
+					$driver->rollback();
+				}
 			}
 		}
 	}

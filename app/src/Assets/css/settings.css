@@ -164,6 +164,11 @@ body:has(#desktop-settings[open]) {
 }
 
 /* What the agent currently sees. Monospace because it is a connection string, not prose. */
+.ad-mcp-warn {
+	color: var(--ad-danger, inherit);
+	font-weight: 500;
+}
+
 .ad-mcp-target {
 	font-family: var(--ad-mono, ui-monospace, monospace);
 }
