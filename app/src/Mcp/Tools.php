@@ -72,10 +72,21 @@ class Tools {
 	}
 
 	/** Run a caller's SQL and return its rows. Rolled back, always.
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool}
+	*
+	* The answer says so. A write is not refused here, it is undone — and RETURNING makes an
+	* INSERT produce a perfectly ordinary result set, so without this the caller gets
+	* {"rows":[{"id":6}]} and concludes it wrote. It did not: the id came from a sequence, which
+	* postgres does not roll back, and the row went with the transaction. An agent that reports
+	* that as a successful write is worse than one that cannot write at all.
+	*
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,rolled_back:bool,note:string}
 	*/
 	function query(string $sql, int $limit = self::MAX_ROWS): array {
-		return $this->select($sql, max(1, min($limit, self::MAX_ROWS)));
+		return $this->select($sql, max(1, min($limit, self::MAX_ROWS))) + [
+			'rolled_back' => true,
+			'note' => 'This ran inside a transaction that was rolled back. Nothing was written. '
+				. 'Any id returned by RETURNING came from a sequence and does not identify a stored row.',
+		];
 	}
 
 	/** What this window is connected to — the answer to "which database am I even looking at".

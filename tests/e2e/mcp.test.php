@@ -220,9 +220,23 @@ try {
         '-tAc', "DELETE FROM users WHERE name = '$probe'",
     ]))->run();
 
+    // The answer must also *say* it was rolled back. RETURNING makes an INSERT produce an
+    // ordinary result set, so without this the caller sees rows and concludes it wrote — which
+    // is exactly what happened in use, and is worse than refusing the write outright.
+    [$written] = $rpc([
+        'jsonrpc' => '2.0', 'id' => 5, 'method' => 'tools/call',
+        'params' => ['name' => 'execute_query', 'arguments' => [
+            'sql' => "INSERT INTO users (name) VALUES ('$marker-returning') RETURNING id",
+        ]],
+    ], $cookies, $mcpUrl);
+    $payload = json_decode($written['result']['content'][0]['text'] ?? '', true);
+    if (($payload['rolled_back'] ?? null) !== true) {
+        $failures[] = 'a write answered without saying it was rolled back: ' . json_encode($payload);
+    }
+
     $check = new Process([
         'docker', 'exec', 'adminer-demo-pg', 'psql', '-U', 'postgres', '-d', 'demo',
-        '-tAc', "SELECT count(*) FROM users WHERE name = '$marker'",
+        '-tAc', "SELECT count(*) FROM users WHERE name LIKE '$marker%'",
     ]);
     $check->run();
     $left = trim($check->getOutput());
