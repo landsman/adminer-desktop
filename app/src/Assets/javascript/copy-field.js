@@ -17,10 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		// is the fallback when the clipboard write is refused.
 		value.addEventListener("focus", () => value.select());
 
-		// The span, not the button: the button also holds the icon, and writing to its
-		// textContent would replace that too.
-		const text = button.querySelector("[data-copy-label]") || button;
-		const label = text.textContent;
+		// The button is icon-only, so its label is the title and the accessible name rather than
+		// any text to rewrite.
+		const label = button.getAttribute("aria-label") || "";
+		const say = (text) => {
+			button.title = text;
+			button.setAttribute("aria-label", text);
+		};
 		let restore = 0;
 		button.addEventListener("click", async () => {
 			value.select();
@@ -33,15 +36,15 @@ document.addEventListener("DOMContentLoaded", () => {
 				return;
 			}
 			const copied = button.dataset.copied || label;
-			// Both: the button says it for anyone watching their pointer, the toast says it for
-			// anyone watching the field. window.adToast is toast.js, loaded from the same folder.
-			text.textContent = copied;
+			// The toast is what a person actually sees now that the button carries no text —
+			// the title only appears on hover. window.adToast is toast.js, same folder.
+			say(copied);
 			if (typeof window.adToast === "function") {
 				window.adToast(copied);
 			}
 			clearTimeout(restore);
 			restore = setTimeout(() => {
-				text.textContent = label;
+				say(label);
 			}, 1500);
 		});
 	}

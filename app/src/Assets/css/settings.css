@@ -225,23 +225,27 @@ body:has(#desktop-settings[open]) {
 	color: var(--fg);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius-sm);
-	padding: var(--ad-cell-padding);
-	/* Room for the button, which floats over the top-right corner. Generous because the label
-	   is translated and "Zkopírovat" is half again as wide as "Copy". */
-	padding-right: 9em;
+	/* Roomier than --ad-cell-padding, which is sized for table cells: this is one command sitting
+	   alone in a box, and at cell spacing it looked wedged into the corner. The right side clears
+	   the button floating over it — a fixed reserve, since the button is a square icon and no
+	   longer grows with a translated label. */
+	padding: 0.7em 3.4em 0.7em 0.8em;
+	line-height: 1.5;
 }
 
+/* Icon only: square, and large enough to be an easy target on a touchpad. The label is the
+   title and the accessible name — see copy-field.latte. */
 .ad-copy-button {
 	position: absolute;
-	top: 0.35em;
-	right: 0.35em;
+	top: 0.5em;
+	right: 0.5em;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35em;
+	justify-content: center;
+	width: 2.4em;
+	height: 2.4em;
+	padding: 0;
 	font: inherit;
-	font-size: 0.85em;
-	white-space: nowrap;
-	padding: 0.25em 0.7em;
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius-sm);
 	background: var(--bg);
