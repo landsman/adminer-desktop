@@ -173,19 +173,29 @@ body:has(#desktop-settings[open]) {
 	font-family: var(--ad-mono, ui-monospace, monospace);
 }
 
+/* One block per agent in the register fieldset: the name, then its command. */
+.ad-mcp-agent + .ad-mcp-agent {
+	margin-top: var(--ad-gap-lg);
+}
+
+.ad-mcp-agent-name {
+	margin: 0 0 0.3em;
+	font-weight: 500;
+}
+
 /* --- Copy field (src/Assets/copy-field.latte) ---------------------------------- */
 
+/* The button sits inside the field, so this is its containing block. */
 .ad-copy {
-	display: flex;
-	align-items: flex-start;
-	gap: var(--ad-gap);
+	position: relative;
 }
 
 /* Wraps rather than scrolls: these hold absolute paths that run past any field width, and a
    command you can only see one field-width of is a command you cannot check before running. */
 .ad-copy-value {
-	flex: 1;
-	min-width: 0;
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
 	font-family: var(--ad-mono, ui-monospace, monospace);
 	font-size: 0.9em;
 	resize: vertical;
@@ -196,14 +206,24 @@ body:has(#desktop-settings[open]) {
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius-sm);
 	padding: var(--ad-cell-padding);
+	/* Room for the button, which floats over the top-right corner. Generous because the label
+	   is translated and "Zkopírovat" is half again as wide as "Copy". */
+	padding-right: 9em;
 }
 
 .ad-copy-button {
+	position: absolute;
+	top: 0.35em;
+	right: 0.35em;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35em;
 	font: inherit;
+	font-size: 0.85em;
 	white-space: nowrap;
-	padding: var(--ad-button-padding);
+	padding: 0.25em 0.7em;
 	border: 1px solid var(--ad-border);
-	border-radius: var(--ad-radius);
+	border-radius: var(--ad-radius-sm);
 	background: var(--bg);
 	color: var(--fg);
 	cursor: pointer;
@@ -211,6 +231,10 @@ body:has(#desktop-settings[open]) {
 
 .ad-copy-button:hover {
 	background: var(--dim);
+}
+
+.ad-copy-icon {
+	flex: none;
 }
 
 /* --- Buttons ------------------------------------------------------------------ */

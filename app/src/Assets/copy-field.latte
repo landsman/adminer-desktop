@@ -9,6 +9,14 @@
 	thing this exists for. Its rows come from the caller, since only the caller knows how long
 	the content runs.
 
+	The button sits *inside* the field, top right, rather than beside it: next to a textarea it
+	stretched the row and left the two controls looking unrelated. Inside, it reads as part of
+	the field it acts on, and the textarea keeps the dialog's full width. The padding that keeps
+	the text clear of it is in settings.css.
+
+	The label lives in its own span because copy-field.js swaps it for "Copied" — writing to the
+	button's own textContent would take the icon with it.
+
 	The button is wired by src/Assets/javascript/copy-field.js, which binds every instance on the
 	page by data attribute — no id to keep unique, and no inline handler, which the app's CSP
 	would refuse anyway (strict-dynamic makes the 'unsafe-inline' beside it ignored).
@@ -23,5 +31,14 @@
 <div class="ad-copy" data-copy-field>
 	<textarea class="ad-copy-value" readonly rows="{$rows}" aria-label="{$label}"
 		data-copy-value>{$value}</textarea>
-	<button type="button" class="ad-copy-button" data-copy-button data-copied="{$copied}">{$copy}</button>
+	{* Inline SVG rather than a sprite or a font: two rectangles, currentColor, no extra request
+		and it follows the theme's text colour on both schemes. aria-hidden because the button's
+		own label already says what it does. *}
+	<button type="button" class="ad-copy-button" data-copy-button data-copied="{$copied}">
+		<svg class="ad-copy-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+			<rect x="5.5" y="5.5" width="9" height="9" rx="1.5"/>
+			<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h1"/>
+		</svg>
+		<span data-copy-label>{$copy}</span>
+	</button>
 </div>

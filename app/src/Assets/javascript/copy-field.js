@@ -17,7 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		// is the fallback when the clipboard write is refused.
 		value.addEventListener("focus", () => value.select());
 
-		const label = button.textContent;
+		// The span, not the button: the button also holds the icon, and writing to its
+		// textContent would replace that too.
+		const text = button.querySelector("[data-copy-label]") || button;
+		const label = text.textContent;
 		let restore = 0;
 		button.addEventListener("click", async () => {
 			value.select();
@@ -32,13 +35,13 @@ document.addEventListener("DOMContentLoaded", () => {
 			const copied = button.dataset.copied || label;
 			// Both: the button says it for anyone watching their pointer, the toast says it for
 			// anyone watching the field. window.adToast is toast.js, loaded from the same folder.
-			button.textContent = copied;
+			text.textContent = copied;
 			if (typeof window.adToast === "function") {
 				window.adToast(copied);
 			}
 			clearTimeout(restore);
 			restore = setTimeout(() => {
-				button.textContent = label;
+				text.textContent = label;
 			}, 1500);
 		});
 	}
