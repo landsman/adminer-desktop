@@ -3,6 +3,10 @@
 /.idea/
 /out/
 /.playwright-mcp/
+# Throwaway git worktrees an agent checks out to work in isolation — a copy of the repo
+# each, and gone once the work lands. Only the worktrees: .claude/skills/ is committed,
+# because a skill is documentation the next person reads.
+/.claude/worktrees/
 # Installed dependencies — composer.json/lock and package.json/lock are the source of
 # truth; the trees themselves are built by `mise run install`, not committed.
 /node_modules
