@@ -105,6 +105,18 @@ dialog#desktop-settings p {
 	border-bottom: 0;
 }
 
+/* ...but adminer's own notice is a <p class="message">, and the reset takes two things it needs:
+   the padding, leaving the text against the edge of its green bubble, and — because `border: 0`
+   is a shorthand and resets the colour with the width — the bottom of its border, leaving a
+   bubble open along the bottom. Restated here in full rather than exempted from the reset, so
+   the border is a green tint of our own instead of whichever hairline wins the cascade. */
+dialog#desktop-settings p.message {
+	padding: 0.6em 0.9em;
+	margin-bottom: var(--ad-gap-lg);
+	border: 1px solid color-mix(in srgb, var(--ad-status-on) 35%, transparent);
+	border-radius: var(--ad-radius-sm);
+}
+
 /* --- Tabs --------------------------------------------------------------------- */
 
 /* No JS: hidden radios drive the panels through :has(). A checked radio is also the
@@ -116,8 +128,11 @@ dialog#desktop-settings p {
 	pointer-events: none;
 }
 
+/* The gap between the tab strip and the panel below it. It lives here, outside #desktop-panels,
+   because the panels are the scrollport: padding-top on them is area a sticky <thead> scrolls
+   rows through. This is the top padding of the tab content, put where it cannot do that. */
 #desktop-tabs {
-	margin-bottom: var(--ad-gap);
+	margin-bottom: var(--ad-gap-lg);
 }
 
 #desktop-tabs label {
@@ -127,9 +142,25 @@ dialog#desktop-settings p {
 	border-bottom: 2px solid transparent;
 }
 
+/* Hover: the tabs are labels, so nothing about them said they were clickable until one was
+   already chosen. A quiet underline and the full text colour — enough to answer "is this a
+   control", not enough to be mistaken for the active tab, which also carries the weight. */
+#desktop-tabs label:hover {
+	color: var(--fg);
+	border-bottom-color: var(--ad-border);
+	background: color-mix(in srgb, var(--fg) 5%, transparent);
+	border-radius: var(--ad-radius-sm) var(--ad-radius-sm) 0 0;
+}
+
 #desktop-tabs input:checked + label {
 	border-bottom-color: currentColor;
 	font-weight: bold;
+}
+
+/* ...and the checked tab keeps its own underline while hovered, or pointing at the tab you are
+   on makes it look like the tab you are not. */
+#desktop-tabs input:checked + label:hover {
+	border-bottom-color: currentColor;
 }
 
 /* No focus ring on the tabs: opening the dialog moves focus onto the checked tab, so the
@@ -151,6 +182,13 @@ dialog#desktop-settings p {
 
 #desktop-panels > div {
 	display: none;
+	/* Room inside the tab content — the panels sat flush against the dialog's own padding, so
+	   a checkbox in the top left had nothing between it and the tab strip.
+
+	   No padding-top, and that is the sticky-header rule above restated: the panel is inside the
+	   scrollport, so space above a sticky <thead> is area the rows scroll through. The gap under
+	   the tabs comes from #desktop-tabs' own margin instead, which is outside the scrollport. */
+	padding: 0 0.4em var(--ad-panel-gap);
 }
 
 #desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
@@ -161,21 +199,108 @@ dialog#desktop-settings p {
 
 /* The explanatory lines in the AI-access panel: this is the one panel that has to say what
    it does before the user decides, so the prose needs to read as secondary to the control
-   rather than competing with it. --dim is adminer's own muted colour, so it follows the
-   design the user picked instead of us choosing one. */
-.ad-mcp-note {
+   rather than competing with it.
+
+   Indented to the width of a checkbox and its gap, so a note sits under the *label* of the
+   switch it explains rather than under the box. With three switches and five notes on one
+   panel, that indent is what says which sentence belongs to which control — they were a flat
+   stack of paragraphs, all the same distance apart, before it. */
+#desktop-panel-mcp .ad-mcp-note {
 	color: var(--ad-fg-quiet);
 	font-size: 0.9em;
+	line-height: 1.5;
+	margin: 0.35em 0 0;
+	padding-left: 1.9em;
+}
+
+/* The switches themselves: the panel's headings, in effect. The space above each one is what
+   separates one setting from the next, so it is --ad-panel-gap and not a paragraph margin. */
+#desktop-panel-mcp p:has(> input[type="checkbox"]) {
+	margin: var(--ad-panel-gap) 0 0;
+	font-weight: 500;
+}
+
+/* ...except the first, which sits directly under the tab strip and needs no gap above it. */
+#desktop-panel-mcp > p:first-child {
+	margin-top: 0;
+}
+
+/* The register box is the end of the panel and reads as its own step, so it gets the panel gap
+   above it and room to breathe inside — a fieldset with commands in it is not a filter box. */
+.ad-mcp-register {
+	margin-top: var(--ad-panel-gap);
+	padding: 0.4em 1.1em 1.1em;
+}
+
+.ad-mcp-register legend {
+	padding: 0 0.4em;
+	font-weight: 500;
+}
+
+/* Is it working, and for what — one question, so one card. The switches above it are decisions
+   to make; this is the answer to whether they took effect, and loose in the same stack it read
+   as three more notes about the checkbox before it. */
+.ad-mcp-state {
+	margin-top: var(--ad-panel-gap);
+	padding: 0.7em 1em;
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+	background: color-mix(in srgb, var(--fg) 4%, transparent);
+}
+
+/* One text column, with the dot hanging in the margin beside it.
+
+   The status sentence is two lines wide in most languages, and the plain indent had its second
+   line starting under the dot while the two detail lines started somewhere else again — three
+   different left edges in a box four lines tall. A hanging indent puts every line of the status
+   on the same edge, and the details on that edge too, so the dot is the only thing outside it. */
+#desktop-panel-mcp .ad-mcp-status {
+	margin: 0;
+	font-weight: 500;
+	padding-left: 1.55em;
+	text-indent: -1.55em;
+}
+
+#desktop-panel-mcp .ad-mcp-state .ad-mcp-note {
+	padding-left: 1.55em;
+	margin-top: 0.25em;
+}
+
+/* A little air between "is it on" and the two details about it, which are a different question. */
+#desktop-panel-mcp .ad-mcp-state .ad-mcp-note:first-of-type {
+	margin-top: 0.6em;
 }
 
 /* The status dot: quiet until the feature is actually reachable, so "on" and "working" are
    not the same signal — the panel can be ticked while the window is logged out. */
 .ad-mcp-dot {
 	color: var(--ad-status-off);
+	margin-right: 0.35em;
 }
 
 .ad-mcp-on {
 	color: var(--ad-status-on);
+}
+
+/* A live thing, so it reads as live: the dot breathes only when an agent could actually reach
+   the database. Off and waiting stay perfectly still, which is what makes the difference
+   noticeable from across the dialog without reading the sentence. */
+@media (prefers-reduced-motion: no-preference) {
+	.ad-mcp-dot.ad-mcp-on {
+		animation: ad-mcp-pulse 2.4s ease-in-out infinite;
+	}
+}
+
+@keyframes ad-mcp-pulse {
+	0%,
+	100% {
+		opacity: 1;
+		filter: drop-shadow(0 0 0.1em transparent);
+	}
+	50% {
+		opacity: 0.6;
+		filter: drop-shadow(0 0 0.4em var(--ad-status-on));
+	}
 }
 
 /* What the agent currently sees. Monospace because it is a connection string, not prose. */
@@ -209,13 +334,20 @@ dialog#desktop-settings p {
 }
 
 /* One block per agent in the register fieldset: the name, then its command. */
-.ad-mcp-agent + .ad-mcp-agent {
+.ad-mcp-agent {
 	margin-top: var(--ad-gap-lg);
 }
 
-.ad-mcp-agent-name {
-	margin: 0 0 0.3em;
+#desktop-panel-mcp .ad-mcp-agent-name {
+	margin: 0 0 0.35em;
 	font-weight: 500;
+}
+
+/* The note introducing the commands sits above the first agent, so it is prose in its own
+   right rather than a footnote to a control — no indent, and the gap belongs below it. */
+#desktop-panel-mcp .ad-mcp-register > .ad-mcp-note {
+	padding-left: 0;
+	margin: 0.2em 0 0;
 }
 
 /* --- Copy field (src/Assets/copy-field.latte) ---------------------------------- */
@@ -307,29 +439,43 @@ dialog#desktop-settings p {
 
 /* Reset alone on the left: the row is flex-end, so pushing the gap after this button takes
    it to the other side of the dialog — away from the two people press without reading, which
-   is where every platform puts the action that throws something away. */
-#desktop-reset {
+   is where every platform puts the action that throws something away.
+
+   Red, but only in its text and border. Filled it would compete with Save for attention from
+   the far side of the dialog, and this is the button nobody should be drawn to; the colour is
+   there to be recognised once you are already looking at it. It fills on hover, by which point
+   you have aimed at it. */
+#desktop-actions #desktop-reset {
 	margin-right: auto;
+	color: var(--ad-danger);
+	border-color: color-mix(in srgb, var(--ad-danger) 45%, transparent);
 }
 
-/* AccentColor is whatever the user picked in System Settings, so the confirm button
-   matches the rest of their desktop rather than a colour chosen here. */
-#desktop-save {
-	background: AccentColor;
-	color: AccentColorText;
+#desktop-actions #desktop-reset:hover:not(:disabled) {
+	background: var(--ad-danger);
+	color: var(--ad-ok-fg);
+	border-color: transparent;
+}
+
+/* Green: the one button that keeps what you changed. It used to be AccentColor — whatever the
+   user picked in System Settings — which reads as "the default action" but not as "this is the
+   one that saves", and against a red Reset the pair only works if the confirm side is green. */
+#desktop-actions #desktop-save {
+	background: var(--ad-ok);
+	color: var(--ad-ok-fg);
 	border-color: transparent;
 	font-weight: 500;
 }
 
 /* Darken on hover and further on press, which is how a filled button behaves on macOS.
-   brightness() was wrong in both directions: it washed out a light accent colour and
-   barely moved a dark one. */
-#desktop-save:hover:not(:disabled) {
-	background: color-mix(in srgb, AccentColor 88%, black);
+   brightness() was wrong in both directions: it washed out a light fill and barely moved a
+   dark one. */
+#desktop-actions #desktop-save:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-ok) 88%, black);
 }
 
-#desktop-save:active:not(:disabled) {
-	background: color-mix(in srgb, AccentColor 76%, black);
+#desktop-actions #desktop-save:active:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-ok) 76%, black);
 }
 
 #desktop-actions button:disabled {

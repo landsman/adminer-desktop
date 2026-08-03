@@ -44,25 +44,31 @@
 	is meant to inform — and the sentence above ends on exactly the word it corrects. *}
 <p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>
 
-{* Only once it is saved on. The status is computed from the stored setting, so between ticking
+{* Its own card, because these three lines answer one question — is it working, and for what —
+	and that is a different kind of thing from the switches above it, which are decisions to make.
+	Loose in the stack they read as three more notes about the checkbox above them.
+
+	Only once it is saved on. The status is computed from the stored setting, so between ticking
 	the box and pressing Save it would still read "Off. Nothing can reach the database." directly
 	under a ticked switch — the one place in this panel where the saved value and the box on
 	screen visibly disagree. *}
-<p n:if="$enabled" class="ad-mcp-status">
-	{* Both classes go through n:class — Latte rejects a plain class attribute beside it. *}
-	<span n:class="'ad-mcp-dot', $status['ready'] ? 'ad-mcp-on'">&#9679;</span>
-	{$status['text']}
-</p>
+<div n:if="$enabled" class="ad-mcp-state">
+	<p class="ad-mcp-status">
+		{* Both classes go through n:class — Latte rejects a plain class attribute beside it. *}
+		<span n:class="'ad-mcp-dot', $status['ready'] ? 'ad-mcp-on'">&#9679;</span>
+		{$status['text']}
+	</p>
 
-{* Only once something has actually called: "never used" is the default and saying so on every
-	open would be noise. Seeing a recent query you did not ask for is the point. *}
-{* Which connection, because the agent follows the window: browsing to another database
-	repoints it, and with several servers open in turn that is not obvious from anywhere else. *}
-<p n:if="$target !== null" class="ad-mcp-note">
-	{$desktop->t('mcp.target')} <span class="ad-mcp-target">{$target}</span>
-</p>
+	{* Which connection, because the agent follows the window: browsing to another database
+		repoints it, and with several servers open in turn that is not obvious from anywhere else. *}
+	<p n:if="$target !== null" class="ad-mcp-note">
+		{$desktop->t('mcp.target')} <span class="ad-mcp-target">{$target}</span>
+	</p>
 
-<p n:if="$lastUsed !== null" class="ad-mcp-note">{$lastUsed}</p>
+	{* Only once something has actually called: "never used" is the default and saying so on every
+		open would be noise. Seeing a recent query you did not ask for is the point. *}
+	<p n:if="$lastUsed !== null" class="ad-mcp-note">{$lastUsed}</p>
+</div>
 
 {* The class is not decoration: adminer's default.css renders every fieldset `display: inline`,
 	which shrink-wraps it. Right for its filter boxes, wrong for a box holding commands that wrap

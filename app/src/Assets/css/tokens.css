@@ -13,6 +13,10 @@
 	/* Spacing */
 	--ad-gap: 0.5em;
 	--ad-gap-lg: 1em;
+	/* The space between one setting and the next inside a panel. Its own token because it is the
+	   rhythm of the dialog rather than a gap between two particular things: every panel uses it,
+	   so the three tabs stay in step. */
+	--ad-panel-gap: 1.6em;
 	--ad-cell-padding: 0.3em 0.5em;
 	--ad-button-padding: 0.45em 1.2em;
 
@@ -40,6 +44,14 @@
 
 	/* Row with an edit that has not been saved yet */
 	--ad-unsaved: #fdf6ba;
+
+	/* Confirm and destroy. Fixed hues rather than AccentColor, which Save used to take: green
+	   and red mean the same thing on every desktop, and the point of the pair is that the button
+	   that keeps your settings and the one that throws them away cannot be confused at a glance.
+	   --ad-danger is text on the panel as well as a fill, so it stays legible on both schemes. */
+	--ad-ok: #087f4e;
+	--ad-ok-fg: #fff;
+	--ad-danger: #b42318;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,5 +60,9 @@
 		/* The light green is too dark to read on a dark panel; this is the theme's own
 		   dark-side --ad-ok value, kept in step. */
 		--ad-status-on: #6fe0a1;
+		/* Lifted, not the light-side values: #087f4e is nearly black against a dark panel, and
+		   #b42318 as text on one is unreadable. The green still carries white text. */
+		--ad-ok: #0e9d5f;
+		--ad-danger: #f97066;
 	}
 }
