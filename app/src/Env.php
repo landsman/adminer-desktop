@@ -19,6 +19,10 @@ enum Env: string {
 	/** The launcher's own path (Go's os.Executable), so the MCP panel can print the exact
 	* registration command for this install. Unset when app/ is served without the launcher. */
 	case Exe = 'ADMINER_DESKTOP_EXE';
+	/** Where the launcher keeps its logs — ~/Library/Logs on macOS, the data dir elsewhere
+	* (launcher/prefs.go logDir). The MCP request log goes here so the Open Logs menu item
+	* already opens it; unset when app/ is served without the launcher. */
+	case Logs = 'ADMINER_DESKTOP_LOGS';
 
 	/** The value of this environment variable, or false when it is not set (getenv's contract). */
 	function get(): string|false {

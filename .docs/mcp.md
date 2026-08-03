@@ -59,6 +59,25 @@ than undone, log the window in as a read-only database user.
 | *"stopped answering — the window was probably closed"* | it was running when you registered; it is not now |
 | *"not connected to a database"* / *"session has expired"* | the app is open but logged out — log in again |
 
+## Seeing what the agent did
+
+Every request is logged — one line per call, with the time, the method, the tool and what was
+asked (the SQL for a query, the table for anything else). The **Open Logs** menu item opens the
+folder it sits in; the file is `mcp-YYYY-MM-DD.log`.
+
+```
+2026-08-03T14:22:07Z	tools/call	list_tables
+2026-08-03T14:22:11Z	tools/call	execute_query	SELECT id, email FROM users LIMIT 20
+```
+
+A file per day, so today's cannot grow without bound and yesterday's is left exactly as it was.
+Files older than two weeks are removed on the next write, so a machine left running does not
+accumulate them.
+
+**What was asked is logged; what came back is not.** Results are the contents of your database,
+and a plaintext copy of those sitting beside it would be a worse leak than the access being
+recorded. The file is readable only by your account.
+
 ## Turning it off
 
 Set `"mcp": false`, or delete the key. The next page you load in the app retracts the handshake

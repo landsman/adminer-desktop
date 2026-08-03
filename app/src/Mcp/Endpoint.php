@@ -26,12 +26,14 @@ class Endpoint {
 	private Handshake $handshake;
 	private Server $server;
 	private Activity $activity;
+	private RequestLog $log;
 
-	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null) {
+	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null) {
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
 		$this->server = $server ?? new Server();
 		$this->activity = $activity ?? new Activity();
+		$this->log = $log ?? new RequestLog();
 	}
 
 	/** The hook body. Returns null so the hook has no opinion for other plugins; the MCP path
@@ -58,7 +60,10 @@ class Endpoint {
 		$input = (string) file_get_contents("php://input");
 		// Before answering, so a call that goes on to fail still shows up: "something asked me
 		// this and it broke" is exactly as worth seeing as a call that worked.
-		$this->activity->record($this->method($input), time());
+		$now = time();
+		[$method, $tool, $detail] = $this->describe($input);
+		$this->activity->record($method, $now);
+		$this->log->append($method, $tool, $detail, $now);
 		$answer = $this->answer($input, $connected);
 		if ($answer === null) {
 			// A JSON-RPC notification is answered with silence, not an empty body with a 200.
@@ -116,12 +121,28 @@ class Endpoint {
 	* Its own tiny parse rather than reaching into Server: this runs whether or not we are
 	* connected, and a malformed body still counts as an agent having called.
 	*/
-	private function method(string $input): string {
+	/** @return array{0:string,1:string,2:string} method, tool, and the argument worth logging */
+	private function describe(string $input): array {
 		$message = json_decode($input, true);
-		$method = is_array($message) && isset($message['method']) && is_string($message['method'])
-			? $message['method']
-			: '';
-		return $method !== '' ? $method : 'unknown';
+		if (!is_array($message)) {
+			// Still a call, and a malformed one is worth seeing in the log rather than dropping.
+			return ['unknown', '', ''];
+		}
+		$method = isset($message['method']) && is_string($message['method']) ? $message['method'] : 'unknown';
+		$params = is_array($message['params'] ?? null) ? $message['params'] : [];
+		$tool = isset($params['name']) && is_string($params['name']) ? $params['name'] : '';
+		$args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
+		// The SQL for a query, the table for everything else: what was asked, never what came
+		// back. Results are the database's contents, and a plaintext copy of those beside it
+		// would be a worse leak than the access being recorded.
+		$detail = '';
+		foreach (['sql', 'table'] as $key) {
+			if (isset($args[$key]) && is_string($args[$key])) {
+				$detail = $args[$key];
+				break;
+			}
+		}
+		return [$method, $tool, $detail];
 	}
 
 	/** The body to answer an MCP request with, or null for 204.

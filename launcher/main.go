@@ -246,6 +246,12 @@ func main() {
 	if exe, err := os.Executable(); err == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_EXE="+exe)
 	}
+	// The log directory, so the MCP request log lands where Open Logs already looks. Not the
+	// data directory: on macOS logs belong under ~/Library/Logs, which is what logDir() knows
+	// and what goMenuLogs opens.
+	if dir, err := logDir(); err == nil {
+		srv.Env = append(srv.Env, "ADMINER_DESKTOP_LOGS="+dir)
+	}
 	// -debug reaches the page too: the plugin tags <body> with it, and the desktop scripts
 	// that smooth over the WebView (the link context-menu block) stand down so the inspector's
 	// own right-click menu, Inspect Element and the rest are all there.
