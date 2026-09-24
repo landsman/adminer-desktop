@@ -31,14 +31,15 @@ on its own lists them.
 make qa                             # php lint, phpstan, phpcs, golangci-lint, biome, shellcheck
 make verify                         # adminer checksums + frankenphp's build provenance
 make check                          # boots the app and asserts its behaviour before login
-make e2e                            # browser checks against a real postgres (needs docker)
+make e2e                            # Behat scenarios against postgres and mysql (needs docker)
 ```
 
 `make check` is the one that matters most: Adminer streams dumps with `ob_flush(); flush()`,
 so it asserts long responses neither buffer nor time out, and it boots every shipped plugin in
-turn. `make e2e` drives a real browser — login, the theme, the settings dialog, the resizable
-sidebar and columns, drag-and-drop import — and leaves screenshots in
-`tests/e2e/screenshots/`.
+turn. `make e2e` runs the Behat scenarios in `tests/e2e/features/` in a real browser — login,
+the theme, the settings dialog, the resizable sidebar and columns, drag-and-drop import, the MCP
+endpoint — and a failed step leaves the page it failed on in `tests/e2e/artifacts/`.
+`make e2e-visual` runs the same in a browser you can watch.
 
 CI is billed on this repo and macOS runners cost ten times the rest, so `qa` and `check` pass
 locally before a push rather than being iterated against in Actions.

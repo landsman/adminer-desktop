@@ -180,10 +180,10 @@ Verify:
 ```sh
 make qa       # php lint, phpstan level 6, phpcs, golangci-lint, biome, shellcheck
 make check    # boots the app, constructs every picked plugin, asserts before-login behaviour
-make e2e      # browser checks (needs docker); tests/e2e/plugins/ is one file per plugin
+make e2e      # Behat browser scenarios (needs docker); plugins in features/pgsql/plugins.feature
 make debug    # run with Safari Web Inspector attached — use this the moment a symptom is visual
 ```
 
 `make check` only proves a plugin *boots*. Anything a plugin does to a form is only
-ever asserted by a `tests/e2e/plugins/<name>.test.php` — drop the file in and it runs,
-there is no list to update.
+ever asserted by a scenario in `tests/e2e/features/pgsql/plugins.feature` — add one there,
+reusing the steps in `tests/e2e/bootstrap/DesktopContext.php`.

@@ -9,8 +9,8 @@
 #                    import dropzone, the MCP endpoint. None of it asks the database anything, so a
 #                    second suite would spend a second browser proving the same CSS. pgsql only.
 #
-# A feature that only one driver has would go in features/<driver>/, which is the same rule one
-# step further. There is none yet.
+#   features/pgsql/  what only one driver can answer: the plugins on a form, whose effect a real
+#                    jsonb column would hide on another driver. Same rule, one step further.
 #
 # The driver is handed to the contexts; each suite serves the app on a port of its own, because
 # the suites share a process (harness/fixture.php picks the next free one from there).

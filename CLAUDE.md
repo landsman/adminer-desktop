@@ -159,20 +159,21 @@ and `package.json` with their lockfiles are the source of truth; `app/vendor/` a
 `node_modules/` are built, not committed, and `dg/composer-cleaner` slims `app/vendor/` for
 a production build.
 
-`tests/e2e/run.php` is the browser end-to-end check, on playwright-php. It owns its whole
-fixture — a throwaway postgres in docker, the app served with a data dir so Adminer's
-passwordless block is satisfied — logs in, and asserts the theme applied and the scheme
-emulated in light and dark, leaving screenshots in `tests/e2e/screenshots/`. `make e2e`
-runs it; it stays out of `qa` because it is slow and needs docker.
+The browser end-to-end check is Behat driving playwright-php: scenarios in
+`tests/e2e/features/`, steps in `tests/e2e/bootstrap/` (`DesktopContext`, `McpContext`,
+autoloaded as `Desktop\Tests\`), and `tests/e2e/harness/fixture.php` owning the whole fixture
+— a throwaway postgres and mysql in docker, the app served with a data dir so Adminer's
+passwordless block is satisfied. `make e2e` runs it; it stays out of `qa` because it is slow and
+needs docker. `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows
+either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`.
 
-Every `*.test.php` there or one folder down is a check — drop one in and it runs, no list to
-keep in step. One per surface at the top (`theme`, `settings`, `sidebar-resize`,
-`edit-field-width`, `table-columns`, `drag-drop-import`), and one per plugin under
-`plugins/`, which is the folder that grows:
-`check.sh` only proves a plugin boots on the login page, so anything a plugin does to a form
-is only ever asserted here. `seed.sql` is applied when the container is **created** —
-`make destroy` (not `down`, which leaves the data volume) is what makes a changed seed reach
-the database.
+`tests/e2e/behat.yml` has one suite per driver, and the folder decides which run a feature:
+`features/data/` (what Adminer reads through a driver) runs on both, `features/shell/` (our own
+chrome — theme, settings, sidebar, import, MCP) and `features/pgsql/` on postgres only. A new
+`.feature` in a folder runs with no list to update. `features/pgsql/plugins.feature` is where
+plugins are asserted: `check.sh` only proves a plugin boots on the login page, so anything a
+plugin does to a form is only ever asserted there. `seed/<driver>.sql` is reapplied on every
+run, so an edited seed needs no `make destroy`.
 
 ## Layout
 
@@ -194,7 +195,7 @@ launcher/                    the native shell (Go + Objective-C) - see launcher/
 launcher/main.go             start frankenphp, point a WebView at it, take it down with the window
 launcher/dialogs_darwin.m    what WKWebView leaves out: JS dialogs, file picker, mouse/reload
 launcher/download_darwin.m   turn an Export > save attachment into a real download + progress
-tests/e2e/run.php            playwright-php browser checks + seed.sql; plugins/ is one file per plugin
+tests/e2e/                   Behat: features/, bootstrap/ (steps), harness/fixture.php, seed/<driver>.sql
 mise.toml                    node, and the install/format/lint/e2e tasks
 ```
 
