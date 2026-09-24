@@ -97,16 +97,23 @@ function e2e_database(array $driver): string
 	return '127.0.0.1:' . $driver['hostPort'];
 }
 
-/** Wait until the server inside the container answers, not merely until the container exists.
+/** Wait until the demo database takes a login, not merely until the container exists.
+ *
+ * Over TCP, and as the query the seed will run, because on a fresh container both images first
+ * start a temporary server for their init scripts — one that answers on the socket before the
+ * database or the root password exist, so a socket probe says ready and the seed then fails
+ * ("database demo does not exist", "Access denied"). That server never listens on TCP, so only
+ * the real one can pass this. A reused container never shows it, which is why only CI did.
+ *
  * @param array<string, mixed> $driver
  */
 function e2e_wait_for_database(array $driver): void
 {
 	$name = (string) $driver['container'];
 	$probe = $driver['name'] === 'pgsql'
-		? ['docker', 'exec', $name, 'pg_isready', '-U', (string) $driver['username']]
-		: ['docker', 'exec', $name, 'mysqladmin', 'ping', '-u', (string) $driver['username'], '-p' . $driver['password']];
-	$deadline = time() + 60;
+		? ['docker', 'exec', '-e', "PGPASSWORD={$driver['password']}", $name, 'psql', '-h', '127.0.0.1', '-U', (string) $driver['username'], '-d', E2E_DATABASE, '-c', 'SELECT 1']
+		: ['docker', 'exec', $name, 'mysql', '-h', '127.0.0.1', '-u', (string) $driver['username'], '-p' . $driver['password'], E2E_DATABASE, '-e', 'SELECT 1'];
+	$deadline = time() + 120;
 	while (true) {
 		$ready = new Process($probe);
 		$ready->run();
@@ -272,11 +279,15 @@ function e2e_login(PageInterface $page, array $fix): void
 		$page->locator('input[name="auth[db]"]')->fill(E2E_DATABASE);
 		// Submit the form rather than clicking: the rebuild leaves the button intermittently "not
 		// actionable", and this depends on neither its markup nor its label.
-		$page->evaluate('() => document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit()');
-		$page->waitForLoadState('networkidle');
-		// A rejected login comes back as the login page, and its title says so. The title is a
-		// driver call, unlike an evaluate, which throws when it lands while adminer's answer to a
-		// good login is still committing.
+		// The mark is how the answer is told from the form it answers. requestSubmit() only starts the
+		// navigation, so a load-state wait could return before the POST was sent, and a title read
+		// mid-navigation is not "Login" either — which passed a login that never happened, and the
+		// scenario met the login form one step later. A fresh MySQL's first, slow authentication is
+		// what opened that window. waitForFunction survives the navigation; the page it resolves on
+		// is Adminer's answer, whichever way it went.
+		$page->evaluate('() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }');
+		$page->waitForFunction('() => !window.e2eSubmitted && document.readyState === "complete"');
+		// A rejected login comes back as the login page, and its title says so.
 		if (!str_starts_with($page->title(), 'Login')) {
 			return;
 		}
