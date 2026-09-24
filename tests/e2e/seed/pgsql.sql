@@ -1,10 +1,9 @@
--- Demo data for the e2e run (tests/e2e/run.php, `mise run e2e`).
+-- Demo data for the PostgreSQL suite (tests/e2e/behat.yml, `make e2e`) and for `make demo`.
 --
--- Applied once, when the container is created — fixture.php reuses one that is already
--- running and does not reseed it. So editing this file and re-running the e2e changes
--- nothing until `make destroy` drops the container. Idempotent anyway, for the reseed that
--- follows. Add tables here as the app grows more surfaces to test — keep the drops in
--- dependency order (children first).
+-- Applied on every run — the drops below are what makes that idempotent — so editing this file
+-- reaches the database without dropping the container first. Add tables here as the app grows
+-- more surfaces to test, keep seed/mysql.sql in step for anything features/data/ reads, and keep
+-- the drops in dependency order (children first).
 
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS users;
@@ -59,7 +58,7 @@ CREATE TABLE big_child (
 INSERT INTO big_child (lookup_id) VALUES (1);
 
 -- The JSON plugins (AdminerPrettyJsonColumn, AdminerJsonColumn) only do anything to a value that
--- starts with { or [ and parses, so all three columns are the check (json-column.test.php).
+-- starts with { or [ and parses, so all three columns are the check (features/pgsql/plugins.feature).
 --
 -- `notes` is text holding JSON on purpose, and it is the column that proves pretty-json-column:
 -- the plugins sniff the value, not the column type, whereas Adminer already gives a real jsonb
@@ -75,7 +74,7 @@ CREATE TABLE documents (
 	notes   text
 );
 
--- The first two rows are written out because json-column.test.php asserts on id 1 by name —
+-- The first two rows are written out because features/pgsql/plugins.feature asserts on id 1 by name —
 -- generated ones would move under it the moment the generator changed.
 INSERT INTO documents (title, payload, notes) VALUES
 	('Smlouva', '{"customer":{"name":"Anna Nováková","id":1},"items":[{"sku":"A-1","qty":2}],"paid":true}', '{"author":{"name":"Bára Dvořáková"},"revision":3}'),
