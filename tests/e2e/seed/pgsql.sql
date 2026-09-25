@@ -57,9 +57,10 @@ CREATE TABLE big_child (
 );
 INSERT INTO big_child (lookup_id) VALUES (1);
 
--- A jsonb column beside text ones, because the edit form gives JSON its own JUSH editor and
+-- A jsonb column beside text ones, because the edit form gives JSON its own JUSH editor: it has
+-- to pretty-print and sit on the form's width (features/pgsql/json-editor.feature), and
 -- features/data/edit-form.feature resizes every field on it, that one included. `notes` is text
--- holding JSON, and `title` plain text. Both JSON values are nested and carry unicode. Fifty rows,
+-- holding JSON, which Adminer leaves as stored, and `title` plain text. Both JSON values are nested and carry unicode. Fifty rows,
 -- because a JSON editor is the one surface where a toy value hides everything worth seeing.
 CREATE TABLE documents (
 	id      serial PRIMARY KEY,
