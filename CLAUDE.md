@@ -65,8 +65,8 @@ instances instead: `PluginList::instances()`, returned from `adminer-plugins.php
 
 **Which plugins ship is a hand-picked list, not a glob.** `PluginList::PICKED` maps the
 file in `src/Settings/Plugins/available/` to the class it declares; the whole upstream set
-is downloaded but only these are offered. Adding one means checking it works here — nine of
-upstream's 51 cannot even be constructed without arguments, and others want a reverse proxy,
+is downloaded but only these are offered. Adding one means checking it works here — seven of
+upstream's 49 cannot even be constructed without arguments, and others want a reverse proxy,
 an MTA or a CDN. `make check` boots every picked plugin in turn, which is what says so.
 `PluginList::DEFAULT_ON` is what a fresh install has enabled; `settings.json`
 (`SettingKey::Plugins`) stores the user's answer per plugin, `name => on`, and only where it

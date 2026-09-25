@@ -38,7 +38,8 @@ done
 # The desktop plugin must prefill Server, or a Docker/remote database fails to connect with a
 # confusing Unix-socket error. This is also the proof it is our app answering, not a stray
 # process on the port: only our plugin rewrites the empty Server field to 127.0.0.1.
-curl -s "$BASE/adminer.php" | grep -q 'name="auth\[server\]" value="127.0.0.1"' || {
+# Either quote: adminer 6 writes this field's attributes with single ones.
+curl -s "$BASE/adminer.php" | grep -q 'name=.auth\[server\]. value=.127\.0\.0\.1.' || {
 	echo "FAIL: not our app on $PORT, or the Server field is not prefilled with 127.0.0.1"; exit 1; }
 echo "ok: Server field prefilled"
 
@@ -53,8 +54,12 @@ echo "ok: refresh shortcut wired and served"
 
 # version-noverify is on whatever the user picked: adminer otherwise fetches
 # adminer.org/version/ from <body onload> and offers an upgrade this app cannot install.
-curl -s "$BASE/adminer.php" | grep -q "verifyVersion = () => { }" || {
-	echo "FAIL: the version check was not disabled"; exit 1; }
+# Since 6.0 the plugin answers adminer's verifyVersion() hook rather than stubbing the JS
+# function, so what proves it is the absence of both ways adminer asks: the onload call,
+# and the <noscript> iframe it added for pages without JavaScript.
+if curl -s "$BASE/adminer.php" | grep -qE "partial\(verifyVersion|adminer\.org/version"; then
+	echo "FAIL: the version check was not disabled"; exit 1
+fi
 echo "ok: adminer's version check is off"
 
 # Switching design must work before you log in. Upstream only handles it in
@@ -165,7 +170,7 @@ while IFS="$(printf '\t')" read -r NAME JSON; do
 	CODE=$(curl -s -o "$OUT" -w '%{http_code}' "$BASE/adminer.php")
 	[ "$CODE" = "200" ] || { echo "FAIL: $NAME -> HTTP $CODE"; exit 1; }
 	# The login form still there, and nothing PHP had to say about it.
-	grep -q 'name="auth\[server\]"' "$OUT" || {
+	grep -q 'name=.auth\[server\].' "$OUT" || {
 		echo "FAIL: $NAME broke the login page"; grep -oiE '(fatal|parse) error[^<]{0,160}' "$OUT" | head -2; exit 1; }
 	if grep -qiE '<b>(Fatal error|Parse error|Warning|Deprecated|Notice)</b>' "$OUT"; then
 		echo "FAIL: $NAME raised a PHP error"

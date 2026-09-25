@@ -57,16 +57,10 @@ CREATE TABLE big_child (
 );
 INSERT INTO big_child (lookup_id) VALUES (1);
 
--- The JSON plugins (AdminerPrettyJsonColumn, AdminerJsonColumn) only do anything to a value that
--- starts with { or [ and parses, so all three columns are the check (features/pgsql/plugins.feature).
---
--- `notes` is text holding JSON on purpose, and it is the column that proves pretty-json-column:
--- the plugins sniff the value, not the column type, whereas Adminer already gives a real jsonb
--- column its own jush-js editor. So `payload` shows the plugins on the type they are named for,
--- `notes` is where only a plugin can be doing the work, and `title` is the plain text they have
--- to leave alone. Both JSON values are nested and carry unicode — pretty-printing is the whole
--- point, and the stored value is one line. Fifty rows, because a JSON editor is the one surface
--- where a toy value hides everything worth seeing.
+-- A jsonb column beside text ones, because the edit form gives JSON its own JUSH editor and
+-- features/data/edit-form.feature resizes every field on it, that one included. `notes` is text
+-- holding JSON, and `title` plain text. Both JSON values are nested and carry unicode. Fifty rows,
+-- because a JSON editor is the one surface where a toy value hides everything worth seeing.
 CREATE TABLE documents (
 	id      serial PRIMARY KEY,
 	title   text,
@@ -74,7 +68,7 @@ CREATE TABLE documents (
 	notes   text
 );
 
--- The first two rows are written out because features/pgsql/plugins.feature asserts on id 1 by name —
+-- The first two rows are written out because features/data/edit-form.feature opens id 1 by name —
 -- generated ones would move under it the moment the generator changed.
 INSERT INTO documents (title, payload, notes) VALUES
 	('Smlouva', '{"customer":{"name":"Anna Nováková","id":1},"items":[{"sku":"A-1","qty":2}],"paid":true}', '{"author":{"name":"Bára Dvořáková"},"revision":3}'),

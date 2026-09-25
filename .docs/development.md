@@ -47,11 +47,11 @@ locally before a push rather than being iterated against in Actions.
 ## Versions are pinned
 
 ```make
-ADMINER_VERSION    = 5.5.1
+ADMINER_VERSION    = 6.1.1
 FRANKENPHP_VERSION = 1.12.6
 ```
 
-`adminer.php`, `editor.php`, 51 plugins and 26 designs all come from that one Adminer tag, so
+`adminer.php`, `editor.php`, 49 plugins and 28 designs all come from that one Adminer tag, so
 they cannot drift apart. Nothing ever resolves "latest", every download is checksum-verified,
 and frankenphp is checked against the build provenance GitHub publishes for it.
 
