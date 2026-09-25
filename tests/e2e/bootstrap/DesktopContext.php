@@ -1105,27 +1105,30 @@ class DesktopContext implements Context
 		}
 	}
 
-	/** The tag alone would say nothing — Adminer renders a text column as a textarea anyway. The
-	 * plugin's marker is the jush-js class on the one it builds.
+	// ── Adminer's JSON editor ────────────────────────────────────────────────────────────────
+
+	/** JUSH hides the textarea and puts its highlighted <pre> in the same cell; the class names the
+	 * language, so a JavaScript or plain editor would not pass for a JSON one.
 	 */
-	#[Then("the :field field is the plugin's own editor")]
-	public function fieldIsPluginEditor(string $field): void
+	#[Then("the :field field is Adminer's JSON editor")]
+	public function fieldIsJsonEditor(string $field): void
 	{
-		$marker = $this->fieldMarker($field);
-		if ($marker !== 'TEXTAREA.jush-js') {
-			throw new RuntimeException("$field is a $marker — the plugin is not applying");
+		$editor = (string) $this->page->evaluate($this->fieldScript($field, "el.parentNode.querySelector('pre.jush-json') ? 'yes' : 'no'"));
+		if ($editor !== 'yes') {
+			throw new RuntimeException("$field has no JSON editor ($editor)");
 		}
 	}
 
-	#[Then("the :field field is left as Adminer's own")]
-	public function fieldIsAdminersOwn(string $field): void
+	#[Then("the :field field is left as Adminer's plain textarea")]
+	public function fieldIsPlainTextarea(string $field): void
 	{
-		$marker = $this->fieldMarker($field);
-		if ($marker === 'TEXTAREA.jush-js') {
-			throw new RuntimeException("$field was taken over by the plugin, and it is not JSON");
+		$marker = (string) $this->page->evaluate($this->fieldScript($field, "el.tagName + (el.parentNode.querySelector('pre.jush') ? '+editor' : '')"));
+		if ($marker !== 'TEXTAREA') {
+			throw new RuntimeException("$field is $marker, not a plain textarea");
 		}
 	}
 
+	/** What the editor shows is what it writes back to the hidden textarea, so the value is read there. */
 	#[Then('the :field field is pretty-printed')]
 	public function fieldIsPrettyPrinted(string $field): void
 	{
@@ -1139,30 +1142,23 @@ class DesktopContext implements Context
 	public function fieldKeptAccents(string $field): void
 	{
 		$value = (string) $this->page->evaluate($this->fieldScript($field, 'el.value'));
-		if (!str_contains($value, 'Dvořáková')) {
-			throw new RuntimeException("$field lost its unicode (JSON_UNESCAPED_UNICODE)");
+		if (!str_contains($value, 'Nováková')) {
+			throw new RuntimeException("$field lost its unicode: " . var_export(substr($value, 0, 120), true));
 		}
 	}
 
-	#[Then('the :field field lists the keys :keys')]
-	public function fieldListsKeys(string $field, string $keys): void
+	/** JUSH copies the width of the textarea it hides, so any font Adminer gives that textarea alone
+	 * moves the editor off the width the rest of the form is on — past the form's edge, as 6.0's
+	 * 110% monospace did, by some 90px. JUSH's own padding on its content-box <pre> is the few
+	 * pixels allowed.
+	 */
+	#[Then('the :field editor is as wide as the :other field')]
+	public function editorAsWideAs(string $field, string $other): void
 	{
-		$listed = (string) $this->page->evaluate($this->fieldScript(
-			$field,
-			'[...td.querySelectorAll("table > tbody > tr > th")].map((th) => th.textContent).sort().join(",")',
-		));
-		foreach (explode(',', $keys) as $key) {
-			if (!str_contains($listed, trim($key))) {
-				throw new RuntimeException("$field has no $key in its table, only " . var_export($listed, true));
-			}
-		}
-	}
-
-	#[Then('the :field field got no table of keys')]
-	public function fieldGotNoTable(string $field): void
-	{
-		if ($this->page->evaluate($this->fieldScript($field, '!!td.querySelector("table")')) === 'true') {
-			throw new RuntimeException("$field got a table — the plugin took over a value that is not JSON");
+		$editor = (int) $this->page->evaluate($this->fieldScript($field, "el.parentNode.querySelector('pre.jush').offsetWidth"));
+		$plain = (int) $this->page->evaluate($this->fieldScript($other, 'el.offsetWidth'));
+		if (abs($editor - $plain) > 12) {
+			throw new RuntimeException("the $field editor is {$editor}px, the $other field {$plain}px");
 		}
 	}
 
@@ -1241,13 +1237,12 @@ class DesktopContext implements Context
 		return $now;
 	}
 
-	/** Evaluate an expression with `el` bound to a field's editor and `td` to the cell around it. */
+	/** Evaluate an expression with `el` bound to a field's editor. */
 	private function fieldScript(string $field, string $expression): string
 	{
 		return "() => {
 			const el = document.querySelector('form [name=\"fields[$field]\"]');
 			if (!el) { return 'MISSING'; }
-			const td = el.closest('td');
 			return String($expression);
 		}";
 	}
@@ -1255,17 +1250,6 @@ class DesktopContext implements Context
 	private function fieldTag(string $field): string
 	{
 		return (string) $this->page->evaluate($this->fieldScript($field, 'el.tagName'));
-	}
-
-	private function fieldMarker(string $field): string
-	{
-		$marker = (string) $this->page->evaluate(
-			$this->fieldScript($field, "el.tagName + (el.classList.contains('jush-js') ? '.jush-js' : '')"),
-		);
-		if ($marker === 'MISSING') {
-			throw new RuntimeException("$field is not on the edit form at all");
-		}
-		return $marker;
 	}
 
 	/** Whether a real surface — not a token, a surface — resolved to the dark side. */

@@ -61,6 +61,15 @@ select.size {
 	max-width: calc(100vw - var(--ad-sidebar-width) - 6em);
 }
 
+/* Adminer 6 gives a JSON field 110% monospace (textarea[class*="jush-"]), which outranks the
+   inherited font above — and the width is in em, so that field alone came out 10% wider, and
+   JUSH sized its editor from it past the edge of the form. Only this textarea's font, which
+   JUSH hides behind its own <pre>: the editor keeps Adminer's monospace, and the SQL command's
+   textarea is not in this table. */
+#form > table.layout textarea[class*="jush-"] {
+	font: inherit;
+}
+
 input:hover,
 select:hover,
 textarea:hover {

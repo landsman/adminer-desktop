@@ -5,7 +5,7 @@
  * keeps a preference like that with the others. This relocates the select into the theme
  * panel's slot (Desktop\Theme renders #desktop-lang-slot).
  *
- * Its own onchange submits the surrounding form, but in the dialog that is our settings
+ * Its own change handler submits the surrounding form, but in the dialog that is our settings
  * form, which redirects in handlePost before Adminer ever reads $_POST["lang"] — the switch
  * would be lost. So the change is rewired to a standalone POST of just lang + token, which
  * is exactly what Adminer's own form sends and all its language handler needs.
@@ -45,6 +45,10 @@ if (slot && select && token) {
 		form.submit();
 	};
 	select.removeAttribute("name");
+	// Adminer 6 no longer sets onchange itself: it declares data-onchange="formSubmit()" and
+	// dispatches it from a document listener, so replacing the property above did not stop it.
+	// Left in place, it submits the settings form the select now sits in, without lang.
+	select.removeAttribute("data-onchange");
 	slot.append(select);
 	lang.remove();
 }

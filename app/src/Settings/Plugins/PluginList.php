@@ -16,8 +16,8 @@ use Desktop\UserSettings;
 class PluginList {
 	/** What we ship, as the class each one declares.
 	*
-	* Hand-picked, not globbed. The release carries 51 and most of them answer a question a
-	* desktop app never asks. Nine cannot be constructed at all without arguments — adminer
+	* Hand-picked, not globbed. The release carries 49 and most of them answer a question a
+	* desktop app never asks. Seven cannot be constructed at all without arguments — adminer
 	* refuses those and prints why in place of the plugin (include/plugins.inc.php:30) — and
 	* of the rest, some want a reverse proxy or an MTA that is not there, some fetch their
 	* editor from a CDN an offline app cannot reach, and some offer a second copy of a
@@ -35,7 +35,6 @@ class PluginList {
 		\AdminerDumpBz2::class,
 		\AdminerDumpDate::class,
 		\AdminerDumpJson::class,
-		\AdminerDumpPhp::class,
 		\AdminerDumpXml::class,
 		\AdminerDumpZip::class,
 		\AdminerEditForeign::class,
@@ -43,14 +42,11 @@ class PluginList {
 		\AdminerEditorViews::class,
 		\AdminerEnumOption::class,
 		\AdminerForeignSystem::class,
-		\AdminerJsonColumn::class,
-		\AdminerPrettyJsonColumn::class,
 		\AdminerRowNumbers::class,
 		\AdminerSlugify::class,
 		\AdminerTableIndexesStructure::class,
 		\AdminerTableStructure::class,
 		\AdminerTablesFilter::class,
-		\AdminerTranslation::class,
 	];
 
 	/** On whatever the user picked, and not offered as a choice.

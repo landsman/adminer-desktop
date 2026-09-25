@@ -119,8 +119,11 @@ class AdminerDesktop extends Adminer\Plugin {
 		// Only fill in a blank field; never override a server the user has already chosen.
 		if ($name == "server" && Adminer\SERVER == "") {
 			// Rewrite the value in Adminer's own markup rather than restating it, so this
-			// doesn't silently drift when the login form changes upstream.
-			return str_replace('value=""', 'value="127.0.0.1"', $value);
+			// doesn't silently drift when the login form changes upstream — either quote,
+			// because 6.0 moved the field from double to single ones. The heading goes back
+			// in too: the hook answers for the whole row, and without its <tr> the browser
+			// hoists the bare input out of the table.
+			return $heading . preg_replace('~value=([\'"])\1~', 'value=${1}127.0.0.1$1', $value) . "\n";
 		}
 		return null; // let adminer handle every other field
 	}
