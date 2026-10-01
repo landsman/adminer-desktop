@@ -232,22 +232,22 @@ biome:
 		echo "biome skipped (run 'mise run install', or put node on PATH)" ; \
 	fi
 
-# Security scan. Docker rather than an install, and skipped rather than failed when
-# docker is not running, so `make security` is safe to chain locally.
+# Security scan, for a local run — CI calls the shared semgrep workflow in
+# landsman/config instead (.github/workflows/build.yml), and this keeps the same
+# packs and excludes. Docker rather than an install, and skipped rather than failed
+# when docker is not running, so `make security` is safe to chain locally.
 # Not semgrep's own Docker Hub image — that rate-limits anonymous pulls. It comes from
 # the public GHCR mirror published by github.com/landsman/config, which every repo of
 # mine shares, so no repo mirrors it for itself.
 #
-# The one `latest` in this Makefile, and the exception is the mirror rather than
-# laziness: this tag does not follow semgrep's releases, it follows what that repo
-# last merged. A version reaches it only after Dependabot proposed it there, a
-# week-old cooldown passed, and the pull request was merged — so the deliberate
-# bump the rest of the pins get by hand happens once, centrally, instead of once
-# per repo that scans. Pinning a version here would only mean this repo drifts
-# behind that decision until someone remembers it.
+# The version is the one that repo pins, read from its Dockerfile on each run, so the
+# bump happens once, centrally — Dependabot proposed it there, a week-old cooldown
+# passed, the pull request was merged. Not `latest`: docker never re-pulls a tag it
+# already holds, so a laptop would keep scanning with the first one it ever pulled.
 # What it costs, plainly: a merge over there can turn a build red here with no
 # commit of ours to point at. `git log` in landsman/config is where that lives.
-SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:latest
+SEMGREP_VERSION = $(shell curl -fsSL https://raw.githubusercontent.com/landsman/config/main/bin/semgrep/Dockerfile | sed -n 's|^FROM semgrep/semgrep:||p')
+SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:$(SEMGREP_VERSION)
 
 # p/php, p/golang and p/secrets read the code we wrote. p/ci reads what runs it — the
 # workflows and .github/dependabot.yml — which is the half that had nothing looking at
@@ -261,6 +261,7 @@ SEMGREP_SKIP = yaml.github-actions.security.github-actions-mutable-action-tag.gi
 
 security:
 	@docker info >/dev/null 2>&1 || { echo "semgrep skipped (docker not running)"; exit 0; }; \
+	[ -n "$(SEMGREP_VERSION)" ] || { echo "no semgrep version from landsman/config (offline?)"; exit 1; }; \
 	docker run --rm -v "$$PWD:/src" -w /src $(SEMGREP_IMAGE) semgrep \
 		--config=p/php --config=p/golang --config=p/secrets --config=p/ci \
 		--exclude-rule=$(SEMGREP_SKIP) \
