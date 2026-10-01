@@ -68,10 +68,17 @@ jobs:
       # shellcheck is already on the runner and says far more than `sh -n` does.
       - run: shellcheck check.sh
 
-      # Security rules for php, go and leaked secrets. Docker is on the runner and the
-      # Makefile pulls semgrep from the public GHCR mirror, so this needs nothing
-      # installed and no credentials.
-      - run: make security
+  # Security rules for php and go, on top of the leaked-secret and workflow rules every
+  # caller gets. The shared scan from landsman/config: it pins the semgrep version that
+  # repo last merged, from its public GHCR mirror, so the bump happens once there and
+  # each log says which version ran. Its own job, so it runs beside the lint instead of
+  # after it, and a red scan reads apart from a red lint. Same gate as quality.
+  security:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft != true
+    uses: landsman/config/.github/workflows/semgrep.yml@main
+    with:
+      packs: p/php p/golang
+      exclude: adminer.php editor.php available designs
 
   # Manual only. Three platforms per commit is minutes spent to learn that a one-line PHP
   # change is still fine, and macOS runners bill at 10x. Run it from the Actions tab: tick
