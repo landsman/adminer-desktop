@@ -1,0 +1,27 @@
+name: dependencies
+
+# Known vulnerabilities in the lockfiles, through the shared scan in
+# landsman/config: trivy from my GHCR mirror, failing on a fixable HIGH or
+# CRITICAL in a production dependency. Dependabot's alerts and security updates,
+# on in this repo's settings, cover the rest and open the fixes.
+on:
+  # A pull request that changes what is installed.
+  pull_request:
+    paths:
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/bun.lock'
+      - '**/composer.json'
+      - '**/composer.lock'
+      - '**/go.mod'
+      - '**/go.sum'
+      - .github/workflows/dependencies.yml
+  # And weekly on main, because a lockfile nobody touches still collects new
+  # advisories, and only a run on an unchanged commit sees them.
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    uses: landsman/config/.github/workflows/dependencies.yml@main
