@@ -246,7 +246,7 @@ biome:
 # already holds, so a laptop would keep scanning with the first one it ever pulled.
 # What it costs, plainly: a merge over there can turn a build red here with no
 # commit of ours to point at. `git log` in landsman/config is where that lives.
-SEMGREP_VERSION = $(shell curl -fsSL https://raw.githubusercontent.com/landsman/config/main/bin/semgrep/Dockerfile | sed -n 's|^FROM semgrep/semgrep:||p')
+SEMGREP_VERSION = $(shell curl -fsSL https://raw.githubusercontent.com/landsman/config/main/bin/semgrep/Dockerfile | sed -n 's|^FROM semgrep/semgrep:\([^@ ]*\).*|\1|p')
 SEMGREP_IMAGE = ghcr.io/landsman/semgrep-mirror:$(SEMGREP_VERSION)
 
 # p/php, p/golang and p/secrets read the code we wrote. p/ci reads what runs it — the
