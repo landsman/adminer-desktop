@@ -247,9 +247,9 @@ class McpContext implements Context
 	}
 
 	#[When('an agent runs the query :sql')]
-	public function agentRunsQuery(string $sql, ?int $maxCell = null): void
+	public function agentRunsQuery(string $sql, bool $whole = false): void
 	{
-		$arguments = ['sql' => $sql] + ($maxCell === null ? [] : ['max_cell_length' => $maxCell]);
+		$arguments = ['sql' => $sql] + ($whole ? ['whole_values' => true] : []);
 		$this->answer = $this->rpc([
 			'id' => 4,
 			'method' => 'tools/call',
@@ -263,7 +263,7 @@ class McpContext implements Context
 	#[When('an agent runs the query :sql asking for whole values')]
 	public function agentRunsQueryWhole(string $sql): void
 	{
-		$this->agentRunsQuery($sql, 0);
+		$this->agentRunsQuery($sql, true);
 	}
 
 	/** A cut value has to be named in the answer: a cut jsonb stops parsing, a cut text column
@@ -278,6 +278,9 @@ class McpContext implements Context
 		}
 		if ($this->cut($column) !== ['row' => 0, 'column' => $column, 'length' => $length]) {
 			throw new RuntimeException("the cut of $column is not reported: " . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+		if (!str_contains((string) ($this->payload['whole_values'] ?? ''), 'whole_values: true')) {
+			throw new RuntimeException('the answer does not say how to get the whole value: ' . json_encode($this->payload['whole_values'] ?? null));
 		}
 	}
 

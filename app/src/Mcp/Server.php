@@ -126,7 +126,7 @@ class Server {
 					'properties' => [
 						'table' => ['type' => 'string', 'description' => 'Table name.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, default 20, capped at 200.'],
-						'max_cell_length' => ['type' => 'integer', 'description' => 'Characters kept per value, default 2000; 0 returns every value whole. JSON values are never cut. Cut values are listed in truncated_cells.'],
+						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole. By default text longer than 2000 characters is cut and listed in truncated_cells; JSON values are never cut.'],
 					],
 					'required' => ['table'],
 				],
@@ -139,7 +139,7 @@ class Server {
 					'properties' => [
 						'sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.'],
-						'max_cell_length' => ['type' => 'integer', 'description' => 'Characters kept per value, default 2000; 0 returns every value whole. JSON values are never cut. Cut values are listed in truncated_cells.'],
+						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole. By default text longer than 2000 characters is cut and listed in truncated_cells; JSON values are never cut.'],
 					],
 					'required' => ['sql'],
 				],
@@ -156,17 +156,17 @@ class Server {
 		$args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
 		$table = is_string($args['table'] ?? null) ? $args['table'] : '';
 		$limit = is_int($args['limit'] ?? null) ? $args['limit'] : null;
-		$maxCell = is_int($args['max_cell_length'] ?? null) ? $args['max_cell_length'] : Tools::MAX_CELL;
+		$whole = ($args['whole_values'] ?? false) === true;
 
 		$payload = match ($name) {
 			'current_connection' => $this->tools->connection(),
 			'list_tables' => $this->tools->listTables(),
 			'describe_table' => $this->tools->describeTable($this->required($table, 'table')),
-			'preview_table_data' => $this->tools->previewTable($this->required($table, 'table'), $limit ?? 20, $maxCell),
+			'preview_table_data' => $this->tools->previewTable($this->required($table, 'table'), $limit ?? 20, $whole),
 			'execute_query' => $this->tools->query(
 				$this->required(is_string($args['sql'] ?? null) ? $args['sql'] : '', 'sql'),
 				$limit ?? 200,
-				$maxCell,
+				$whole,
 			),
 			default => throw new McpError(Strings::t('mcp.agent_unknown_tool') . ": $name"),
 		};

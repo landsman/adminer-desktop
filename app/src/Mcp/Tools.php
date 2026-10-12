@@ -37,10 +37,9 @@ class Tools {
 	/** Rows returned before we stop and say there were more. */
 	private const int MAX_ROWS = 200;
 
-	/** Cells are truncated at this many characters by default — a BLOB column should not be able
-	* to push the useful columns out of the answer. A caller that needs the whole value asks for
-	* it with a max_cell_length of 0. */
-	const int MAX_CELL = 2000;
+	/** Cells are truncated at this many characters unless the caller asks for whole_values — a
+	* BLOB column should not be able to push the useful columns out of the answer. */
+	private const int MAX_CELL = 2000;
 
 	/** The tables in the current database, with their type.
 	* @return array<string,string> name => "table"|"view"|…
@@ -72,13 +71,13 @@ class Tools {
 	}
 
 	/** The first rows of a table, without the caller having to write SQL for the common case.
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,whole_values?:string}
 	*/
-	function previewTable(string $table, int $limit = 20, int $maxCell = self::MAX_CELL): array {
+	function previewTable(string $table, int $limit = 20, bool $whole = false): array {
 		$limit = max(1, min($limit, self::MAX_ROWS));
 		// idf_escape is the driver's own identifier quoting — never string-concatenate a name
 		// that came from outside.
-		return $this->select('SELECT * FROM ' . \Adminer\idf_escape($table) . ' LIMIT ' . ($limit + 1), $limit, $maxCell);
+		return $this->select('SELECT * FROM ' . \Adminer\idf_escape($table) . ' LIMIT ' . ($limit + 1), $limit, $whole);
 	}
 
 	/** Run a caller's SQL and return its rows. Rolled back, always.
@@ -89,10 +88,10 @@ class Tools {
 	* postgres does not roll back, and the row went with the transaction. An agent that reports
 	* that as a successful write is worse than one that cannot write at all.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,rolled_back:bool,note:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,whole_values?:string,rolled_back:bool,note:string}
 	*/
-	function query(string $sql, int $limit = self::MAX_ROWS, int $maxCell = self::MAX_CELL): array {
-		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)), $maxCell);
+	function query(string $sql, int $limit = self::MAX_ROWS, bool $whole = false): array {
+		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)), $whole);
 		return $result + ($this->write
 			? ['rolled_back' => false, 'note' => Strings::t('mcp.agent_note_committed')]
 			: ['rolled_back' => true, 'note' => Strings::t('mcp.agent_note_rolled_back')]);
@@ -114,9 +113,9 @@ class Tools {
 	* `truncated` is about rows; `truncated_cells` names every value that was cut, because a cut
 	* text column fails nowhere at all — the data is just gone.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,whole_values?:string}
 	*/
-	private function select(string $sql, int $limit, int $maxCell): array {
+	private function select(string $sql, int $limit, bool $whole): array {
 		$connection = \Adminer\connection();
 		// begin()/rollback() are Driver methods, not free functions like most of adminer's API —
 		// each driver spells the statement itself (BEGIN, START TRANSACTION, …).
@@ -143,16 +142,19 @@ class Tools {
 					// JSON is never cut: half a document does not parse, so it would cost the
 					// context and answer nothing. ponytail: a multi-megabyte jsonb comes back
 					// whole too; a per-call byte budget is the upgrade if that ever floods one.
-					if ($maxCell > 0 && $length > $maxCell && !json_validate($value)) {
+					if (!$whole && $length > self::MAX_CELL && !json_validate($value)) {
 						// Characters, not bytes: substr() could cut a UTF-8 sequence in half.
-						$row[$column] = mb_substr($value, 0, $maxCell, 'UTF-8') . '… [truncated]';
+						$row[$column] = mb_substr($value, 0, self::MAX_CELL, 'UTF-8') . '… [truncated]';
 						$cut[] = ['row' => count($rows), 'column' => (string) $column, 'length' => $length];
 					}
 				}
 				$rows[] = $row;
 			}
 			$columns = $rows === [] ? [] : array_map('strval', array_keys($rows[0]));
-			return ['columns' => $columns, 'rows' => $rows, 'truncated' => $truncated, 'truncated_cells' => $cut];
+			return ['columns' => $columns, 'rows' => $rows, 'truncated' => $truncated, 'truncated_cells' => $cut]
+					// Said in the answer, not only in the tool description: this is the moment the
+					// agent needs to know the whole value is one argument away.
+					+ ($cut === [] ? [] : ['whole_values' => Strings::t('mcp.agent_note_cut')]);
 		} finally {
 			// finally, not after the return: a query that throws must still not leave a
 			// transaction open on the connection the user is browsing in.

@@ -78,6 +78,7 @@ return [
 	'mcp.agent_not_connected' => 'Adminer Desktop není připojen k databázi. Přihlaste se v aplikaci znovu.',
 	'mcp.agent_note_committed' => 'Zápisy jsou povoleny: vše, co tento příkaz změnil, bylo potvrzeno.',
 	'mcp.agent_note_rolled_back' => 'Toto proběhlo v transakci, která byla vrácena zpět. Nic nebylo zapsáno. Jakékoli id vrácené klauzulí RETURNING pochází ze sekvence a neoznačuje uložený řádek.',
+	'mcp.agent_note_cut' => 'Hodnoty uvedené v truncated_cells byly zkráceny. Celé je dostanete opakovaným voláním s whole_values: true.',
 	'mcp.agent_no_result' => 'příkaz nevrátil žádnou výsledkovou sadu',
 	'mcp.agent_parse_error' => 'chyba při parsování',
 	'mcp.agent_unknown_method' => 'neznámá metoda',

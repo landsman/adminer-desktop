@@ -78,6 +78,7 @@ return [
 	'mcp.agent_not_connected' => 'Adminer Desktop nu este conectat la nicio bază de date. Autentificați-vă din nou în aplicație.',
 	'mcp.agent_note_committed' => 'Scrierile sunt permise: tot ce a modificat această instrucțiune a fost confirmat.',
 	'mcp.agent_note_rolled_back' => 'Aceasta a rulat într-o tranzacție anulată. Nu s-a scris nimic. Orice id returnat de RETURNING provine dintr-o secvență și nu identifică un rând stocat.',
+	'mcp.agent_note_cut' => 'Valorile enumerate în truncated_cells au fost trunchiate. Apelează din nou cu whole_values: true pentru a le primi întregi.',
 	'mcp.agent_no_result' => 'instrucțiunea nu a returnat niciun set de rezultate',
 	'mcp.agent_parse_error' => 'eroare de analiză',
 	'mcp.agent_unknown_method' => 'metodă necunoscută',
