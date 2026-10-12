@@ -126,7 +126,7 @@ class Server {
 					'properties' => [
 						'table' => ['type' => 'string', 'description' => 'Table name.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, default 20, capped at 200.'],
-						'max_cell_length' => ['type' => 'integer', 'description' => 'Characters kept per value, default 2000; 0 returns every value whole. Cut values are listed in truncated_cells.'],
+						'max_cell_length' => ['type' => 'integer', 'description' => 'Characters kept per value, default 2000; 0 returns every value whole. JSON values are never cut. Cut values are listed in truncated_cells.'],
 					],
 					'required' => ['table'],
 				],
@@ -139,7 +139,7 @@ class Server {
 					'properties' => [
 						'sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.'],
-						'max_cell_length' => ['type' => 'integer', 'description' => 'Characters kept per value, default 2000; 0 returns every value whole. Cut values are listed in truncated_cells.'],
+						'max_cell_length' => ['type' => 'integer', 'description' => 'Characters kept per value, default 2000; 0 returns every value whole. JSON values are never cut. Cut values are listed in truncated_cells.'],
 					],
 					'required' => ['sql'],
 				],

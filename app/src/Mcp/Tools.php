@@ -112,7 +112,7 @@ class Tools {
 	/** Run one statement inside a transaction and roll it back.
 	*
 	* `truncated` is about rows; `truncated_cells` names every value that was cut, because a cut
-	* jsonb no longer parses and a cut text column fails nowhere at all — the data is just gone.
+	* text column fails nowhere at all — the data is just gone.
 	*
 	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>}
 	*/
@@ -140,7 +140,10 @@ class Tools {
 				}
 				foreach ($row as $column => $value) {
 					$length = is_string($value) ? mb_strlen($value, 'UTF-8') : 0;
-					if ($maxCell > 0 && $length > $maxCell) {
+					// JSON is never cut: half a document does not parse, so it would cost the
+					// context and answer nothing. ponytail: a multi-megabyte jsonb comes back
+					// whole too; a per-call byte budget is the upgrade if that ever floods one.
+					if ($maxCell > 0 && $length > $maxCell && !json_validate($value)) {
 						// Characters, not bytes: substr() could cut a UTF-8 sequence in half.
 						$row[$column] = mb_substr($value, 0, $maxCell, 'UTF-8') . '… [truncated]';
 						$cut[] = ['row' => count($rows), 'column' => (string) $column, 'length' => $length];

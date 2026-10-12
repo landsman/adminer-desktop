@@ -276,9 +276,8 @@ class McpContext implements Context
 		if (mb_strlen($value, 'UTF-8') !== $kept + mb_strlen('… [truncated]', 'UTF-8') || !mb_check_encoding($value, 'UTF-8')) {
 			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters: ' . mb_substr($value, -20));
 		}
-		$want = [['row' => 0, 'column' => $column, 'length' => $length]];
-		if (($this->payload['truncated_cells'] ?? null) !== $want) {
-			throw new RuntimeException('the cut is not reported: ' . json_encode($this->payload['truncated_cells'] ?? null));
+		if ($this->cut($column) !== ['row' => 0, 'column' => $column, 'length' => $length]) {
+			throw new RuntimeException("the cut of $column is not reported: " . json_encode($this->payload['truncated_cells'] ?? null));
 		}
 	}
 
@@ -289,6 +288,28 @@ class McpContext implements Context
 		if (mb_strlen($value, 'UTF-8') !== $length || ($this->payload['truncated_cells'] ?? null) !== []) {
 			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters, cuts: ' . json_encode($this->payload['truncated_cells'] ?? null));
 		}
+	}
+
+	/** Longer than the cap, or a value that was never at risk of being cut would pass. */
+	#[Then('the value in :column comes back whole as JSON, over :length characters')]
+	public function valueWholeJson(string $column, int $length): void
+	{
+		$value = (string) ($this->payload['rows'][0][$column] ?? '');
+		if (mb_strlen($value, 'UTF-8') <= $length || $this->cut($column) !== null) {
+			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters, cuts: ' . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+		json_decode($value, flags: JSON_THROW_ON_ERROR);
+	}
+
+	/** @return array<string,mixed>|null the truncated_cells entry for this column */
+	private function cut(string $column): ?array
+	{
+		foreach ((array) ($this->payload['truncated_cells'] ?? []) as $cell) {
+			if (($cell['column'] ?? null) === $column) {
+				return $cell;
+			}
+		}
+		return null;
 	}
 
 	#[Then('the answer mentions :text')]

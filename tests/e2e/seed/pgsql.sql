@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS big_child;
 DROP TABLE IF EXISTS big_lookup;
 DROP TABLE IF EXISTS documents;
+DROP TABLE IF EXISTS long_values;
 
 CREATE TABLE users (
 	id         serial PRIMARY KEY,
@@ -137,6 +138,19 @@ SELECT
 		ELSE format('Vyřízeno telefonicky, %s. položek', 3 + g % 8)
 	END
 FROM generate_series(3, 50) g;
+
+-- Values longer than the MCP tools return by default (Tools::MAX_CELL, 2000 characters), for
+-- features/shell/mcp.feature. `body` is exactly 5000 characters of Czech, so a cut counted in
+-- bytes shows up as the wrong length; `payload` is a longer jsonb, which must come back whole.
+CREATE TABLE long_values (
+	id      serial PRIMARY KEY,
+	body    text,
+	payload jsonb
+);
+INSERT INTO long_values (body, payload) VALUES (
+	repeat('Příliš žluťoučký kůň úpěl ďábelské ódy. ', 125),
+	(SELECT jsonb_build_object('lines', jsonb_agg(jsonb_build_object('n', g, 'text', format('Řádek %s: příliš žluťoučký kůň', g)))) FROM generate_series(1, 120) g)
+);
 
 -- Filler tables. Two tables fit in the sidebar without scrolling, which hides every problem
 -- that only shows on a real database: the sidebar keeping its scroll position across a
