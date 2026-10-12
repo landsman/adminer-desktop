@@ -104,8 +104,9 @@ class Server {
 		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
 		// Said in the description, so the agent can choose whole_values before its first call
 		// rather than learning about the cut from a result it then has to ask for again.
-		$cells = 'Text values longer than ' . Tools::MAX_CELL . ' characters are cut to ' . Tools::MAX_CELL
-			. ' and listed in truncated_cells with their full length; pass whole_values: true to get them whole. JSON values are never cut.';
+		$cells = 'To keep one large column from filling your context, text values longer than ' . Tools::MAX_CELL
+			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells with their full length;'
+			. ' pass whole_values: true when you need them whole. JSON values are never cut, since half a document does not parse.';
 		return [
 			[
 				'name' => 'current_connection',
