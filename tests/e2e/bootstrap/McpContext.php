@@ -88,6 +88,12 @@ class McpContext implements Context
 		$this->writeSettings(['mcp' => true, 'mcp_write' => true]);
 	}
 
+	#[Given('AI access is on and set to return whole values')]
+	public function accessIsOnWithWholeValues(): void
+	{
+		$this->writeSettings(['mcp' => true, 'mcp_whole_values' => true]);
+	}
+
 	#[When('AI access is turned off')]
 	public function accessIsTurnedOff(): void
 	{
@@ -240,6 +246,20 @@ class McpContext implements Context
 		}
 	}
 
+	#[Then('the description of :tool mentions :text')]
+	public function descriptionMentions(string $tool, string $text): void
+	{
+		foreach ((array) ($this->answer['result']['tools'] ?? []) as $offered) {
+			if (($offered['name'] ?? null) === $tool) {
+				if (!str_contains((string) ($offered['description'] ?? ''), $text)) {
+					throw new RuntimeException("$tool does not say $text: " . ($offered['description'] ?? ''));
+				}
+				return;
+			}
+		}
+		throw new RuntimeException("tools/list does not offer $tool");
+	}
+
 	#[When('an agent calls :tool')]
 	public function agentCallsTool(string $tool): void
 	{
@@ -247,16 +267,80 @@ class McpContext implements Context
 	}
 
 	#[When('an agent runs the query :sql')]
-	public function agentRunsQuery(string $sql): void
+	public function agentRunsQuery(string $sql, bool $whole = false): void
 	{
+		$arguments = ['sql' => $sql] + ($whole ? ['whole_values' => true] : []);
 		$this->answer = $this->rpc([
 			'id' => 4,
 			'method' => 'tools/call',
-			'params' => ['name' => 'execute_query', 'arguments' => ['sql' => $sql]],
+			'params' => ['name' => 'execute_query', 'arguments' => $arguments],
 		]);
 		// The tool's payload is JSON inside a JSON string, so it is decoded twice — a naive
 		// contains('"rolled_back"') looks for a quote that is escaped by the time it reaches here.
 		$this->payload = (array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true);
+	}
+
+	#[When('an agent runs the query :sql asking for whole values')]
+	public function agentRunsQueryWhole(string $sql): void
+	{
+		$this->agentRunsQuery($sql, true);
+	}
+
+	/** A cut value has to be named in the answer: a cut jsonb stops parsing, a cut text column
+	 * fails nowhere at all. Counted in characters, so the cut cannot split a UTF-8 sequence.
+	 */
+	#[Then('the value in :column is cut to :kept characters of :length, and the answer says so')]
+	public function valueCutAndReported(string $column, int $kept, int $length): void
+	{
+		$value = (string) ($this->payload['rows'][0][$column] ?? '');
+		if (mb_strlen($value, 'UTF-8') !== $kept + mb_strlen('… [truncated]', 'UTF-8') || !mb_check_encoding($value, 'UTF-8')) {
+			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters: ' . mb_substr($value, -20));
+		}
+		if ($this->cut($column) !== ['row' => 0, 'column' => $column, 'length' => $length]) {
+			throw new RuntimeException("the cut of $column is not reported: " . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+		if (!str_contains((string) ($this->payload['truncated_note'] ?? ''), 'whole_values: true')) {
+			throw new RuntimeException('the answer does not say how to get the whole value: ' . json_encode($this->payload['truncated_note'] ?? null));
+		}
+	}
+
+	#[Then('the answer says :column was cut too')]
+	public function answerSaysCut(string $column): void
+	{
+		if ($this->cut($column) === null) {
+			throw new RuntimeException("the cut of $column is not reported: " . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+	}
+
+	#[Then('the value in :column comes back whole, :length characters')]
+	public function valueWhole(string $column, int $length): void
+	{
+		$value = (string) ($this->payload['rows'][0][$column] ?? '');
+		if (mb_strlen($value, 'UTF-8') !== $length || ($this->payload['truncated_cells'] ?? null) !== []) {
+			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters, cuts: ' . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+	}
+
+	/** Longer than the cap, or a value that was never at risk of being cut would pass. */
+	#[Then('the value in :column comes back whole as JSON, over :length characters')]
+	public function valueWholeJson(string $column, int $length): void
+	{
+		$value = (string) ($this->payload['rows'][0][$column] ?? '');
+		if (mb_strlen($value, 'UTF-8') <= $length || $this->cut($column) !== null) {
+			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters, cuts: ' . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+		json_decode($value, flags: JSON_THROW_ON_ERROR);
+	}
+
+	/** @return array<string,mixed>|null the truncated_cells entry for this column */
+	private function cut(string $column): ?array
+	{
+		foreach ((array) ($this->payload['truncated_cells'] ?? []) as $cell) {
+			if (($cell['column'] ?? null) === $column) {
+				return $cell;
+			}
+		}
+		return null;
 	}
 
 	#[Then('the answer mentions :text')]

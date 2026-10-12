@@ -33,8 +33,12 @@ class Server {
 
 	private Tools $tools;
 
-	function __construct(?Tools $tools = null, bool $write = false) {
-		$this->tools = $tools ?? new Tools($write);
+	/** Whether the user turned the cut off for good, so the descriptions do not promise one. */
+	private bool $whole;
+
+	function __construct(?Tools $tools = null, bool $write = false, bool $whole = false) {
+		$this->tools = $tools ?? new Tools($write, $whole);
+		$this->whole = $whole;
 	}
 
 	/** Handle one JSON-RPC message.
@@ -102,6 +106,11 @@ class Server {
 	*/
 	private function catalogue(): array {
 		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
+		// Said in the description, so the agent can choose whole_values before its first call
+		// rather than learning about the cut from a result it then has to ask for again.
+		$cells = $this->whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
+			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells (row is 0-based) with their full length;'
+			. ' pass whole_values: true when you need them whole.';
 		return [
 			[
 				'name' => 'current_connection',
@@ -120,24 +129,26 @@ class Server {
 			],
 			[
 				'name' => 'preview_table_data',
-				'description' => 'First rows of a table, for seeing the shape of real data without writing SQL.',
+				'description' => 'First rows of a table, for seeing the shape of real data without writing SQL. ' . $cells,
 				'inputSchema' => [
 					'type' => 'object',
 					'properties' => [
 						'table' => ['type' => 'string', 'description' => 'Table name.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, default 20, capped at 200.'],
+						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
 					],
 					'required' => ['table'],
 				],
 			],
 			[
 				'name' => 'execute_query',
-				'description' => 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data. Results are capped at 200 rows.',
+				'description' => 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data. Results are capped at 200 rows. ' . $cells,
 				'inputSchema' => [
 					'type' => 'object',
 					'properties' => [
 						'sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.'],
+						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
 					],
 					'required' => ['sql'],
 				],
@@ -154,15 +165,17 @@ class Server {
 		$args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
 		$table = is_string($args['table'] ?? null) ? $args['table'] : '';
 		$limit = is_int($args['limit'] ?? null) ? $args['limit'] : null;
+		$whole = ($args['whole_values'] ?? false) === true;
 
 		$payload = match ($name) {
 			'current_connection' => $this->tools->connection(),
 			'list_tables' => $this->tools->listTables(),
 			'describe_table' => $this->tools->describeTable($this->required($table, 'table')),
-			'preview_table_data' => $this->tools->previewTable($this->required($table, 'table'), $limit ?? 20),
+			'preview_table_data' => $this->tools->previewTable($this->required($table, 'table'), $limit ?? 20, $whole),
 			'execute_query' => $this->tools->query(
 				$this->required(is_string($args['sql'] ?? null) ? $args['sql'] : '', 'sql'),
 				$limit ?? 200,
+				$whole,
 			),
 			default => throw new McpError(Strings::t('mcp.agent_unknown_tool') . ": $name"),
 		};
