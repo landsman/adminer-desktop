@@ -240,6 +240,20 @@ class McpContext implements Context
 		}
 	}
 
+	#[Then('the description of :tool mentions :text')]
+	public function descriptionMentions(string $tool, string $text): void
+	{
+		foreach ((array) ($this->answer['result']['tools'] ?? []) as $offered) {
+			if (($offered['name'] ?? null) === $tool) {
+				if (!str_contains((string) ($offered['description'] ?? ''), $text)) {
+					throw new RuntimeException("$tool does not say $text: " . ($offered['description'] ?? ''));
+				}
+				return;
+			}
+		}
+		throw new RuntimeException("tools/list does not offer $tool");
+	}
+
 	#[When('an agent calls :tool')]
 	public function agentCallsTool(string $tool): void
 	{

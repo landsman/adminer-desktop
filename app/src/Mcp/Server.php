@@ -102,6 +102,10 @@ class Server {
 	*/
 	private function catalogue(): array {
 		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
+		// Said in the description, so the agent can choose whole_values before its first call
+		// rather than learning about the cut from a result it then has to ask for again.
+		$cells = 'Text values longer than ' . Tools::MAX_CELL . ' characters are cut to ' . Tools::MAX_CELL
+			. ' and listed in truncated_cells with their full length; pass whole_values: true to get them whole. JSON values are never cut.';
 		return [
 			[
 				'name' => 'current_connection',
@@ -120,26 +124,26 @@ class Server {
 			],
 			[
 				'name' => 'preview_table_data',
-				'description' => 'First rows of a table, for seeing the shape of real data without writing SQL.',
+				'description' => 'First rows of a table, for seeing the shape of real data without writing SQL. ' . $cells,
 				'inputSchema' => [
 					'type' => 'object',
 					'properties' => [
 						'table' => ['type' => 'string', 'description' => 'Table name.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, default 20, capped at 200.'],
-						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole. By default text longer than 2000 characters is cut and listed in truncated_cells; JSON values are never cut.'],
+						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
 					],
 					'required' => ['table'],
 				],
 			],
 			[
 				'name' => 'execute_query',
-				'description' => 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data. Results are capped at 200 rows.',
+				'description' => 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data. Results are capped at 200 rows. ' . $cells,
 				'inputSchema' => [
 					'type' => 'object',
 					'properties' => [
 						'sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'],
 						'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.'],
-						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole. By default text longer than 2000 characters is cut and listed in truncated_cells; JSON values are never cut.'],
+						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
 					],
 					'required' => ['sql'],
 				],

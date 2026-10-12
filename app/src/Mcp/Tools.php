@@ -39,7 +39,7 @@ class Tools {
 
 	/** Cells are truncated at this many characters unless the caller asks for whole_values — a
 	* BLOB column should not be able to push the useful columns out of the answer. */
-	private const int MAX_CELL = 2000;
+	const int MAX_CELL = 2000;
 
 	/** The tables in the current database, with their type.
 	* @return array<string,string> name => "table"|"view"|…
