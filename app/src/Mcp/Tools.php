@@ -30,8 +30,12 @@ class Tools {
 	/** Whether a statement that writes is kept. Off unless the user said otherwise. */
 	private bool $write;
 
-	function __construct(bool $write = false) {
+	/** Whether every value comes back whole, as if each call asked for whole_values. */
+	private bool $whole;
+
+	function __construct(bool $write = false, bool $whole = false) {
 		$this->write = $write;
+		$this->whole = $whole;
 	}
 
 	/** Rows returned before we stop and say there were more. */
@@ -39,7 +43,7 @@ class Tools {
 
 	/** Cells are truncated at this many characters unless the caller asks for whole_values — a
 	* BLOB column should not be able to push the useful columns out of the answer. */
-	const int MAX_CELL = 2000;
+	public const int MAX_CELL = 2000;
 
 	/** The tables in the current database, with their type.
 	* @return array<string,string> name => "table"|"view"|…
@@ -71,7 +75,7 @@ class Tools {
 	}
 
 	/** The first rows of a table, without the caller having to write SQL for the common case.
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,whole_values?:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string}
 	*/
 	function previewTable(string $table, int $limit = 20, bool $whole = false): array {
 		$limit = max(1, min($limit, self::MAX_ROWS));
@@ -88,7 +92,7 @@ class Tools {
 	* postgres does not roll back, and the row went with the transaction. An agent that reports
 	* that as a successful write is worse than one that cannot write at all.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,whole_values?:string,rolled_back:bool,note:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,rolled_back:bool,note:string}
 	*/
 	function query(string $sql, int $limit = self::MAX_ROWS, bool $whole = false): array {
 		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)), $whole);
@@ -113,7 +117,7 @@ class Tools {
 	* `truncated` is about rows; `truncated_cells` names every value that was cut, because a cut
 	* text column fails nowhere at all — the data is just gone.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,whole_values?:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string}
 	*/
 	private function select(string $sql, int $limit, bool $whole): array {
 		$connection = \Adminer\connection();
@@ -139,10 +143,7 @@ class Tools {
 				}
 				foreach ($row as $column => $value) {
 					$length = is_string($value) ? mb_strlen($value, 'UTF-8') : 0;
-					// JSON is never cut: half a document does not parse, so it would cost the
-					// context and answer nothing. ponytail: a multi-megabyte jsonb comes back
-					// whole too; a per-call byte budget is the upgrade if that ever floods one.
-					if (!$whole && $length > self::MAX_CELL && !json_validate($value)) {
+					if (!$whole && !$this->whole && $length > self::MAX_CELL) {
 						// Characters, not bytes: substr() could cut a UTF-8 sequence in half.
 						$row[$column] = mb_substr($value, 0, self::MAX_CELL, 'UTF-8') . '… [truncated]';
 						$cut[] = ['row' => count($rows), 'column' => (string) $column, 'length' => $length];
@@ -154,7 +155,7 @@ class Tools {
 			return ['columns' => $columns, 'rows' => $rows, 'truncated' => $truncated, 'truncated_cells' => $cut]
 					// Said in the answer, not only in the tool description: this is the moment the
 					// agent needs to know the whole value is one argument away.
-					+ ($cut === [] ? [] : ['whole_values' => Strings::t('mcp.agent_note_cut')]);
+					+ ($cut === [] ? [] : ['truncated_note' => Strings::t('mcp.agent_note_cut')]);
 		} finally {
 			// finally, not after the return: a query that throws must still not leave a
 			// transaction open on the connection the user is browsing in.

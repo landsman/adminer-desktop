@@ -88,6 +88,12 @@ class McpContext implements Context
 		$this->writeSettings(['mcp' => true, 'mcp_write' => true]);
 	}
 
+	#[Given('AI access is on and set to return whole values')]
+	public function accessIsOnWithWholeValues(): void
+	{
+		$this->writeSettings(['mcp' => true, 'mcp_whole_values' => true]);
+	}
+
 	#[When('AI access is turned off')]
 	public function accessIsTurnedOff(): void
 	{
@@ -293,8 +299,16 @@ class McpContext implements Context
 		if ($this->cut($column) !== ['row' => 0, 'column' => $column, 'length' => $length]) {
 			throw new RuntimeException("the cut of $column is not reported: " . json_encode($this->payload['truncated_cells'] ?? null));
 		}
-		if (!str_contains((string) ($this->payload['whole_values'] ?? ''), 'whole_values: true')) {
-			throw new RuntimeException('the answer does not say how to get the whole value: ' . json_encode($this->payload['whole_values'] ?? null));
+		if (!str_contains((string) ($this->payload['truncated_note'] ?? ''), 'whole_values: true')) {
+			throw new RuntimeException('the answer does not say how to get the whole value: ' . json_encode($this->payload['truncated_note'] ?? null));
+		}
+	}
+
+	#[Then('the answer says :column was cut too')]
+	public function answerSaysCut(string $column): void
+	{
+		if ($this->cut($column) === null) {
+			throw new RuntimeException("the cut of $column is not reported: " . json_encode($this->payload['truncated_cells'] ?? null));
 		}
 	}
 

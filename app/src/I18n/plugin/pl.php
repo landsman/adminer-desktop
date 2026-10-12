@@ -56,6 +56,8 @@ return [
 	'mcp.register_on' => 'Zarejestruj u swojego agenta w',
 	'mcp.register_hint' => 'Skopiuj i uruchom raz w terminalu. Działa również po ponownym uruchomieniu.',
 	'mcp.readonly_note' => 'Wycofanie transakcji cofa zmiany danych. Niektóre bazy zatwierdzają zmianę struktury natychmiast, więc tam nie da się jej cofnąć. Aby zapis był niemożliwy, a nie tylko cofany, zaloguj się jako użytkownik bazy tylko do odczytu.',
+	'mcp.whole_enable' => 'Zawsze zwracaj długie wartości w całości',
+	'mcp.whole_note' => 'Wartości dłuższe niż 2000 znaków są w przeciwnym razie obcinane, aby jedna duża kolumna nie zapełniła kontekstu agenta. Agent nadal może poprosić o pełne wartości dla pojedynczego zapytania.',
 	'mcp.used_moments' => 'Ostatnie zapytanie: przed chwilą.',
 	'mcp.used_minutes' => 'Ostatnie zapytanie: w ciągu ostatniej godziny.',
 	'mcp.used_hours' => 'Ostatnie zapytanie: dzisiaj.',

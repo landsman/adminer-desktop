@@ -38,11 +38,19 @@ Feature: An agent reaching the database this window is logged into
     Then the answer says it was rolled back
     And no row named "mcp-rollback-probe" survived
 
-  Scenario: A long text value is cut on a character and reported, a long JSON one is not cut
+  Scenario: A long value is cut on a character and reported, and comes back whole on request
     When an agent runs the query "SELECT body, payload FROM long_values"
     Then the value in "body" is cut to 2000 characters of 5000, and the answer says so
-    And the value in "payload" comes back whole as JSON, over 2000 characters
+    And the answer says "payload" was cut too
     When an agent runs the query "SELECT body, payload FROM long_values" asking for whole values
+    Then the value in "body" comes back whole, 5000 characters
+    And the value in "payload" comes back whole as JSON, over 2000 characters
+
+  Scenario: With whole values on in the settings, nothing is cut and the description says so
+    Given AI access is on and set to return whole values
+    When an agent lists the tools
+    Then the description of "execute_query" mentions "Every value is returned whole."
+    When an agent runs the query "SELECT body, payload FROM long_values"
     Then the value in "body" comes back whole, 5000 characters
 
   Scenario: With writes allowed the same statement persists, and says so

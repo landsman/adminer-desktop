@@ -56,6 +56,8 @@ return [
 	'mcp.register_on' => 'Beim Agenten registrieren unter',
 	'mcp.register_hint' => 'Kopieren und einmal im Terminal ausführen. Funktioniert auch nach einem Neustart.',
 	'mcp.readonly_note' => 'Ein Rollback macht Datenänderungen rückgängig. Manche Datenbanken bestätigen eine Strukturänderung sofort, dort lässt sie sich nicht zurücknehmen. Damit Schreibzugriffe unmöglich statt rückgängig gemacht werden, melden Sie sich als schreibgeschützter Datenbankbenutzer an.',
+	'mcp.whole_enable' => 'Lange Werte immer vollständig zurückgeben',
+	'mcp.whole_note' => 'Werte über 2000 Zeichen werden sonst gekürzt, damit eine große Spalte nicht den Kontext des Agenten füllt. Der Agent kann vollständige Werte trotzdem pro Abfrage anfordern.',
 	'mcp.used_moments' => 'Letzte Abfrage: gerade eben.',
 	'mcp.used_minutes' => 'Letzte Abfrage: innerhalb der letzten Stunde.',
 	'mcp.used_hours' => 'Letzte Abfrage: heute.',

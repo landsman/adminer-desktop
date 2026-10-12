@@ -34,4 +34,7 @@ enum SettingKey: string {
 	// letting something read your database and letting it rewrite your database are not the
 	// same decision — see Desktop\Mcp\Tools.
 	case McpWrite = 'mcp_write';
+	// Whether long text values reach the agent whole instead of cut at Tools::MAX_CELL. For a
+	// user whose agent has the context to spare and keeps asking with whole_values anyway.
+	case McpWholeValues = 'mcp_whole_values';
 }

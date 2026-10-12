@@ -11,6 +11,7 @@
 	\AdminerDesktop $desktop,
 	bool $enabled,
 	bool $write,
+	bool $whole,
 	string $os,
 	array $commands,
 	array $status,
@@ -43,6 +44,15 @@
 	where the caveat to "rolled back, so they have no effect" arrived long after the decision it
 	is meant to inform — and the sentence above ends on exactly the word it corrects. *}
 <p class="ad-mcp-note">{$desktop->t('mcp.readonly_note')}</p>
+
+{* Off by default: the cut keeps one large column from filling the agent's context, and an agent
+	that needs a value whole can already ask per call. This is for when it always does. *}
+<p>
+	<input type="checkbox" name="mcp_whole_values" value="1" id="desktop-mcp-whole" n:attr="checked: $whole">
+	<label for="desktop-mcp-whole">{$desktop->t('mcp.whole_enable')}</label>
+</p>
+
+<p class="ad-mcp-note">{$desktop->t('mcp.whole_note')}</p>
 
 {* Its own card, because these three lines answer one question — is it working, and for what —
 	and that is a different kind of thing from the switches above it, which are decisions to make.

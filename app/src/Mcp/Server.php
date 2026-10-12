@@ -33,8 +33,12 @@ class Server {
 
 	private Tools $tools;
 
-	function __construct(?Tools $tools = null, bool $write = false) {
-		$this->tools = $tools ?? new Tools($write);
+	/** Whether the user turned the cut off for good, so the descriptions do not promise one. */
+	private bool $whole;
+
+	function __construct(?Tools $tools = null, bool $write = false, bool $whole = false) {
+		$this->tools = $tools ?? new Tools($write, $whole);
+		$this->whole = $whole;
 	}
 
 	/** Handle one JSON-RPC message.
@@ -104,9 +108,9 @@ class Server {
 		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
 		// Said in the description, so the agent can choose whole_values before its first call
 		// rather than learning about the cut from a result it then has to ask for again.
-		$cells = 'To keep one large column from filling your context, text values longer than ' . Tools::MAX_CELL
-			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells with their full length;'
-			. ' pass whole_values: true when you need them whole. JSON values are never cut, since half a document does not parse.';
+		$cells = $this->whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
+			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells (row is 0-based) with their full length;'
+			. ' pass whole_values: true when you need them whole.';
 		return [
 			[
 				'name' => 'current_connection',

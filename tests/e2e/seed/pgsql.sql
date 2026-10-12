@@ -141,7 +141,8 @@ FROM generate_series(3, 50) g;
 
 -- Values longer than the MCP tools return by default (Tools::MAX_CELL, 2000 characters), for
 -- features/shell/mcp.feature. `body` is exactly 5000 characters of Czech, so a cut counted in
--- bytes shows up as the wrong length; `payload` is a longer jsonb, which must come back whole.
+-- bytes shows up as the wrong length; `payload` is a longer jsonb,
+-- the type that stops parsing when cut, so whole_values is what makes it usable.
 CREATE TABLE long_values (
 	id      serial PRIMARY KEY,
 	body    text,

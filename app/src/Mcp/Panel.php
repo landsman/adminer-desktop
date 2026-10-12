@@ -39,6 +39,7 @@ class Panel {
 			"desktop" => $this->desktop,
 			"enabled" => $enabled,
 			"write" => (bool) $this->settings->get(SettingKey::McpWrite, false),
+			"whole" => (bool) $this->settings->get(SettingKey::McpWholeValues, false),
 			"os" => Os::current()->label(),
 			"commands" => $this->commands(),
 			"status" => $this->status($enabled),
@@ -53,6 +54,7 @@ class Panel {
 	function apply(): void {
 		$this->settings->set(SettingKey::Mcp, isset($_POST["mcp"]));
 		$this->settings->set(SettingKey::McpWrite, isset($_POST["mcp_write"]));
+		$this->settings->set(SettingKey::McpWholeValues, isset($_POST["mcp_whole_values"]));
 	}
 
 	/** The registration command per agent, ready to paste.

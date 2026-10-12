@@ -56,6 +56,8 @@ return [
 	'mcp.register_on' => 'Zaregistrovať u agenta na',
 	'mcp.register_hint' => 'Skopírujte a spustite raz v termináli. Funguje aj po reštarte.',
 	'mcp.readonly_note' => 'Vrátenie transakcie vráti zmeny dát. Niektoré databázy potvrdia zmenu štruktúry okamžite, takže pri nich ju vrátiť nemožno. Ak chcete zápis úplne znemožniť namiesto vracania, prihláste sa ako používateľ s právom len na čítanie.',
+	'mcp.whole_enable' => 'Vždy vracať dlhé hodnoty celé',
+	'mcp.whole_note' => 'Hodnoty dlhšie ako 2000 znakov sa inak skracujú, aby jeden veľký stĺpec nezaplnil kontext agenta. Agent si aj tak môže o celé hodnoty povedať pri jednotlivom dotaze.',
 	'mcp.used_moments' => 'Posledný dopyt: pred chvíľou.',
 	'mcp.used_minutes' => 'Posledný dopyt: počas poslednej hodiny.',
 	'mcp.used_hours' => 'Posledný dopyt: dnes.',

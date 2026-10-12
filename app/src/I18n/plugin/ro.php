@@ -56,6 +56,8 @@ return [
 	'mcp.register_on' => 'Înregistrează la agentul tău pe',
 	'mcp.register_hint' => 'Copiază-l și rulează-l o dată în terminal. Funcționează și după repornire.',
 	'mcp.readonly_note' => 'Anularea tranzacției revine asupra modificărilor de date. Unele baze de date confirmă imediat o modificare de structură, așa că acolo nu poate fi anulată. Pentru ca scrierile să fie imposibile, nu doar anulate, autentifică-te ca utilizator de bază de date doar cu drept de citire.',
+	'mcp.whole_enable' => 'Returnează întotdeauna valorile lungi întregi',
+	'mcp.whole_note' => 'Altfel, valorile mai lungi de 2000 de caractere sunt trunchiate, ca o singură coloană mare să nu umple contextul agentului. Agentul poate cere în continuare valori întregi pentru fiecare interogare.',
 	'mcp.used_moments' => 'Ultima interogare: chiar acum.',
 	'mcp.used_minutes' => 'Ultima interogare: în ultima oră.',
 	'mcp.used_hours' => 'Ultima interogare: astăzi.',

@@ -63,6 +63,8 @@ return [
 	'mcp.register_on' => 'Register with your agent on',
 	'mcp.register_hint' => 'Copy it, then run it once in a terminal. It keeps working after a restart.',
 	'mcp.readonly_note' => 'Rollback undoes data changes. Some databases commit a schema change immediately, so on those it cannot be undone. To make writes impossible rather than undone, log in as a read-only database user.',
+	'mcp.whole_enable' => 'Always return long values whole',
+	'mcp.whole_note' => 'Values longer than 2000 characters are otherwise cut, so one large column does not fill the agent\'s context. The agent can still ask for whole values per query.',
 	'mcp.used_moments' => 'Last query: moments ago.',
 	'mcp.used_minutes' => 'Last query: within the hour.',
 	'mcp.used_hours' => 'Last query: today.',
