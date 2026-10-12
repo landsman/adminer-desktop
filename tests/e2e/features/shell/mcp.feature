@@ -36,6 +36,12 @@ Feature: An agent reaching the database this window is logged into
     Then the answer says it was rolled back
     And no row named "mcp-rollback-probe" survived
 
+  Scenario: A value too long to return whole is cut on a character and reported
+    When an agent runs the query "SELECT repeat('é', 5000) AS s"
+    Then the value in "s" is cut to 2000 characters of 5000, and the answer says so
+    When an agent runs the query "SELECT repeat('é', 5000) AS s" asking for whole values
+    Then the value in "s" comes back whole, 5000 characters
+
   Scenario: With writes allowed the same statement persists, and says so
     Given AI access is on and allowed to write
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-committed') RETURNING id"

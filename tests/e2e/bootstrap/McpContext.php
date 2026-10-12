@@ -247,16 +247,48 @@ class McpContext implements Context
 	}
 
 	#[When('an agent runs the query :sql')]
-	public function agentRunsQuery(string $sql): void
+	public function agentRunsQuery(string $sql, ?int $maxCell = null): void
 	{
+		$arguments = ['sql' => $sql] + ($maxCell === null ? [] : ['max_cell_length' => $maxCell]);
 		$this->answer = $this->rpc([
 			'id' => 4,
 			'method' => 'tools/call',
-			'params' => ['name' => 'execute_query', 'arguments' => ['sql' => $sql]],
+			'params' => ['name' => 'execute_query', 'arguments' => $arguments],
 		]);
 		// The tool's payload is JSON inside a JSON string, so it is decoded twice — a naive
 		// contains('"rolled_back"') looks for a quote that is escaped by the time it reaches here.
 		$this->payload = (array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true);
+	}
+
+	#[When('an agent runs the query :sql asking for whole values')]
+	public function agentRunsQueryWhole(string $sql): void
+	{
+		$this->agentRunsQuery($sql, 0);
+	}
+
+	/** A cut value has to be named in the answer: a cut jsonb stops parsing, a cut text column
+	 * fails nowhere at all. Counted in characters, so the cut cannot split a UTF-8 sequence.
+	 */
+	#[Then('the value in :column is cut to :kept characters of :length, and the answer says so')]
+	public function valueCutAndReported(string $column, int $kept, int $length): void
+	{
+		$value = (string) ($this->payload['rows'][0][$column] ?? '');
+		if (mb_strlen($value, 'UTF-8') !== $kept + mb_strlen('… [truncated]', 'UTF-8') || !mb_check_encoding($value, 'UTF-8')) {
+			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters: ' . mb_substr($value, -20));
+		}
+		$want = [['row' => 0, 'column' => $column, 'length' => $length]];
+		if (($this->payload['truncated_cells'] ?? null) !== $want) {
+			throw new RuntimeException('the cut is not reported: ' . json_encode($this->payload['truncated_cells'] ?? null));
+		}
+	}
+
+	#[Then('the value in :column comes back whole, :length characters')]
+	public function valueWhole(string $column, int $length): void
+	{
+		$value = (string) ($this->payload['rows'][0][$column] ?? '');
+		if (mb_strlen($value, 'UTF-8') !== $length || ($this->payload['truncated_cells'] ?? null) !== []) {
+			throw new RuntimeException("$column came back as " . mb_strlen($value, 'UTF-8') . ' characters, cuts: ' . json_encode($this->payload['truncated_cells'] ?? null));
+		}
 	}
 
 	#[Then('the answer mentions :text')]
