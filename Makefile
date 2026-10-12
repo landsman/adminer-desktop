@@ -437,6 +437,11 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
 	cp $(ICON) "$(APP)"/Contents/Resources/
+	# Last, once nothing in the bundle changes. The binaries carry only the linker's own
+	# signature, which seals no Info.plist and no resources, so a downloaded copy fails
+	# Gatekeeper as "damaged" with no way past it. An ad-hoc signature (`-`, no account)
+	# seals the whole bundle; Gatekeeper then says "not verified" and offers Open Anyway.
+	codesign --force --deep --sign - "$(APP)"
 	@echo "built "$(APP)" -- $$(du -sh "$(APP)" | cut -f1)"
 
 # One name shape for every artifact: adminer-desktop_<version>_<os>-<arch>.<ext>. A
@@ -458,7 +463,8 @@ PKG_ARCH    = $(if $(filter aarch64 arm64,$(UNAME_M)),arm64,amd64)
 PKG_OS      = $(if $(filter Darwin,$(UNAME_S)),macos,$(if $(filter Linux,$(UNAME_S)),linux,windows))
 PKG         = adminer-desktop_$(PKG_VERSION)_$(PKG_OS)-$(PKG_ARCH)
 
-# Unsigned, so a first launch elsewhere needs right-click > Open. Signing is M4.
+# Ad-hoc signed, not notarized: a first launch elsewhere is refused, then allowed from
+# System Settings > Privacy & Security > Open Anyway. Notarizing needs a paid account; that is M4.
 # The bundle inside keeps its display name, "Adminer Desktop.app"; only the archive is
 # renamed, so the download is greppable and the thing in /Applications still reads right.
 zip: bundle  ## Zip the macOS .app bundle
