@@ -4,7 +4,7 @@
     "license": "Apache-2.0",
     "type": "project",
     "require-dev": {
-        "behat/behat": "^3.32",
+        "behat/behat": "^4.0",
         "dg/composer-cleaner": "^2.2",
         "nette/tester": "^2.5",
         "playwright-php/playwright": "^1.2",
