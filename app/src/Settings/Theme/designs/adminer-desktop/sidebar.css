@@ -86,8 +86,16 @@
 	font-size: 92%;
 }
 
+/* The path back is grey like the rest of the strip, and takes the accent and an underline
+   only under the pointer. */
 #breadcrumb a {
-	color: color-mix(in srgb, var(--ad-accent) 80%, var(--fg));
+	color: inherit;
+}
+
+#breadcrumb a:hover {
+	color: var(--ad-accent);
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
 }
 
 #logout {
