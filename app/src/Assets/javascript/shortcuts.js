@@ -25,7 +25,8 @@ function reloadShortcut(e) {
 addEventListener("keydown", reloadShortcut);
 
 /**
- * Open the list of shortcuts on ?, the key GitHub, Gmail and most web apps use for it.
+ * Open the list of shortcuts on ?, the key GitHub, Gmail and most web apps use for it: the
+ * settings dialog, on its shortcuts tab.
  *
  * Not while typing — ? is a character there — and not over another dialog. The list itself is
  * src/Shortcuts/, printed for the platform the app runs on; a shortcut added here gets a row
@@ -44,8 +45,14 @@ function helpShortcut(e) {
 	) {
 		return;
 	}
+	const tab = document.querySelector("#desktop-tab-shortcuts");
+	if (!tab) {
+		return;
+	}
 	e.preventDefault();
-	window.desktopOpenDialog?.("desktop-shortcuts");
+	// Checked before opening: the tabs are radios, so this is the whole of switching to it.
+	tab.checked = true;
+	window.desktopOpenDialog?.("desktop-settings");
 }
 
 addEventListener("keydown", helpShortcut);

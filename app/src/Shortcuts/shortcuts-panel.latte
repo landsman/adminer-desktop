@@ -1,0 +1,18 @@
+{* The keyboard shortcuts tab of the settings dialog, listed for the platform the app runs on
+	(Shortcuts.php). ? opens the dialog straight on it (javascript/shortcuts.js). Read-only: no
+	field here posts anything.
+
+	A table per group, not one table with a thead per group: the panels' thead is sticky, and two
+	in one table stick over each other's rows. *}
+{parameters
+	array $rows
+}
+<table n:foreach="$rows as $group => $shortcuts" class="odds">
+	<thead><tr><th colspan="2">{$group}</th></tr></thead>
+	<tbody>
+		<tr n:foreach="$shortcuts as [$label, $combos]">
+			<td>{$label}</td>
+			<td><kbd n:foreach="$combos as $combo">{$combo}</kbd></td>
+		</tr>
+	</tbody>
+</table>
