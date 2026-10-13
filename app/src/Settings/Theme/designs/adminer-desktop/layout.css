@@ -359,6 +359,18 @@ body {
 		box-shadow: 0 8px 28px color-mix(in srgb, #000 22%, transparent);
 	}
 
+	/* Open, the drawer dims and blurs what it covers, like a modal's backdrop (modal.css); a
+	   click there closes it (adminer's script). */
+	.js #foot:not(.foot) {
+		box-shadow:
+			0 8px 28px color-mix(in srgb, #000 22%, transparent),
+			0 0 0 100vmax rgba(0, 0, 0, 0.6);
+	}
+
+	body:has(#foot:not(.foot)) #content {
+		filter: blur(2px);
+	}
+
 	/* Closed. Adminer's own `.js .foot` says the same, but loses to `#foot { display: flex }`. */
 	.js #foot.foot {
 		display: none;
