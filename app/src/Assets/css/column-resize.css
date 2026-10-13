@@ -19,6 +19,14 @@
 	z-index: 1;
 }
 
+/* Adminer pins the row-actions cell on a wide table (`th.sticky, td.sticky`), but the
+   position: relative above puts every header cell after it on the same layer, later in the
+   source — so the header names paint over the pinned cell instead of scrolling under it.
+   Thead only: in the body a z-index would lift the pinned cells over the sticky header. */
+#table thead .sticky {
+	z-index: 2;
+}
+
 .ad-column-grip {
 	position: absolute;
 	top: 0;

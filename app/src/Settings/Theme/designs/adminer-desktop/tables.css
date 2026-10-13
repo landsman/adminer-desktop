@@ -93,6 +93,14 @@ tbody tr:hover th {
 	background: var(--lit);
 }
 
+/* Adminer's pinned row-actions column (edit, checkbox) on a table wider than the panel. Sticky
+   sticks to the panel's padding box, so it came to rest one padding in from the edge, with the
+   first column's values showing in the gap to its left — the same correction as .footer below. */
+th.sticky,
+td.sticky {
+	left: calc(-1 * var(--ad-panel-pad));
+}
+
 /* The row actions, stuck to the bottom of the content panel.
  *
  * Adminer leaves half an em below them and pulls them 20px past the right edge only, which in
