@@ -18,7 +18,7 @@ links against.
 
 ```sh
 make run                            # build and open the window
-make bundle                         # build/Adminer Desktop.app (icon, menu bar)
+make bundle                         # build.noindex/Adminer Desktop.app (icon, menu bar)
 make zip                            # ...zipped, to hand to someone else
 ```
 
