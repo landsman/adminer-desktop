@@ -17,6 +17,17 @@ Feature: The Adminer Desktop theme
       | light  |
       | dark   |
 
+  Scenario Outline: Delete on the edit form does not look like Save, in either scheme
+    Given the browser is in the <scheme> scheme
+    And I am logged in
+    When I open the edit form for "documents" row "1"
+    Then Delete is not painted like Save
+
+    Examples:
+      | scheme |
+      | light  |
+      | dark   |
+
   Scenario: The settings gear scrolls with the sidebar it sits in
     Given I am logged in
     When I open the "users" table
