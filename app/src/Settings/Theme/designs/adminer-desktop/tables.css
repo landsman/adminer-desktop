@@ -101,6 +101,29 @@ td.sticky {
 	left: calc(-1 * var(--ad-panel-pad));
 }
 
+/* Adminer marks that cell .hover as well, and `td.hover` drops its bottom and start borders and
+   paints it --bg — so it read as a gap in the grid, without the row lines, the zebra or the
+   hover tint. The borders come back, and the tints are laid over an opaque --bg: they are
+   translucent, and the cell has to hide the values scrolling under it. `:first-child` to
+   outrank adminer's `td.hover:first-child`, which is the rule taking the start border. */
+td.sticky:first-child {
+	border-bottom-width: 1px;
+	border-inline-start-width: 1px;
+}
+
+.odds tbody tr:nth-child(2n) td.sticky {
+	background: linear-gradient(var(--ad-zebra), var(--ad-zebra)) var(--bg);
+}
+
+tbody tr:hover td.sticky {
+	background: linear-gradient(var(--ad-accent-quiet), var(--ad-accent-quiet))
+		var(--bg);
+}
+
+.js .checkable .checked td.sticky {
+	background: var(--lit);
+}
+
 /* The row actions, stuck to the bottom of the content panel.
  *
  * Adminer leaves half an em below them and pulls them 20px past the right edge only, which in
