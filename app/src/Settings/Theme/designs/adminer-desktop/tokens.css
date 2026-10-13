@@ -62,6 +62,9 @@ html {
 	/* The height of the two header rows, the sidebar's logo and the content's breadcrumb, so
 	   their rules run on as one line across the gutter. Scaled by hand: rem ignores --ad-scale. */
 	--ad-header-h: calc(2.4rem * var(--ad-scale, 1));
+	/* The same for the row under them, the sidebar's database switch and the page title: what
+	   that row holds is a select, whose height decides the sidebar's side of it. */
+	--ad-subheader-h: calc(3.375rem * var(--ad-scale, 1));
 	--ad-zebra: light-dark(
 		color-mix(in srgb, var(--fg) 3%, transparent),
 		color-mix(in srgb, #ffffff 4%, transparent)

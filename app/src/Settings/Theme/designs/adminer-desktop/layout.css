@@ -155,6 +155,12 @@ body {
 	/* Adminer's .8em above and below and 20px under made the title the tallest thing on the
 	   page; it is a label for the page, under a breadcrumb that already says where you are. */
 	padding: 0.5rem var(--ad-panel-pad);
+	/* Its rule runs on from the one under the sidebar's database switch (--ad-subheader-h).
+	   A minimum, so a title too long for one line still wraps. align-content, not flex: a flex
+	   title would split its text from a <span> in it and drop the space between them. */
+	align-content: center;
+	box-sizing: border-box;
+	min-height: var(--ad-subheader-h);
 }
 
 /* Directly under the breadcrumb the title's padding is the space between the two rules; the
