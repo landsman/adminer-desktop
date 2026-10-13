@@ -269,6 +269,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		if (Env::Debug->get()) {
 			echo " debug";
 		}
+		// fresh-on-back.js reloads a page Back restored, but never one that answered a POST.
+		if ($_SERVER["REQUEST_METHOD"] == "POST") {
+			echo " ad-posted";
+		}
 		$this->theme->bodyClass();
 		$current = $this->connections->current();
 		if ($current?->color()) {
