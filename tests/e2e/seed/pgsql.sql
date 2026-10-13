@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS big_child;
 DROP TABLE IF EXISTS big_lookup;
 DROP TABLE IF EXISTS documents;
 DROP TABLE IF EXISTS long_values;
+DROP TABLE IF EXISTS wide_rows;
 
 CREATE TABLE users (
 	id         serial PRIMARY KEY,
@@ -152,6 +153,62 @@ INSERT INTO long_values (body, payload) VALUES (
 	repeat('Příliš žluťoučký kůň úpěl ďábelské ódy. ', 125),
 	(SELECT jsonb_build_object('lines', jsonb_agg(jsonb_build_object('n', g, 'text', format('Řádek %s: příliš žluťoučký kůň', g)))) FROM generate_series(1, 120) g)
 );
+
+-- Wider than the content panel, so the data list scrolls sideways: the pinned row-actions
+-- column, the action bar under the table and the sticky breadcrumb all only show their
+-- behaviour there. Many columns of very different widths — a flag, a two-digit number, a
+-- sentence, a jsonb — since that is what column sizing and the scroll have to cope with. A uuid
+-- first, like most real tables, and more than 50 rows so the pager is in the bar too. Every
+-- value derives from the row number (the uuid through md5), so a reseed gives the same rows.
+CREATE TABLE wide_rows (
+	uuid           uuid PRIMARY KEY,
+	active         boolean NOT NULL,
+	code           text NOT NULL,
+	grade          char(1) NOT NULL,
+	name           text NOT NULL,
+	category       text NOT NULL,
+	description    text NOT NULL,
+	quantity       integer NOT NULL,
+	unit           text NOT NULL,
+	unit_price     numeric(10, 2) NOT NULL,
+	vat_rate       smallint NOT NULL,
+	total_price    numeric(12, 2) NOT NULL,
+	currency       char(3) NOT NULL,
+	warehouse      text NOT NULL,
+	shelf          text NOT NULL,
+	supplier_email text NOT NULL,
+	supplier_note  text,
+	tags           text[] NOT NULL,
+	attributes     jsonb NOT NULL,
+	expires_on     date,
+	created_at     timestamptz NOT NULL,
+	updated_at     timestamptz NOT NULL
+);
+INSERT INTO wide_rows
+SELECT
+	md5(g::text)::uuid,
+	g % 5 <> 0,
+	format('WR-%s', lpad(g::text, 4, '0')),
+	chr(65 + g % 4),
+	format('Položka číslo %s s dlouhým názvem', g),
+	(ARRAY['chemicals', 'packaging', 'tools', 'spare parts'])[1 + g % 4],
+	format('Popis položky %s, dost dlouhý na to, aby sloupec něco vážil a bylo vidět, jak se chová dlouhý text v úzkém okně', g),
+	g * 7 % 500,
+	(ARRAY['ks', 'kg', 'l', 'bal.'])[1 + g % 4],
+	round((g * 13.37 % 1000)::numeric, 2),
+	(ARRAY[0, 12, 21])[1 + g % 3],
+	round((g * 7 % 500) * (g * 13.37 % 1000)::numeric, 2),
+	'CZK',
+	(ARRAY['Praha', 'Brno', 'Ostrava'])[1 + g % 3],
+	format('%s-%s', chr(65 + g % 6), g % 20),
+	format('supplier%s@example.com', g % 9),
+	CASE WHEN g % 3 = 0 THEN NULL ELSE format('Dodavatel %s dodává jen ve všední dny', g % 9) END,
+	ARRAY[(ARRAY['fragile', 'hazmat', 'cold'])[1 + g % 3], 'stock'],
+	jsonb_build_object('color', (ARRAY['red', 'green', 'blue'])[1 + g % 3], 'weight_g', g * 25, 'origin', 'CZ'),
+	CASE WHEN g % 4 = 0 THEN NULL ELSE date '2027-01-01' + g END,
+	timestamptz '2026-01-01 08:00+00' + g * interval '1 day',
+	timestamptz '2026-06-01 08:00+00' + g * interval '3 hours'
+FROM generate_series(1, 60) g;
 
 -- Filler tables. Two tables fit in the sidebar without scrolling, which hides every problem
 -- that only shows on a real database: the sidebar keeping its scroll position across a
