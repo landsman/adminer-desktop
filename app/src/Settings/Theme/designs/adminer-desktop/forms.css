@@ -18,6 +18,38 @@ textarea {
 	padding: 0.34em 0.55em;
 }
 
+/* A select is drawn like the field beside it, with the pager's chevron (tables.css) on the
+   right, not the native one — WebKit's is a grey capsule that ignores the border, radius and
+   padding above, so a select never lined up with the input next to it. A list box (multiple)
+   keeps its native look: it has no chevron to replace. The pager's own select is a bare chip.
+
+   A background rather than the pager's masked ::after, because a select cannot hold a
+   pseudo-element; and a background cannot take currentcolor, so the mark comes in one file per
+   scheme, switched like the sprite icons in base.css. */
+select:not([multiple], .ad-page-select) {
+	appearance: none;
+	padding-right: 1.8em;
+	background:
+		var(--bg) url("icons/select-chevron-light.svg") right 0.45em center / 1.1em
+		no-repeat;
+}
+
+body.theme-dark select:not([multiple], .ad-page-select) {
+	background-image: url("icons/select-chevron-dark.svg");
+}
+
+@media (prefers-color-scheme: dark) {
+	body.theme-auto select:not([multiple], .ad-page-select) {
+		background-image: url("icons/select-chevron-dark.svg");
+	}
+}
+
+/* The connection form pads its fields evenly (connections.css), which put its selects' text
+   under the chevron. */
+.ad-field select:not([multiple]) {
+	padding-right: 1.8em;
+}
+
 input[type="checkbox"],
 input[type="radio"] {
 	padding: 0;
@@ -90,9 +122,9 @@ select.size {
 	font: inherit;
 }
 
-input:hover,
-select:hover,
-textarea:hover {
+input:where(:not(:disabled)):hover,
+select:where(:not(:disabled)):hover,
+textarea:where(:not(:disabled)):hover {
 	border-color: var(--fg);
 }
 
@@ -102,6 +134,13 @@ textarea:focus-visible {
 	border-color: var(--ad-accent);
 	outline: 2px solid var(--ad-accent-quiet);
 	outline-offset: 0;
+}
+
+/* A field that cannot be used should not look like one that can. appearance: none above also
+   drops the native greyed-out look, so a disabled select read exactly like a live one. */
+:is(input, select, textarea):disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
 }
 
 select,
