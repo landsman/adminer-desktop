@@ -166,3 +166,11 @@ body.theme-dark .icon {
 .os-mac :hover {
 	scrollbar-color: color-mix(in srgb, var(--fg) 35%, transparent) transparent;
 }
+
+/* Even transparent, that bar keeps its width, so every rule in the two panels stopped one
+   scrollbar short of the right edge. The panels scroll by trackpad and wheel, as macOS's own
+   overlay scrollbars do when hidden; the scrollers inside them keep theirs. */
+.os-mac #menu,
+.os-mac #content {
+	scrollbar-width: none;
+}

@@ -31,7 +31,7 @@ in a tag from publishing something, and keeps the macOS runner off every `git pu
   — an empty ref is the default branch, so the old behaviour is untouched.
 - The Linux matrix row packages `tarball deb` — `deb` only re-roots what `dist` already
   staged, so it costs a `dpkg-deb` call rather than a second compile — and uploads
-  `build/*.deb` alongside the tarball.
+  `build.noindex/*.deb` alongside the tarball.
 - A `release` job downloads all three artifacts and runs `gh release upload <tag>
   --clobber`, then `gh release edit <tag> --prerelease`. Upload, never create: `gh` finds
   a draft or a published release by tag, and `--clobber` makes a re-run replace an asset

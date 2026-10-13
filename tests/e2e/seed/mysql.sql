@@ -1,4 +1,4 @@
--- Demo data for the MySQL suite (tests/e2e/behat.yml, `make e2e`).
+-- Demo data for the MySQL suite (tests/e2e/behat.php, `make e2e`).
 --
 -- The same tables as seed/pgsql.sql, in this driver's own types, because features/data/ runs
 -- against both and a scenario cannot know which one it is on. What the two files do not share is

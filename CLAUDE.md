@@ -10,7 +10,7 @@ rendering, CSS or JavaScript, and three separate bugs here were invisible to it:
 never fired.
 
 ```sh
-make debug          # or ./build/adminer-desktop -debug
+make debug          # or ./build.noindex/adminer-desktop -debug
 ```
 
 That turns on **Safari's Web Inspector** against the app's page — Safari → Develop →
@@ -167,7 +167,7 @@ passwordless block is satisfied. `make e2e` runs it; it stays out of `qa` becaus
 needs docker. `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows
 either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`.
 
-`tests/e2e/behat.yml` has one suite per driver, and the folder decides which run a feature:
+`tests/e2e/behat.php` has one suite per driver, and the folder decides which run a feature:
 `features/data/` (what Adminer reads through a driver) runs on both, `features/shell/` (our own
 chrome — theme, settings, sidebar, import, MCP) and `features/pgsql/` on postgres only. A new
 `.feature` in a folder runs with no list to update. `features/pgsql/plugins.feature` is where

@@ -1,4 +1,4 @@
--- Demo data for the PostgreSQL suite (tests/e2e/behat.yml, `make e2e`) and for `make demo`.
+-- Demo data for the PostgreSQL suite (tests/e2e/behat.php, `make e2e`) and for `make demo`.
 --
 -- Applied on every run — the drops below are what makes that idempotent — so editing this file
 -- reaches the database without dropping the container first. Add tables here as the app grows
