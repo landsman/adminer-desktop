@@ -126,3 +126,28 @@
 :target {
 	background: var(--lit);
 }
+
+/* Database and schema on one row, each select taking what is left of its half. Adminer
+   breaks them with a <br>; hidden fields and the hidden Go button stay out of the way. */
+#dbs {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+}
+
+#dbs br {
+	display: none;
+}
+
+#dbs label {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 0.3em;
+	min-width: 0;
+}
+
+#dbs select {
+	flex: 1;
+	min-width: 0;
+}
