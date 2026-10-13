@@ -237,6 +237,17 @@ body {
 	white-space: nowrap;
 }
 
+/* The logo image sat on the text's baseline, a little above its middle; centred instead, without
+   adminer's -3px that nudged it down to the baseline. */
+#h1 {
+	display: inline-flex;
+	align-items: center;
+}
+
+#h1 > img {
+	margin-bottom: 0;
+}
+
 /* Settings gear: at the sidebar's top-right, by the Adminer logo, as a quiet icon rather
    than a filled button floating over the content panel (where it also caught its clicks). */
 #desktop-gear {
