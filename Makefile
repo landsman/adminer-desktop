@@ -434,6 +434,7 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	# reconciles the copied tree down to the production deps in place.
 	./bin/frankenphp php-cli .cache/composer.phar install --no-dev --no-interaction \
 		--working-dir="$(APP)"/Contents/Resources/app
+	./bin/frankenphp php-cli cli/latte-precompile.php "$(APP)"/Contents/Resources/app
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
@@ -493,6 +494,8 @@ dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	# Strip the dev tooling app/vendor carries for qa (phpcs, slevomat, playwright — ~9 MB the
 	# shipped app never runs), reconciling the copied tree down to production deps in place.
 	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(DIST)/app
+	# Not on windows: Latte locks even a precompiled template there, so app/ would have to be writable.
+	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(DIST)/app)
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.

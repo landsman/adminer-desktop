@@ -87,6 +87,11 @@ Adminer's `input_hidden()`/`input_token()` are registered on it, and `make qa` c
 every `.latte` through that same engine. An `n:attribute` needs its element closed, which
 adminer's markup often is not.
 
+**A packaged build never recompiles a template.** `make bundle`/`dist` precompile every
+`.latte` into the package's `app/latte-cache/` and Latte's freshness check is off there, so
+editing a template inside a built app changes nothing — rebuild. The checkout has no
+`latte-cache/` and keeps compiling into `<data dir>/latte` as you edit.
+
 **Adminer's own CSS is the styling system.** Reuse `--bg`, `--fg`, `--dim`, `--lit` and
 classes like `.odds`; `dark.css` overrides them, so anything built on them follows the
 design the user picked. Our own tokens are prefixed `--ad-`.
