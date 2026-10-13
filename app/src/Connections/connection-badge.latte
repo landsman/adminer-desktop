@@ -1,7 +1,8 @@
-{* The connection you are in, at the top of the sidebar (Connections::badge()). The colour is
-	whitelisted (Color::hex()), hence noescape — see connections.latte. *}
-{parameters \Desktop\Connections\Connection $connection}
-<a id="ad-connection-badge" href="{$connection->url()|nocheck}" title="{$connection->address()}" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
+{* The connection you are in, in the header's corner (Connections::badge()). The colour is
+	whitelisted (Color::hex()), hence noescape — see connections.latte. It leads home, to the
+	saved connections, like the logo (AdminerDesktop::home()). *}
+{parameters \Desktop\Connections\Connection $connection, string $home}
+<a id="ad-connection-badge" href="{$home}" title="{$connection->address()}" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
 	<span class="ad-card-icon">{$connection->icon()|noescape}</span>
 	<span class="ad-badge-name">{$connection->title()}</span>
 	<span n:if="$connection->environment" class="ad-env ad-env-{$connection->environment->value}">{$connection->environment->label()}</span>

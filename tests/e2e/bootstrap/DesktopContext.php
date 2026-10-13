@@ -1380,8 +1380,8 @@ class DesktopContext implements Context
 		);
 	}
 
-	#[Then('the sidebar badge reads :name')]
-	public function sidebarBadgeReads(string $name): void
+	#[Then('the connection badge reads :name')]
+	public function connectionBadgeReads(string $name): void
 	{
 		$badge = (string) $this->page->evaluate(
 			// language=JavaScript
@@ -1400,6 +1400,18 @@ class DesktopContext implements Context
 			'() => document.body.className',
 		);
 		if (!str_contains($body, $class)) {
+			throw new RuntimeException("the body class is '$body'");
+		}
+	}
+
+	#[Then('the body does not carry the :class class')]
+	public function bodyDoesNotCarryClass(string $class): void
+	{
+		$body = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.body.className',
+		);
+		if (in_array($class, explode(' ', $body), true)) {
 			throw new RuntimeException("the body class is '$body'");
 		}
 	}

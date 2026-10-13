@@ -348,9 +348,10 @@ body:has(#ad-connections) #logins {
 	outline: 2px solid AccentColor;
 }
 
-/* Inside a connection: a stripe across the top of the window, and the badge at the top of the
-   sidebar, both in its colour — so a PROD window never looks like a LOCAL one. */
-body.ad-connected::before {
+/* Inside a connection, the badge in its colour — so a PROD window never looks like a LOCAL one —
+   and on a page that changes something (AdminerDesktop::bodyClass()), a stripe across the top
+   of the window in that colour too. */
+body.ad-writing::before {
 	content: "";
 	position: fixed;
 	inset: 0 0 auto;

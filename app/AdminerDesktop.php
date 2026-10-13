@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Desktop\Assets\Javascript;
 use Desktop\Assets\Styles;
 use Desktop\Connections\Connections;
+use Desktop\DestructiveAction;
 use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
@@ -189,6 +190,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head(): ?string {
 		$this->styles->link();
 		$this->javascript->link();
+		$this->javascript->beforePaint("header.js");
 		// Restore the sizes the user set themselves — the sidebar, and the edit form's fields —
 		// before the body paints, so a cold start opens at them instead of flashing the default
 		// then jumping. Each is a property the theme reads, named by what the api stored
@@ -287,15 +289,17 @@ class AdminerDesktop extends Adminer\Plugin {
 		}
 		$this->theme->bodyClass();
 		$current = $this->connections->current();
-		if ($current?->color()) {
-			echo " ad-connected";
+		// The stripe in the connection's colour marks the pages that change something, not every
+		// page of it.
+		if ($current?->color() && DestructiveAction::current()) {
+			echo " ad-writing";
 		}
 		if ($current?->environment) {
 			echo " env-" . $current->environment->value;
 		}
 	}
 
-	/** The logo leads where the breadcrumb's home mark does, not out to adminer.org in a new
+	/** The logo leads to the start screen (home()), not out to adminer.org in a new
 	* window — in a desktop app that opened a browser nobody asked for. Adminer's own markup with
 	* only the link swapped, so the logo and its versioned URL stay adminer's; the address is the
 	* one adminer builds for the breadcrumb's first link (include/design.inc.php).
@@ -307,8 +311,13 @@ class AdminerDesktop extends Adminer\Plugin {
 		if (!isset($_GET["username"])) {
 			return (string) preg_replace("~<a href='[^']*'[^>]*?( id='h1'[^>]*>)(.*?)</a>~s", '<span$1$2</span>', $name);
 		}
-		$home = substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1);
-		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", $name);
+		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($this->home()) . "'", $name);
+	}
+
+	/** The start screen with the saved connections, still signed in: this server without the
+	* user. The logo and the connection badge lead there. */
+	function home(): string {
+		return substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1) ?: ".";
 	}
 
 	/** Adminer's sidebar, with ours ahead of it: the settings dialog, the search box once logged in
