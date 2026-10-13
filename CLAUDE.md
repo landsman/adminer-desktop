@@ -170,7 +170,9 @@ autoloaded as `Desktop\Tests\`), and `tests/e2e/harness/fixture.php` owning the 
 — a throwaway postgres and mysql in docker, the app served with a data dir so Adminer's
 passwordless block is satisfied. `make e2e` runs it; it stays out of `qa` because it is slow and
 needs docker. `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows
-either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`.
+either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`. `make e2e-packaged`
+runs the same scenarios against `app/` as a release ships it — production deps, templates
+precompiled, read-only — so a template the build missed fails a scenario; CI runs it nightly only.
 
 A step's JavaScript and selectors are strings, so nothing checks them until a scenario fails. Mark
 each with PhpStorm's language-injection comment on the line before the literal — `// language=JavaScript`

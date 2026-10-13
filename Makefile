@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e e2e-visual i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e e2e-visual e2e-packaged i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -320,6 +320,17 @@ e2e: fetch app/vendor  ## Every scenario, against both drivers (needs docker)
 e2e-visual: fetch app/vendor  ## The same, in a browser you can watch (needs docker)
 	mise run e2e-visual
 
+# The same scenarios against app/ as it ships: production deps, templates precompiled, and read-only,
+# as a signed bundle or a .deb under /usr is. A template the build did not compile is then a fatal
+# page rather than a slow first one, which `e2e` against the checkout never shows. Nightly in CI.
+E2E_APP = build.noindex/e2e-app
+e2e-packaged: fetch app/vendor  ## Every scenario, against the packaged app/ (needs docker)
+	# u+w first: a killed run leaves the copy read-only, and rm cannot clear it then.
+	chmod -R u+w $(E2E_APP) 2>/dev/null; rm -rf $(E2E_APP) && mkdir -p $(dir $(E2E_APP)) && cp -R app $(E2E_APP)
+	$(call package-app,$(E2E_APP))
+	chmod -R a-w $(E2E_APP)
+	ADMINER_DESKTOP_E2E_APP=$(CURDIR)/$(E2E_APP) mise run e2e; s=$$?; chmod -R u+w $(E2E_APP); exit $$s
+
 ##@ Build & run
 
 # About reads these, so it can never disagree with what is actually bundled.
@@ -433,9 +444,7 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	# Strip the dev tooling the shared app/vendor target installs for qa (phpcs, slevomat,
 	# playwright — ~9 MB the shipped app never runs). composer.json travels with app/, so this
 	# reconciles the copied tree down to the production deps in place.
-	./bin/frankenphp php-cli .cache/composer.phar install --no-dev --no-interaction \
-		--working-dir="$(APP)"/Contents/Resources/app
-	./bin/frankenphp php-cli cli/latte-precompile.php "$(APP)"/Contents/Resources/app
+	$(call package-app,"$(APP)"/Contents/Resources/app)
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
 	# sit directly in Resources. macOS then picks the language itself.
 	cp -R lproj/*.lproj "$(APP)"/Contents/Resources/
@@ -482,6 +491,16 @@ zip: bundle  ## Zip the macOS .app bundle
 # adminer-desktop without colliding with the binary of that name in build.noindex/.
 DIST = build.noindex/pkg/adminer-desktop
 
+# Turns a copy of app/ into what ships; bundle, dist and e2e-packaged share it, so the nightly tests
+# the same tree a release carries. composer strips the dev tooling app/vendor carries for qa
+# (phpcs, slevomat, playwright — ~9 MB the shipped app never runs), reconciling the copy down to
+# production deps in place. No precompile on windows: Latte locks even a precompiled template
+# there, so app/ would have to be writable.
+define package-app
+	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(1)
+	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(1))
+endef
+
 dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	rm -rf $(DIST) && mkdir -p $(DIST)
 	cp build.noindex/adminer-desktop$(EXE) $(DIST)/
@@ -492,11 +511,7 @@ dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	# the exe. cp rather than rsync: git bash on the windows runner has no rsync.
 	cp -R bin/. $(DIST)/
 	cp -R app $(DIST)/app   # includes app/vendor, the autoloader Latte renders through
-	# Strip the dev tooling app/vendor carries for qa (phpcs, slevomat, playwright — ~9 MB the
-	# shipped app never runs), reconciling the copied tree down to production deps in place.
-	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(DIST)/app
-	# Not on windows: Latte locks even a precompiled template there, so app/ would have to be writable.
-	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(DIST)/app)
+	$(call package-app,$(DIST)/app)
 	@echo "built $(DIST) -- $$(du -sh $(DIST) | cut -f1)"
 
 # tar preserves the executable bit; zip on windows does not need it.

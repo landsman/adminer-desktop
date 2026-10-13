@@ -414,7 +414,7 @@ class McpContext implements Context
 	public function throughTheStdioBridge(string $sql): void
 	{
 		$shim = new Process(
-			[$this->fix['root'] . '/bin/frankenphp', 'php-cli', $this->fix['root'] . '/app/mcp.php'],
+			[$this->fix['root'] . '/bin/frankenphp', 'php-cli', $this->fix['app'] . '/mcp.php'],
 			null,
 			['ADMINER_DESKTOP_DATA' => $this->fix['data']],
 		);
