@@ -189,7 +189,10 @@ class DesktopContext implements Context
 	public function sortBy(string $column): void
 	{
 		$this->before = $this->list();
-		$this->page->evaluate("() => document.querySelector('[id=\"th[$column]\"] a').click()");
+		$this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('[id=\"th[$column]\"] a').click()",
+		);
 		$this->after = $this->settled($this->before, fn (): array => $this->list());
 	}
 
@@ -198,7 +201,10 @@ class DesktopContext implements Context
 	{
 		$this->before = $this->list() + $this->pager();
 		// The first control that is a link: on page one, first and previous are spans.
-		$this->page->evaluate("() => [...document.querySelectorAll('a.ad-page-step')][0].click()");
+		$this->page->evaluate(
+			// language=JavaScript
+			"() => [...document.querySelectorAll('a.ad-page-step')][0].click()",
+		);
 		$this->after = $this->settled($this->before, fn (): array => $this->list() + $this->pager());
 	}
 
@@ -209,18 +215,24 @@ class DesktopContext implements Context
 		// By value, not by label: the option labelled 10 is page 9, and a bare string would match
 		// the label. Adminer numbers pages from zero.
 		$value = (int) $number - 1;
-		$this->page->evaluate("() => {
-			const list = document.querySelector('.ad-page-select');
-			list.value = '$value';
-			list.dispatchEvent(new Event('change'));
-		}");
+		$this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const list = document.querySelector('.ad-page-select');
+				list.value = '$value';
+				list.dispatchEvent(new Event('change'));
+			}",
+		);
 		$this->after = $this->settled($this->before, fn (): array => $this->list() + $this->pager());
 	}
 
 	#[When('I pick :limit rows a page')]
 	public function pickPageSize(string $limit): void
 	{
-		$this->page->locator("#form select[name='limit']")->selectOption($limit);
+		$this->page->locator(
+			// language=JQuery-CSS
+			"#form select[name='limit']",
+		)->selectOption($limit);
 		$this->page->waitForURL("**limit=$limit**");
 		$this->page->waitForLoadState('networkidle');
 	}
@@ -636,12 +648,15 @@ class DesktopContext implements Context
 	#[When('I drag the sidebar handle :pixels pixels right')]
 	public function dragSidebar(int $pixels): void
 	{
-		$handle = $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const h = document.querySelector('#ad-sidebar-resizer');
-			if (!h) { return null; }
-			const r = h.getBoundingClientRect();
-			return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-		}");
+		$handle = $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const h = document.querySelector('#ad-sidebar-resizer');
+				if (!h) { return null; }
+				const r = h.getBoundingClientRect();
+				return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+			}",
+		);
 		if (!is_array($handle)) {
 			throw new RuntimeException('the resize handle was not inserted');
 		}
@@ -666,7 +681,10 @@ class DesktopContext implements Context
 	#[When('I nudge the sidebar handle left with the keyboard')]
 	public function nudgeSidebar(): void
 	{
-		$this->page->locator('#ad-sidebar-resizer')->focus();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-sidebar-resizer',
+		)->focus();
 		$this->before = ['sidebar' => $this->sidebarWidth()];
 		for ($i = 0; $i < 5; $i++) {
 			$this->page->keyboard()->press('ArrowLeft');
@@ -725,9 +743,11 @@ class DesktopContext implements Context
 		$cold = $this->page->context()->newPage();
 		$cold->goto($this->page->url());
 		$cold->waitForLoadState('networkidle');
-		$width = (float) $cold->evaluate($what === 'sidebar'
-			? "() => document.querySelector('#foot').getBoundingClientRect().width"
-			: "() => document.querySelector('#form > table.layout textarea').getBoundingClientRect().width");
+		$width = (float) $cold->evaluate(
+			// language=JavaScript
+			'(selector) => document.querySelector(selector).getBoundingClientRect().width',
+			$what === 'sidebar' ? '#foot' : '#form > table.layout textarea',
+		);
 		$cold->close();
 		if ($width <= 0) {
 			throw new RuntimeException("nothing to measure on the fresh page — is it the $what page at all?");
@@ -746,6 +766,7 @@ class DesktopContext implements Context
 	public function themeIsApplied(): void
 	{
 		$accent = $this->page->evaluate(
+			// language=JavaScript
 			"() => getComputedStyle(document.documentElement).getPropertyValue('--ad-accent').trim()",
 		);
 		if (!is_string($accent) || $accent === '') {
@@ -768,7 +789,10 @@ class DesktopContext implements Context
 	#[Then('the emulated scheme is :scheme')]
 	public function emulatedSchemeIs(string $scheme): void
 	{
-		$isDark = (bool) $this->page->evaluate("() => matchMedia('(prefers-color-scheme: dark)').matches");
+		$isDark = (bool) $this->page->evaluate(
+			// language=JavaScript
+			"() => matchMedia('(prefers-color-scheme: dark)').matches",
+		);
 		if ($isDark !== ($scheme === 'dark')) {
 			throw new RuntimeException("prefers-color-scheme was not emulated as $scheme");
 		}
@@ -780,12 +804,15 @@ class DesktopContext implements Context
 	#[Then('the settings gear scrolls with the sidebar')]
 	public function gearScrollsWithSidebar(): void
 	{
-		$moved = $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const menu = document.querySelector('#menu'), gear = document.querySelector('#desktop-gear');
-			const top = gear.getBoundingClientRect().top;
-			menu.scrollTop = 200;
-			return top - gear.getBoundingClientRect().top;
-		}");
+		$moved = $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const menu = document.querySelector('#menu'), gear = document.querySelector('#desktop-gear');
+				const top = gear.getBoundingClientRect().top;
+				menu.scrollTop = 200;
+				return top - gear.getBoundingClientRect().top;
+			}",
+		);
 		if ((float) $moved < 150) {
 			throw new RuntimeException("the settings gear did not scroll with the sidebar (moved {$moved}px)");
 		}
@@ -799,8 +826,14 @@ class DesktopContext implements Context
 		// Only if it is closed. Changing the language reopens it, and clicking the gear while the
 		// modal is up means clicking an element behind the backdrop, which never becomes
 		// actionable — the whole check timed out there rather than failing on anything it asserts.
-		if (!$this->page->evaluate("() => document.querySelector('#desktop-settings').open")) {
-			$this->page->locator('#desktop-gear')->click();
+		if (!$this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('#desktop-settings').open",
+		)) {
+			$this->page->locator(
+				// language=JQuery-CSS
+				'#desktop-gear',
+			)->click();
 			usleep(300_000); // showModal() animates, and its contents are display:none until it lands
 		}
 	}
@@ -808,13 +841,19 @@ class DesktopContext implements Context
 	#[When('I pick the :density row density')]
 	public function pickDensity(string $density): void
 	{
-		$this->page->locator("input[name=\"density\"][value=\"$density\"]")->check(['force' => true]);
+		$this->page->locator(
+			// language=JQuery-CSS
+			"input[name=\"density\"][value=\"$density\"]",
+		)->check(['force' => true]);
 	}
 
 	#[When('I force the :appearance appearance')]
 	public function forceAppearance(string $appearance): void
 	{
-		$this->page->locator("input[name=\"appearance\"][value=\"$appearance\"]")->check(['force' => true]);
+		$this->page->locator(
+			// language=JQuery-CSS
+			"input[name=\"appearance\"][value=\"$appearance\"]",
+		)->check(['force' => true]);
 	}
 
 	/** Whichever gallery design is offered first, so this does not break when the catalogue changes. */
@@ -822,13 +861,17 @@ class DesktopContext implements Context
 	public function pickFirstDesign(): void
 	{
 		$design = $this->page->evaluate(
+			// language=JavaScript
 			'() => { const r = [...document.querySelectorAll("input[name=design_light]")].find((x) => x.value); return r ? r.value : null; }',
 		);
 		if (!is_string($design) || $design === '') {
 			throw new RuntimeException('no gallery design was offered to pick');
 		}
 		$this->dragged = $design; // reused as "what the last step picked"
-		$this->page->locator("input[name=\"design_light\"][value=\"$design\"]")->check(['force' => true]);
+		$this->page->locator(
+			// language=JQuery-CSS
+			"input[name=\"design_light\"][value=\"$design\"]",
+		)->check(['force' => true]);
 	}
 
 	/** Set on the checkbox directly: what this guards is that Save persists it, not the browser's
@@ -849,7 +892,10 @@ class DesktopContext implements Context
 	#[When('I save the settings')]
 	public function saveSettings(): void
 	{
-		$this->page->locator('#desktop-save')->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#desktop-save',
+		)->click();
 		$this->page->waitForLoadState('networkidle');
 	}
 
@@ -860,11 +906,17 @@ class DesktopContext implements Context
 	#[When('I switch the language to :lang')]
 	public function switchLanguage(string $lang): void
 	{
-		$this->page->locator('#desktop-lang-slot select')->selectOption($lang);
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#desktop-lang-slot select',
+		)->selectOption($lang);
 		for ($i = 0; $i < 30; $i++) {
 			usleep(200_000);
 			try {
-				if ((string) $this->page->evaluate('() => document.documentElement.lang') === $lang) {
+				if ((string) $this->page->evaluate(
+					// language=JavaScript
+					'() => document.documentElement.lang',
+				) === $lang) {
 					return;
 				}
 			} catch (\Throwable $e) {
@@ -880,8 +932,14 @@ class DesktopContext implements Context
 	#[When('I reset the settings to their defaults')]
 	public function resetSettings(): void
 	{
-		$this->page->evaluate('() => { window.confirm = () => true; }');
-		$this->page->locator('#desktop-reset')->click();
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => { window.confirm = () => true; }',
+		);
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#desktop-reset',
+		)->click();
 		$this->page->waitForLoadState('networkidle');
 		usleep(300_000); // the redirect lands before the unlink is visible to this process
 	}
@@ -893,6 +951,7 @@ class DesktopContext implements Context
 	public function storeADraggedWidth(): void
 	{
 		$this->page->evaluate(
+			// language=JavaScript
 			"() => navigator.sendBeacon(window.desktopApi.resize, new URLSearchParams({what: 'sidebar', width: '420'}))",
 		);
 		for ($i = 0; $i < 30 && !isset(e2e_settings($this->fix)['user_resized_px']); $i++) {
@@ -912,7 +971,10 @@ class DesktopContext implements Context
 	#[Then('the saved connection is a card')]
 	public function savedConnectionIsCard(): void
 	{
-		$cards = (int) $this->page->evaluate('() => document.querySelectorAll("#ad-connections .ad-card").length');
+		$cards = (int) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelectorAll("#ad-connections .ad-card").length',
+		);
 		if ($cards !== 1) {
 			throw new RuntimeException("$cards cards on the login page");
 		}
@@ -921,7 +983,10 @@ class DesktopContext implements Context
 	#[Then('the login form is folded away')]
 	public function loginFormFolded(): void
 	{
-		if ($this->page->locator('input[name="auth[username]"]')->isVisible()) {
+		if ($this->page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[username]"]',
+		)->isVisible()) {
 			throw new RuntimeException('the login form is still showing');
 		}
 	}
@@ -929,13 +994,19 @@ class DesktopContext implements Context
 	#[When('I ask for a new connection')]
 	public function askForNewConnection(): void
 	{
-		$this->page->locator('#ad-new-connection')->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-new-connection',
+		)->click();
 	}
 
 	#[Then('the login form is shown')]
 	public function loginFormShown(): void
 	{
-		if (!$this->page->locator('input[name="auth[username]"]')->isVisible()) {
+		if (!$this->page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[username]"]',
+		)->isVisible()) {
 			throw new RuntimeException('the login form stayed folded');
 		}
 	}
@@ -943,19 +1014,43 @@ class DesktopContext implements Context
 	#[When('I label the connection :name as :env in :color')]
 	public function labelConnection(string $name, string $env, string $color): void
 	{
-		$this->page->locator('.ad-card-edit')->click();
-		$dialog = $this->page->locator('dialog.ad-connection-dialog[open]');
-		$dialog->locator('input[name="name"]')->fill($name);
-		$dialog->locator('select[name="env"]')->selectOption($env);
-		$dialog->locator("input[name=\"color\"][value=\"$color\"]")->check(['force' => true]);
-		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector("dialog[open] .ad-save").click(); }');
-		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+		$this->page->locator(
+			// language=JQuery-CSS
+			'.ad-card-edit',
+		)->click();
+		$dialog = $this->page->locator(
+			// language=JQuery-CSS
+			'dialog.ad-connection-dialog[open]',
+		);
+		$dialog->locator(
+			// language=JQuery-CSS
+			'input[name="name"]',
+		)->fill($name);
+		$dialog->locator(
+			// language=JQuery-CSS
+			'select[name="env"]',
+		)->selectOption($env);
+		$dialog->locator(
+			// language=JQuery-CSS
+			"input[name=\"color\"][value=\"$color\"]",
+		)->check(['force' => true]);
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => { window.e2eLeaving = true; document.querySelector("dialog[open] .ad-save").click(); }',
+		);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eLeaving && document.readyState === "complete"',
+		);
 	}
 
 	#[Then('the logo is not a link')]
 	public function logoNotLink(): void
 	{
-		if ((bool) $this->page->evaluate('() => !!document.querySelector("a#h1")')) {
+		if ((bool) $this->page->evaluate(
+			// language=JavaScript
+			'() => !!document.querySelector("a#h1")',
+		)) {
 			throw new RuntimeException('the logo is still a link');
 		}
 	}
@@ -963,7 +1058,10 @@ class DesktopContext implements Context
 	#[Then("the version links to adminer's releases")]
 	public function versionLinksReleases(): void
 	{
-		$href = (string) $this->page->evaluate('() => document.querySelector(".ad-versions a")?.getAttribute("href") ?? ""');
+		$href = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector(".ad-versions a")?.getAttribute("href") ?? ""',
+		);
 		if ($href !== 'https://github.com/vrana/adminer/releases') {
 			throw new RuntimeException("the version links to '$href'");
 		}
@@ -980,15 +1078,18 @@ class DesktopContext implements Context
 	#[Then('nothing runs past the window')]
 	public function nothingPastWindow(): void
 	{
-		$over = (string) $this->page->evaluate('() => {
-			const out = [];
-			if (document.documentElement.scrollWidth > innerWidth + 1) out.push("the page scrolls sideways");
-			for (const e of document.querySelectorAll(".ad-card, .ad-card-action, .ad-env, dialog[open], dialog[open] button, dialog[open] input, dialog[open] select")) {
-				const r = e.getBoundingClientRect();
-				if (r.width && (r.left < -1 || r.right > innerWidth + 1)) out.push(e.id || e.className || e.tagName);
-			}
-			return [...new Set(out)].join(", ");
-		}');
+		$over = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const out = [];
+				if (document.documentElement.scrollWidth > innerWidth + 1) out.push("the page scrolls sideways");
+				for (const e of document.querySelectorAll(".ad-card, .ad-card-action, .ad-env, dialog[open], dialog[open] button, dialog[open] input, dialog[open] select")) {
+					const r = e.getBoundingClientRect();
+					if (r.width && (r.left < -1 || r.right > innerWidth + 1)) out.push(e.id || e.className || e.tagName);
+				}
+				return [...new Set(out)].join(", ");
+			}',
+		);
 		if ($over !== '') {
 			throw new RuntimeException("past the window: $over");
 		}
@@ -997,7 +1098,10 @@ class DesktopContext implements Context
 	#[Then('Permanent login is ticked')]
 	public function permanentTicked(): void
 	{
-		if (!$this->page->locator('input[name="auth[permanent]"]')->isChecked()) {
+		if (!$this->page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[permanent]"]',
+		)->isChecked()) {
 			throw new RuntimeException('Permanent login is not ticked');
 		}
 	}
@@ -1005,20 +1109,32 @@ class DesktopContext implements Context
 	#[When("I open the connection's editor")]
 	public function openEditor(): void
 	{
-		$this->page->locator('.ad-card-edit')->click();
-		$this->page->waitForFunction('() => document.querySelector("dialog.ad-connection-dialog[open]")');
+		$this->page->locator(
+			// language=JQuery-CSS
+			'.ad-card-edit',
+		)->click();
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.querySelector("dialog.ad-connection-dialog[open]")',
+		);
 	}
 
 	#[When('I pick the :env environment')]
 	public function pickEnvironment(string $env): void
 	{
-		$this->page->locator('dialog[open] select[name="env"]')->selectOption($env);
+		$this->page->locator(
+			// language=JQuery-CSS
+			'dialog[open] select[name="env"]',
+		)->selectOption($env);
 	}
 
 	#[Then('the :color swatch is picked')]
 	public function swatchPicked(string $color): void
 	{
-		$picked = (string) $this->page->evaluate('() => document.querySelector("dialog[open] input[name=color]:checked")?.value ?? ""');
+		$picked = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("dialog[open] input[name=color]:checked")?.value ?? ""',
+		);
 		if ($picked !== $color) {
 			throw new RuntimeException("the picked swatch is '$picked'");
 		}
@@ -1027,7 +1143,10 @@ class DesktopContext implements Context
 	#[When('I type :name as its name')]
 	public function typeName(string $name): void
 	{
-		$this->page->locator('dialog[open] input[name="name"]')->fill($name);
+		$this->page->locator(
+			// language=JQuery-CSS
+			'dialog[open] input[name="name"]',
+		)->fill($name);
 	}
 
 	#[When('I press Escape')]
@@ -1039,20 +1158,32 @@ class DesktopContext implements Context
 	#[Then('I am asked whether to discard the changes')]
 	public function askedToDiscard(): void
 	{
-		$this->page->waitForFunction('() => document.querySelector("#ad-discard")?.open');
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.querySelector("#ad-discard")?.open',
+		);
 	}
 
 	#[When('I keep editing')]
 	public function keepEditing(): void
 	{
-		$this->page->locator('#ad-discard [data-close]')->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-discard [data-close]',
+		)->click();
 	}
 
 	#[Then('the editor is still open with :name in it')]
 	public function editorStillOpen(string $name): void
 	{
-		$value = (string) $this->page->evaluate('() => document.querySelector("dialog.ad-connection-dialog[open] input[name=name]")?.value ?? "(closed)"');
-		if ($value !== $name || (bool) $this->page->evaluate('() => document.querySelector("#ad-discard").open')) {
+		$value = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("dialog.ad-connection-dialog[open] input[name=name]")?.value ?? "(closed)"',
+		);
+		if ($value !== $name || (bool) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("#ad-discard").open',
+		)) {
 			throw new RuntimeException("the editor holds '$value'");
 		}
 	}
@@ -1072,7 +1203,10 @@ class DesktopContext implements Context
 	#[Then('the card says it is logged out')]
 	public function cardLoggedOut(): void
 	{
-		if (!(bool) $this->page->evaluate('() => !!document.querySelector(".ad-card.ad-signed-out")')) {
+		if (!(bool) $this->page->evaluate(
+			// language=JavaScript
+			'() => !!document.querySelector(".ad-card.ad-signed-out")',
+		)) {
 			throw new RuntimeException('the card is not marked logged out');
 		}
 	}
@@ -1080,8 +1214,14 @@ class DesktopContext implements Context
 	#[Then('no connection is listed')]
 	public function noConnectionListed(): void
 	{
-		$cards = (int) $this->page->evaluate('() => document.querySelectorAll(".ad-card").length');
-		if ($cards !== 0 || !$this->page->locator('.ad-empty')->isVisible()) {
+		$cards = (int) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelectorAll(".ad-card").length',
+		);
+		if ($cards !== 0 || !$this->page->locator(
+			// language=JQuery-CSS
+			'.ad-empty',
+		)->isVisible()) {
 			throw new RuntimeException("$cards cards, and no line saying there are none");
 		}
 	}
@@ -1089,7 +1229,10 @@ class DesktopContext implements Context
 	#[Then('the card reads :name with a :env tag')]
 	public function cardReads(string $name, string $env): void
 	{
-		$card = (string) $this->page->evaluate('() => document.querySelector("#ad-connections .ad-card").innerText');
+		$card = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("#ad-connections .ad-card").innerText',
+		);
 		if (!str_contains($card, $name) || !str_contains($card, $env)) {
 			throw new RuntimeException("the card reads '$card'");
 		}
@@ -1100,14 +1243,23 @@ class DesktopContext implements Context
 	{
 		// Marked so the wait survives the navigation and resolves on the page it lands on — a
 		// load-state wait right after the click returns on the login page that is still there.
-		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector(".ad-card-link").click(); }');
-		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => { window.e2eLeaving = true; document.querySelector(".ad-card-link").click(); }',
+		);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eLeaving && document.readyState === "complete"',
+		);
 	}
 
 	#[Then('the sidebar badge reads :name')]
 	public function sidebarBadgeReads(string $name): void
 	{
-		$badge = (string) $this->page->evaluate('() => document.querySelector("#ad-connection-badge")?.innerText ?? ""');
+		$badge = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("#ad-connection-badge")?.innerText ?? ""',
+		);
 		if (!str_contains($badge, $name)) {
 			throw new RuntimeException("the badge reads '$badge'");
 		}
@@ -1116,7 +1268,10 @@ class DesktopContext implements Context
 	#[Then('the body carries the :class class')]
 	public function bodyCarriesClass(string $class): void
 	{
-		$body = (string) $this->page->evaluate('() => document.body.className');
+		$body = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.body.className',
+		);
 		if (!str_contains($body, $class)) {
 			throw new RuntimeException("the body class is '$body'");
 		}
@@ -1133,7 +1288,10 @@ class DesktopContext implements Context
 	#[Then('the override renders dark under a light OS')]
 	public function overrideRendersDark(): void
 	{
-		$osDark = (bool) $this->page->evaluate("() => matchMedia('(prefers-color-scheme: dark)').matches");
+		$osDark = (bool) $this->page->evaluate(
+			// language=JavaScript
+			"() => matchMedia('(prefers-color-scheme: dark)').matches",
+		);
 		if ($osDark) {
 			throw new RuntimeException('a light OS context is needed to prove the override');
 		}
@@ -1147,6 +1305,7 @@ class DesktopContext implements Context
 	{
 		$design = (string) $this->dragged;
 		$linked = (bool) $this->page->evaluate(
+			// language=JavaScript
 			'(d) => [...document.querySelectorAll("link[rel=stylesheet]")].some((l) => (l.getAttribute("href") || "").includes(d))',
 			$design,
 		);
@@ -1183,7 +1342,10 @@ class DesktopContext implements Context
 	#[Then('the page comes back in :lang')]
 	public function pageComesBackIn(string $lang): void
 	{
-		$html = (string) $this->page->evaluate('() => document.documentElement.lang');
+		$html = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.documentElement.lang',
+		);
 		if ($html !== $lang) {
 			throw new RuntimeException("the page is in '$html'");
 		}
@@ -1204,7 +1366,10 @@ class DesktopContext implements Context
 	#[Then('the import dropzone was never built')]
 	public function dropzoneNeverBuilt(): void
 	{
-		if ($this->page->evaluate("() => document.getElementById('ad-import-drop') === null") !== true) {
+		if ($this->page->evaluate(
+			// language=JavaScript
+			"() => document.getElementById('ad-import-drop') === null",
+		) !== true) {
 			throw new RuntimeException('the dropzone overlay leaked onto a page that is not the import page');
 		}
 	}
@@ -1212,18 +1377,21 @@ class DesktopContext implements Context
 	#[Then('the dropzone is ready and out of the way')]
 	public function dropzoneReady(): void
 	{
-		$ready = (array) $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const input = document.querySelector('input[type=\"file\"][name=\"sql_file[]\"]');
-			const overlay = document.getElementById('ad-import-drop');
-			const meta = document.querySelector('meta[name=\"ad-import-drop\"]');
-			return {
-				input: !!input,
-				overlay: !!overlay,
-				hidden: overlay ? getComputedStyle(overlay).visibility === 'hidden' : null,
-				label: overlay ? overlay.textContent : null,
-				metaLabel: meta ? meta.content : null,
-			};
-		}");
+		$ready = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const input = document.querySelector('input[type=\"file\"][name=\"sql_file[]\"]');
+				const overlay = document.getElementById('ad-import-drop');
+				const meta = document.querySelector('meta[name=\"ad-import-drop\"]');
+				return {
+					input: !!input,
+					overlay: !!overlay,
+					hidden: overlay ? getComputedStyle(overlay).visibility === 'hidden' : null,
+					label: overlay ? overlay.textContent : null,
+					metaLabel: meta ? meta.content : null,
+				};
+			}",
+		);
 		if ($ready['input'] !== true) {
 			throw new RuntimeException("Adminer's sql_file[] upload input was not found on the import page");
 		}
@@ -1247,17 +1415,20 @@ class DesktopContext implements Context
 	#[When('I drag a file over the window')]
 	public function dragFileOverWindow(): void
 	{
-		$raised = $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const dt = new DataTransfer();
-			dt.items.add(new File(['SELECT 1;\\n'], 'dropped-dump.sql', { type: 'application/sql' }));
-			window.__adDrag = dt;
-			const fire = (t) =>
-				window.dispatchEvent(new DragEvent(t, { bubbles: true, cancelable: true, dataTransfer: dt }));
-			fire('dragenter');
-			fire('dragover');
-			const o = document.getElementById('ad-import-drop');
-			return o.classList.contains('dragging') && getComputedStyle(o).visibility === 'visible';
-		}");
+		$raised = $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const dt = new DataTransfer();
+				dt.items.add(new File(['SELECT 1;\\n'], 'dropped-dump.sql', { type: 'application/sql' }));
+				window.__adDrag = dt;
+				const fire = (t) =>
+					window.dispatchEvent(new DragEvent(t, { bubbles: true, cancelable: true, dataTransfer: dt }));
+				fire('dragenter');
+				fire('dragover');
+				const o = document.getElementById('ad-import-drop');
+				return o.classList.contains('dragging') && getComputedStyle(o).visibility === 'visible';
+			}",
+		);
 		$this->after = ['raised' => $raised];
 		usleep(200_000); // let the 0.12s fade-in finish, so a screenshot shows it at full opacity
 	}
@@ -1273,20 +1444,23 @@ class DesktopContext implements Context
 	#[When('I drop it')]
 	public function dropTheFile(): void
 	{
-		$this->after = (array) $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const dt = window.__adDrag;
-			const notPrevented = window.dispatchEvent(
-				new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }),
-			);
-			const input = document.querySelector('input[name=\"sql_file[]\"]');
-			const o = document.getElementById('ad-import-drop');
-			return {
-				count: input.files.length,
-				name: input.files.length ? input.files[0].name : null,
-				prevented: !notPrevented,
-				hidden: !o.classList.contains('dragging'),
-			};
-		}");
+		$this->after = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const dt = window.__adDrag;
+				const notPrevented = window.dispatchEvent(
+					new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }),
+				);
+				const input = document.querySelector('input[name=\"sql_file[]\"]');
+				const o = document.getElementById('ad-import-drop');
+				return {
+					count: input.files.length,
+					name: input.files.length ? input.files[0].name : null,
+					prevented: !notPrevented,
+					hidden: !o.classList.contains('dragging'),
+				};
+			}",
+		);
 	}
 
 	#[Then("the file landed on Adminer's own upload input")]
@@ -1414,10 +1588,22 @@ class DesktopContext implements Context
 	 * page the post redirects to. */
 	private function confirmCardAction(string $dialog): void
 	{
-		$this->page->locator("[data-dialog=\"$dialog\"]")->click();
-		$this->page->waitForFunction("() => document.getElementById('$dialog')?.open");
-		$this->page->evaluate("() => { window.e2eLeaving = true; document.querySelector('#$dialog [type=submit]').click(); }");
-		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+		$this->page->locator(
+			// language=JQuery-CSS
+			"[data-dialog=\"$dialog\"]",
+		)->click();
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => document.getElementById('$dialog')?.open",
+		);
+		$this->page->evaluate(
+			// language=JavaScript
+			"() => { window.e2eLeaving = true; document.querySelector('#$dialog [type=submit]').click(); }",
+		);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eLeaving && document.readyState === "complete"',
+		);
 	}
 
 	private function newPage(array $options = []): PageInterface
@@ -1446,7 +1632,10 @@ class DesktopContext implements Context
 		$this->page->waitForLoadState('networkidle');
 		// Set on every navigation and only ever lost to a new document, which is what the in-place
 		// swaps are here not to do.
-		$this->page->evaluate('() => { window.__adSameDocument = true; }');
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => { window.__adSameDocument = true; }',
+		);
 	}
 
 	/** @param array<string, mixed> $at */
@@ -1463,6 +1652,7 @@ class DesktopContext implements Context
 	{
 		$checked = $on ? 'true' : 'false';
 		$this->page->evaluate(
+			// language=JavaScript
 			"() => { document.querySelector(\"input[name='plugins[]'][value='$plugin']\").checked = $checked; }",
 		);
 	}
@@ -1487,6 +1677,7 @@ class DesktopContext implements Context
 	/** Evaluate an expression with `el` bound to a field's editor. */
 	private function fieldScript(string $field, string $expression): string
 	{
+		// language=JavaScript
 		return "() => {
 			const el = document.querySelector('form [name=\"fields[$field]\"]');
 			if (!el) { return 'MISSING'; }
@@ -1502,61 +1693,76 @@ class DesktopContext implements Context
 	/** Whether a real surface — not a token, a surface — resolved to the dark side. */
 	private function surfaceIsDark(): bool
 	{
-		return (bool) $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const el = document.querySelector('#content') || document.body;
-			const [r, g, b] = getComputedStyle(el).backgroundColor.match(/\\d+/g).map(Number);
-			return r + g + b < 200;
-		}");
+		return (bool) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const el = document.querySelector('#content') || document.body;
+				const [r, g, b] = getComputedStyle(el).backgroundColor.match(/\\d+/g).map(Number);
+				return r + g + b < 200;
+			}",
+		);
 	}
 
 	private function sidebarWidth(): float
 	{
-		return (float) $this->page->evaluate("() => document.querySelector('#foot').getBoundingClientRect().width");
+		return (float) $this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('#foot').getBoundingClientRect().width",
+		);
 	}
 
 	/** @return array<string, mixed> */
 	private function list(): array
 	{
-		return (array) $this->page->evaluate(/** @lang JavaScript */ "() => ({
-			first: (document.querySelector('#table tbody tr td:nth-child(3)')?.textContent ?? '').trim(),
-			rows: document.querySelectorAll('#table tbody tr').length,
-			highlighted: document.querySelectorAll('#table tbody code span[class^=jush]').length,
-			sameDocument: window.__adSameDocument === true,
-		})");
+		return (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => ({
+				first: (document.querySelector('#table tbody tr td:nth-child(3)')?.textContent ?? '').trim(),
+				rows: document.querySelectorAll('#table tbody tr').length,
+				highlighted: document.querySelectorAll('#table tbody code span[class^=jush]').length,
+				sameDocument: window.__adSameDocument === true,
+			})",
+		);
 	}
 
 	/** @return array<string, mixed> */
 	private function pager(): array
 	{
-		return (array) $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const steps = [...document.querySelectorAll('.ad-page-step')];
-			const list = document.querySelector('.ad-page-select');
-			const chip = document.querySelector('.ad-page-chip');
-			return {
-				steps: steps.length,
-				ends: steps.filter((s) => s.tagName !== 'A').map((s) => s.textContent),
-				pages: list ? list.options.length : 0,
-				at: list ? list.value : '',
-				total: (document.querySelector('.ad-page-total')?.textContent ?? '').trim(),
-				range: (list?.selectedOptions[0]?.textContent ?? '').trim(),
-				drawn: steps.filter((s) => (getComputedStyle(s, '::before').maskImage || '').includes('icons/')).length,
-				chevron: chip ? (getComputedStyle(chip, '::after').maskImage || '').includes('icons/') : false,
-				page: location.search.match(/[?&]page=(\\d+)/)?.[1] ?? '0',
-			};
-		}");
+		return (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const steps = [...document.querySelectorAll('.ad-page-step')];
+				const list = document.querySelector('.ad-page-select');
+				const chip = document.querySelector('.ad-page-chip');
+				return {
+					steps: steps.length,
+					ends: steps.filter((s) => s.tagName !== 'A').map((s) => s.textContent),
+					pages: list ? list.options.length : 0,
+					at: list ? list.value : '',
+					total: (document.querySelector('.ad-page-total')?.textContent ?? '').trim(),
+					range: (list?.selectedOptions[0]?.textContent ?? '').trim(),
+					drawn: steps.filter((s) => (getComputedStyle(s, '::before').maskImage || '').includes('icons/')).length,
+					chevron: chip ? (getComputedStyle(chip, '::after').maskImage || '').includes('icons/') : false,
+					page: location.search.match(/[?&]page=(\\d+)/)?.[1] ?? '0',
+				};
+			}",
+		);
 	}
 
 	/** @return array<string, mixed> */
 	private function limit(): array
 	{
-		return (array) $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const field = document.querySelector(\"#form [name='limit']\");
-			return {
-				tag: field ? field.tagName : 'none',
-				value: field ? field.value : '',
-				options: field && field.options ? [...field.options].map((o) => o.value) : [],
-			};
-		}");
+		return (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const field = document.querySelector(\"#form [name='limit']\");
+				return {
+					tag: field ? field.tagName : 'none',
+					value: field ? field.value : '',
+					options: field && field.options ? [...field.options].map((o) => o.value) : [],
+				};
+			}",
+		);
 	}
 
 	/** One column's width and grip, every other column's width, and what the page around it is
@@ -1566,44 +1772,48 @@ class DesktopContext implements Context
 	 */
 	private function columns(string $column): array
 	{
-		return (array) $this->page->evaluate(/** @lang JavaScript */ "(column) => {
-			const ths = [...document.querySelectorAll('#table tr:first-child th')];
-			const index = ths.findIndex((th) => th.id === `th[\${column}]`);
-			if (index < 0) { return { missing: ths.map((th) => th.id).join(',') }; }
-			const th = ths[index];
-			const grip = th.querySelector('.ad-column-grip');
-			const box = grip ? grip.getBoundingClientRect() : null;
-			const content = document.querySelector('#content');
-			const footer = document.querySelector('.footer');
-			const others = {};
-			ths.forEach((other, i) => {
-				if (i !== index && other.id) { others[other.id] = Math.round(other.getBoundingClientRect().width); }
-			});
-			return {
-				width: Math.round(th.getBoundingClientRect().width),
-				others,
-				// Deliberately not the header: the grip runs the height of the column, and grabbing
-				// it beside a data row well below the header is the point of that.
-				grip: box ? { x: box.right - 1, y: box.top + Math.min(200, box.height - 10) } : null,
-				gripHeight: box ? Math.round(box.height) : 0,
-				// How far it runs past adminer's sticky row actions, margin included: that gap is
-				// the footer's own background shadow, painted over the rows behind it.
-				pastFooter: box ? Math.round(
-					box.bottom - (footer.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(footer).marginTop))
-				) : 0,
-				textLength: Number(document.querySelector(\"input[name='text_length']\").value),
-				table: Math.round(document.querySelector('#table').getBoundingClientRect().width),
-				contentScrolls: content.scrollWidth > content.clientWidth,
-				windowScrolls: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-				checked: [...document.querySelectorAll('#table input[type=checkbox]')].filter((c) => c.checked).length,
-				// Highlighted values, so a row swapped in by a re-run is not plain text where the
-				// one it replaced was coloured.
-				highlighted: document.querySelectorAll('#table tbody code span[class^=jush]').length,
-				// The longest value on show: what raising Text length is actually for.
-				longestValue: Math.max(...[...document.querySelectorAll('#table tbody tr')]
-					.map((tr) => (tr.cells[index + 1]?.textContent ?? '').length)),
-			};
-		}", $column);
+		return (array) $this->page->evaluate(
+			// language=JavaScript
+			"(column) => {
+				const ths = [...document.querySelectorAll('#table tr:first-child th')];
+				const index = ths.findIndex((th) => th.id === `th[\${column}]`);
+				if (index < 0) { return { missing: ths.map((th) => th.id).join(',') }; }
+				const th = ths[index];
+				const grip = th.querySelector('.ad-column-grip');
+				const box = grip ? grip.getBoundingClientRect() : null;
+				const content = document.querySelector('#content');
+				const footer = document.querySelector('.footer');
+				const others = {};
+				ths.forEach((other, i) => {
+					if (i !== index && other.id) { others[other.id] = Math.round(other.getBoundingClientRect().width); }
+				});
+				return {
+					width: Math.round(th.getBoundingClientRect().width),
+					others,
+					// Deliberately not the header: the grip runs the height of the column, and grabbing
+					// it beside a data row well below the header is the point of that.
+					grip: box ? { x: box.right - 1, y: box.top + Math.min(200, box.height - 10) } : null,
+					gripHeight: box ? Math.round(box.height) : 0,
+					// How far it runs past adminer's sticky row actions, margin included: that gap is
+					// the footer's own background shadow, painted over the rows behind it.
+					pastFooter: box ? Math.round(
+						box.bottom - (footer.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(footer).marginTop))
+					) : 0,
+					textLength: Number(document.querySelector(\"input[name='text_length']\").value),
+					table: Math.round(document.querySelector('#table').getBoundingClientRect().width),
+					contentScrolls: content.scrollWidth > content.clientWidth,
+					windowScrolls: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+					checked: [...document.querySelectorAll('#table input[type=checkbox]')].filter((c) => c.checked).length,
+					// Highlighted values, so a row swapped in by a re-run is not plain text where the
+					// one it replaced was coloured.
+					highlighted: document.querySelectorAll('#table tbody code span[class^=jush]').length,
+					// The longest value on show: what raising Text length is actually for.
+					longestValue: Math.max(...[...document.querySelectorAll('#table tbody tr')]
+						.map((tr) => (tr.cells[index + 1]?.textContent ?? '').length)),
+				};
+			}",
+			$column,
+		);
 	}
 
 	/** The width of every field the user can see, and the grip of the first — its bottom-right
@@ -1614,15 +1824,18 @@ class DesktopContext implements Context
 	 */
 	private function fields(): array
 	{
-		return (array) $this->page->evaluate(/** @lang JavaScript */ "() => {
-			const all = [...document.querySelectorAll('#form > table.layout textarea, #form > table.layout pre.jush')]
-				.filter((el) => el.offsetWidth > 0);
-			if (!all.length) { return { widths: [], grip: null }; }
-			const r = all[0].getBoundingClientRect();
-			return {
-				widths: all.map((el) => el.getBoundingClientRect().width),
-				grip: { x: r.right - 3, y: r.bottom - 3 },
-			};
-		}");
+		return (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const all = [...document.querySelectorAll('#form > table.layout textarea, #form > table.layout pre.jush')]
+					.filter((el) => el.offsetWidth > 0);
+				if (!all.length) { return { widths: [], grip: null }; }
+				const r = all[0].getBoundingClientRect();
+				return {
+					widths: all.map((el) => el.getBoundingClientRect().width),
+					grip: { x: r.right - 3, y: r.bottom - 3 },
+				};
+			}",
+		);
 	}
 }
