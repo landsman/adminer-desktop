@@ -1,0 +1,28 @@
+{* Every dialog the app adds: a header band, a body that scrolls, a footer band with the actions,
+	around one POST form. Used with {embed}, filling the slots:
+
+		{embed '../Assets/modal.latte', id: 'my-dialog', class: 'my-dialog', lightDismiss: true}
+			{block hidden}{input_token()|noescape}{/block}
+			{block header}<h2>Title</h2>{/block}
+			{block body}…fields…{/block}
+			{block footer}<button formmethod="dialog">Cancel</button> <button class="ad-primary">Save</button>{/block}
+		{/embed}
+
+	The look is css/modal.css. Buttons in the footer are quiet unless they take .ad-primary (the
+	one green action, last) or .ad-danger (outlined red, pushed to the left).
+
+	lightDismiss closes on a click outside the dialog, for a dialog with nothing to lose that way;
+	one that asks before discarding edits leaves it off and handles its own Cancel. *}
+{parameters
+	string $id,
+	string $class = '',
+	bool $lightDismiss = false
+}
+<dialog id="{$id}" class="ad-modal {$class}" n:attr="closedby: $lightDismiss ? 'any'">
+	<form action="" method="post">
+		{block hidden}{/block}
+		<div class="ad-modal-header">{block header}{/block}</div>
+		<div class="ad-modal-body">{block body}{/block}</div>
+		<div class="ad-modal-footer">{block footer}{/block}</div>
+	</form>
+</dialog>

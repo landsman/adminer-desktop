@@ -25,6 +25,8 @@
 	--ad-dialog-max-width: 92vw;
 	--ad-dialog-max-height: 88vh;
 	--ad-dialog-padding: 1.2em;
+	/* How long a dialog and its backdrop take to fade in or out (modal.css). */
+	--ad-modal-speed: 200ms;
 
 	/* Derived from Adminer's --fg so borders stay legible on any design */
 	--ad-border: color-mix(in srgb, var(--fg) 25%, transparent);

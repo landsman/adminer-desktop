@@ -165,32 +165,10 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	background: color-mix(in srgb, var(--fg) 6%, transparent);
 }
 
-/* The edit dialog. Printed inside #menu, so it undoes nothing the sidebar styles — it uses no
-   <p>, which the sidebar draws as menu rows (see settings.css). */
+/* The edit dialog. The shell — bands, buttons, backdrop — is modal.css; this is its size and
+   its fields. Printed inside #menu, so it uses no <p>, which the sidebar draws as menu rows. */
 .ad-connection-dialog {
 	width: 26em;
-	max-width: var(--ad-dialog-max-width);
-	padding: var(--ad-dialog-padding);
-	border: 1px solid var(--ad-border);
-	border-radius: var(--ad-radius);
-	background: var(--bg);
-	color: var(--fg);
-}
-
-.ad-connection-dialog::backdrop {
-	background: rgb(0 0 0 / 0.45);
-}
-
-.ad-connection-dialog h2 {
-	display: flex;
-	align-items: center;
-	gap: 0.6em;
-	margin: 0 0 1em;
-	padding: 0;
-	border: 0;
-	background: none;
-	font-size: 1.05em;
-	overflow-wrap: anywhere;
 }
 
 .ad-field {
@@ -205,25 +183,23 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	font: inherit;
 }
 
-.ad-choices {
+.ad-swatches {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 0.4em 0.9em;
-	margin: 0 0 1em;
+	gap: 0.5em 0.6em;
+	margin: 0;
 	padding: 0;
 	border: 0;
 }
 
-.ad-choices legend {
+.ad-swatches legend {
 	margin-bottom: 0.4em;
 	padding: 0;
 }
 
-.ad-choices label {
+.ad-swatches label {
 	display: inline-flex;
-	align-items: center;
-	gap: 0.3em;
 	cursor: pointer;
 }
 
@@ -250,43 +226,6 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 
 .ad-swatches input:focus-visible + .ad-swatch {
 	outline: 2px solid AccentColor;
-}
-
-.ad-dialog-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--ad-gap);
-}
-
-/* The same pair as the settings dialog's actions: Cancel quiet, Save the one green fill. */
-.ad-dialog-actions button {
-	padding: var(--ad-button-padding);
-	border: 1px solid var(--ad-border);
-	border-radius: var(--ad-radius-sm);
-	background: var(--bg);
-	color: var(--fg);
-	font: inherit;
-	cursor: pointer;
-}
-
-.ad-dialog-actions .ad-cancel:hover {
-	background: var(--dim);
-}
-
-.ad-dialog-actions .ad-save {
-	border-color: transparent;
-	background: var(--ad-ok);
-	color: var(--ad-ok-fg);
-	font-weight: 500;
-}
-
-.ad-dialog-actions .ad-save:hover {
-	background: color-mix(in srgb, var(--ad-ok) 88%, black);
-}
-
-.ad-dialog-actions button:focus-visible {
-	outline: 2px solid AccentColor;
-	outline-offset: 2px;
 }
 
 /* Inside a connection: a stripe across the top of the window, and the badge at the top of the

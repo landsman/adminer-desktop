@@ -9,13 +9,6 @@
 
 /* The gear is styled by layout.css, which parks it in the sidebar header as a quiet icon. */
 
-#desktop-settings {
-	border: 1px solid var(--ad-border);
-	border-radius: var(--ad-radius);
-	background: var(--bg);
-	color: var(--fg);
-}
-
 /* Accent the active tab (base handles the focus ring). */
 #desktop-tabs input:checked + label {
 	border-bottom-color: var(--ad-accent);
@@ -27,6 +20,6 @@
    be told apart at a glance, and the theme's indigo says "default action" without saying which.
    Anything restated here would only have to be kept in step with it. */
 
-#desktop-actions button:focus-visible {
+.ad-modal-footer button:focus-visible {
 	outline-color: var(--ad-accent);
 }

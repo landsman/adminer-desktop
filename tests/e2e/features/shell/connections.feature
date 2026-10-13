@@ -16,7 +16,7 @@ Feature: Saved connections
     Then the login form is shown
 
   Scenario: A name, an environment and a colour stick, and follow you in
-    When I label the connection "Fixture" as "prod" in "#7a5af8"
+    When I label the connection "Fixture" as "prod" in "purple"
     Then the card reads "Fixture" with a "PROD" tag
     When I open the connection from its card
     Then the body carries the "env-prod" class

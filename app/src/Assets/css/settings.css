@@ -16,77 +16,9 @@
 
 /* --- Dialog ------------------------------------------------------------------- */
 
+/* The shell — bands, backdrop, animation, page lock — is modal.css; this is only its size. */
 #desktop-settings {
 	width: var(--ad-dialog-width);
-	max-width: var(--ad-dialog-max-width);
-	max-height: var(--ad-dialog-max-height);
-	padding: var(--ad-dialog-padding);
-}
-
-/* Dim the page behind the dialog well past the browser's faint default, so the modal
-   reads clearly as the foreground. */
-#desktop-settings::backdrop {
-	background: rgba(0, 0, 0, 0.6);
-}
-
-/* Only when open. A bare `display: flex` here overrides the `display: none` the browser
-   gives a closed <dialog>, which leaves it on screen permanently and makes close() look
-   broken. */
-#desktop-settings[open] {
-	display: flex;
-	flex-direction: column;
-}
-
-/* Open/close animation. @starting-style is the entry keyframe; transitioning display and
-   overlay with allow-discrete keeps the dialog in the top layer while it fades back out on
-   close. Modern webviews only — older ones just snap, which is fine. */
-@media (prefers-reduced-motion: no-preference) {
-	#desktop-settings,
-	#desktop-settings::backdrop {
-		transition:
-			opacity 0.18s ease,
-			transform 0.18s ease,
-			overlay 0.18s allow-discrete,
-			display 0.18s allow-discrete;
-	}
-
-	#desktop-settings {
-		opacity: 0;
-		transform: translateY(-8px) scale(0.98);
-	}
-	#desktop-settings[open] {
-		opacity: 1;
-		transform: none;
-	}
-	#desktop-settings::backdrop {
-		opacity: 0;
-	}
-	#desktop-settings[open]::backdrop {
-		opacity: 1;
-	}
-
-	@starting-style {
-		#desktop-settings[open] {
-			opacity: 0;
-			transform: translateY(-8px) scale(0.98);
-		}
-		#desktop-settings[open]::backdrop {
-			opacity: 0;
-		}
-	}
-}
-
-#desktop-settings form {
-	display: flex;
-	flex-direction: column;
-	min-height: 0; /* or the panel below cannot shrink and the dialog overflows */
-}
-
-/* Lock the page behind the dialog. CSS rather than JS toggling a class: <dialog> closes
-   on escape and on form submission as well as from the Cancel button, and a handler on
-   the button would miss both, leaving the page unscrollable with nothing to explain it. */
-body:has(#desktop-settings[open]) {
-	overflow: hidden;
 }
 
 /* `#menu p, #logins, #tables { padding: .8em 1em; margin: 0; border-bottom: 1px solid }` styles
@@ -131,8 +63,10 @@ dialog#desktop-settings p.message {
 /* The gap between the tab strip and the panel below it. It lives here, outside #desktop-panels,
    because the panels are the scrollport: padding-top on them is area a sticky <thead> scrolls
    rows through. This is the top padding of the tab content, put where it cannot do that. */
-#desktop-tabs {
-	margin-bottom: var(--ad-gap-lg);
+/* The tab strip fills the header band: no bottom padding, so the active tab's underline sits on
+   the band's own border. */
+#desktop-settings .ad-modal-header {
+	padding-bottom: 0;
 }
 
 #desktop-tabs label {
@@ -170,10 +104,11 @@ dialog#desktop-settings p.message {
 	outline: none;
 }
 
-#desktop-panels {
-	overflow: auto;
-	min-height: 0;
-	flex: 1;
+/* The modal body, minus its top padding: the panels are the scrollport, and padding-top on one
+   is area a sticky <thead> scrolls rows through. The first thing in a panel gets the gap as a
+   margin instead, which scrolls away with it. */
+#desktop-settings .ad-modal-body {
+	padding-top: 0;
 	/* A little larger than the app text — em, so it still follows the theme's scaling. */
 	font-size: 1.05em;
 	/* No padding-top: the sticky header sticks to the top of the scrollport, and any
@@ -182,13 +117,11 @@ dialog#desktop-settings p.message {
 
 #desktop-panels > div {
 	display: none;
-	/* Room inside the tab content — the panels sat flush against the dialog's own padding, so
-	   a checkbox in the top left had nothing between it and the tab strip.
-
-	   No padding-top, and that is the sticky-header rule above restated: the panel is inside the
-	   scrollport, so space above a sticky <thead> is area the rows scroll through. The gap under
-	   the tabs comes from #desktop-tabs' own margin instead, which is outside the scrollport. */
 	padding: 0 0.4em var(--ad-panel-gap);
+}
+
+#desktop-panels > div > :first-child {
+	margin-top: var(--ad-dialog-padding);
 }
 
 #desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
@@ -406,86 +339,6 @@ dialog#desktop-settings p.message {
 
 .ad-copy-icon {
 	flex: none;
-}
-
-/* --- Buttons ------------------------------------------------------------------ */
-
-/* Deliberately not Adminer's button styling. This is a dialog in a desktop app, so it
-   follows the platform's dialog conventions instead: actions bottom right, cancel then
-   confirm, and the primary action filled with the user's own accent colour. */
-
-#desktop-actions {
-	display: flex;
-	justify-content: flex-end;
-	align-items: center;
-	gap: var(--ad-gap);
-	padding-top: var(--ad-gap-lg);
-}
-
-#desktop-actions button {
-	font: inherit;
-	line-height: 1.2;
-	padding: var(--ad-button-padding);
-	border-radius: var(--ad-radius);
-	border: 1px solid var(--ad-border);
-	background: var(--bg);
-	color: var(--fg);
-	cursor: pointer;
-}
-
-#desktop-actions button:hover:not(:disabled) {
-	background: var(--dim);
-}
-
-/* Reset alone on the left: the row is flex-end, so pushing the gap after this button takes
-   it to the other side of the dialog — away from the two people press without reading, which
-   is where every platform puts the action that throws something away.
-
-   Red, but only in its text and border. Filled it would compete with Save for attention from
-   the far side of the dialog, and this is the button nobody should be drawn to; the colour is
-   there to be recognised once you are already looking at it. It fills on hover, by which point
-   you have aimed at it. */
-#desktop-actions #desktop-reset {
-	margin-right: auto;
-	color: var(--ad-danger);
-	border-color: color-mix(in srgb, var(--ad-danger) 45%, transparent);
-}
-
-#desktop-actions #desktop-reset:hover:not(:disabled) {
-	background: var(--ad-danger);
-	color: var(--ad-ok-fg);
-	border-color: transparent;
-}
-
-/* Green: the one button that keeps what you changed. It used to be AccentColor — whatever the
-   user picked in System Settings — which reads as "the default action" but not as "this is the
-   one that saves", and against a red Reset the pair only works if the confirm side is green. */
-#desktop-actions #desktop-save {
-	background: var(--ad-ok);
-	color: var(--ad-ok-fg);
-	border-color: transparent;
-	font-weight: 500;
-}
-
-/* Darken on hover and further on press, which is how a filled button behaves on macOS.
-   brightness() was wrong in both directions: it washed out a light fill and barely moved a
-   dark one. */
-#desktop-actions #desktop-save:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--ad-ok) 88%, black);
-}
-
-#desktop-actions #desktop-save:active:not(:disabled) {
-	background: color-mix(in srgb, var(--ad-ok) 76%, black);
-}
-
-#desktop-actions button:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
-
-#desktop-actions button:focus-visible {
-	outline: 2px solid AccentColor;
-	outline-offset: 2px;
 }
 
 /* --- Tables ------------------------------------------------------------------- */

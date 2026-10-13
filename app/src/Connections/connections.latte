@@ -9,7 +9,7 @@
 <div id="ad-connections" n:class="$adding ? ad-adding">
 	<ul class="ad-cards">
 		{foreach $connections as $connection}
-			{* noescape on the colour only: it is whitelisted against Connections::COLORS, and
+			{* noescape on the colour only: it only ever comes from Color::hex(), and
 				Latte's CSS escaping would turn the # into an escape that is no longer a colour. *}
 			<li class="ad-card" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
 				<a class="ad-card-link" href="{$connection->url()|nocheck}">

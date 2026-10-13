@@ -1,5 +1,5 @@
 {* The connection you are in, at the top of the sidebar (Connections::badge()). The colour is
-	whitelisted (Connections::COLORS / Environment::color()), hence noescape — see connections.latte. *}
+	whitelisted (Color::hex()), hence noescape — see connections.latte. *}
 {parameters \Desktop\Connections\Connection $connection}
 <a id="ad-connection-badge" href="{$connection->url()|nocheck}" title="{$connection->address()}" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
 	<span class="ad-card-icon">{$connection->icon()|noescape}</span>

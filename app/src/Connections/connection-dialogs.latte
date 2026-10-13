@@ -9,13 +9,17 @@
 	array $environments
 }
 {foreach $connections as $connection}
-	{var $id = 'ad-connection-' . $iterator->counter}
-	<dialog id="{$id}" class="ad-connection-dialog">
-		<form action="" method="post">
+	{embed '../Assets/modal.latte', id: 'ad-connection-' . $iterator->counter, class: 'ad-connection-dialog', lightDismiss: true}
+		{block hidden}
 			{input_hidden('desktop_connection', $connection->key())|noescape}
 			{input_token()|noescape}
-			<h2><span class="ad-card-icon">{$connection->icon()|noescape}</span> {$connection->address()}</h2>
+		{/block}
 
+		{block header}
+			<h2><span class="ad-card-icon">{$connection->icon()|noescape}</span> {$connection->address()}</h2>
+		{/block}
+
+		{block body}
 			<label class="ad-field">
 				<span>{$desktop->t('connections.name')}</span>
 				<input name="name" value="{$connection->name}" placeholder="{$connection->address()}" maxlength="60" autocomplete="off">
@@ -30,19 +34,19 @@
 			</label>
 
 			{* No colour falls back to the environment's — Environment::color(). *}
-			<fieldset class="ad-choices ad-swatches">
+			<fieldset class="ad-swatches">
 				<legend>{$desktop->t('connections.color')}</legend>
-				<label title="{$desktop->t('connections.color_auto')}"><input type="radio" name="color" value="" n:attr="checked: $connection->customColor === ''"><span class="ad-swatch ad-swatch-auto"></span></label>
-				<label n:foreach="$colors as $color">
-					<input type="radio" name="color" value="{$color}" n:attr="checked: $connection->customColor === $color">
-					<span class="ad-swatch" style="background: {$color|noescape}"></span>
+				<label title="{$desktop->t('connections.color_auto')}"><input type="radio" name="color" value="" n:attr="checked: !$connection->customColor"><span class="ad-swatch ad-swatch-auto"></span></label>
+				<label n:foreach="$colors as $color" title="{$color->value}">
+					<input type="radio" name="color" value="{$color->value}" n:attr="checked: $connection->customColor === $color">
+					<span class="ad-swatch" style="background: {$color->hex()|noescape}"></span>
 				</label>
 			</fieldset>
+		{/block}
 
-			<div class="ad-dialog-actions">
-				<button type="submit" formmethod="dialog" formnovalidate class="ad-cancel">{$desktop->t('settings.close')}</button>
-				<button type="submit" class="ad-save">{$desktop->t('settings.save')}</button>
-			</div>
-		</form>
-	</dialog>
+		{block footer}
+			<button type="submit" formmethod="dialog" formnovalidate>{$desktop->t('settings.close')}</button>
+			<button type="submit" class="ad-primary ad-save">{$desktop->t('settings.save')}</button>
+		{/block}
+	{/embed}
 {/foreach}

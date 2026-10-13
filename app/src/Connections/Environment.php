@@ -19,12 +19,12 @@ enum Environment: string {
 
 	/** The colour a connection takes when the user picked an environment but no colour of their
 	* own — so marking a server PROD is already enough to make it red. */
-	function color(): string {
+	function color(): Color {
 		return match ($this) {
-			self::Local => '#667085',
-			self::Dev => '#12b76a',
-			self::Stage => '#f79009',
-			self::Prod => '#f04438',
+			self::Local => Color::Gray,
+			self::Dev => Color::Green,
+			self::Stage => Color::Orange,
+			self::Prod => Color::Red,
 		};
 	}
 }

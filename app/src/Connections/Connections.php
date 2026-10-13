@@ -16,10 +16,6 @@ use Desktop\UserSettings;
 * SettingKey::Connections, keyed by Connection::key(). Nothing secret is written here.
 */
 class Connections {
-	/** The swatches offered. A fixed set rather than a free colour picker: <input type="color">
-	* cannot say "no colour", and every one of these has to read as a stripe on both schemes. */
-	const array COLORS = ['#f04438', '#f79009', '#eaaa08', '#12b76a', '#0ba5ec', '#2e90fa', '#7a5af8', '#ee46bc', '#667085'];
-
 	private const int NAME_MAX = 60;
 
 	private \AdminerDesktop $desktop;
@@ -80,7 +76,7 @@ class Connections {
 		Latte::engine()->render(__DIR__ . "/connection-dialogs.latte", [
 			"desktop" => $this->desktop,
 			"connections" => $this->saved(),
-			"colors" => self::COLORS,
+			"colors" => Color::cases(),
 			"environments" => Environment::cases(),
 		]);
 	}
@@ -101,10 +97,9 @@ class Connections {
 		if (!in_array($key, $known, true)) {
 			return;
 		}
-		$color = (string) ($_POST["color"] ?? "");
 		$label = array_filter([
 			'name' => mb_substr(trim((string) ($_POST["name"] ?? "")), 0, self::NAME_MAX),
-			'color' => in_array($color, self::COLORS, true) ? $color : '',
+			'color' => Color::tryFrom((string) ($_POST["color"] ?? ""))->value ?? '',
 			'env' => Environment::tryFrom((string) ($_POST["env"] ?? ""))->value ?? '',
 		], fn(string $value) => $value !== '');
 		$all = $this->labels();
@@ -119,14 +114,13 @@ class Connections {
 	/** @param list<string> $databases */
 	private function with(string $driver, string $server, string $username, array $databases = []): Connection {
 		$label = $this->labels()["$driver|$server|$username"] ?? [];
-		$color = (string) ($label['color'] ?? '');
 		return new Connection(
 			$driver,
 			$server,
 			$username,
 			$databases,
 			(string) ($label['name'] ?? ''),
-			in_array($color, self::COLORS, true) ? $color : '',
+			Color::tryFrom((string) ($label['color'] ?? '')),
 			Environment::tryFrom((string) ($label['env'] ?? '')),
 		);
 	}

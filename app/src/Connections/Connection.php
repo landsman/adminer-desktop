@@ -17,7 +17,7 @@ final readonly class Connection {
 		public string $username,
 		public array $databases = [],
 		public string $name = '',
-		public string $customColor = '',
+		public ?Color $customColor = null,
 		public ?Environment $environment = null,
 	) {
 	}
@@ -36,9 +36,9 @@ final readonly class Connection {
 		return $this->name !== '' ? $this->name : $this->address();
 	}
 
-	/** The user's colour, else the environment's, else none. */
+	/** The hex to paint: the user's colour, else the environment's, else none. */
 	function color(): string {
-		return $this->customColor !== '' ? $this->customColor : ($this->environment?->color() ?? '');
+		return ($this->customColor ?? $this->environment?->color())?->hex() ?? '';
 	}
 
 	/** "PostgreSQL", or "MariaDB" where adminer has learned that the MySQL driver talks to one. */

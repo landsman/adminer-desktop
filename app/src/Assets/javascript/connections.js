@@ -6,6 +6,18 @@
  * which connections.css hides while #ad-connections lacks .ad-adding.
  */
 
+// closedby="any" closes an edit dialog on a click outside it. Where the webview does not know the
+// attribute yet, that click is handled here: one on the backdrop lands on the dialog itself.
+if (!("closedBy" in HTMLDialogElement.prototype)) {
+	for (const dialog of document.querySelectorAll(".ad-connection-dialog")) {
+		dialog.addEventListener("click", (event) => {
+			if (event.target === dialog) {
+				dialog.close();
+			}
+		});
+	}
+}
+
 for (const button of document.querySelectorAll(".ad-card-edit[data-dialog]")) {
 	button.onclick = () =>
 		document.getElementById(button.dataset.dialog)?.showModal();
