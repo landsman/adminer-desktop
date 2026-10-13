@@ -339,25 +339,25 @@ i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation 
 	@./bin/frankenphp$(EXE) php-cli cli/i18n.php check
 
 build: fetch i18n  ## Build the launcher binary
-	go build -ldflags "$(LDFLAGS)" -o build/adminer-desktop$(EXE) ./launcher
+	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
 
 # The app itself: opens a window.
 run: build  ## Build and open the app window
-	./build/adminer-desktop$(EXE)
+	./build.noindex/adminer-desktop$(EXE)
 
 # Like run, but reloads the window whenever a file under app/ changes — edit PHP or CSS
 # and see it without a rebuild (frankenphp serves the tree live; the window just reloads).
 dev: build  ## Run, reloading the window on any change under app/
-	./build/adminer-desktop$(EXE) -dev
+	./build.noindex/adminer-desktop$(EXE) -dev
 
 editor: build  ## Run in editor mode
-	./build/adminer-desktop$(EXE) -editor
+	./build.noindex/adminer-desktop$(EXE) -editor
 
 # Turns on Safari's Web Inspector against the app's page: Develop > this machine >
 # Adminer Desktop. There is no console in the app otherwise, which is how a confirm()
 # that never fired stayed invisible for as long as it did.
 debug: build  ## Run with Safari's Web Inspector attached
-	./build/adminer-desktop$(EXE) -debug
+	./build.noindex/adminer-desktop$(EXE) -debug
 
 # The app in dev mode against seeded demo data, for clicking around by hand. Brings up
 # (or reuses) the same throwaway postgres the e2e uses, reseeds it, and opens the app
@@ -378,7 +378,7 @@ demo: build app/vendor  ## Run against seeded demo data, opened logged in (needs
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
 	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed/pgsql.sql >/dev/null
 	@echo "demo data ready on 127.0.0.1:55432 (postgres / demo / demo)"
-	ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 postgres demo demo' ./build/adminer-desktop$(EXE) -dev
+	ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 postgres demo demo' ./build.noindex/adminer-desktop$(EXE) -dev
 
 # Kill the database containers `make demo` and the e2e left running.
 down:  ## Stop the demo database containers
@@ -396,26 +396,26 @@ destroy:  ## Remove the demo database containers and their data volumes
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
-	./build/adminer-desktop$(EXE) -headless
+	./build.noindex/adminer-desktop$(EXE) -headless
 
 ##@ Package
 
-APP = build/Adminer Desktop.app
-ICON = build/AdminerDesktop.icns
+APP = build.noindex/Adminer Desktop.app
+ICON = build.noindex/AdminerDesktop.icns
 
 # sips and iconutil ship with macOS, so the icon needs no image tooling installed.
 # ponytail: the source is adminer's own 57px pictogram, the largest that exists —
 # so the big sizes are upscaled and soft. Swap in a vector if upstream ever has one.
 $(ICON): assets/logo.png
-	@mkdir -p build/icon.iconset
+	@mkdir -p build.noindex/icon.iconset
 	@for s in 16 32 64 128 256 512 1024; do \
-		sips -z $$s $$s $< --out build/icon.iconset/icon_$${s}x$${s}.png >/dev/null; \
+		sips -z $$s $$s $< --out build.noindex/icon.iconset/icon_$${s}x$${s}.png >/dev/null; \
 	done
-	@cd build/icon.iconset && for s in 16 32 128 256 512; do \
+	@cd build.noindex/icon.iconset && for s in 16 32 128 256 512; do \
 		d=$$((s * 2)); cp icon_$${d}x$${d}.png icon_$${s}x$${s}@2x.png; \
 	done && rm -f icon_64x64.png icon_1024x1024.png
-	iconutil -c icns build/icon.iconset -o $@
-	@rm -rf build/icon.iconset
+	iconutil -c icns build.noindex/icon.iconset -o $@
+	@rm -rf build.noindex/icon.iconset
 
 # A .app is just a directory, which is why none of this needs go:embed or a static
 # single-binary build: the runtime and app/ are simply files inside it.
@@ -423,7 +423,7 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)"/Contents/MacOS "$(APP)"/Contents/Resources
 	sed 's|@ADMINER_VERSION@|$(ADMINER_VERSION)|g' Info.plist.in > "$(APP)"/Contents/Info.plist
-	cp build/adminer-desktop "$(APP)"/Contents/MacOS/
+	cp build.noindex/adminer-desktop "$(APP)"/Contents/MacOS/
 	cp bin/frankenphp "$(APP)"/Contents/MacOS/
 	# The whole app/ tree in one copy — vendor/ lives in app/ now, so it (and the autoloader
 	# Latte needs) travels along too.
@@ -468,20 +468,20 @@ PKG         = adminer-desktop_$(PKG_VERSION)_$(PKG_OS)-$(PKG_ARCH)
 # The bundle inside keeps its display name, "Adminer Desktop.app"; only the archive is
 # renamed, so the download is greppable and the thing in /Applications still reads right.
 zip: bundle  ## Zip the macOS .app bundle
-	rm -f build/$(PKG).zip && cd build && zip -qry $(PKG).zip "Adminer Desktop.app"
-	@echo "built build/$(PKG).zip -- $$(du -sh "build/$(PKG).zip" | cut -f1)"
+	rm -f build.noindex/$(PKG).zip && cd build.noindex && zip -qry $(PKG).zip "Adminer Desktop.app"
+	@echo "built build.noindex/$(PKG).zip -- $$(du -sh "build.noindex/$(PKG).zip" | cut -f1)"
 
 # Linux and Windows get a plain directory rather than a bundle or an installer: the
 # layout resolve() looks for is "runtime and app/ next to the binary", which a folder
 # already satisfies. AppImage, .deb and an MSI are all packaging opinions we do not need
 # before anyone has asked to install this.
-# Staged under build/pkg/ so the folder name inside the archive can still be
-# adminer-desktop without colliding with the binary of that name in build/.
-DIST = build/pkg/adminer-desktop
+# Staged under build.noindex/pkg/ so the folder name inside the archive can still be
+# adminer-desktop without colliding with the binary of that name in build.noindex/.
+DIST = build.noindex/pkg/adminer-desktop
 
 dist: build app/vendor  ## Stage the Linux/Windows folder layout
 	rm -rf $(DIST) && mkdir -p $(DIST)
-	cp build/adminer-desktop$(EXE) $(DIST)/
+	cp build.noindex/adminer-desktop$(EXE) $(DIST)/
 	# The window icon, beside the binary so iconPath() finds it at runtime (the launcher
 	# sets the GTK window icon from it; the .deb also points its .desktop at a copy).
 	cp assets/logo.png $(DIST)/
@@ -496,18 +496,18 @@ dist: build app/vendor  ## Stage the Linux/Windows folder layout
 
 # tar preserves the executable bit; zip on windows does not need it.
 tarball: dist  ## Package the Linux tarball
-	cd build/pkg && tar czf ../$(PKG).tar.gz adminer-desktop
-	@echo "built build/$(PKG).tar.gz -- $$(du -sh build/$(PKG).tar.gz | cut -f1)"
+	cd build.noindex/pkg && tar czf ../$(PKG).tar.gz adminer-desktop
+	@echo "built build.noindex/$(PKG).tar.gz -- $$(du -sh build.noindex/$(PKG).tar.gz | cut -f1)"
 
 # The one platform whose own package cannot be made with the tool named after it: git bash
 # on windows ships no zip(1), which is the only thing the whole build was ever missing there.
 # 7-Zip is on the runner and on most windows machines, and writes the same archive.
 windows: dist  ## Package the Windows zip
-	rm -f build/$(PKG).zip
-	cd build/pkg && { command -v zip >/dev/null 2>&1 \
+	rm -f build.noindex/$(PKG).zip
+	cd build.noindex/pkg && { command -v zip >/dev/null 2>&1 \
 		&& zip -qry ../$(PKG).zip adminer-desktop \
 		|| 7z a -tzip -bso0 ../$(PKG).zip adminer-desktop; }
-	@echo "built build/$(PKG).zip -- $$(du -sh build/$(PKG).zip | cut -f1)"
+	@echo "built build.noindex/$(PKG).zip -- $$(du -sh build.noindex/$(PKG).zip | cut -f1)"
 
 # A .deb is the same flat layout dist stages, just rooted at /usr/lib instead of a folder:
 # resolve() reads os.Executable(), which follows the /usr/bin symlink back to the real
@@ -515,14 +515,14 @@ windows: dist  ## Package the Windows zip
 # from dpkg rather than PKG_ARCH -- it is the authority on the machine that will install
 # the thing, and the go build is never cross-compiled here anyway.
 # --root-owner-group ships the files as root:root without needing fakeroot.
-DEB      = build/deb
+DEB      = build.noindex/deb
 DEB_ARCH = $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
-DEB_FILE = build/adminer-desktop_$(PKG_VERSION)_linux-$(DEB_ARCH)-deb.deb
+DEB_FILE = build.noindex/adminer-desktop_$(PKG_VERSION)_linux-$(DEB_ARCH)-deb.deb
 
 deb: dist  ## Package a Debian .deb (Linux)
 	rm -rf $(DEB)
 	mkdir -p $(DEB)/DEBIAN $(DEB)/usr/lib $(DEB)/usr/bin $(DEB)/usr/share/applications $(DEB)/usr/share/pixmaps
-	cp -R build/pkg/adminer-desktop $(DEB)/usr/lib/adminer-desktop
+	cp -R build.noindex/pkg/adminer-desktop $(DEB)/usr/lib/adminer-desktop
 	ln -sf ../lib/adminer-desktop/adminer-desktop $(DEB)/usr/bin/adminer-desktop
 	cp assets/logo.png $(DEB)/usr/share/pixmaps/adminer-desktop.png
 	# StartupWMClass = the GtkWindow's app_id (webview's prgname, the binary basename), so

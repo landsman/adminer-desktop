@@ -22,7 +22,7 @@
 /app/src/Settings/Theme/designs/*
 !/app/src/Settings/Theme/designs/adminer-desktop/
 /bin
-/build/
+/build.noindex/
 # Native-shell translations: generated from app/src/I18n/Locale/*.php by `make i18n` and rebuilt
 # before every build. The per-language files are the committed source.
 /lproj/*.lproj/Localizable.strings

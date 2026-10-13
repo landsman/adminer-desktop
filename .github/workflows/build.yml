@@ -173,7 +173,7 @@ jobs:
 
       # One glob for all three platforms, because every package is now named
       # adminer-desktop_<version>_<os>-<arch>.<ext> (see PKG in the Makefile). It picks up
-      # the .deb beside the tarball and never the bare `build/adminer-desktop` binary,
+      # the .deb beside the tarball and never the bare `build.noindex/adminer-desktop` binary,
       # which has no underscore.
       # None notarized or certificate-signed: macOS needs Open Anyway in Privacy & Security
       # on first launch (see `zip` in the Makefile), and Windows shows a
@@ -181,7 +181,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: adminer-desktop-${{ matrix.platform }}
-          path: build/adminer-desktop_*
+          path: build.noindex/adminer-desktop_*
           if-no-files-found: error
 
   # Attaches what the matrix built to the release that already exists for the named tag —

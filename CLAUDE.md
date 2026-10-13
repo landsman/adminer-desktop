@@ -10,7 +10,7 @@ rendering, CSS or JavaScript, and three separate bugs here were invisible to it:
 never fired.
 
 ```sh
-make debug          # or ./build/adminer-desktop -debug
+make debug          # or ./build.noindex/adminer-desktop -debug
 ```
 
 That turns on **Safari's Web Inspector** against the app's page — Safari → Develop →
