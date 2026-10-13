@@ -8,7 +8,8 @@
 	\AdminerDesktop $desktop,
 	\Desktop\Settings\Theme\Theme $theme,
 	\Desktop\Settings\Plugins\PluginList $plugins,
-	\Desktop\Mcp\Panel $mcp
+	\Desktop\Mcp\Panel $mcp,
+	\Desktop\Shortcuts\Shortcuts $shortcuts
 }
 <button type="button" id="desktop-gear" data-dialog="desktop-settings" title="{$desktop->t('settings.title')}">&#9881;</button>
 
@@ -23,7 +24,7 @@
 
 	{* Tabs are hidden radios plus :has() in the stylesheet: no JS, and a checked radio is
 		also the state, so nothing has to be restored when the dialog reopens. A screen reader
-		hears a radio group of three, which is what it is — arrows move between them natively,
+		hears a radio group of four, which is what it is — arrows move between them natively,
 		where the ARIA tab pattern would need a roving tabindex in script to do the same. They
 		carry no value, so whichever is checked posts the same desktop_tab=on, and switching tabs
 		is not an unsaved change to the guard. *}
@@ -36,6 +37,8 @@
 			<label for="desktop-tab-plugins">{$desktop->t('settings.tab_plugins')}</label>
 			<input type="radio" name="desktop_tab" id="desktop-tab-mcp">
 			<label for="desktop-tab-mcp">{$desktop->t('settings.tab_mcp')}</label>
+			<input type="radio" name="desktop_tab" id="desktop-tab-shortcuts">
+			<label for="desktop-tab-shortcuts">{$desktop->t('settings.tab_shortcuts')}</label>
 		</div>
 	{/block}
 
@@ -45,6 +48,7 @@
 			<div id="desktop-panel-themes">{do $theme->panel()}</div>
 			<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
 			<div id="desktop-panel-mcp">{do $mcp->panel()}</div>
+			<div id="desktop-panel-shortcuts">{do $shortcuts->panel()}</div>
 		</div>
 	{/block}
 

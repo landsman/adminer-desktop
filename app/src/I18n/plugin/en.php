@@ -18,6 +18,7 @@ return [
 	'settings.title' => 'Settings',
 	'settings.tab_theme' => 'Appearance',
 	'settings.tab_plugins' => 'Plugins',
+	'settings.tab_shortcuts' => 'Shortcuts',
 	'settings.save' => 'Save',
 	'settings.close' => 'Cancel',
 	// {n}, not %d: Adminer's lang() runs the string through sprintf, which would replace %d with 0
@@ -111,9 +112,7 @@ return [
 	'mcp.agent_unknown_tool' => 'unknown tool',
 	'mcp.agent_missing_argument' => 'missing required argument',
 
-	// Keyboard shortcuts dialog (src/Shortcuts/). Adminer and Editor are product names.
-	'shortcuts.title' => 'Keyboard shortcuts',
-	'shortcuts.close_dialog' => 'Close',
+	// Keyboard shortcuts tab (src/Shortcuts/). Adminer and Editor are product names.
 	'shortcuts.group_app' => 'App',
 	'shortcuts.group_forms' => 'Forms and SQL',
 	'shortcuts.help' => 'Show this list',

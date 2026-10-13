@@ -38,7 +38,6 @@ class AdminerDesktop extends Adminer\Plugin {
 	private Mcp\Panel $mcp;
 	private UserSettings $userSettings;
 	private Connections $connections;
-	private Shortcuts $shortcuts;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
@@ -56,8 +55,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->plugins = new PluginList($this, $this->userSettings);
 		$this->mcp = new Mcp\Panel($this, $this->userSettings);
 		$this->connections = new Connections($this, $this->userSettings);
-		$this->dialog = new Dialog($this, $this->theme, $this->plugins, $this->mcp);
-		$this->shortcuts = new Shortcuts($this);
+		$this->dialog = new Dialog($this, $this->theme, $this->plugins, $this->mcp, new Shortcuts($this));
 	}
 
 	/** Answer an agent's MCP call, and keep the handshake that let it find us current.
@@ -312,13 +310,12 @@ class AdminerDesktop extends Adminer\Plugin {
 		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", $name);
 	}
 
-	/** Adminer's sidebar, with ours ahead of it: the settings and shortcuts dialogs and, on the
-	* login page, the versions beside its gear and the dialogs that edit the saved connections.
+	/** Adminer's sidebar, with ours ahead of it: the settings dialog and, on the login page, the
+	* versions beside its gear and the dialogs that edit the saved connections.
 	* @param string $missing
 	* @return void
 	*/
 	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
-		$this->shortcuts->render();
 		if ($missing != "auth") {
 			$this->dialog->render();
 			return;

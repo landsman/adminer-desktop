@@ -12,6 +12,7 @@ return [
 	'settings.title' => 'Ustawienia',
 	'settings.tab_theme' => 'Wygląd',
 	'settings.tab_plugins' => 'Wtyczki',
+	'settings.tab_shortcuts' => 'Skróty',
 	'settings.save' => 'Zapisz',
 	'settings.close' => 'Zamknij',
 	'settings.reset' => 'Przywróć domyślne',
@@ -104,9 +105,7 @@ return [
 	'mcp.agent_unknown_tool' => 'nieznane narzędzie',
 	'mcp.agent_missing_argument' => 'brak wymaganego argumentu',
 
-	// Keyboard shortcuts dialog (src/Shortcuts/).
-	'shortcuts.title' => 'Skróty klawiszowe',
-	'shortcuts.close_dialog' => 'Zamknij',
+	// Keyboard shortcuts tab (src/Shortcuts/).
 	'shortcuts.group_app' => 'Aplikacja',
 	'shortcuts.group_forms' => 'Formularze i SQL',
 	'shortcuts.help' => 'Pokaż tę listę',

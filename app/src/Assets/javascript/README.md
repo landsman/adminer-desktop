@@ -24,7 +24,7 @@ before `table-columns.js`. Three so far:
 
 - `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
 - `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
-  `data-dialog` button would (`shortcuts.js` opens the shortcuts list on `?`).
+  `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
 - `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the
   document, adminer's highlighting re-applied and the url corrected. With a url it asks for
   that one (a sort link); without, for whatever the options form currently says, so changing a

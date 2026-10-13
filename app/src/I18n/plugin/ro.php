@@ -12,6 +12,7 @@ return [
 	'settings.title' => 'Setări',
 	'settings.tab_theme' => 'Aspect',
 	'settings.tab_plugins' => 'Pluginuri',
+	'settings.tab_shortcuts' => 'Comenzi rapide',
 	'settings.save' => 'Salvează',
 	'settings.close' => 'Închide',
 	'settings.reset' => 'Resetează la implicit',
@@ -104,9 +105,7 @@ return [
 	'mcp.agent_unknown_tool' => 'unealtă necunoscută',
 	'mcp.agent_missing_argument' => 'lipsește un argument obligatoriu',
 
-	// Keyboard shortcuts dialog (src/Shortcuts/).
-	'shortcuts.title' => 'Comenzi rapide de la tastatură',
-	'shortcuts.close_dialog' => 'Închide',
+	// Keyboard shortcuts tab (src/Shortcuts/).
 	'shortcuts.group_app' => 'Aplicație',
 	'shortcuts.group_forms' => 'Formulare și SQL',
 	'shortcuts.help' => 'Afișează această listă',
