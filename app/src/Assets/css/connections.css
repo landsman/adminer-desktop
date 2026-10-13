@@ -1,0 +1,390 @@
+/* Saved connections: the cards on the login page, their edit dialogs, and the stripe and badge
+ * that carry a connection's colour once you are in it (src/Connections/). Built on adminer's
+ * --bg/--fg so it follows whichever design is active; --ad-conn is the connection's colour,
+ * set per card inline and for the whole page by head(). */
+
+/* The versions the login page prints (Connections::versions()). Only our own design places them,
+   at the foot of the window; every other design keeps adminer's version by the logo. */
+.ad-versions {
+	display: none;
+}
+
+/* No connection saved yet: one quiet line where the cards will be, the button under it. */
+.ad-empty {
+	margin: 0.4em 0 var(--ad-gap-lg);
+	text-align: center;
+	color: var(--ad-fg-quiet);
+}
+
+/* Adminer's own list of the same logins, in the sidebar: the cards replace it. */
+body:has(#ad-connections) #logins {
+	display: none;
+}
+
+#ad-connections {
+	margin-bottom: var(--ad-gap-lg);
+}
+
+.ad-cards {
+	display: grid;
+	/* One per row: a column of connections reads as a list to pick from, and the name and the
+	   address get the whole width instead of an ellipsis. minmax(0, …), not a bare 1fr, whose
+	   minimum is the card's widest unbroken line: a long name then widened the whole page past a
+	   narrow window instead of ending in an ellipsis. */
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--ad-gap-lg);
+	margin: 0 0 var(--ad-gap-lg);
+	padding: 0;
+	list-style: none;
+}
+
+.ad-card {
+	--ad-conn-tint: var(--ad-conn, var(--fg));
+	container-type: inline-size;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--ad-border);
+	border-left: 4px solid var(--ad-conn, var(--ad-border));
+	border-radius: var(--ad-radius);
+	background: var(--bg);
+}
+
+.ad-card:hover {
+	background: color-mix(in srgb, var(--ad-conn-tint) 6%, var(--bg));
+}
+
+.ad-card-row {
+	display: flex;
+	align-items: center;
+	gap: 0.25em;
+	padding-right: 0.6em;
+}
+
+.ad-card-link {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	align-items: center;
+	gap: 0.75em;
+	padding: 0.8em 0.4em 0.8em 0.8em;
+	color: inherit;
+	text-decoration: none;
+}
+
+.ad-card-icon {
+	display: inline-grid;
+	place-items: center;
+	flex: none;
+	width: 2.2em;
+	height: 2.2em;
+	border-radius: var(--ad-radius-sm);
+	background: color-mix(
+		in srgb,
+		var(--ad-conn-tint, var(--fg)) 14%,
+		transparent
+	);
+	color: var(--ad-conn-tint, var(--fg));
+}
+
+.ad-card-icon svg {
+	width: 70%;
+	height: 70%;
+}
+
+.ad-card-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+}
+
+.ad-card-text strong,
+.ad-card-text small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ad-card-text small {
+	color: var(--ad-fg-quiet);
+}
+
+.ad-card-actions {
+	display: flex;
+	flex: none;
+	gap: 0.1em;
+}
+
+/* A narrow card — a narrow window — gives its buttons a row of their own under the name, which
+   beside the tag and three buttons was down to its first letter. */
+@container (max-width: 26rem) {
+	.ad-card-row {
+		flex-wrap: wrap;
+	}
+
+	.ad-card-actions {
+		order: 1;
+		width: 100%;
+		justify-content: flex-end;
+		padding-bottom: 0.4em;
+	}
+}
+
+/* Square targets the size of the logo beside them, centred on the title row. */
+.ad-card-action {
+	display: grid;
+	place-items: center;
+	width: 2.2em;
+	height: 2.2em;
+	padding: 0;
+	border: 0;
+	border-radius: var(--ad-radius-sm);
+	background: none;
+	color: var(--ad-fg-quiet);
+	cursor: pointer;
+}
+
+.ad-card-action svg {
+	width: 1.1em;
+	height: 1.1em;
+}
+
+.ad-card-action:hover,
+.ad-card-action:focus-visible {
+	background: color-mix(in srgb, var(--fg) 10%, transparent);
+	color: var(--fg);
+}
+
+.ad-card-forget:hover,
+.ad-card-forget:focus-visible {
+	background: color-mix(in srgb, var(--ad-danger) 12%, transparent);
+	color: var(--ad-danger);
+}
+
+.ad-card-action:focus-visible {
+	outline: 2px solid AccentColor;
+	outline-offset: 1px;
+}
+
+/* Logged out of: still on the list, quieter, and saying why it will ask for a password. */
+.ad-signed-out .ad-card-icon {
+	opacity: 0.55;
+}
+
+.ad-card-state {
+	font-style: italic;
+}
+
+.ad-card-databases {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35em;
+	padding: 0 0.8em 0.8em calc(0.8em + 2.95em);
+}
+
+.ad-card-databases a {
+	border: 1px solid var(--ad-border);
+	border-radius: 999px;
+	padding: 0.05em 0.6em;
+	font-size: 0.85em;
+	text-decoration: none;
+}
+
+/* The environment tag. Fixed hues, the same ones Environment::color() falls back to, so PROD
+   reads red whatever colour the connection itself was given. */
+.ad-env {
+	flex: none;
+	border-radius: var(--ad-radius-sm);
+	padding: 0.1em 0.45em;
+	font-size: 0.75em;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: #fff;
+	background: #667085;
+}
+
+.ad-env-dev {
+	background: #079455;
+}
+
+.ad-env-stage {
+	background: #dc6803;
+}
+
+.ad-env-prod {
+	background: #d92d20;
+}
+
+#ad-new-connection {
+	width: 100%;
+	border: 1px dashed var(--ad-border);
+	border-radius: var(--ad-radius);
+	padding: 0.6em 1.2em;
+	background: none;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+#ad-new-connection:hover {
+	border-style: solid;
+	background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+
+/* The edit dialog. The shell — bands, buttons, backdrop — is modal.css; this is its size and
+   its fields. Printed inside #menu, so it uses no <p>, which the sidebar draws as menu rows. */
+.ad-connection-dialog {
+	width: 26em;
+}
+
+.ad-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	margin-bottom: 1em;
+}
+
+.ad-field :is(input, select) {
+	padding: 0.4em;
+	font: inherit;
+}
+
+.ad-swatches {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5em 0.6em;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.ad-swatches legend {
+	margin-bottom: 0.4em;
+	padding: 0;
+}
+
+.ad-swatches label {
+	display: inline-flex;
+	cursor: pointer;
+}
+
+/* Swatches: the radio is the state, the circle is what you see and click. */
+.ad-swatches input {
+	position: absolute;
+	opacity: 0;
+}
+
+.ad-swatch {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 50%;
+	outline-offset: 2px;
+}
+
+/* No colour: an empty ring with a slash through it. */
+.ad-swatch-none {
+	border: 1px solid var(--ad-fg-quiet);
+	background: linear-gradient(
+		135deg,
+		transparent 46%,
+		var(--ad-fg-quiet) 46% 54%,
+		transparent 54%
+	);
+}
+
+/* The new-connection modal holds adminer's own form: its field table in the body, its submit row
+   in the footer. The row's paragraph steps aside so Permanent login sits on the left and Login
+   lines up with Cancel on the right, styled as the modal's primary. */
+.ad-new-connection-dialog {
+	width: 34em;
+}
+
+/* adminer gives its login table a 20px right margin, which on top of the full width the login
+   page gives it ran past the body and drew a horizontal scrollbar. */
+.ad-new-connection-dialog table.layout {
+	margin: 0;
+}
+
+.ad-new-connection-dialog .ad-modal-footer p {
+	display: contents;
+}
+
+.ad-new-connection-dialog .ad-modal-footer label {
+	order: -1;
+	margin-right: auto;
+	white-space: nowrap;
+}
+
+/* Too narrow for the three on one row: Permanent login takes the first row, so Cancel and Login
+   stay together on the second rather than Login wrapping alone. */
+@media (max-width: 30rem) {
+	.ad-new-connection-dialog .ad-modal-footer label {
+		flex-basis: 100%;
+	}
+}
+
+.ad-new-connection-dialog .ad-modal-footer input[type="submit"] {
+	font: inherit;
+	line-height: 1.2;
+	padding: var(--ad-button-padding);
+	border: 1px solid transparent;
+	border-radius: var(--ad-radius);
+	background: var(--ad-ok);
+	color: var(--ad-ok-fg);
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.ad-confirm-dialog {
+	width: 28em;
+}
+
+.ad-swatches input:checked + .ad-swatch {
+	outline: 2px solid var(--fg);
+}
+
+.ad-swatches input:focus-visible + .ad-swatch {
+	outline: 2px solid AccentColor;
+}
+
+/* Inside a connection: a stripe across the top of the window, and the badge at the top of the
+   sidebar, both in its colour — so a PROD window never looks like a LOCAL one. */
+body.ad-connected::before {
+	content: "";
+	position: fixed;
+	inset: 0 0 auto;
+	z-index: 100;
+	height: 3px;
+	background: var(--ad-conn);
+	pointer-events: none;
+}
+
+#ad-connection-badge {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+	margin: 0.6em 0.8em;
+	padding: 0.35em 0.5em;
+	border: 1px solid
+		color-mix(in srgb, var(--ad-conn, var(--fg)) 45%, transparent);
+	border-radius: var(--ad-radius);
+	background: color-mix(in srgb, var(--ad-conn, var(--fg)) 10%, transparent);
+	color: inherit;
+	text-decoration: none;
+}
+
+#ad-connection-badge .ad-card-icon {
+	--ad-conn-tint: var(--ad-conn, var(--fg));
+	width: 1.6em;
+	height: 1.6em;
+}
+
+.ad-badge-name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 600;
+}

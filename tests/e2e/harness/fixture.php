@@ -271,6 +271,9 @@ function e2e_login(PageInterface $page, array $fix): void
 	$driver = $fix['driver'];
 	for ($attempt = 1; $attempt <= 3; $attempt++) {
 		$page->goto((string) $fix['base']);
+		// The login form is adminer's, inside the "New connection" modal on our login page; open
+		// it the way a user does. Without our login page (served bare) there is no button.
+		$page->evaluate('() => document.querySelector("#ad-new-connection")?.click()');
 		$page->locator('select[name="auth[driver]"]')->selectOption((string) $driver['key']);
 		usleep(400_000 * $attempt); // let the rebuild settle, and wait longer each time round
 		$page->locator('input[name="auth[server]"]')->fill((string) $fix['database']);

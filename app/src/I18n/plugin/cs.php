@@ -22,6 +22,24 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'z',
 
+	// Saved connections.
+	'connections.new' => 'Nové připojení',
+	'connections.empty' => 'Zatím žádná uložená připojení.',
+	'connections.edit' => 'Upravit',
+	'connections.name' => 'Název',
+	'connections.environment' => 'Prostředí',
+	'connections.color' => 'Barva',
+	'connections.none' => 'Žádné',
+	'connections.logout' => 'Odhlásit',
+	'connections.logout_confirm' => 'Heslo se zapomene. Připojení zůstane v seznamu a příště se na heslo zeptá.',
+	'connections.forget' => 'Zapomenout',
+	'connections.forget_confirm' => 'Připojení zmizí ze seznamu i s heslem, názvem, prostředím a barvou.',
+	'connections.signed_out' => 'odhlášeno',
+	'connections.discard_title' => 'Zahodit změny?',
+	'connections.discard_text' => 'Co jste tu změnili, se ztratí.',
+	'connections.discard' => 'Zahodit',
+	'connections.keep_editing' => 'Pokračovat v úpravách',
+
 	// Theme panel.
 	'theme.appearance' => 'Barevný režim',
 	'theme.appearance_hint' => 'Adminer Desktop se řídí světlým a tmavým režimem systému, nebo ho můžete připnout na Světlý či Tmavý. Každý režim použije vzhled zvolený níže.',

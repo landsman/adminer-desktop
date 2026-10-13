@@ -1,0 +1,211 @@
+/* Every dialog the app adds, one shape: a header band, a body that scrolls, a footer band with
+ * the actions. The settings dialog and the saved-connection editor both use it, so a third
+ * dialog gets the same look by taking the classes rather than restating them.
+ *
+ * The bands are a faint tint of --fg on --bg, so they follow whichever design is active and both
+ * schemes without a value of their own. */
+
+.ad-modal {
+	padding: 0;
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+	background: var(--bg);
+	color: var(--fg);
+	max-width: var(--ad-dialog-max-width);
+	max-height: var(--ad-dialog-max-height);
+	/* The bands' corners would otherwise poke out of the rounded dialog. */
+	overflow: hidden;
+}
+
+/* Only when open. A bare `display: flex` here overrides the `display: none` the browser gives a
+   closed <dialog>, which leaves it on screen permanently and makes close() look broken. */
+.ad-modal[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+.ad-modal > form {
+	display: flex;
+	flex-direction: column;
+	min-height: 0; /* or the body cannot shrink and the dialog overflows */
+	flex: 1;
+}
+
+/* Dim the page behind well past the browser's faint default, so the modal reads clearly as the
+   foreground. */
+.ad-modal::backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+/* Lock the page behind. CSS rather than JS toggling a class: <dialog> closes on escape and on
+   form submission as well as from Cancel, and a handler on the button would miss both, leaving
+   the page unscrollable with nothing to explain it. */
+body:has(.ad-modal[open]) {
+	overflow: hidden;
+}
+
+.ad-modal-header,
+.ad-modal-footer {
+	flex: none;
+	padding: 0.8em var(--ad-dialog-padding);
+	background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+}
+
+.ad-modal-header {
+	border-bottom: 1px solid var(--ad-border);
+}
+
+/* A plain title. Adminer styles h2 as a page heading with its own band and border; inside a
+   dialog that is a band within a band. Restated under #content too, where the theme gives the
+   page title its padding and margins by id, which a class alone cannot outrank. */
+.ad-modal-header h2,
+#content .ad-modal-header h2 {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-size: 1.05em;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.ad-modal-body {
+	overflow: auto;
+	min-height: 0;
+	flex: 1;
+	padding: var(--ad-dialog-padding);
+}
+
+/* Cancel first, primary action last: the order every mac dialog uses, and muscle memory puts
+   the confirm button in the bottom right corner. */
+.ad-modal-footer {
+	display: flex;
+	/* A narrow window: a footer with more than the buttons in it takes a second row rather than
+	   breaking its label or its buttons' text. */
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	align-items: center;
+	gap: var(--ad-gap);
+	border-top: 1px solid var(--ad-border);
+}
+
+/* Deliberately not Adminer's button styling: a dialog in a desktop app follows the platform's
+   dialog conventions instead. Quiet by default, so only the action that matters carries colour. */
+.ad-modal-footer button {
+	font: inherit;
+	line-height: 1.2;
+	padding: var(--ad-button-padding);
+	border-radius: var(--ad-radius);
+	border: 1px solid var(--ad-border);
+	background: var(--bg);
+	color: var(--fg);
+	cursor: pointer;
+}
+
+.ad-modal-footer button:hover:not(:disabled) {
+	background: var(--dim);
+}
+
+/* Green: the one button that keeps what you changed. Fixed rather than AccentColor, which reads
+   as "the default action" but not as "this is the one that saves" — and next to a red
+   destructive button the pair only works if the confirm side is green. */
+.ad-modal-footer .ad-primary {
+	background: var(--ad-ok);
+	color: var(--ad-ok-fg);
+	border-color: transparent;
+	font-weight: 500;
+}
+
+/* Darken on hover and further on press, which is how a filled button behaves on macOS. */
+.ad-modal-footer .ad-primary:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-ok) 88%, black);
+}
+
+.ad-modal-footer .ad-primary:active:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-ok) 76%, black);
+}
+
+/* Destructive, alone on the left — away from the two people press without reading. Red only in
+   its text and border: filled it would compete with the primary for attention, and this is the
+   button nobody should be drawn to. It fills on hover, by which point you have aimed at it. */
+.ad-modal-footer .ad-danger {
+	margin-right: auto;
+	color: var(--ad-danger);
+	border-color: color-mix(in srgb, var(--ad-danger) 45%, transparent);
+}
+
+.ad-modal-footer .ad-danger:hover:not(:disabled) {
+	background: var(--ad-danger);
+	color: var(--ad-ok-fg);
+	border-color: transparent;
+}
+
+/* Red and filled, last: a confirmation whose whole point is the destructive act ("Forget?",
+   "Discard changes?"). There it is the answer, not a side door, so it takes the primary's place;
+   Cancel before it keeps the focus. .ad-danger above is the other case — a destructive extra in a
+   dialog that is about something else (Reset beside Save). */
+.ad-modal-footer .ad-destructive {
+	background: var(--ad-danger-fill);
+	color: var(--ad-ok-fg);
+	border-color: transparent;
+	font-weight: 500;
+}
+
+.ad-modal-footer .ad-destructive:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-danger-fill) 88%, black);
+}
+
+.ad-modal-footer .ad-destructive:active:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-danger-fill) 76%, black);
+}
+
+.ad-modal-footer button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* A soft halo rather than a ring set off from the button: the focused button in a dialog that
+   just opened is usually the safe one, and a heavy ring made it the loudest thing in it. */
+.ad-modal-footer button:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, AccentColor 40%, transparent);
+}
+
+/* The dialog and its backdrop fade in and out together rather than appearing and vanishing at
+   once, the dialog rising 8px as it comes. @starting-style is the entry keyframe; transitioning
+   display and overlay with allow-discrete keeps the dialog in the top layer until the fade-out
+   has finished. Older webviews just snap, which is fine. */
+@media (prefers-reduced-motion: no-preference) {
+	.ad-modal,
+	.ad-modal::backdrop {
+		opacity: 0;
+		transition:
+			opacity var(--ad-modal-speed) ease-out,
+			transform var(--ad-modal-speed) ease-out,
+			overlay var(--ad-modal-speed) allow-discrete,
+			display var(--ad-modal-speed) allow-discrete;
+	}
+
+	.ad-modal {
+		transform: translateY(8px);
+	}
+
+	.ad-modal[open],
+	.ad-modal[open]::backdrop {
+		opacity: 1;
+		transform: none;
+	}
+
+	@starting-style {
+		.ad-modal[open],
+		.ad-modal[open]::backdrop {
+			opacity: 0;
+		}
+		.ad-modal[open] {
+			transform: translateY(8px);
+		}
+	}
+}

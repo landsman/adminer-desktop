@@ -22,6 +22,24 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'z',
 
+	// Saved connections.
+	'connections.new' => 'Nowe połączenie',
+	'connections.empty' => 'Brak zapisanych połączeń.',
+	'connections.edit' => 'Edytuj',
+	'connections.name' => 'Nazwa',
+	'connections.environment' => 'Środowisko',
+	'connections.color' => 'Kolor',
+	'connections.none' => 'Brak',
+	'connections.logout' => 'Wyloguj',
+	'connections.logout_confirm' => 'Hasło zostanie zapomniane. Połączenie zostaje na liście i następnym razem o nie zapyta.',
+	'connections.forget' => 'Zapomnij',
+	'connections.forget_confirm' => 'Połączenie zniknie z listy wraz z hasłem, nazwą, środowiskiem i kolorem.',
+	'connections.signed_out' => 'wylogowano',
+	'connections.discard_title' => 'Odrzucić zmiany?',
+	'connections.discard_text' => 'To, co tu zmieniono, zostanie utracone.',
+	'connections.discard' => 'Odrzuć',
+	'connections.keep_editing' => 'Edytuj dalej',
+
 	// Theme panel.
 	'theme.appearance' => 'Tryb kolorów',
 	'theme.appearance_hint' => 'Adminer Desktop podąża za jasnym i ciemnym trybem systemu, albo można go ustawić na stałe na Jasny lub Ciemny. Każdy tryb używa motywu wybranego poniżej.',

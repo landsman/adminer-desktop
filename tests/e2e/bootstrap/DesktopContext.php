@@ -876,6 +876,219 @@ class DesktopContext implements Context
 		}
 	}
 
+	// ── saved connections ────────────────────────────────────────────────────────────────────
+
+	/** The address with no login in it: adminer answers with the login page, saved logins and all. */
+	#[When('I go to the login page')]
+	public function goToLoginPage(): void
+	{
+		$this->goto((string) $this->fix['base']);
+	}
+
+	#[Then('the saved connection is a card')]
+	public function savedConnectionIsCard(): void
+	{
+		$cards = (int) $this->page->evaluate('() => document.querySelectorAll("#ad-connections .ad-card").length');
+		if ($cards !== 1) {
+			throw new RuntimeException("$cards cards on the login page");
+		}
+	}
+
+	#[Then('the login form is folded away')]
+	public function loginFormFolded(): void
+	{
+		if ($this->page->locator('input[name="auth[username]"]')->isVisible()) {
+			throw new RuntimeException('the login form is still showing');
+		}
+	}
+
+	#[When('I ask for a new connection')]
+	public function askForNewConnection(): void
+	{
+		$this->page->locator('#ad-new-connection')->click();
+	}
+
+	#[Then('the login form is shown')]
+	public function loginFormShown(): void
+	{
+		if (!$this->page->locator('input[name="auth[username]"]')->isVisible()) {
+			throw new RuntimeException('the login form stayed folded');
+		}
+	}
+
+	#[When('I label the connection :name as :env in :color')]
+	public function labelConnection(string $name, string $env, string $color): void
+	{
+		$this->page->locator('.ad-card-edit')->click();
+		$dialog = $this->page->locator('dialog.ad-connection-dialog[open]');
+		$dialog->locator('input[name="name"]')->fill($name);
+		$dialog->locator('select[name="env"]')->selectOption($env);
+		$dialog->locator("input[name=\"color\"][value=\"$color\"]")->check(['force' => true]);
+		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector("dialog[open] .ad-save").click(); }');
+		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+	}
+
+	#[Then('the logo is not a link')]
+	public function logoNotLink(): void
+	{
+		if ((bool) $this->page->evaluate('() => !!document.querySelector("a#h1")')) {
+			throw new RuntimeException('the logo is still a link');
+		}
+	}
+
+	#[Then("the version links to adminer's releases")]
+	public function versionLinksReleases(): void
+	{
+		$href = (string) $this->page->evaluate('() => document.querySelector(".ad-versions a")?.getAttribute("href") ?? ""');
+		if ($href !== 'https://github.com/vrana/adminer/releases') {
+			throw new RuntimeException("the version links to '$href'");
+		}
+	}
+
+	#[When('the window is :width by :height pixels')]
+	public function windowIs(string $width, string $height): void
+	{
+		$this->page->setViewportSize((int) $width, (int) $height);
+	}
+
+	/** Nothing wider than the window: the page does not scroll sideways, and no card, button or
+	 * open modal reaches past its edge. */
+	#[Then('nothing runs past the window')]
+	public function nothingPastWindow(): void
+	{
+		$over = (string) $this->page->evaluate('() => {
+			const out = [];
+			if (document.documentElement.scrollWidth > innerWidth + 1) out.push("the page scrolls sideways");
+			for (const e of document.querySelectorAll(".ad-card, .ad-card-action, .ad-env, dialog[open], dialog[open] button, dialog[open] input, dialog[open] select")) {
+				const r = e.getBoundingClientRect();
+				if (r.width && (r.left < -1 || r.right > innerWidth + 1)) out.push(e.id || e.className || e.tagName);
+			}
+			return [...new Set(out)].join(", ");
+		}');
+		if ($over !== '') {
+			throw new RuntimeException("past the window: $over");
+		}
+	}
+
+	#[Then('Permanent login is ticked')]
+	public function permanentTicked(): void
+	{
+		if (!$this->page->locator('input[name="auth[permanent]"]')->isChecked()) {
+			throw new RuntimeException('Permanent login is not ticked');
+		}
+	}
+
+	#[When("I open the connection's editor")]
+	public function openEditor(): void
+	{
+		$this->page->locator('.ad-card-edit')->click();
+		$this->page->waitForFunction('() => document.querySelector("dialog.ad-connection-dialog[open]")');
+	}
+
+	#[When('I pick the :env environment')]
+	public function pickEnvironment(string $env): void
+	{
+		$this->page->locator('dialog[open] select[name="env"]')->selectOption($env);
+	}
+
+	#[Then('the :color swatch is picked')]
+	public function swatchPicked(string $color): void
+	{
+		$picked = (string) $this->page->evaluate('() => document.querySelector("dialog[open] input[name=color]:checked")?.value ?? ""');
+		if ($picked !== $color) {
+			throw new RuntimeException("the picked swatch is '$picked'");
+		}
+	}
+
+	#[When('I type :name as its name')]
+	public function typeName(string $name): void
+	{
+		$this->page->locator('dialog[open] input[name="name"]')->fill($name);
+	}
+
+	#[When('I press Escape')]
+	public function pressEscape(): void
+	{
+		$this->page->keyboard()->press('Escape');
+	}
+
+	#[Then('I am asked whether to discard the changes')]
+	public function askedToDiscard(): void
+	{
+		$this->page->waitForFunction('() => document.querySelector("#ad-discard")?.open');
+	}
+
+	#[When('I keep editing')]
+	public function keepEditing(): void
+	{
+		$this->page->locator('#ad-discard [data-close]')->click();
+	}
+
+	#[Then('the editor is still open with :name in it')]
+	public function editorStillOpen(string $name): void
+	{
+		$value = (string) $this->page->evaluate('() => document.querySelector("dialog.ad-connection-dialog[open] input[name=name]")?.value ?? "(closed)"');
+		if ($value !== $name || (bool) $this->page->evaluate('() => document.querySelector("#ad-discard").open')) {
+			throw new RuntimeException("the editor holds '$value'");
+		}
+	}
+
+	#[When('I log out of the connection')]
+	public function logOutOfConnection(): void
+	{
+		$this->confirmCardAction('ad-connection-logout-1');
+	}
+
+	#[When('I forget the connection')]
+	public function forgetConnection(): void
+	{
+		$this->confirmCardAction('ad-connection-forget-1');
+	}
+
+	#[Then('the card says it is logged out')]
+	public function cardLoggedOut(): void
+	{
+		if (!(bool) $this->page->evaluate('() => !!document.querySelector(".ad-card.ad-signed-out")')) {
+			throw new RuntimeException('the card is not marked logged out');
+		}
+	}
+
+	#[Then('no connection is listed')]
+	public function noConnectionListed(): void
+	{
+		$cards = (int) $this->page->evaluate('() => document.querySelectorAll(".ad-card").length');
+		if ($cards !== 0 || !$this->page->locator('.ad-empty')->isVisible()) {
+			throw new RuntimeException("$cards cards, and no line saying there are none");
+		}
+	}
+
+	#[Then('the card reads :name with a :env tag')]
+	public function cardReads(string $name, string $env): void
+	{
+		$card = (string) $this->page->evaluate('() => document.querySelector("#ad-connections .ad-card").innerText');
+		if (!str_contains($card, $name) || !str_contains($card, $env)) {
+			throw new RuntimeException("the card reads '$card'");
+		}
+	}
+
+	#[When('I open the connection from its card')]
+	public function openFromCard(): void
+	{
+		// Marked so the wait survives the navigation and resolves on the page it lands on — a
+		// load-state wait right after the click returns on the login page that is still there.
+		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector(".ad-card-link").click(); }');
+		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+	}
+
+	#[Then('the sidebar badge reads :name')]
+	public function sidebarBadgeReads(string $name): void
+	{
+		$badge = (string) $this->page->evaluate('() => document.querySelector("#ad-connection-badge")?.innerText ?? ""');
+		if (!str_contains($badge, $name)) {
+			throw new RuntimeException("the badge reads '$badge'");
+		}
+	}
+
 	#[Then('the body carries the :class class')]
 	public function bodyCarriesClass(string $class): void
 	{
@@ -1173,6 +1386,16 @@ class DesktopContext implements Context
 	 *
 	 * @param array<string, mixed> $options
 	 */
+	/** Open a card's confirmation by its button and answer it with its submit, waiting for the
+	 * page the post redirects to. */
+	private function confirmCardAction(string $dialog): void
+	{
+		$this->page->locator("[data-dialog=\"$dialog\"]")->click();
+		$this->page->waitForFunction("() => document.getElementById('$dialog')?.open");
+		$this->page->evaluate("() => { window.e2eLeaving = true; document.querySelector('#$dialog [type=submit]').click(); }");
+		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+	}
+
 	private function newPage(array $options = []): PageInterface
 	{
 		$context = e2e_browser()->newContext($options + ['viewport' => ['width' => 1600, 'height' => 900]]);

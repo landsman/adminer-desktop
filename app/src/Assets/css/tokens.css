@@ -25,6 +25,8 @@
 	--ad-dialog-max-width: 92vw;
 	--ad-dialog-max-height: 88vh;
 	--ad-dialog-padding: 1.2em;
+	/* How long a dialog and its backdrop take to fade in or out (modal.css). */
+	--ad-modal-speed: 200ms;
 
 	/* Derived from Adminer's --fg so borders stay legible on any design */
 	--ad-border: color-mix(in srgb, var(--fg) 25%, transparent);
@@ -52,6 +54,9 @@
 	--ad-ok: #087f4e;
 	--ad-ok-fg: #fff;
 	--ad-danger: #b42318;
+	/* The fill behind white text on a destructive button. Its own token, because --ad-danger is
+	   lifted for text on a dark panel and would be too light to carry white. */
+	--ad-danger-fill: #d92d20;
 }
 
 @media (prefers-color-scheme: dark) {

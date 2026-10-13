@@ -1,0 +1,10 @@
+{* Connections::versions(): the two versions at the foot of the login page. The desktop one is
+	missing when app/ is served without the launcher, which is what knows it. *}
+{parameters
+	string $adminer,
+	?\Desktop\AppVersion $desktop
+}
+<span class="ad-versions">
+	<a href="https://github.com/vrana/adminer/releases" target="_blank" rel="noopener">Adminer {$adminer}</a>
+	{if $desktop}· <a href="{$desktop->url()}" target="_blank" rel="noopener" title="{$desktop->describe}">Desktop {$desktop->label()}</a>{/if}
+</span>

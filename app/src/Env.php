@@ -24,6 +24,11 @@ enum Env: string {
 	* already opens it; unset when app/ is served without the launcher. */
 	case Logs = 'ADMINER_DESKTOP_LOGS';
 
+	/** The launcher's build version, `git describe --tags --always --dirty` from the Makefile:
+	* a tag, a tag with commits past it (beta-v0.7.2-15-gaa1715f), or "dev". Unset when app/ is
+	* served without the launcher. See Desktop\AppVersion. */
+	case Version = 'ADMINER_DESKTOP_VERSION';
+
 	/** The value of this environment variable, or false when it is not set (getenv's contract). */
 	function get(): string|false {
 		return getenv($this->value);

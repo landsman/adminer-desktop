@@ -22,6 +22,24 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'din',
 
+	// Saved connections.
+	'connections.new' => 'Conexiune nouă',
+	'connections.empty' => 'Încă nu există conexiuni salvate.',
+	'connections.edit' => 'Editează',
+	'connections.name' => 'Nume',
+	'connections.environment' => 'Mediu',
+	'connections.color' => 'Culoare',
+	'connections.none' => 'Niciunul',
+	'connections.logout' => 'Deconectare',
+	'connections.logout_confirm' => 'Parola este uitată. Conexiunea rămâne în listă și o cere data viitoare.',
+	'connections.forget' => 'Uită',
+	'connections.forget_confirm' => 'Conexiunea este scoasă din listă, cu parola, numele, mediul și culoarea ei.',
+	'connections.signed_out' => 'deconectat',
+	'connections.discard_title' => 'Renunți la modificări?',
+	'connections.discard_text' => 'Ce ai modificat aici se va pierde.',
+	'connections.discard' => 'Renunță',
+	'connections.keep_editing' => 'Continuă editarea',
+
 	// Theme panel.
 	'theme.appearance' => 'Mod de culoare',
 	'theme.appearance_hint' => 'Adminer Desktop urmează modul luminos și întunecat al sistemului sau îl puteți fixa pe Luminos ori Întunecat. Fiecare mod folosește tema aleasă mai jos.',

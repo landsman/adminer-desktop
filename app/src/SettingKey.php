@@ -37,4 +37,7 @@ enum SettingKey: string {
 	// Whether long text values reach the agent whole instead of cut at Tools::MAX_CELL. For a
 	// user whose agent has the context to spare and keeps asking with whole_values anyway.
 	case McpWholeValues = 'mcp_whole_values';
+	// The user's labels for adminer's saved logins — name, colour, environment — keyed by
+	// driver|server|username. Adminer keeps the logins and their passwords; see Desktop\Connections.
+	case Connections = 'connections';
 }

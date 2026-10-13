@@ -1,0 +1,58 @@
+{* The login page (Connections::loginPage()): the cards, or a line saying there are none yet, then
+	adminer's own login form in the "New connection" modal. Printed inside adminer's form, so the modal is one
+	without a form of its own and its fields post with adminer's. *}
+{parameters
+	\AdminerDesktop $desktop,
+	array $connections,
+	array $icons,
+	string $fields,
+	string $submit,
+	bool $adding
+}
+<div id="ad-connections">
+	<p n:if="!$connections" class="ad-empty">{$desktop->t('connections.empty')}</p>
+	<ul n:if="$connections" class="ad-cards">
+		{foreach $connections as $connection}
+			{var $n = $iterator->counter}
+			{* noescape on the colour only: it only ever comes from Color::hex(), and
+				Latte's CSS escaping would turn the # into an escape that is no longer a colour. *}
+			<li n:class="ad-card, !$connection->signedIn ? ad-signed-out" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
+				<div class="ad-card-row">
+					<a class="ad-card-link" href="{$connection->url()|nocheck}">
+						<span class="ad-card-icon" title="{$connection->system()}">{$connection->icon()|noescape}</span>
+						<span class="ad-card-text">
+							<strong>{$connection->title()}</strong>
+							<small>
+								{$connection->system()}{if $connection->name !== ''} · {$connection->address()}{/if}
+								{if !$connection->signedIn} · <span class="ad-card-state">{$desktop->t('connections.signed_out')}</span>{/if}
+							</small>
+						</span>
+						<span n:if="$connection->environment" class="ad-env ad-env-{$connection->environment->value}">{$connection->environment->label()}</span>
+					</a>
+					{* Beside the link, not over it: targets of their own, centred on the title row. *}
+					<span class="ad-card-actions">
+						<button type="button" class="ad-card-action ad-card-edit" data-dialog="ad-connection-{$n}" title="{$desktop->t('connections.edit')}" aria-label="{$desktop->t('connections.edit')}">{$icons['edit']|noescape}</button>
+						<button n:if="$connection->signedIn" type="button" class="ad-card-action" data-dialog="ad-connection-logout-{$n}" title="{$desktop->t('connections.logout')}" aria-label="{$desktop->t('connections.logout')}">{$icons['logout']|noescape}</button>
+						<button type="button" class="ad-card-action ad-card-forget" data-dialog="ad-connection-forget-{$n}" title="{$desktop->t('connections.forget')}" aria-label="{$desktop->t('connections.forget')}">{$icons['forget']|noescape}</button>
+					</span>
+				</div>
+				<span n:if="$connection->databases" class="ad-card-databases">
+					<a n:foreach="$connection->databases as $database" href="{$connection->url($database)|nocheck}">{$database}</a>
+				</span>
+			</li>
+		{/foreach}
+	</ul>
+	<button type="button" id="ad-new-connection" data-dialog="ad-new-connection-dialog">+ {$desktop->t('connections.new')}</button>
+</div>
+
+{embed '../Assets/modal.latte', id: 'ad-new-connection-dialog', class: 'ad-new-connection-dialog', guard: true, form: false, labelledBy: 'ad-new-connection-title'}
+	{block header}<h2 id="ad-new-connection-title">{$desktop->t('connections.new')}</h2>{/block}
+	{block body}{$fields|noescape}{/block}
+	{block footer}
+		<button type="button" data-close>{$desktop->t('settings.close')}</button>
+		{$submit|noescape}
+	{/block}
+{/embed}
+{* Opened on load — see Connections::loginPage(). An attribute the script reads rather than an
+	inline script, which the CSP would want a nonce for. *}
+<span n:if="$adding" hidden data-open-dialog="ad-new-connection-dialog"></span>

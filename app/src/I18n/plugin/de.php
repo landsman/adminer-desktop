@@ -22,6 +22,24 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'von',
 
+	// Saved connections.
+	'connections.new' => 'Neue Verbindung',
+	'connections.empty' => 'Noch keine gespeicherten Verbindungen.',
+	'connections.edit' => 'Bearbeiten',
+	'connections.name' => 'Name',
+	'connections.environment' => 'Umgebung',
+	'connections.color' => 'Farbe',
+	'connections.none' => 'Keine',
+	'connections.logout' => 'Abmelden',
+	'connections.logout_confirm' => 'Das Passwort wird vergessen. Die Verbindung bleibt in der Liste und fragt beim nächsten Mal danach.',
+	'connections.forget' => 'Vergessen',
+	'connections.forget_confirm' => 'Die Verbindung wird aus der Liste entfernt, mit Passwort, Name, Umgebung und Farbe.',
+	'connections.signed_out' => 'abgemeldet',
+	'connections.discard_title' => 'Änderungen verwerfen?',
+	'connections.discard_text' => 'Was Sie hier geändert haben, geht verloren.',
+	'connections.discard' => 'Verwerfen',
+	'connections.keep_editing' => 'Weiter bearbeiten',
+
 	// Theme panel.
 	'theme.appearance' => 'Erscheinungsbild',
 	'theme.appearance_hint' => 'Adminer Desktop folgt dem hellen und dunklen Modus des Systems, oder Sie legen ihn fest auf Hell oder Dunkel. Jeder Modus verwendet das unten gewählte Design.',

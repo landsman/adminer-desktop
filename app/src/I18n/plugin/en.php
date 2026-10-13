@@ -30,6 +30,24 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'of',
 
+	// Saved connections on the login page (src/Connections/).
+	'connections.new' => 'New connection',
+	'connections.empty' => 'No saved connections yet.',
+	'connections.edit' => 'Edit',
+	'connections.name' => 'Name',
+	'connections.environment' => 'Environment',
+	'connections.color' => 'Colour',
+	'connections.none' => 'None',
+	'connections.logout' => 'Log out',
+	'connections.logout_confirm' => 'The password is forgotten. The connection stays on the list and asks for it next time.',
+	'connections.forget' => 'Forget',
+	'connections.forget_confirm' => 'The connection is removed from the list, with its password, name, environment and colour.',
+	'connections.signed_out' => 'logged out',
+	'connections.discard_title' => 'Discard changes?',
+	'connections.discard_text' => 'What you changed here will be lost.',
+	'connections.discard' => 'Discard',
+	'connections.keep_editing' => 'Keep editing',
+
 	// Theme panel (theme-panel.latte, Theme.php).
 	'theme.appearance' => 'Appearance',
 	'theme.appearance_hint' => 'Adminer Desktop follows the system light and dark, or pin it to Light or Dark. Either scheme uses the design chosen for it below.',

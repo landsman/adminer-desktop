@@ -13,42 +13,44 @@
 }
 <button type="button" id="desktop-gear" title="{$desktop->t('settings.title')}">&#9881;</button>
 
-<dialog id="desktop-settings">
-<form action="" method="post">
+{* Not light-dismissed and not guarded here: settings-dialog.js asks about unsaved edits itself. *}
+{embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, label: $desktop->t('settings.title')}
+	{block hidden}
+		{input_hidden('desktop_settings', 1)|noescape}
+		{input_token()|noescape}
+	{/block}
 
 	{* Tabs are hidden radios plus :has() in the stylesheet: no JS, and a checked radio is
 		also the state, so nothing has to be restored when the dialog reopens. *}
-	<div id="desktop-tabs">
-		<input type="radio" name="desktop_tab" id="desktop-tab-themes" checked>
-		<label for="desktop-tab-themes">{$desktop->t('settings.tab_theme')}</label>
-		<input type="radio" name="desktop_tab" id="desktop-tab-plugins">
-		<label for="desktop-tab-plugins">{$desktop->t('settings.tab_plugins')}</label>
-		<input type="radio" name="desktop_tab" id="desktop-tab-mcp">
-		<label for="desktop-tab-mcp">{$desktop->t('settings.tab_mcp')}</label>
-	</div>
+	{block header}
+		<div id="desktop-tabs">
+			<input type="radio" name="desktop_tab" id="desktop-tab-themes" checked>
+			<label for="desktop-tab-themes">{$desktop->t('settings.tab_theme')}</label>
+			<input type="radio" name="desktop_tab" id="desktop-tab-plugins">
+			<label for="desktop-tab-plugins">{$desktop->t('settings.tab_plugins')}</label>
+			<input type="radio" name="desktop_tab" id="desktop-tab-mcp">
+			<label for="desktop-tab-mcp">{$desktop->t('settings.tab_mcp')}</label>
+		</div>
+	{/block}
 
 	{* The panels print themselves; this only decides where they sit. *}
-	<div id="desktop-panels">
-		<div id="desktop-panel-themes">{do $theme->panel()}</div>
-		<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
-		<div id="desktop-panel-mcp">{do $mcp->panel()}</div>
-	</div>
+	{block body}
+		<div id="desktop-panels">
+			<div id="desktop-panel-themes">{do $theme->panel()}</div>
+			<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
+			<div id="desktop-panel-mcp">{do $mcp->panel()}</div>
+		</div>
+	{/block}
 
-	{input_hidden('desktop_settings', 1)|noescape}
-	{input_token()|noescape}
-
-	{* Cancel first, primary action last: that is the order every mac dialog uses, and
-		muscle memory puts the confirm button in the bottom right corner. *}
-	<div id="desktop-actions">
+	{block footer}
 		{* Its own submit button, named: a named submit posts its own name, so nothing here
 			needs a hidden field or a line of script to say which button was pressed. Left of
 			the others, away from the one people press without reading. *}
-		<button type="submit" name="desktop_reset" value="1" id="desktop-reset"
+		<button type="submit" name="desktop_reset" value="1" id="desktop-reset" class="ad-danger"
 			data-confirm="{$desktop->t('settings.reset_confirm')}">{$desktop->t('settings.reset')}</button>
 		{* The question the script asks before discarding edits, translated here because
 			this is where the translations are. *}
 		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('settings.close')}</button>
-		<button type="submit" id="desktop-save">{$desktop->t('settings.save')}</button>
-	</div>
-</form>
-</dialog>
+		<button type="submit" id="desktop-save" class="ad-primary">{$desktop->t('settings.save')}</button>
+	{/block}
+{/embed}

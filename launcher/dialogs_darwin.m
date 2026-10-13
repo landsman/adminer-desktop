@@ -14,7 +14,7 @@
  * That is not cosmetic. Adminer wires confirm() onto every destructive action
  * (include/html.inc.php:124) and an onclick returning false cancels the action, so
  * dropping a table, deleting rows and truncating quietly did nothing. The file picker is
- * how a .sql file gets imported.
+ * how a .sql file gets imported. And a target=_blank link, which needs it to open anywhere.
  */
 
 @interface AdminerDesktopUIDelegate : NSObject <WKUIDelegate>
@@ -74,6 +74,22 @@
 	[panel setCanChooseDirectories:[parameters allowsDirectories]];
 	[panel setAllowsMultipleSelection:[parameters allowsMultipleSelection]];
 	completionHandler([panel runModal] == NSModalResponseOK ? [panel URLs] : nil);
+}
+
+/* A link with target=_blank asks for a new window, which this app has no place for: returning nil
+ * drops it, so on its own such a click did nothing. An http(s) one opens in the system browser
+ * instead — the version's link to adminer's releases, a plugin's link out. Anything else, such as
+ * a javascript: or a file: URL, is still dropped. */
+- (WKWebView *)webView:(WKWebView *)webView
+		createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
+		forNavigationAction:(WKNavigationAction *)navigationAction
+		windowFeatures:(WKWindowFeatures *)windowFeatures {
+	NSURL *url = navigationAction.request.URL;
+	NSString *scheme = [[url scheme] lowercaseString];
+	if ([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"]) {
+		[[NSWorkspace sharedWorkspace] openURL:url];
+	}
+	return nil;
 }
 
 @end
