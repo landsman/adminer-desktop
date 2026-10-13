@@ -944,6 +944,88 @@ class DesktopContext implements Context
 		usleep(300_000); // the redirect lands before the unlink is visible to this process
 	}
 
+	#[Then('the settings dialog is named by its :title title')]
+	public function settingsNamedByTitle(string $title): void
+	{
+		$name = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => { const d = document.querySelector("#desktop-settings"); const h = document.getElementById(d.getAttribute("aria-labelledby")); return h && h.checkVisibility() ? h.textContent.trim() : "(none visible)"; }',
+		);
+		if ($name !== $title) {
+			throw new RuntimeException("the settings dialog is named '$name'");
+		}
+	}
+
+	#[Then('the focus is on the settings dialog')]
+	public function focusOnSettings(): void
+	{
+		$this->assertFocus('desktop-settings');
+	}
+
+	#[Then('the focus is back on the gear')]
+	public function focusOnGear(): void
+	{
+		$this->assertFocus('desktop-gear');
+	}
+
+	#[When('I tab into the settings dialog')]
+	public function tabIntoSettings(): void
+	{
+		$this->page->keyboard()->press('Tab');
+	}
+
+	/** The radio itself is hidden, so the ring is its label's — and it must be there for the keyboard. */
+	#[Then('the focused tab shows a focus ring')]
+	public function focusedTabRing(): void
+	{
+		$ring = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => { const r = document.activeElement; return r?.matches("#desktop-tabs input") ? getComputedStyle(r.nextElementSibling).boxShadow : "(focus on " + r?.id + ")"; }',
+		);
+		if ($ring === 'none' || str_starts_with($ring, '(')) {
+			throw new RuntimeException("no focus ring on the tab: $ring");
+		}
+	}
+
+	#[Then('the settings dialog is still open with :density picked')]
+	public function settingsStillOpen(string $density): void
+	{
+		$state = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("#desktop-settings").open && !document.querySelector("#ad-discard").open ? document.querySelector("input[name=density]:checked")?.value ?? "" : "(closed)"',
+		);
+		if ($state !== $density) {
+			throw new RuntimeException("the settings dialog holds '$state'");
+		}
+	}
+
+	#[Then('the settings dialog is closed')]
+	public function settingsClosed(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !document.querySelector("#desktop-settings").open',
+		);
+	}
+
+	#[When('the OS asks for reduced motion')]
+	public function reducedMotion(): void
+	{
+		$this->page->emulateMedia(['reducedMotion' => 'reduce']);
+	}
+
+	#[Then('the settings dialog does not fade')]
+	public function settingsDoesNotFade(): void
+	{
+		$durations = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => { const d = document.querySelector("#desktop-settings"); return getComputedStyle(d).transitionDuration + " " + getComputedStyle(d, "::backdrop").transitionDuration; }',
+		);
+		if (preg_match('/[1-9]/', $durations)) {
+			throw new RuntimeException("the dialog still transitions: $durations");
+		}
+	}
+
 	/** A dragged width goes in through the api the page's own scripts post to: the reset has to
 	 * forget what that stored too, not only the dialog's own fields.
 	 */
@@ -1604,6 +1686,17 @@ class DesktopContext implements Context
 			// language=JavaScript
 			'() => !window.e2eLeaving && document.readyState === "complete"',
 		);
+	}
+
+	private function assertFocus(string $id): void
+	{
+		$focused = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.activeElement?.id ?? ""',
+		);
+		if ($focused !== $id) {
+			throw new RuntimeException("the focus is on '$focused', not #$id");
+		}
 	}
 
 	private function newPage(array $options = []): PageInterface

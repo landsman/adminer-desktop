@@ -69,6 +69,11 @@ dialog#desktop-settings p.message {
 	padding-bottom: 0;
 }
 
+/* The title above the tab strip, which also names the dialog (aria-labelledby). */
+#desktop-settings .ad-modal-header h2 {
+	margin-bottom: 0.4em;
+}
+
 #desktop-tabs label {
 	display: inline-block;
 	padding: 0.4em var(--ad-gap-lg);
@@ -97,11 +102,13 @@ dialog#desktop-settings p.message {
 	border-bottom-color: currentColor;
 }
 
-/* No focus ring on the tabs: opening the dialog moves focus onto the checked tab, so the
-   ring flashed on every open. The checked tab already shows its state (underline + weight),
-   so keyboard users still see where they are. */
+/* The ring the hidden radio cannot show, on its label: the underline says which tab is chosen,
+   this says where the keyboard is (WCAG 2.4.7). The dialog takes the focus when it opens, not the
+   checked tab, so it does not flash on every open. Same ring as the footer buttons. */
 #desktop-tabs input:focus-visible + label {
 	outline: none;
+	box-shadow: 0 0 0 2px AccentColor;
+	border-radius: var(--ad-radius-sm) var(--ad-radius-sm) 0 0;
 }
 
 /* The modal body, minus its top padding: the panels are the scrollport, and padding-top on one

@@ -66,8 +66,8 @@
 		   dark-side --ad-ok value, kept in step. */
 		--ad-status-on: #6fe0a1;
 		/* Lifted, not the light-side values: #087f4e is nearly black against a dark panel, and
-		   #b42318 as text on one is unreadable. The green still carries white text. */
-		--ad-ok: #0e9d5f;
+		   #b42318 as text on one is unreadable. Lifted only so far: white on it stays at 4.7:1. */
+		--ad-ok: #098551;
 		--ad-danger: #f97066;
 	}
 }

@@ -22,7 +22,6 @@ return [
 	'settings.close' => 'Cancel',
 	// {n}, not %d: Adminer's lang() runs the string through sprintf, which would replace %d with 0
 	// before the browser (which fills in {n}) ever sees it.
-	'settings.unsaved' => 'Unsaved changes: {n}. Close anyway?',
 	'settings.reset' => 'Reset to defaults',
 	'settings.reset_confirm' => 'Reset every setting back to its default? The theme, the plugins and the widths you resized are all forgotten. Adminer\'s own language and saved servers are kept.',
 

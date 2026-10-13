@@ -14,7 +14,6 @@ return [
 	'settings.tab_plugins' => 'Pluginy',
 	'settings.save' => 'Uložit',
 	'settings.close' => 'Zavřít',
-	'settings.unsaved' => 'Neuložené změny: {n}. Přesto zavřít?',
 	'settings.reset' => 'Obnovit výchozí',
 	'settings.reset_confirm' => 'Obnovit všechna nastavení na výchozí? Vzhled, pluginy i šířky, které jste si upravili, se zapomenou. Jazyk a uložené servery Admineru zůstanou.',
 

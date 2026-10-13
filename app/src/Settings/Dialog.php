@@ -12,8 +12,7 @@ use Desktop\Settings\Theme\Theme;
 *
 * It owns no settings of its own — the panels come from Theme and PluginList, and this
 * only decides where they sit. The markup is settings-dialog.latte and the behaviour is
-* src/Assets/javascript/settings-dialog.js, so what is left here is handing one the other's
-* translated strings.
+* src/Assets/javascript/settings-dialog.js.
 */
 class Dialog {
 	private \AdminerDesktop $desktop;
@@ -34,9 +33,6 @@ class Dialog {
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
 			"mcp" => $this->mcp,
-			// {n}, not %d: lang() runs the string through sprintf, which would replace %d
-			// with 0 before the browser ever saw it. The script fills it in.
-			"unsaved" => $this->desktop->t('settings.unsaved'),
 		]);
 	}
 }

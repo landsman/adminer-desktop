@@ -18,7 +18,8 @@
 	form: false for a modal that sits inside a form it belongs to — adminer's login form, whose
 	fields have to post with it — since a form cannot hold another. labelledBy names the element
 	in the header that gives the dialog its accessible name; label names it outright, for a header
-	with no heading to point at. *}
+	with no heading to point at. focusSelf puts the focus on the dialog when it opens, for one whose
+	first focusable element is not where the user starts. *}
 {parameters
 	string $id,
 	string $class = '',
@@ -26,9 +27,10 @@
 	bool $guard = false,
 	bool $form = true,
 	string $labelledBy = '',
-	string $label = ''
+	string $label = '',
+	bool $focusSelf = false
 }
-<dialog id="{$id}" class="ad-modal {$class}" n:attr="closedby: $lightDismiss ? 'any', data-guard: $guard, aria-labelledby: $labelledBy ?: null, aria-label: $label ?: null">
+<dialog id="{$id}" class="ad-modal {$class}" n:attr="closedby: $lightDismiss ? 'any', data-guard: $guard, aria-labelledby: $labelledBy ?: null, aria-label: $label ?: null, tabindex: $focusSelf ? -1 : null, data-focus-self: $focusSelf">
 	<form n:tag-if="$form" action="" method="post">
 		{block hidden}{/block}
 		<div class="ad-modal-header">{block header}{/block}</div>
