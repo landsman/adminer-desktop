@@ -398,18 +398,19 @@ body:has(input[name="auth[username]"]) :is(#foot, #content) {
 	width: min(40rem, 100%);
 }
 
+/* Above the panel, which it otherwise paints under: it is a stacking context of its own (its
+   view-transition-name), so the gear inside it reaching down into the panel's title row needs
+   the whole of #foot lifted, not only the gear. */
 body:has(input[name="auth[username]"]) #foot {
+	position: relative;
+	z-index: 1;
 	overflow: visible;
 	background: none;
 	border: 0;
 }
 
-/* The logo and the gear as one row, centred against each other, the gear at the end. Pinned to
-   the sidebar's corner as elsewhere, it sat on the top edge while the logo's text sat lower. */
 body:has(input[name="auth[username]"]) #menu {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	position: static;
 	padding-bottom: 0.8rem;
 	overflow: visible;
 	background: none;
@@ -422,12 +423,17 @@ body:has(input[name="auth[username]"]) #menu h1 {
 	background: none;
 }
 
+/* The gear in the panel's title row, in the same column as the cards' buttons below it, instead
+   of alone in the space above the panel. Placed against #foot, which ends where the panel starts
+   and spans the panel's content box: the base rule's translateY(-50%) centres it on half the
+   title row (#content h2: 0.5rem of padding either side of one line), and it is inset by what
+   insets the card's last button within that box — the card's border and the card row's 0.6em at
+   the cards' 0.84375rem text — at that button's size (2.2em of the same text). */
 body:has(input[name="auth[username]"]) #desktop-gear {
-	position: static;
-	order: 1;
-	/* The half-height lift that centres it on the row when it is absolute; in the flex row it
-	   only lifts it off-centre. */
-	transform: none;
+	top: calc(100% + 1.3rem);
+	right: calc(1px + 0.6 * 0.84375rem);
+	width: calc(2.2 * 0.84375rem);
+	height: calc(2.2 * 0.84375rem);
 }
 
 body:has(input[name="auth[username]"]) #content {

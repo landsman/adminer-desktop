@@ -269,6 +269,12 @@ body:has(#ad-connections) #logins {
 	width: 34em;
 }
 
+/* adminer gives its login table a 20px right margin, which on top of the full width the login
+   page gives it ran past the body and drew a horizontal scrollbar. */
+.ad-new-connection-dialog table.layout {
+	margin: 0;
+}
+
 .ad-new-connection-dialog .ad-modal-footer p {
 	display: contents;
 }
