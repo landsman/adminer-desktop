@@ -4,6 +4,7 @@
 {parameters
 	\AdminerDesktop $desktop,
 	array $connections,
+	string $editIcon,
 	bool $adding
 }
 <div id="ad-connections" n:class="$adding ? ad-adding">
@@ -12,15 +13,18 @@
 			{* noescape on the colour only: it only ever comes from Color::hex(), and
 				Latte's CSS escaping would turn the # into an escape that is no longer a colour. *}
 			<li class="ad-card" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
-				<a class="ad-card-link" href="{$connection->url()|nocheck}">
-					<span class="ad-card-icon" title="{$connection->system()}">{$connection->icon()|noescape}</span>
-					<span class="ad-card-text">
-						<strong>{$connection->title()}</strong>
-						<small>{$connection->system()}{if $connection->name !== ''} · {$connection->address()}{/if}</small>
-					</span>
-					<span n:if="$connection->environment" class="ad-env ad-env-{$connection->environment->value}">{$connection->environment->label()}</span>
-				</a>
-				<button type="button" class="ad-card-edit" data-dialog="ad-connection-{$iterator->counter}" title="{$desktop->t('connections.edit')}" aria-label="{$desktop->t('connections.edit')}">&#9998;</button>
+				<div class="ad-card-row">
+					<a class="ad-card-link" href="{$connection->url()|nocheck}">
+						<span class="ad-card-icon" title="{$connection->system()}">{$connection->icon()|noescape}</span>
+						<span class="ad-card-text">
+							<strong>{$connection->title()}</strong>
+							<small>{$connection->system()}{if $connection->name !== ''} · {$connection->address()}{/if}</small>
+						</span>
+						<span n:if="$connection->environment" class="ad-env ad-env-{$connection->environment->value}">{$connection->environment->label()}</span>
+					</a>
+					{* Beside the link, not over it: a target of its own, centred on the title row. *}
+					<button type="button" class="ad-card-edit" data-dialog="ad-connection-{$iterator->counter}" title="{$desktop->t('connections.edit')}" aria-label="{$desktop->t('connections.edit')}">{$editIcon|noescape}</button>
+				</div>
 				<span n:if="$connection->databases" class="ad-card-databases">
 					<a n:foreach="$connection->databases as $database" href="{$connection->url($database)|nocheck}">{$database}</a>
 				</span>

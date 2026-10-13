@@ -64,6 +64,7 @@ class Connections {
 		Latte::engine()->render(__DIR__ . "/connections.latte", [
 			"desktop" => $this->desktop,
 			"connections" => $saved,
+			"editIcon" => (string) file_get_contents(__DIR__ . "/icons/edit.svg"),
 			// A login that was just posted and failed comes back here with its error: show the
 			// form it was typed into rather than hiding it behind the button.
 			"adding" => !empty($_POST["auth"]),

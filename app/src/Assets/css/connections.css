@@ -31,7 +31,6 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 
 .ad-card {
 	--ad-conn-tint: var(--ad-conn, var(--fg));
-	position: relative;
 	display: flex;
 	flex-direction: column;
 	border: 1px solid var(--ad-border);
@@ -44,12 +43,20 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	background: color-mix(in srgb, var(--ad-conn-tint) 6%, var(--bg));
 }
 
-.ad-card-link {
+.ad-card-row {
 	display: flex;
 	align-items: center;
+	gap: 0.25em;
+	padding-right: 0.6em;
+}
+
+.ad-card-link {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	align-items: center;
 	gap: 0.75em;
-	/* Room on the right for the edit button, which sits over the corner. */
-	padding: 0.8em 2.6em 0.8em 0.8em;
+	padding: 0.8em 0.4em 0.8em 0.8em;
 	color: inherit;
 	text-decoration: none;
 }
@@ -92,22 +99,35 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	color: var(--ad-fg-quiet);
 }
 
+/* A square target the size of the logo beside it, centred on the title row. */
 .ad-card-edit {
-	position: absolute;
-	top: 0.5em;
-	right: 0.5em;
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 2.2em;
+	height: 2.2em;
+	padding: 0;
 	border: 0;
 	border-radius: var(--ad-radius-sm);
-	padding: 0.2em 0.45em;
 	background: none;
 	color: var(--ad-fg-quiet);
 	cursor: pointer;
+}
+
+.ad-card-edit svg {
+	width: 1.1em;
+	height: 1.1em;
 }
 
 .ad-card-edit:hover,
 .ad-card-edit:focus-visible {
 	background: color-mix(in srgb, var(--fg) 10%, transparent);
 	color: var(--fg);
+}
+
+.ad-card-edit:focus-visible {
+	outline: 2px solid AccentColor;
+	outline-offset: 1px;
 }
 
 .ad-card-databases {
