@@ -152,11 +152,14 @@ class DesktopContext implements Context
 	#[Then('every field fits inside the content panel')]
 	public function fieldsFitPanel(): void
 	{
-		$over = (int) $this->page->evaluate('() => {
-			const edge = document.querySelector("#content").getBoundingClientRect().right;
-			return [...document.querySelectorAll("#form > table.layout :is(textarea, pre.jush)")]
-				.filter((f) => f.offsetParent !== null && f.getBoundingClientRect().right > edge + 1).length;
-		}');
+		$over = (int) $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const edge = document.querySelector("#content").getBoundingClientRect().right;
+				return [...document.querySelectorAll("#form > table.layout :is(textarea, pre.jush)")]
+					.filter((f) => f.offsetParent !== null && f.getBoundingClientRect().right > edge + 1).length;
+			}',
+		);
 		if ($over > 0) {
 			throw new RuntimeException("$over fields run past the content panel");
 		}
