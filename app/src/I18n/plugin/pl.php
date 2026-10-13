@@ -24,6 +24,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Nowe połączenie',
+	'connections.empty' => 'Brak zapisanych połączeń.',
 	'connections.edit' => 'Edytuj',
 	'connections.name' => 'Nazwa',
 	'connections.environment' => 'Środowisko',

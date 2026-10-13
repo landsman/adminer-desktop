@@ -3,10 +3,17 @@
  * --bg/--fg so it follows whichever design is active; --ad-conn is the connection's colour,
  * set per card inline and for the whole page by head(). */
 
-/* The version link the login page prints (AdminerDesktop::navigation()). Only our own design
-   places it, at the foot of the window; every other design keeps adminer's version by the logo. */
-.ad-version {
+/* The versions the login page prints (Connections::versions()). Only our own design places them,
+   at the foot of the window; every other design keeps adminer's version by the logo. */
+.ad-versions {
 	display: none;
+}
+
+/* No connection saved yet: one quiet line where the cards will be, the button under it. */
+.ad-empty {
+	margin: 0.4em 0 var(--ad-gap-lg);
+	text-align: center;
+	color: var(--ad-fg-quiet);
 }
 
 /* Adminer's own list of the same logins, in the sidebar: the cards replace it. */
@@ -21,8 +28,10 @@ body:has(#ad-connections) #logins {
 .ad-cards {
 	display: grid;
 	/* One per row: a column of connections reads as a list to pick from, and the name and the
-	   address get the whole width instead of an ellipsis. */
-	grid-template-columns: 1fr;
+	   address get the whole width instead of an ellipsis. minmax(0, …), not a bare 1fr, whose
+	   minimum is the card's widest unbroken line: a long name then widened the whole page past a
+	   narrow window instead of ending in an ellipsis. */
+	grid-template-columns: minmax(0, 1fr);
 	gap: var(--ad-gap-lg);
 	margin: 0 0 var(--ad-gap-lg);
 	padding: 0;
@@ -31,6 +40,7 @@ body:has(#ad-connections) #logins {
 
 .ad-card {
 	--ad-conn-tint: var(--ad-conn, var(--fg));
+	container-type: inline-size;
 	display: flex;
 	flex-direction: column;
 	border: 1px solid var(--ad-border);
@@ -103,6 +113,21 @@ body:has(#ad-connections) #logins {
 	display: flex;
 	flex: none;
 	gap: 0.1em;
+}
+
+/* A narrow card — a narrow window — gives its buttons a row of their own under the name, which
+   beside the tag and three buttons was down to its first letter. */
+@container (max-width: 26rem) {
+	.ad-card-row {
+		flex-wrap: wrap;
+	}
+
+	.ad-card-actions {
+		order: 1;
+		width: 100%;
+		justify-content: flex-end;
+		padding-bottom: 0.4em;
+	}
 }
 
 /* Square targets the size of the logo beside them, centred on the title row. */
@@ -288,6 +313,15 @@ body:has(#ad-connections) #logins {
 .ad-new-connection-dialog .ad-modal-footer label {
 	order: -1;
 	margin-right: auto;
+	white-space: nowrap;
+}
+
+/* Too narrow for the three on one row: Permanent login takes the first row, so Cancel and Login
+   stay together on the second rather than Login wrapping alone. */
+@media (max-width: 30rem) {
+	.ad-new-connection-dialog .ad-modal-footer label {
+		flex-basis: 100%;
+	}
 }
 
 .ad-new-connection-dialog .ad-modal-footer input[type="submit"] {

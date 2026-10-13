@@ -83,6 +83,9 @@ body:has(.ad-modal[open]) {
    the confirm button in the bottom right corner. */
 .ad-modal-footer {
 	display: flex;
+	/* A narrow window: a footer with more than the buttons in it takes a second row rather than
+	   breaking its label or its buttons' text. */
+	flex-wrap: wrap;
 	justify-content: flex-end;
 	align-items: center;
 	gap: var(--ad-gap);

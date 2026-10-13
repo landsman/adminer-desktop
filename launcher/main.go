@@ -252,6 +252,9 @@ func main() {
 	if dir, err := logDir(); err == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_LOGS="+dir)
 	}
+	// The build's own version (git describe, from the Makefile), for the login page to say which
+	// adminer-desktop this is and link to it. PHP has no other way to know: it is not in app/.
+	srv.Env = append(srv.Env, "ADMINER_DESKTOP_VERSION="+version)
 	// -debug reaches the page too: the plugin tags <body> with it, and the desktop scripts
 	// that smooth over the WebView (the link context-menu block) stand down so the inspector's
 	// own right-click menu, Inspect Element and the rest are all there.

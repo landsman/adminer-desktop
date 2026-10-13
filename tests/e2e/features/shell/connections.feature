@@ -48,3 +48,10 @@ Feature: Saved connections
   Scenario: Forgetting takes it off the list
     When I forget the connection
     Then no connection is listed
+
+  Scenario: A narrow window keeps the login page in one column, its modal included
+    When the window is 320 by 640 pixels
+    And I label the connection "A very long connection name for the production replica" as "prod" in "red"
+    Then nothing runs past the window
+    When I ask for a new connection
+    Then nothing runs past the window

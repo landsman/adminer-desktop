@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Desktop\Connections;
 
+use Desktop\AppVersion;
 use Desktop\Latte;
 use Desktop\SettingKey;
 use Desktop\UserSettings;
@@ -71,16 +72,12 @@ class Connections {
 		return $this->with(\Adminer\DRIVER, \Adminer\SERVER, (string) $_GET["username"]);
 	}
 
-	/** The login page with something saved: the cards, then adminer's own login form inside the
-	* "New connection" modal. Printed from the loginForm() hook, which is inside adminer's form, so
-	* the modal's fields still post with it. False when nothing is saved: then adminer prints its
-	* form as the whole page.
+	/** The login page: the cards, or a line saying there are none yet, then adminer's own login
+	* form inside the "New connection" modal. Printed from the loginForm() hook, which is inside
+	* adminer's form, so the modal's fields still post with it.
 	*/
-	function loginPage(): bool {
+	function loginPage(): void {
 		$saved = $this->saved();
-		if (!$saved) {
-			return false;
-		}
 		// adminer's form, captured and split: the field table into the modal's body, its submit
 		// row (Login, Permanent login) into the footer. Called on adminer's own class so that
 		// loginFormField() still goes through every plugin; if a later adminer changes the
@@ -99,7 +96,16 @@ class Connections {
 			// logged-out card, which lands here with its server and username filled in.
 			"adding" => !empty($_POST["auth"]) || isset($_GET["username"]),
 		]);
-		return true;
+	}
+
+	/** At the foot of the login page beside the gear: which adminer and which adminer-desktop
+	* this is, each a link to what changed in it, opened in the browser (target=_blank, which the
+	* launcher hands over). Ours rather than adminer's .version, part of the logo's heading. */
+	function versions(): void {
+		Latte::engine()->render(__DIR__ . "/versions.latte", [
+			"adminer" => \Adminer\VERSION,
+			"desktop" => AppVersion::current(),
+		]);
 	}
 
 	/** @return array<string,string> name => inline SVG, for the card's buttons */

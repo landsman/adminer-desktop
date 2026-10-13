@@ -24,6 +24,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',
+	'connections.empty' => 'Încă nu există conexiuni salvate.',
 	'connections.edit' => 'Editează',
 	'connections.name' => 'Nume',
 	'connections.environment' => 'Mediu',

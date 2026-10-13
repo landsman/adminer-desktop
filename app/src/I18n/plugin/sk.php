@@ -24,6 +24,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Nové pripojenie',
+	'connections.empty' => 'Zatiaľ žiadne uložené pripojenia.',
 	'connections.edit' => 'Upraviť',
 	'connections.name' => 'Názov',
 	'connections.environment' => 'Prostredie',

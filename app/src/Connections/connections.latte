@@ -1,5 +1,5 @@
-{* The login page once something is saved (Connections::loginPage()): the cards, then adminer's own
-	login form in the "New connection" modal. Printed inside adminer's form, so the modal is one
+{* The login page (Connections::loginPage()): the cards, or a line saying there are none yet, then
+	adminer's own login form in the "New connection" modal. Printed inside adminer's form, so the modal is one
 	without a form of its own and its fields post with adminer's. *}
 {parameters
 	\AdminerDesktop $desktop,
@@ -10,7 +10,8 @@
 	bool $adding
 }
 <div id="ad-connections">
-	<ul class="ad-cards">
+	<p n:if="!$connections" class="ad-empty">{$desktop->t('connections.empty')}</p>
+	<ul n:if="$connections" class="ad-cards">
 		{foreach $connections as $connection}
 			{var $n = $iterator->counter}
 			{* noescape on the colour only: it only ever comes from Color::hex(), and

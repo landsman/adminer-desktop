@@ -32,6 +32,7 @@ return [
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
+	'connections.empty' => 'No saved connections yet.',
 	'connections.edit' => 'Edit',
 	'connections.name' => 'Name',
 	'connections.environment' => 'Environment',

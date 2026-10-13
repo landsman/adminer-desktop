@@ -131,12 +131,13 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null; // let adminer handle every other field
 	}
 
-	/** The saved connections as cards, with adminer's own login form in a "New connection" modal.
-	* With nothing saved this abstains and adminer prints its form as the whole page, as before.
-	* @return true|null
+	/** The saved connections as cards — or a line saying there are none yet — with adminer's own
+	* login form in a "New connection" modal. Always answers, so adminer never prints its form.
+	* @return true
 	*/
 	function loginForm() {
-		return $this->connections->loginPage() ? true : null;
+		$this->connections->loginPage();
+		return true;
 	}
 
 	/**
@@ -303,10 +304,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->dialog->render();
 		if ($missing == "auth") {
 			$this->connections->dialogs();
-			// The version, at the foot of the login page beside the gear, as a link to what changed
-			// in it. Ours rather than adminer's .version, which is part of the logo's heading and
-			// links to a download page; target=_blank, which the launcher opens in the browser.
-			echo "<a class='ad-version' href='https://github.com/vrana/adminer/releases' target='_blank' rel='noopener'>" . Adminer\h(Adminer\VERSION) . "</a>\n";
+			$this->connections->versions();
 		}
 	}
 

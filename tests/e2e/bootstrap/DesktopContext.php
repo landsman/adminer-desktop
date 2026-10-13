@@ -939,9 +939,34 @@ class DesktopContext implements Context
 	#[Then("the version links to adminer's releases")]
 	public function versionLinksReleases(): void
 	{
-		$href = (string) $this->page->evaluate('() => document.querySelector(".ad-version")?.getAttribute("href") ?? ""');
+		$href = (string) $this->page->evaluate('() => document.querySelector(".ad-versions a")?.getAttribute("href") ?? ""');
 		if ($href !== 'https://github.com/vrana/adminer/releases') {
 			throw new RuntimeException("the version links to '$href'");
+		}
+	}
+
+	#[When('the window is :width by :height pixels')]
+	public function windowIs(string $width, string $height): void
+	{
+		$this->page->setViewportSize((int) $width, (int) $height);
+	}
+
+	/** Nothing wider than the window: the page does not scroll sideways, and no card, button or
+	 * open modal reaches past its edge. */
+	#[Then('nothing runs past the window')]
+	public function nothingPastWindow(): void
+	{
+		$over = (string) $this->page->evaluate('() => {
+			const out = [];
+			if (document.documentElement.scrollWidth > innerWidth + 1) out.push("the page scrolls sideways");
+			for (const e of document.querySelectorAll(".ad-card, .ad-card-action, .ad-env, dialog[open], dialog[open] button, dialog[open] input, dialog[open] select")) {
+				const r = e.getBoundingClientRect();
+				if (r.width && (r.left < -1 || r.right > innerWidth + 1)) out.push(e.id || e.className || e.tagName);
+			}
+			return [...new Set(out)].join(", ");
+		}');
+		if ($over !== '') {
+			throw new RuntimeException("past the window: $over");
 		}
 	}
 
@@ -1032,8 +1057,8 @@ class DesktopContext implements Context
 	public function noConnectionListed(): void
 	{
 		$cards = (int) $this->page->evaluate('() => document.querySelectorAll(".ad-card").length');
-		if ($cards !== 0 || !$this->page->locator('input[name="auth[username]"]')->isVisible()) {
-			throw new RuntimeException("$cards cards, and the plain login form is not the page");
+		if ($cards !== 0 || !$this->page->locator('.ad-empty')->isVisible()) {
+			throw new RuntimeException("$cards cards, and no line saying there are none");
 		}
 	}
 

@@ -393,7 +393,10 @@ body:has(input[name="auth[username]"]) #ad-sidebar-resizer {
 	display: none;
 }
 
+/* border-box: the 100% is the window's room, and the panel's padding and border on top of it ran
+   the panel past a narrow window's edge. */
 body:has(input[name="auth[username]"]) :is(#foot, #content) {
+	box-sizing: border-box;
 	flex: none;
 	width: min(40rem, 100%);
 }
@@ -420,7 +423,7 @@ body:has(input[name="auth[username]"]) #menu h1 {
 }
 
 /* The version and the gear, side by side at the foot of the window, out of the way: neither is
-   what this page is for. The version is our own link (AdminerDesktop::navigation()); adminer's,
+   what this page is for. The versions are our own links (Connections::versions()); adminer's,
    part of the logo's heading, steps aside. Fixed rather than moved, and meeting at the middle —
    the version ending at it, the gear starting there — centres the pair without knowing either's
    width. Nothing above #foot sets a transform or a filter, so the viewport is what they are fixed
@@ -429,7 +432,7 @@ body:has(input[name="auth[username]"]) #menu .version {
 	display: none;
 }
 
-body:has(input[name="auth[username]"]) .ad-version,
+body:has(input[name="auth[username]"]) .ad-versions,
 body:has(input[name="auth[username]"]) #desktop-gear {
 	position: fixed;
 	bottom: 1rem;
@@ -437,17 +440,22 @@ body:has(input[name="auth[username]"]) #desktop-gear {
 	transform: none;
 }
 
-body:has(input[name="auth[username]"]) .ad-version {
+body:has(input[name="auth[username]"]) .ad-versions {
 	display: block;
 	right: calc(50% + 0.2rem);
 	left: auto;
 	line-height: 1.6rem;
 	font-size: 0.8rem;
+	white-space: nowrap;
 	color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+body:has(input[name="auth[username]"]) .ad-versions a {
+	color: inherit;
 	text-decoration: none;
 }
 
-body:has(input[name="auth[username]"]) .ad-version:hover {
+body:has(input[name="auth[username]"]) .ad-versions a:hover {
 	color: var(--fg);
 	text-decoration: underline;
 }
@@ -480,4 +488,27 @@ body:has(input[name="auth[username]"])
 	:is(input:not([type="checkbox"]), select) {
 	box-sizing: border-box;
 	width: 100%;
+}
+
+/* Narrow, the rest of the app turns the sidebar into a drawer behind a menu button (the
+   max-width: 800px block above). The login page has nothing to navigate, and the drawer took the
+   logo, the version and the gear with it and laid the button over the title: it keeps its own
+   column at every width instead. Selectors outrank the drawer's `.js #foot.foot` and the narrow
+   `#content`, so no !important. */
+body:has(input[name="auth[username]"]) #menuopen {
+	display: none;
+}
+
+body:has(input[name="auth[username]"]) #foot.foot {
+	display: flex;
+	position: static;
+	inset: auto;
+	z-index: auto;
+	border: 0;
+	box-shadow: none;
+}
+
+body:has(input[name="auth[username]"]) #content {
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
 }
