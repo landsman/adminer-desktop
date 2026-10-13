@@ -404,20 +404,30 @@ body:has(input[name="auth[username]"]) #foot {
 	border: 0;
 }
 
+/* The logo and the gear as one row, centred against each other, the gear at the end. Pinned to
+   the sidebar's corner as elsewhere, it sat on the top edge while the logo's text sat lower. */
 body:has(input[name="auth[username]"]) #menu {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 0.8rem;
 	overflow: visible;
 	background: none;
 }
 
 body:has(input[name="auth[username]"]) #menu h1 {
-	padding: 0 0 0.8rem;
+	margin: 0;
+	padding: 0;
 	border: 0;
 	background: none;
 }
 
 body:has(input[name="auth[username]"]) #desktop-gear {
-	top: 0;
-	right: 0;
+	position: static;
+	order: 1;
+	/* The half-height lift that centres it on the row when it is absolute; in the flex row it
+	   only lifts it off-centre. */
+	transform: none;
 }
 
 body:has(input[name="auth[username]"]) #content {
