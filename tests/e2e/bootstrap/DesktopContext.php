@@ -141,6 +141,27 @@ class DesktopContext implements Context
 		$this->go(['edit' => $table, 'where[id]' => $id]);
 	}
 
+	#[When('the window is :width pixels wide')]
+	public function windowIsWide(string $width): void
+	{
+		$this->page->setViewportSize((int) $width, 900);
+	}
+
+	/** Every field's right edge inside the content panel's, the JSON editor's <pre> included —
+	 * a field past it is cut off by the panel's own scrollport. */
+	#[Then('every field fits inside the content panel')]
+	public function fieldsFitPanel(): void
+	{
+		$over = (int) $this->page->evaluate('() => {
+			const edge = document.querySelector("#content").getBoundingClientRect().right;
+			return [...document.querySelectorAll("#form > table.layout :is(textarea, pre.jush)")]
+				.filter((f) => f.offsetParent !== null && f.getBoundingClientRect().right > edge + 1).length;
+		}');
+		if ($over > 0) {
+			throw new RuntimeException("$over fields run past the content panel");
+		}
+	}
+
 	/** The import page is the sql page in import mode: `import=` is what flips it (adminer.php sets
 	 * $_GET["sql"] from it), and that is the page carrying the sql_file[] upload.
 	 */
