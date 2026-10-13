@@ -198,6 +198,15 @@ tbody tr:hover .sticky {
 	margin: 0;
 }
 
+/* Adminer wraps a box's controls in a <div>, where they sat as inline text: a space between
+   two buttons, and nothing between the rows once a narrow panel wrapped them. */
+.footer fieldset > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+}
+
 /* The pager (src/Assets/javascript/table-pager.js): first, previous, the page you are on out
    of how many, next, last. Adminer's own run of numbered links is what it is built from, and
    what it replaces — those were a target the width of a digit each, and to reach page 7 you
