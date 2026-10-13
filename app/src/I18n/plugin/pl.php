@@ -119,4 +119,14 @@ return [
 	'shortcuts.insert_next' => 'Zapisz i wstaw następny wiersz',
 	'shortcuts.field_up' => 'Przejdź do pola wyżej',
 	'shortcuts.field_down' => 'Przejdź do pola niżej',
+	'shortcuts.search' => 'Szukaj tabel i baz danych',
+
+	// Search everywhere, on Shift twice (src/Search/).
+	'search.title' => 'Szukaj',
+	'search.placeholder' => 'Wpisz część nazwy',
+	'search.table' => 'tabela',
+	'search.view' => 'widok',
+	'search.database' => 'baza danych',
+	'search.schema' => 'schemat',
+	'search.none' => 'Brak wyników',
 ];

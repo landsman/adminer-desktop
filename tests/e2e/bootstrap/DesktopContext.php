@@ -1974,6 +1974,32 @@ class DesktopContext implements Context
 		}
 	}
 
+	// ── search everywhere ───────────────────────────────────────────────────────────────────
+
+	/** Back to back, well inside the 300 ms search.js allows between them. */
+	#[When('I press Shift twice')]
+	public function pressShiftTwice(): void
+	{
+		$this->page->keyboard()->press('Shift');
+		$this->page->keyboard()->press('Shift');
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => document.querySelector('#desktop-search').open",
+		);
+	}
+
+	#[When('I type :text')]
+	public function type(string $text): void
+	{
+		$this->page->keyboard()->type($text);
+	}
+
+	#[Then('the :table table is open')]
+	public function tableIsOpen(string $table): void
+	{
+		$this->page->waitForURL("**select=$table**");
+	}
+
 	/** The reload shortcut in the notation of the machine the app runs on — the fixture serves it
 	 * from this one, so PHP_OS_FAMILY here is the app's too. */
 	#[Then('it lists reload in this platform\'s notation')]

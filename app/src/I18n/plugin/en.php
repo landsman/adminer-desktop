@@ -126,4 +126,14 @@ return [
 	'shortcuts.insert_next' => 'Save and insert the next row',
 	'shortcuts.field_up' => 'Move to the field above',
 	'shortcuts.field_down' => 'Move to the field below',
+	'shortcuts.search' => 'Search tables and databases',
+
+	// Search everywhere, on Shift twice (src/Search/). The kinds label each match.
+	'search.title' => 'Search',
+	'search.placeholder' => 'Type part of a name',
+	'search.table' => 'table',
+	'search.view' => 'view',
+	'search.database' => 'database',
+	'search.schema' => 'schema',
+	'search.none' => 'Nothing matches',
 ];

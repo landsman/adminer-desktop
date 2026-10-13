@@ -119,4 +119,14 @@ return [
 	'shortcuts.insert_next' => 'Speichern und nächste Zeile einfügen',
 	'shortcuts.field_up' => 'Zum Feld darüber',
 	'shortcuts.field_down' => 'Zum Feld darunter',
+	'shortcuts.search' => 'Tabellen und Datenbanken suchen',
+
+	// Search everywhere, on Shift twice (src/Search/).
+	'search.title' => 'Suchen',
+	'search.placeholder' => 'Teil eines Namens eingeben',
+	'search.table' => 'Tabelle',
+	'search.view' => 'Ansicht',
+	'search.database' => 'Datenbank',
+	'search.schema' => 'Schema',
+	'search.none' => 'Keine Treffer',
 ];

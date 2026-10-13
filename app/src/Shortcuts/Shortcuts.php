@@ -30,6 +30,7 @@ class Shortcuts {
 		return [
 			'shortcuts.group_app' => [
 				['shortcuts.help', [['?']], null],
+				['shortcuts.search', [[Key::Shift, Key::Shift]], null],
 				['shortcuts.reload', [[Key::Mod, 'R'], ['F5']], null],
 				['shortcuts.close', [[Key::Escape]], null],
 				['shortcuts.adminer', [[Key::Mod, '1']], [Os::Mac]],

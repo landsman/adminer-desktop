@@ -1,0 +1,57 @@
+/* The search box (src/Search/search-dialog.latte): a field and the names under it, high on the
+ * page the way an editor's quick-open sits, with no header or footer band. */
+
+.ad-search[open] {
+	width: 32em;
+	margin-top: 15vh;
+}
+
+.ad-search .ad-modal-header,
+.ad-search .ad-modal-footer {
+	display: none;
+}
+
+.ad-search .ad-modal-body {
+	padding: 0;
+}
+
+.ad-search input {
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0;
+	padding: 0.8em var(--ad-dialog-padding);
+	border: 0;
+	border-bottom: 1px solid var(--ad-border);
+	border-radius: 0;
+	background: none;
+	color: var(--fg);
+	font-size: 1.05em;
+	outline: none;
+}
+
+.ad-search ul {
+	margin: 0;
+	padding: 0.3em 0;
+	list-style: none;
+}
+
+.ad-search li {
+	display: flex;
+	justify-content: space-between;
+	gap: 1em;
+	padding: 0.35em var(--ad-dialog-padding);
+	cursor: pointer;
+}
+
+.ad-search li small {
+	color: var(--ad-fg-quiet);
+}
+
+.ad-search li[aria-selected="true"] {
+	background: color-mix(in srgb, var(--fg) 8%, var(--bg));
+}
+
+.ad-search .ad-search-none {
+	color: var(--ad-fg-quiet);
+	cursor: default;
+}
