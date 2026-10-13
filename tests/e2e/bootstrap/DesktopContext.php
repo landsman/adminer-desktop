@@ -928,6 +928,98 @@ class DesktopContext implements Context
 		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
 	}
 
+	#[Then('Permanent login is ticked')]
+	public function permanentTicked(): void
+	{
+		if (!$this->page->locator('input[name="auth[permanent]"]')->isChecked()) {
+			throw new RuntimeException('Permanent login is not ticked');
+		}
+	}
+
+	#[When("I open the connection's editor")]
+	public function openEditor(): void
+	{
+		$this->page->locator('.ad-card-edit')->click();
+		$this->page->waitForFunction('() => document.querySelector("dialog.ad-connection-dialog[open]")');
+	}
+
+	#[When('I pick the :env environment')]
+	public function pickEnvironment(string $env): void
+	{
+		$this->page->locator('dialog[open] select[name="env"]')->selectOption($env);
+	}
+
+	#[Then('the :color swatch is picked')]
+	public function swatchPicked(string $color): void
+	{
+		$picked = (string) $this->page->evaluate('() => document.querySelector("dialog[open] input[name=color]:checked")?.value ?? ""');
+		if ($picked !== $color) {
+			throw new RuntimeException("the picked swatch is '$picked'");
+		}
+	}
+
+	#[When('I type :name as its name')]
+	public function typeName(string $name): void
+	{
+		$this->page->locator('dialog[open] input[name="name"]')->fill($name);
+	}
+
+	#[When('I press Escape')]
+	public function pressEscape(): void
+	{
+		$this->page->keyboard()->press('Escape');
+	}
+
+	#[Then('I am asked whether to discard the changes')]
+	public function askedToDiscard(): void
+	{
+		$this->page->waitForFunction('() => document.querySelector("#ad-discard")?.open');
+	}
+
+	#[When('I keep editing')]
+	public function keepEditing(): void
+	{
+		$this->page->locator('#ad-discard [data-close]')->click();
+	}
+
+	#[Then('the editor is still open with :name in it')]
+	public function editorStillOpen(string $name): void
+	{
+		$value = (string) $this->page->evaluate('() => document.querySelector("dialog.ad-connection-dialog[open] input[name=name]")?.value ?? "(closed)"');
+		if ($value !== $name || (bool) $this->page->evaluate('() => document.querySelector("#ad-discard").open')) {
+			throw new RuntimeException("the editor holds '$value'");
+		}
+	}
+
+	#[When('I log out of the connection')]
+	public function logOutOfConnection(): void
+	{
+		$this->confirmCardAction('ad-connection-logout-1');
+	}
+
+	#[When('I forget the connection')]
+	public function forgetConnection(): void
+	{
+		$this->confirmCardAction('ad-connection-forget-1');
+	}
+
+	#[Then('the card says it is logged out')]
+	public function cardLoggedOut(): void
+	{
+		if (!(bool) $this->page->evaluate('() => !!document.querySelector(".ad-card.ad-signed-out")')) {
+			throw new RuntimeException('the card is not marked logged out');
+		}
+	}
+
+	#[Then('no connection is listed')]
+	public function noConnectionListed(): void
+	{
+		$cards = (int) $this->page->evaluate('() => document.querySelectorAll(".ad-card").length');
+		if ($cards !== 0 || !$this->page->locator('input[name="auth[username]"]')->isVisible()) {
+			throw new RuntimeException("$cards cards, and the plain login form is not the page");
+		}
+	}
+
 	#[Then('the card reads :name with a :env tag')]
 	public function cardReads(string $name, string $env): void
 	{
@@ -1252,6 +1344,16 @@ class DesktopContext implements Context
 	 *
 	 * @param array<string, mixed> $options
 	 */
+	/** Open a card's confirmation by its button and answer it with its submit, waiting for the
+	 * page the post redirects to. */
+	private function confirmCardAction(string $dialog): void
+	{
+		$this->page->locator("[data-dialog=\"$dialog\"]")->click();
+		$this->page->waitForFunction("() => document.getElementById('$dialog')?.open");
+		$this->page->evaluate("() => { window.e2eLeaving = true; document.querySelector('#$dialog [type=submit]').click(); }");
+		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+	}
+
 	private function newPage(array $options = []): PageInterface
 	{
 		$context = e2e_browser()->newContext($options + ['viewport' => ['width' => 1600, 'height' => 900]]);

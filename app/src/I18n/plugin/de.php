@@ -29,7 +29,15 @@ return [
 	'connections.environment' => 'Umgebung',
 	'connections.color' => 'Farbe',
 	'connections.none' => 'Keine',
-	'connections.color_auto' => 'Farbe der Umgebung',
+	'connections.logout' => 'Abmelden',
+	'connections.logout_confirm' => 'Das Passwort wird vergessen. Die Verbindung bleibt in der Liste und fragt beim nächsten Mal danach.',
+	'connections.forget' => 'Vergessen',
+	'connections.forget_confirm' => 'Die Verbindung wird aus der Liste entfernt, mit Passwort, Name, Umgebung und Farbe.',
+	'connections.signed_out' => 'abgemeldet',
+	'connections.discard_title' => 'Änderungen verwerfen?',
+	'connections.discard_text' => 'Was Sie hier geändert haben, geht verloren.',
+	'connections.discard' => 'Verwerfen',
+	'connections.keep_editing' => 'Weiter bearbeiten',
 
 	// Theme panel.
 	'theme.appearance' => 'Erscheinungsbild',

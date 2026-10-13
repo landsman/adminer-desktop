@@ -11,15 +11,25 @@
 	The look is css/modal.css. Buttons in the footer are quiet unless they take .ad-primary (the
 	one green action, last) or .ad-danger (outlined red, pushed to the left).
 
-	lightDismiss closes on a click outside the dialog, for a dialog with nothing to lose that way;
-	one that asks before discarding edits leaves it off and handles its own Cancel. *}
+	Every way out — Escape, a click outside (lightDismiss), a button with data-close — is one close
+	request, and with guard on, a changed form asks before it is discarded (javascript/modal.js).
+	A button with data-dialog="<id>" anywhere on the page opens it.
+
+	form: false for a modal that sits inside a form it belongs to — adminer's login form, whose
+	fields have to post with it — since a form cannot hold another. labelledBy names the element
+	in the header that gives the dialog its accessible name; label names it outright, for a header
+	with no heading to point at. *}
 {parameters
 	string $id,
 	string $class = '',
-	bool $lightDismiss = false
+	bool $lightDismiss = true,
+	bool $guard = false,
+	bool $form = true,
+	string $labelledBy = '',
+	string $label = ''
 }
-<dialog id="{$id}" class="ad-modal {$class}" n:attr="closedby: $lightDismiss ? 'any'">
-	<form action="" method="post">
+<dialog id="{$id}" class="ad-modal {$class}" n:attr="closedby: $lightDismiss ? 'any', data-guard: $guard, aria-labelledby: $labelledBy ?: null, aria-label: $label ?: null">
+	<form n:tag-if="$form" action="" method="post">
 		{block hidden}{/block}
 		<div class="ad-modal-header">{block header}{/block}</div>
 		<div class="ad-modal-body">{block body}{/block}</div>

@@ -37,7 +37,15 @@ return [
 	'connections.environment' => 'Environment',
 	'connections.color' => 'Colour',
 	'connections.none' => 'None',
-	'connections.color_auto' => "The environment's colour",
+	'connections.logout' => 'Log out',
+	'connections.logout_confirm' => 'The password is forgotten. The connection stays on the list and asks for it next time.',
+	'connections.forget' => 'Forget',
+	'connections.forget_confirm' => 'The connection is removed from the list, with its password, name, environment and colour.',
+	'connections.signed_out' => 'logged out',
+	'connections.discard_title' => 'Discard changes?',
+	'connections.discard_text' => 'What you changed here will be lost.',
+	'connections.discard' => 'Discard',
+	'connections.keep_editing' => 'Keep editing',
 
 	// Theme panel (theme-panel.latte, Theme.php).
 	'theme.appearance' => 'Appearance',

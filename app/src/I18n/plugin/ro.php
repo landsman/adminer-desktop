@@ -29,7 +29,15 @@ return [
 	'connections.environment' => 'Mediu',
 	'connections.color' => 'Culoare',
 	'connections.none' => 'Niciunul',
-	'connections.color_auto' => 'Culoarea mediului',
+	'connections.logout' => 'Deconectare',
+	'connections.logout_confirm' => 'Parola este uitată. Conexiunea rămâne în listă și o cere data viitoare.',
+	'connections.forget' => 'Uită',
+	'connections.forget_confirm' => 'Conexiunea este scoasă din listă, cu parola, numele, mediul și culoarea ei.',
+	'connections.signed_out' => 'deconectat',
+	'connections.discard_title' => 'Renunți la modificări?',
+	'connections.discard_text' => 'Ce ai modificat aici se va pierde.',
+	'connections.discard' => 'Renunță',
+	'connections.keep_editing' => 'Continuă editarea',
 
 	// Theme panel.
 	'theme.appearance' => 'Mod de culoare',

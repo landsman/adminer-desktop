@@ -29,7 +29,15 @@ return [
 	'connections.environment' => 'Prostředí',
 	'connections.color' => 'Barva',
 	'connections.none' => 'Žádné',
-	'connections.color_auto' => 'Barva prostředí',
+	'connections.logout' => 'Odhlásit',
+	'connections.logout_confirm' => 'Heslo se zapomene. Připojení zůstane v seznamu a příště se na heslo zeptá.',
+	'connections.forget' => 'Zapomenout',
+	'connections.forget_confirm' => 'Připojení zmizí ze seznamu i s heslem, názvem, prostředím a barvou.',
+	'connections.signed_out' => 'odhlášeno',
+	'connections.discard_title' => 'Zahodit změny?',
+	'connections.discard_text' => 'Co jste tu změnili, se ztratí.',
+	'connections.discard' => 'Zahodit',
+	'connections.keep_editing' => 'Pokračovat v úpravách',
 
 	// Theme panel.
 	'theme.appearance' => 'Barevný režim',

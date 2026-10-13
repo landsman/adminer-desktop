@@ -13,7 +13,8 @@
 }
 <button type="button" id="desktop-gear" title="{$desktop->t('settings.title')}">&#9881;</button>
 
-{embed '../Assets/modal.latte', id: 'desktop-settings'}
+{* Not light-dismissed and not guarded here: settings-dialog.js asks about unsaved edits itself. *}
+{embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, label: $desktop->t('settings.title')}
 	{block hidden}
 		{input_hidden('desktop_settings', 1)|noescape}
 		{input_token()|noescape}

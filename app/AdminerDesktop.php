@@ -131,13 +131,12 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null; // let adminer handle every other field
 	}
 
-	/** The saved connections as cards above the login form, which they fold away behind
-	* "New connection". Prints and abstains, so adminer still prints its own form after them.
-	* @return null
+	/** The saved connections as cards, with adminer's own login form in a "New connection" modal.
+	* With nothing saved this abstains and adminer prints its form as the whole page, as before.
+	* @return true|null
 	*/
 	function loginForm() {
-		$this->connections->cards();
-		return null;
+		return $this->connections->loginPage() ? true : null;
 	}
 
 	/**
@@ -321,7 +320,12 @@ class AdminerDesktop extends Adminer\Plugin {
 		// empty(), not adminer's bare $_POST["x"]: this one runs on every request, including
 		// every GET, so the warning it would leave is on every page in the debug bar.
 		if (!empty($_POST["desktop_connection"]) && Adminer\verify_token()) {
-			$this->connections->apply();
+			$key = (string) $_POST["desktop_connection"];
+			match ($_POST["desktop_connection_action"] ?? "") {
+				"logout" => $this->connections->logout($key),
+				"forget" => $this->connections->forget($key),
+				default => $this->connections->apply(),
+			};
 			Adminer\redirect($_SERVER["REQUEST_URI"]);
 		}
 		if (empty($_POST["desktop_settings"]) || !Adminer\verify_token()) {

@@ -8,12 +8,6 @@ body:has(#ad-connections) #logins {
 	display: none;
 }
 
-/* The login form folds away behind "New connection" while there are cards to pick from. Its
-   table and its submit row are direct children of adminer's form, after our block. */
-form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
-	display: none;
-}
-
 #ad-connections {
 	margin-bottom: var(--ad-gap-lg);
 }
@@ -99,11 +93,16 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	color: var(--ad-fg-quiet);
 }
 
-/* A square target the size of the logo beside it, centred on the title row. */
-.ad-card-edit {
+.ad-card-actions {
+	display: flex;
+	flex: none;
+	gap: 0.1em;
+}
+
+/* Square targets the size of the logo beside them, centred on the title row. */
+.ad-card-action {
 	display: grid;
 	place-items: center;
-	flex: none;
 	width: 2.2em;
 	height: 2.2em;
 	padding: 0;
@@ -114,20 +113,35 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	cursor: pointer;
 }
 
-.ad-card-edit svg {
+.ad-card-action svg {
 	width: 1.1em;
 	height: 1.1em;
 }
 
-.ad-card-edit:hover,
-.ad-card-edit:focus-visible {
+.ad-card-action:hover,
+.ad-card-action:focus-visible {
 	background: color-mix(in srgb, var(--fg) 10%, transparent);
 	color: var(--fg);
 }
 
-.ad-card-edit:focus-visible {
+.ad-card-forget:hover,
+.ad-card-forget:focus-visible {
+	background: color-mix(in srgb, var(--ad-danger) 12%, transparent);
+	color: var(--ad-danger);
+}
+
+.ad-card-action:focus-visible {
 	outline: 2px solid AccentColor;
 	outline-offset: 1px;
+}
+
+/* Logged out of: still on the list, quieter, and saying why it will ask for a password. */
+.ad-signed-out .ad-card-icon {
+	opacity: 0.55;
+}
+
+.ad-card-state {
+	font-style: italic;
 }
 
 .ad-card-databases {
@@ -181,8 +195,7 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	cursor: pointer;
 }
 
-#ad-new-connection:hover,
-#ad-new-connection[aria-expanded="true"] {
+#ad-new-connection:hover {
 	border-style: solid;
 	background: color-mix(in srgb, var(--fg) 6%, transparent);
 }
@@ -238,8 +251,47 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	outline-offset: 2px;
 }
 
-.ad-swatch-auto {
-	border: 1px dashed var(--ad-fg-quiet);
+/* No colour: an empty ring with a slash through it. */
+.ad-swatch-none {
+	border: 1px solid var(--ad-fg-quiet);
+	background: linear-gradient(
+		135deg,
+		transparent 46%,
+		var(--ad-fg-quiet) 46% 54%,
+		transparent 54%
+	);
+}
+
+/* The new-connection modal holds adminer's own form: its field table in the body, its submit row
+   in the footer. The row's paragraph steps aside so Permanent login sits on the left and Login
+   lines up with Cancel on the right, styled as the modal's primary. */
+.ad-new-connection-dialog {
+	width: 34em;
+}
+
+.ad-new-connection-dialog .ad-modal-footer p {
+	display: contents;
+}
+
+.ad-new-connection-dialog .ad-modal-footer label {
+	order: -1;
+	margin-right: auto;
+}
+
+.ad-new-connection-dialog .ad-modal-footer input[type="submit"] {
+	font: inherit;
+	line-height: 1.2;
+	padding: var(--ad-button-padding);
+	border: 1px solid transparent;
+	border-radius: var(--ad-radius);
+	background: var(--ad-ok);
+	color: var(--ad-ok-fg);
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.ad-confirm-dialog {
+	width: 28em;
 }
 
 .ad-swatches input:checked + .ad-swatch {

@@ -1,37 +1,28 @@
 /**
- * The saved-connection cards on the login page (src/Connections/connections.latte).
- *
- * The pencil on a card opens its edit dialog — printed in the sidebar, outside adminer's login
- * form, and named by the button's data-dialog. "New connection" unfolds adminer's own form,
- * which connections.css hides while #ad-connections lacks .ad-adding.
+ * The saved-connection cards on the login page (src/Connections/). Opening and closing their
+ * dialogs is modal.js; what is left is particular to these.
  */
 
-// closedby="any" closes an edit dialog on a click outside it. Where the webview does not know the
-// attribute yet, that click is handled here: one on the backdrop lands on the dialog itself.
-if (!("closedBy" in HTMLDialogElement.prototype)) {
-	for (const dialog of document.querySelectorAll(".ad-connection-dialog")) {
-		dialog.addEventListener("click", (event) => {
-			if (event.target === dialog) {
-				dialog.close();
-			}
-		});
-	}
-}
-
-for (const button of document.querySelectorAll(".ad-card-edit[data-dialog]")) {
-	button.onclick = () =>
-		document.getElementById(button.dataset.dialog)?.showModal();
-}
-
-const add = document.querySelector("#ad-new-connection");
-if (add) {
-	add.onclick = () => {
-		const open = document
-			.querySelector("#ad-connections")
-			.classList.toggle("ad-adding");
-		add.setAttribute("aria-expanded", String(open));
-		if (open) {
-			document.querySelector("#username")?.focus();
+// Picking an environment picks its colour too — the option carries it — and the swatch stays the
+// user's to change afterwards.
+for (const select of document.querySelectorAll(
+	'.ad-connection-dialog select[name="env"]',
+)) {
+	select.addEventListener("change", () => {
+		const color = select.selectedOptions[0]?.dataset.color ?? "";
+		const swatch = select.form.querySelector(
+			`input[name="color"][value="${color}"]`,
+		);
+		if (swatch) {
+			swatch.checked = true;
 		}
-	};
+	});
+}
+
+// "Permanent login" on by default: in a desktop app remembering the login is the point, and
+// unticked the connection vanishes from the list with the session. adminer only ticks it when
+// some permanent login already exists.
+const permanent = document.querySelector('input[name="auth[permanent]"]');
+if (permanent) {
+	permanent.checked = true;
 }

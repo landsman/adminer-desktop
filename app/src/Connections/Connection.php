@@ -19,6 +19,9 @@ final readonly class Connection {
 		public string $name = '',
 		public ?Color $customColor = null,
 		public ?Environment $environment = null,
+		// Whether adminer holds its password. A connection logged out of stays on the list,
+		// and asks for the password again when opened.
+		public bool $signedIn = true,
 	) {
 	}
 
@@ -36,9 +39,15 @@ final readonly class Connection {
 		return $this->name !== '' ? $this->name : $this->address();
 	}
 
-	/** The hex to paint: the user's colour, else the environment's, else none. */
+	/** The hex to paint, or none. The environment's colour is only the dialog's suggestion
+	* (Environment::color()): whatever was saved is what shows, "no colour" included. */
 	function color(): string {
-		return ($this->customColor ?? $this->environment?->color())?->hex() ?? '';
+		return $this->customColor?->hex() ?? '';
+	}
+
+	/** The swatch the edit dialog opens on: the saved colour, else the environment's. */
+	function suggestedColor(): ?Color {
+		return $this->customColor ?? $this->environment?->color();
 	}
 
 	/** "PostgreSQL", or "MariaDB" where adminer has learned that the MySQL driver talks to one. */
