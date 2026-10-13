@@ -10,6 +10,54 @@
 	navigation: auto;
 }
 
+/* Inside a connection the panels pair with themselves, and a content panel of a different height
+   morphs. By default the browser scales each snapshot to the box, stretching it as it lands; at
+   their own size, only cropped by the moving box, the snapshots stay still and just the box
+   travels — fast off the mark, then a long soft landing. The snapshots hand over in the first
+   third, linear and in step, so their opacities always sum to one and an unchanged sidebar never
+   dims. */
+::view-transition-group(*) {
+	animation-duration: 0.3s;
+	animation-timing-function: cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+::view-transition-old(*.ad-sidebar),
+::view-transition-new(*.ad-sidebar),
+::view-transition-old(ad-content),
+::view-transition-new(ad-content) {
+	height: 100%;
+	object-fit: none;
+	object-position: top center;
+	animation-duration: 0.1s;
+	animation-timing-function: linear;
+}
+
+/* Arriving from the login, the panels have no old selves (layout.css unnames the login's), so
+   each is the only child of its pair — and so is the sidebar on opening another database, being
+   named per database (AdminerDesktop::head) and matched here by its class. The content fades in
+   where it lands, at the page's pace; the sidebar slides in from under it, right to left. The content is lifted above it
+   for that — groups otherwise stack in DOM order, and #foot comes last. */
+::view-transition-group(ad-content) {
+	z-index: 1;
+}
+
+::view-transition-old(ad-content):only-child,
+::view-transition-new(ad-content):only-child {
+	animation-duration: 0.3s;
+	animation-timing-function: ease-out;
+}
+
+::view-transition-new(*.ad-sidebar):only-child {
+	animation: ad-vt-slide-in 0.3s cubic-bezier(0.05, 0.7, 0.1, 1) both;
+}
+
+@keyframes ad-vt-slide-in {
+	from {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	@view-transition {
 		navigation: none;

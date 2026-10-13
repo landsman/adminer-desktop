@@ -37,8 +37,11 @@ body {
 	   next document instead of cross-fading it with everything else. The sidebar is the same
 	   list before and after a click — fading it out and back in is the drift you see when
 	   opening a table, and holding it still is what a native window does. #content is named
-	   for the same reason: what actually changed then animates on its own. */
+	   for the same reason: what actually changed then animates on its own. AdminerDesktop::head
+	   overrides the name per database, so another database's list does not pair; the class is
+	   what base.css matches it by. */
 	view-transition-name: ad-sidebar;
+	view-transition-class: ad-sidebar;
 	order: -1;
 	position: static;
 	display: flex;
@@ -401,7 +404,11 @@ body:has(input[name="auth[username]"]) #ad-sidebar-resizer {
 
 /* border-box: the 100% is the window's room, and the panel's padding and border on top of it ran
    the panel past a narrow window's edge. */
+/* Unnamed: this header and column are not the sidebar and panel of the next page, and paired
+   with them the transition would fly one box into the other. Unpaired, the login fades out where
+   it stands and the connection's panels come in on their own (base.css). */
 body:has(input[name="auth[username]"]) :is(#foot, #content) {
+	view-transition-name: none;
 	box-sizing: border-box;
 	flex: none;
 	width: min(40rem, 100%);
