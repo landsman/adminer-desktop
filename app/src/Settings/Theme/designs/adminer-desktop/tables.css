@@ -93,6 +93,56 @@ tbody tr:hover th {
 	background: var(--lit);
 }
 
+/* Adminer's pinned row-actions column (edit, checkbox) on a table wider than the panel. Sticky
+   sticks to the panel's padding box, so it came to rest one padding in from the edge, with the
+   first column's values showing in the gap to its left — the same correction as .footer below. */
+th.sticky,
+td.sticky {
+	left: calc(-1 * var(--ad-panel-pad));
+}
+
+/* Adminer marks that cell .hover as well, and `td.hover` drops its bottom and start borders and
+   paints it --bg — so it read as a gap in the grid, without the row lines, the zebra or the
+   hover tint. The borders come back, and the tints are laid over an opaque --bg: they are
+   translucent, and the cell has to hide the values scrolling under it. The hover covers the
+   th too — the table list pins the name, and a translucent tint let the next cell show through.
+
+   The borders by #table, since only the data list has the cell: adminer strips them again on
+   `tr:hover td.hover`, `.checked td.hover` and the header's `table > :first-child >
+   :first-child > td.hover`, and anything less specific lost to one of them — the row went a
+   pixel shorter under the pointer and the grid below jumped. */
+#table td.sticky {
+	border-bottom-width: 1px;
+	border-inline-start-width: 1px;
+}
+
+/* The select-all cell over them, which `td.hover` also turns from the header's grey to --bg. */
+#table thead td.sticky {
+	border-top-width: 1px;
+	background: var(--dim);
+}
+
+.odds tbody tr:nth-child(2n) td.sticky {
+	background: linear-gradient(var(--ad-zebra), var(--ad-zebra)) var(--bg);
+}
+
+tbody tr:hover .sticky {
+	background: linear-gradient(var(--ad-accent-quiet), var(--ad-accent-quiet))
+		var(--bg);
+}
+
+.js .checkable .checked td.sticky {
+	background: var(--lit);
+}
+
+/* As wide as the table, so the action bar below it is too. Adminer gets this from
+   `body { min-width: fit-content }`, but here #content is what scrolls, and the form and div
+   between it and the footer stayed the panel's width — the bar stopped there, with rows
+   showing to its right once scrolled. */
+#content :has(.footer) {
+	min-width: fit-content;
+}
+
 /* The row actions, stuck to the bottom of the content panel.
  *
  * Adminer leaves half an em below them and pulls them 20px past the right edge only, which in
@@ -133,13 +183,31 @@ tbody tr:hover th {
 	gap: 0.5rem;
 	background: transparent;
 	padding: 0;
+	/* The bar is as wide as the table; its controls stay in the visible part of it while the
+	   table scrolls sideways, and wrap against that width rather than the table's. */
+	position: sticky;
+	left: 0;
+	width: fit-content;
+	max-width: 100cqi;
 }
 
-/* Each box centres what it holds, now that the box is taller than its contents. */
+/* Each box centres what it holds, now that the box is taller than its contents. The border
+   runs through the middle of the legend, so half the legend already sits above the contents:
+   the padding is lopsided by that half to put them midway between the two lines. */
 .footer fieldset {
 	display: flex;
 	align-items: center;
 	margin: 0;
+	padding-block: 0.25rem 0.9rem;
+}
+
+/* Adminer wraps a box's controls in a <div>, where they sat as inline text: a space between
+   two buttons, and nothing between the rows once a narrow panel wrapped them. */
+.footer fieldset > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
 }
 
 /* The pager (src/Assets/javascript/table-pager.js): first, previous, the page you are on out

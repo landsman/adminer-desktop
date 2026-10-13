@@ -1,9 +1,10 @@
 /* Resizable data-list columns — the grips src/Assets/javascript/table-columns.js inserts into
  * the header row.
  *
- * The same manners as the sidebar's handle: a thin gutter that stays out of the way, warms up
- * when the pointer is anywhere in the header row so the edges read as something you can pull,
- * and takes the accent under the pointer itself. Here rather than in the theme because every
+ * The same manners as the sidebar's handle: a thin gutter that stays out of the way and shows
+ * only under the pointer, on the edge it would move — the col-resize cursor is what says it
+ * can be pulled. Lighting every edge whenever the pointer crossed the header striped the whole
+ * grid each time a column name was reached for. Here rather than in the theme because every
  * design has this table, unlike the sidebar, which only our own layout lays out in panels.
  */
 
@@ -17,6 +18,14 @@
    and over the grips hanging off it, which then never see the press that lands on them. */
 #table thead {
 	z-index: 1;
+}
+
+/* Adminer pins the row-actions cell on a wide table (`th.sticky, td.sticky`), but the
+   position: relative above puts every header cell after it on the same layer, later in the
+   source — so the header names paint over the pinned cell instead of scrolling under it.
+   Thead only: in the body a z-index would lift the pinned cells over the sticky header. */
+#table thead .sticky {
+	z-index: 2;
 }
 
 .ad-column-grip {
@@ -33,12 +42,6 @@
 	/* The pointer events are the script's; the browser's own panning gesture is not. */
 	touch-action: none;
 	transition: background-color 0.12s ease;
-}
-
-/* Anywhere in the header row: every column edge shows at once, which is what says they can be
-   dragged at all. --lit is adminer's own, so this holds on every design. */
-#table thead:hover .ad-column-grip {
-	background: var(--ad-border, var(--lit));
 }
 
 .ad-column-grip:hover,

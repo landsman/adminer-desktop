@@ -255,6 +255,16 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->theme->bodyClass();
 	}
 
+	/** The logo leads where the breadcrumb's home mark does, not out to adminer.org in a new
+	* window — in a desktop app that opened a browser nobody asked for. Adminer's own markup with
+	* only the link swapped, so the logo and its versioned URL stay adminer's; the address is the
+	* one adminer builds for the breadcrumb's first link (include/design.inc.php).
+	*/
+	function name(): string {
+		$home = substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1);
+		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", (new Adminer\Adminer)->name());
+	}
+
 	/**
 	* @return void
 	*/

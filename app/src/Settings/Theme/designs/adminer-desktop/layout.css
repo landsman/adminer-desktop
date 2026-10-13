@@ -97,6 +97,10 @@ body {
 	   With overflow-y alone it spills out of the panel and the window scrolls instead,
 	   taking the sidebar with it. */
 	overflow: auto;
+	/* So what sits in a wider-than-panel row can measure the visible width (cqi) — the action
+	   bar under a wide table, in tables.css. Safe: the width comes from the flex row above,
+	   never from the content. */
+	container-type: inline-size;
 	background: var(--ad-panel);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius);
@@ -105,13 +109,98 @@ body {
 /* Breadcrumb becomes the content panel's sticky header, always in view. */
 #content #breadcrumb {
 	position: sticky;
-	inset: 0 auto auto 0;
+	/* Minus the padding: sticky stops at the panel's padding box, so with 0 the header came to
+	   rest one padding in once the table was scrolled sideways, short of the panel's edges. */
+	inset: 0 auto auto calc(-1 * var(--ad-panel-pad));
+	/* One row: the links shrink to an ellipsis before the current page's name does (it is the
+	   text after them, which a flex row cannot shrink), and Logout is the last item
+	   (breadcrumb-logout.js) — the path gives way rather than running under it. The gap is
+	   the spaces around the », which a flex row trims. */
+	display: flex;
+	align-items: center;
+	gap: 0.35em;
+	white-space: nowrap;
 	width: auto;
 	margin: 0 calc(-1 * var(--ad-panel-pad)) 0.6rem;
 	padding: 0.55rem var(--ad-panel-pad);
 	background: var(--ad-panel);
 	border-bottom: 1px solid var(--ad-border);
 	z-index: 3;
+}
+
+/* A table wider than the panel scrolls the whole panel sideways, and everything above it went
+   along — the title, the links, the select form. Held in place instead, like the breadcrumb:
+   only what holds a table moves. Not the table's own scroller instead, which would make its
+   sticky header stick to that box and no longer to the panel. Sticky works across the whole
+   scroll here because the panel is these elements' containing block. :where keeps it from
+   outranking the rules that position some of them. */
+#content > :where(:not(#breadcrumb, h2, :has(table))) {
+	position: sticky;
+	left: 0;
+}
+
+#content > h2 {
+	position: sticky;
+	/* It reaches into the padding (below), so it stops one padding further out. */
+	left: calc(-1 * var(--ad-panel-pad));
+}
+
+/* The page title's rule runs edge to edge like the breadcrumb's. Adminer pulls it out on the
+   start side only (`margin-inline-start: -18px`), so it stopped one padding short of the right.
+   And less of it: */
+#content h2 {
+	margin: 0 calc(-1 * var(--ad-panel-pad)) 0.75rem;
+	/* Adminer's .8em above and below and 20px under made the title the tallest thing on the
+	   page; it is a label for the page, under a breadcrumb that already says where you are. */
+	padding: 0.5rem var(--ad-panel-pad);
+}
+
+/* Directly under the breadcrumb the title's padding is the space between the two rules; the
+   breadcrumb's own margin on top of it pushed the title below the middle. */
+#content #breadcrumb:has(+ h2) {
+	margin-bottom: 0;
+}
+
+#content #breadcrumb > a,
+#content #breadcrumb > .ad-breadcrumb-current {
+	min-width: 1.5em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Flex takes from each item in proportion to its shrink factor, so the links give nearly all
+   of it until they are down to their minimum, and only then the page's name. The big number
+   goes on the links, not a tiny one on the name: shrink factors summing under 1 take only that
+   fraction of the overflow, and the name, last one left, would barely move. */
+#content #breadcrumb > a {
+	flex-shrink: 1000;
+}
+
+/* The path's first link, the driver, drawn as a home mark (breadcrumb-logout.js); a fixed
+   size rather than one of the links that shrink. */
+#content #breadcrumb > .ad-breadcrumb-home {
+	flex: none;
+	width: 1.1rem;
+	height: 1.1rem;
+	min-width: 0;
+	background: currentcolor;
+	-webkit-mask: url("icons/home.svg") center / contain no-repeat;
+	mask: url("icons/home.svg") center / contain no-repeat;
+}
+
+#content #breadcrumb > form {
+	flex: none;
+	margin-inline-start: auto;
+	padding-inline-start: 0.6rem;
+}
+
+#content #breadcrumb .logout {
+	position: static;
+	margin: 0;
+	/* Adminer's narrow layout paints it --dim with a halo again (`.js .logout`), a grey box in
+	   the middle of the header row. */
+	background: transparent;
+	box-shadow: none;
 }
 
 /* Logout is its own form; pin it to the window's top-right corner so it stays in the
@@ -147,4 +236,94 @@ body {
 /* The hover tooltip floats; keep it out of the flex flow. */
 #help {
 	position: fixed;
+}
+
+/* A narrow window: the sidebar folds behind a burger.
+ *
+ * Adminer's own narrow layout (default.css, the same 800px) turns #foot into a dropdown under
+ * a burger at the content's top-left — which in the panels lands over the breadcrumb — and
+ * shoves the breadcrumb and #content aside with !important, which only !important undoes.
+ * Kept: its burger (#menuopen, moved into the breadcrumb row by breadcrumb-logout.js), its
+ * `.foot` class for closed, and its script, which toggles that class and closes on any click
+ * outside. Changed: open, the sidebar is a full-height drawer over the content's left edge. */
+@media (max-width: 800px) {
+	/* One panel left on screen, so no gutter around it and no frame: the window is the frame. */
+	body {
+		padding: 0;
+	}
+
+	#content {
+		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
+		margin-inline-start: 0 !important;
+		border: 0;
+		border-radius: 0;
+	}
+
+	#content #breadcrumb {
+		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
+		left: calc(-1 * var(--ad-panel-pad)) !important;
+	}
+
+	#content #breadcrumb > #menuopen {
+		position: static;
+		flex: none;
+		margin-inline-end: 0.2rem;
+	}
+
+	#menuopen button {
+		width: 1.4rem;
+		height: 1.4rem;
+		background: currentcolor;
+		color: color-mix(in srgb, var(--fg) 70%, transparent);
+		cursor: pointer;
+		/* Drawn edge to edge and pinned left, so the lines start at the panel's padding — the
+		   same inset as Logout's border at the other end of the row. The button stays wider
+		   than the mark, to be hit. */
+		-webkit-mask: url("icons/menu.svg") left center / 1rem no-repeat;
+		mask: url("icons/menu.svg") left center / 1rem no-repeat;
+	}
+
+	#menuopen button:hover,
+	#menuopen button[aria-expanded="true"] {
+		color: var(--fg);
+	}
+
+	#ad-sidebar-resizer {
+		display: none;
+	}
+
+	.js #foot {
+		position: fixed;
+		inset: 0 auto 0 0;
+		z-index: 10;
+		border-width: 0 1px 0 0;
+		border-radius: 0;
+		width: min(var(--ad-sidebar-width), calc(100vw - 4rem));
+		box-shadow: 0 8px 28px color-mix(in srgb, #000 22%, transparent);
+	}
+
+	/* Closed. Adminer's own `.js .foot` says the same, but loses to `#foot { display: flex }`. */
+	.js #foot.foot {
+		display: none;
+	}
+
+	/* Logout, moved under the logo by breadcrumb-logout.js: a row of the sidebar like the
+	   others — its padding and divider come from `#menu p` — rather than the corner widget
+	   adminer and the wide layout make of it. */
+	#menu .logout {
+		position: static;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	/* Adminer's dropdown dressing, which the drawer's own border and shadow replace. */
+	#menu {
+		min-width: 0;
+		margin-top: 0;
+		border: 0;
+		box-shadow: none;
+	}
 }
