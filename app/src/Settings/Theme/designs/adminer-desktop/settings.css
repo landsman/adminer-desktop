@@ -21,5 +21,5 @@
    Anything restated here would only have to be kept in step with it. */
 
 .ad-modal-footer button:focus-visible {
-	outline-color: var(--ad-accent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--ad-accent) 45%, transparent);
 }

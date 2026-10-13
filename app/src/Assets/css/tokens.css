@@ -54,6 +54,9 @@
 	--ad-ok: #087f4e;
 	--ad-ok-fg: #fff;
 	--ad-danger: #b42318;
+	/* The fill behind white text on a destructive button. Its own token, because --ad-danger is
+	   lifted for text on a dark panel and would be too light to carry white. */
+	--ad-danger-fill: #d92d20;
 }
 
 @media (prefers-color-scheme: dark) {

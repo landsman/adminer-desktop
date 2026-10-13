@@ -70,7 +70,7 @@
 		{/block}
 	{/embed}
 
-	{* Forgetting cannot be undone from here, so Cancel takes the focus and Forget is the danger. *}
+	{* Forgetting cannot be undone from here: Forget is the red answer, Cancel before it keeps the focus. *}
 	{embed '../Assets/modal.latte', id: 'ad-connection-forget-' . $n, class: 'ad-confirm-dialog', labelledBy: 'ad-connection-forget-title-' . $n}
 		{block hidden}
 			{input_hidden('desktop_connection', $connection->key())|noescape}
@@ -80,8 +80,8 @@
 		{block header}<h2 id="ad-connection-forget-title-{$n}">{$desktop->t('connections.forget')}: {$connection->title()}</h2>{/block}
 		{block body}{$desktop->t('connections.forget_confirm')}{/block}
 		{block footer}
-			<button type="submit" class="ad-danger ad-forget">{$desktop->t('connections.forget')}</button>
 			<button type="button" data-close autofocus>{$desktop->t('settings.close')}</button>
+			<button type="submit" class="ad-destructive ad-forget">{$desktop->t('connections.forget')}</button>
 		{/block}
 	{/embed}
 {/foreach}
@@ -92,7 +92,7 @@
 	{block header}<h2 id="ad-discard-title">{$desktop->t('connections.discard_title')}</h2>{/block}
 	{block body}{$desktop->t('connections.discard_text')}{/block}
 	{block footer}
-		<button type="button" class="ad-danger" data-discard>{$desktop->t('connections.discard')}</button>
 		<button type="button" data-close autofocus>{$desktop->t('connections.keep_editing')}</button>
+		<button type="button" class="ad-destructive" data-discard>{$desktop->t('connections.discard')}</button>
 	{/block}
 {/embed}

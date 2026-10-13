@@ -140,14 +140,35 @@ body:has(.ad-modal[open]) {
 	border-color: transparent;
 }
 
+/* Red and filled, last: a confirmation whose whole point is the destructive act ("Forget?",
+   "Discard changes?"). There it is the answer, not a side door, so it takes the primary's place;
+   Cancel before it keeps the focus. .ad-danger above is the other case — a destructive extra in a
+   dialog that is about something else (Reset beside Save). */
+.ad-modal-footer .ad-destructive {
+	background: var(--ad-danger-fill);
+	color: var(--ad-ok-fg);
+	border-color: transparent;
+	font-weight: 500;
+}
+
+.ad-modal-footer .ad-destructive:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-danger-fill) 88%, black);
+}
+
+.ad-modal-footer .ad-destructive:active:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-danger-fill) 76%, black);
+}
+
 .ad-modal-footer button:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
 
+/* A soft halo rather than a ring set off from the button: the focused button in a dialog that
+   just opened is usually the safe one, and a heavy ring made it the loudest thing in it. */
 .ad-modal-footer button:focus-visible {
-	outline: 2px solid AccentColor;
-	outline-offset: 2px;
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, AccentColor 40%, transparent);
 }
 
 /* The dialog and its backdrop fade in and out together rather than appearing and vanishing at
