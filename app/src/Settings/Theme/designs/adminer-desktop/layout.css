@@ -128,6 +128,22 @@ body {
 	z-index: 3;
 }
 
+/* The page title's rule runs edge to edge like the breadcrumb's. Adminer pulls it out on the
+   start side only (`margin-inline-start: -18px`), so it stopped one padding short of the right.
+   And less of it: */
+#content h2 {
+	margin: 0 calc(-1 * var(--ad-panel-pad)) 0.75rem;
+	/* Adminer's .8em above and below and 20px under made the title the tallest thing on the
+	   page; it is a label for the page, under a breadcrumb that already says where you are. */
+	padding: 0.5rem var(--ad-panel-pad);
+}
+
+/* Directly under the breadcrumb the title's padding is the space between the two rules; the
+   breadcrumb's own margin on top of it pushed the title below the middle. */
+#content #breadcrumb:has(+ h2) {
+	margin-bottom: 0;
+}
+
 #content #breadcrumb > a,
 #content #breadcrumb > .ad-breadcrumb-current {
 	min-width: 1.5em;
