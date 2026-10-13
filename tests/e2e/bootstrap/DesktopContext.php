@@ -360,12 +360,13 @@ class DesktopContext implements Context
 		}
 	}
 
-	#[Then('the count beside it reads :rows rows')]
-	public function countReads(string $rows): void
+	/** The word comes from the page's #ad-i18n block; without it the script falls back to "/". */
+	#[Then('the count beside it reads :count')]
+	public function countReads(string $count): void
 	{
 		$pager = $this->pager();
-		if (!str_contains((string) $pager['total'], $rows)) {
-			throw new RuntimeException("the count reads '{$pager['total']}', which is not the $rows rows");
+		if (!str_contains((string) $pager['total'], $count)) {
+			throw new RuntimeException("the count reads '{$pager['total']}', not '$count'");
 		}
 	}
 
@@ -1521,13 +1522,13 @@ class DesktopContext implements Context
 			"() => {
 				const input = document.querySelector('input[type=\"file\"][name=\"sql_file[]\"]');
 				const overlay = document.getElementById('ad-import-drop');
-				const meta = document.querySelector('meta[name=\"ad-import-drop\"]');
+				const strings = JSON.parse(document.getElementById('ad-i18n')?.textContent || '{}');
 				return {
 					input: !!input,
 					overlay: !!overlay,
 					hidden: overlay ? getComputedStyle(overlay).visibility === 'hidden' : null,
 					label: overlay ? overlay.textContent : null,
-					metaLabel: meta ? meta.content : null,
+					served: strings['import.drop_hint'] ?? null,
 				};
 			}",
 		);
@@ -1540,11 +1541,11 @@ class DesktopContext implements Context
 		if ($ready['hidden'] !== true) {
 			throw new RuntimeException('the dropzone overlay was visible before any drag');
 		}
-		// The label is rendered server-side and localized: it has to come from the meta
-		// AdminerDesktop emits, not from a hardcoded string in the script.
-		if (($ready['metaLabel'] ?? '') === '' || $ready['label'] !== $ready['metaLabel']) {
-			throw new RuntimeException('the dropzone label did not come from the server meta: '
-				. json_encode($ready['label']) . ' against ' . json_encode($ready['metaLabel']));
+		// The label is localized server-side: it has to come from the #ad-i18n block
+		// AdminerDesktop emits, not from the script's English fallback.
+		if (($ready['served'] ?? '') === '' || $ready['label'] !== $ready['served']) {
+			throw new RuntimeException('the dropzone label did not come from #ad-i18n: '
+				. json_encode($ready['label']) . ' against ' . json_encode($ready['served']));
 		}
 	}
 

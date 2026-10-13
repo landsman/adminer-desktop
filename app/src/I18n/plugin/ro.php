@@ -20,7 +20,7 @@ return [
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
-	'pager.of' => 'din',
+	'js.pager.of' => 'din',
 
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',
@@ -62,7 +62,7 @@ return [
 	'plugins.col_desc' => 'Ce face',
 
 	// Whole-page import dropzone.
-	'import.drop_hint' => 'Trageți aici fișierul SQL pentru import',
+	'js.import.drop_hint' => 'Trageți aici fișierul SQL pentru import',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Acces AI',

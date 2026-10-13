@@ -10,7 +10,7 @@ Feature: Paging through the data list
   Scenario: The first page offers the controls and says where it is
     Then the pager offers first, previous, next and last
     And the page list offers 10 pages
-    And the count beside it reads 50 rows
+    And the count beside it reads "of 50"
     And the chip reads "1-5"
     And every step control is drawn from an icon file
     And first and previous lead nowhere

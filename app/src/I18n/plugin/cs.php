@@ -20,7 +20,7 @@ return [
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
-	'pager.of' => 'z',
+	'js.pager.of' => 'z',
 
 	// Saved connections.
 	'connections.new' => 'Nové připojení',
@@ -62,7 +62,7 @@ return [
 	'plugins.col_desc' => 'Co dělá',
 
 	// Whole-page import dropzone.
-	'import.drop_hint' => 'Přetáhněte sem SQL soubor pro import',
+	'js.import.drop_hint' => 'Přetáhněte sem SQL soubor pro import',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Přístup pro AI',
