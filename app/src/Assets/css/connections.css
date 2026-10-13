@@ -200,8 +200,9 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	margin-bottom: 1em;
 }
 
-.ad-field input {
+.ad-field :is(input, select) {
 	padding: 0.4em;
+	font: inherit;
 }
 
 .ad-choices {
@@ -257,15 +258,35 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 	gap: var(--ad-gap);
 }
 
+/* The same pair as the settings dialog's actions: Cancel quiet, Save the one green fill. */
 .ad-dialog-actions button {
 	padding: var(--ad-button-padding);
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius-sm);
+	background: var(--bg);
+	color: var(--fg);
+	font: inherit;
+	cursor: pointer;
+}
+
+.ad-dialog-actions .ad-cancel:hover {
+	background: var(--dim);
 }
 
 .ad-dialog-actions .ad-save {
-	border: 0;
-	border-radius: var(--ad-radius-sm);
+	border-color: transparent;
 	background: var(--ad-ok);
 	color: var(--ad-ok-fg);
+	font-weight: 500;
+}
+
+.ad-dialog-actions .ad-save:hover {
+	background: color-mix(in srgb, var(--ad-ok) 88%, black);
+}
+
+.ad-dialog-actions button:focus-visible {
+	outline: 2px solid AccentColor;
+	outline-offset: 2px;
 }
 
 /* Inside a connection: a stripe across the top of the window, and the badge at the top of the

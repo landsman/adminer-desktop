@@ -922,7 +922,7 @@ class DesktopContext implements Context
 		$this->page->locator('.ad-card-edit')->click();
 		$dialog = $this->page->locator('dialog.ad-connection-dialog[open]');
 		$dialog->locator('input[name="name"]')->fill($name);
-		$dialog->locator("input[name=\"env\"][value=\"$env\"]")->check(['force' => true]);
+		$dialog->locator('select[name="env"]')->selectOption($env);
 		$dialog->locator("input[name=\"color\"][value=\"$color\"]")->check(['force' => true]);
 		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector("dialog[open] .ad-save").click(); }');
 		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');

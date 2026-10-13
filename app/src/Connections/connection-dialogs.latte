@@ -21,14 +21,13 @@
 				<input name="name" value="{$connection->name}" placeholder="{$connection->address()}" maxlength="60" autocomplete="off">
 			</label>
 
-			<fieldset class="ad-choices">
-				<legend>{$desktop->t('connections.environment')}</legend>
-				<label><input type="radio" name="env" value="" n:attr="checked: !$connection->environment"> {$desktop->t('connections.none')}</label>
-				<label n:foreach="$environments as $environment">
-					<input type="radio" name="env" value="{$environment->value}" n:attr="checked: $connection->environment === $environment">
-					<span class="ad-env ad-env-{$environment->value}">{$environment->label()}</span>
-				</label>
-			</fieldset>
+			<label class="ad-field">
+				<span>{$desktop->t('connections.environment')}</span>
+				<select name="env">
+					<option value="">{$desktop->t('connections.none')}</option>
+					<option n:foreach="$environments as $environment" value="{$environment->value}" n:attr="selected: $connection->environment === $environment">{$environment->label()}</option>
+				</select>
+			</label>
 
 			{* No colour falls back to the environment's — Environment::color(). *}
 			<fieldset class="ad-choices ad-swatches">
@@ -41,7 +40,7 @@
 			</fieldset>
 
 			<div class="ad-dialog-actions">
-				<button type="submit" formmethod="dialog" formnovalidate>{$desktop->t('settings.close')}</button>
+				<button type="submit" formmethod="dialog" formnovalidate class="ad-cancel">{$desktop->t('settings.close')}</button>
 				<button type="submit" class="ad-save">{$desktop->t('settings.save')}</button>
 			</div>
 		</form>
