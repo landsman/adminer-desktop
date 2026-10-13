@@ -189,6 +189,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	function head(): ?string {
 		$this->styles->link();
 		$this->javascript->link();
+		$this->javascript->beforePaint("header.js");
 		// Restore the sizes the user set themselves — the sidebar, and the edit form's fields —
 		// before the body paints, so a cold start opens at them instead of flashing the default
 		// then jumping. Each is a property the theme reads, named by what the api stored
@@ -307,8 +308,13 @@ class AdminerDesktop extends Adminer\Plugin {
 		if (!isset($_GET["username"])) {
 			return (string) preg_replace("~<a href='[^']*'[^>]*?( id='h1'[^>]*>)(.*?)</a>~s", '<span$1$2</span>', $name);
 		}
-		$home = substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1);
-		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", $name);
+		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($this->home()) . "'", $name);
+	}
+
+	/** The start screen with the saved connections, still signed in: this server without the
+	* user. The logo and the connection badge lead there. */
+	function home(): string {
+		return substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1) ?: ".";
 	}
 
 	/** Adminer's sidebar, with ours ahead of it: the settings dialog, the search box once logged in

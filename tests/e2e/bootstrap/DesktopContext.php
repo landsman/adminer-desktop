@@ -1380,8 +1380,8 @@ class DesktopContext implements Context
 		);
 	}
 
-	#[Then('the sidebar badge reads :name')]
-	public function sidebarBadgeReads(string $name): void
+	#[Then('the connection badge reads :name')]
+	public function connectionBadgeReads(string $name): void
 	{
 		$badge = (string) $this->page->evaluate(
 			// language=JavaScript

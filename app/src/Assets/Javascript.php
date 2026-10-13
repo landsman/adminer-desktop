@@ -29,4 +29,14 @@ class Javascript {
 			echo \Adminer\script_src("src/Assets/javascript/$name?v=" . (int) @filemtime($filename), true);
 		}
 	}
+
+	/** Print a blocking <script src> for a file in javascript/before-paint/, from the head() hook
+	* after the stylesheets: it runs before the body is parsed, so it can arrange the page as it
+	* arrives and nothing is seen to move. Only for what would otherwise be visibly redrawn -- it
+	* holds up parsing while it loads.
+	*/
+	function beforePaint(string $name): void {
+		$filename = $this->dir . "/before-paint/$name";
+		echo \Adminer\script_src("src/Assets/javascript/before-paint/$name?v=" . (int) @filemtime($filename));
+	}
 }

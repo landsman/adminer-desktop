@@ -128,11 +128,12 @@ class Connections {
 		]);
 	}
 
-	/** The badge at the top of the sidebar once logged in, so the colour follows you around. */
+	/** The badge once logged in, printed atop the sidebar and moved into the header's corner
+	* (before-paint/header.js), so the colour follows you around. */
 	function badge(): void {
 		$current = $this->current();
-		if ($current && ($current->name !== '' || $current->environment || $current->color() !== '')) {
-			Latte::engine()->render(__DIR__ . "/connection-badge.latte", ["connection" => $current]);
+		if ($current) {
+			Latte::engine()->render(__DIR__ . "/connection-badge.latte", ["connection" => $current, "home" => $this->desktop->home()]);
 		}
 	}
 

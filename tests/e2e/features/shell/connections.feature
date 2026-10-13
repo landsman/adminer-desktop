@@ -24,7 +24,7 @@ Feature: Saved connections
     Then the card reads "Fixture" with a "PROD" tag
     When I open the connection from its card
     Then the body carries the "env-prod" class
-    And the sidebar badge reads "Fixture"
+    And the connection badge reads "Fixture"
 
   Scenario: Picking an environment picks its colour, which stays changeable
     When I open the connection's editor

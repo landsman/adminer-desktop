@@ -116,8 +116,8 @@ body {
 	   rest one padding in once the table was scrolled sideways, short of the panel's edges. */
 	inset: 0 auto auto calc(-1 * var(--ad-panel-pad));
 	/* One row: the links shrink to an ellipsis before the current page's name does (it is the
-	   text after them, which a flex row cannot shrink), and Logout is the last item
-	   (breadcrumb-logout.js) — the path gives way rather than running under it. The gap is
+	   text after them, which a flex row cannot shrink), and the connection's badge is the last
+	   item (before-paint/header.js) — the path gives way rather than running under it. The gap is
 	   the spaces around the », which a flex row trims. */
 	display: flex;
 	align-items: center;
@@ -187,7 +187,7 @@ body {
 	flex-shrink: 1000;
 }
 
-/* The path's first link, the driver, drawn as a home mark (breadcrumb-logout.js); a fixed
+/* The path's first link, the driver, drawn as a home mark (before-paint/header.js); a fixed
    size rather than one of the links that shrink. */
 #content #breadcrumb > .ad-breadcrumb-home {
 	flex: none;
@@ -199,19 +199,41 @@ body {
 	mask: url("icons/home.svg") center / contain no-repeat;
 }
 
-#content #breadcrumb > form {
-	flex: none;
-	margin-inline-start: auto;
-	padding-inline-start: 0.6rem;
+/* Never painted anywhere but its place: before-paint/header.js puts it there before the first
+   paint, and this keeps it out of sight should a browser paint the half-parsed page sooner. */
+.js #ad-connection-badge:not(.ad-placed) {
+	display: none;
 }
 
-#content #breadcrumb .logout {
-	position: static;
-	margin: 0;
-	/* Adminer's narrow layout paints it --dim with a halo again (`.js .logout`), a grey box in
-	   the middle of the header row. */
-	background: transparent;
-	box-shadow: none;
+/* The connection's badge, moved from the sidebar's top into the header's corner
+   (before-paint/header.js): a pill rather than a full-width row. */
+#content #breadcrumb #ad-connection-badge {
+	flex: none;
+	margin: 0 0 0 auto;
+	padding: 0.15em 0.45em;
+	/* Not a link of the path: the breadcrumb's grey, and its accent and underline on hover
+	   (sidebar.css), would reach it in here. */
+	color: var(--fg);
+	text-decoration: none;
+}
+
+#content #breadcrumb #ad-connection-badge:hover {
+	background: color-mix(in srgb, var(--ad-conn, var(--fg)) 20%, transparent);
+}
+
+/* The environment tag sits as close to the end as to the top and bottom. */
+#content #breadcrumb #ad-connection-badge:has(.ad-env) {
+	padding-inline-end: 0.15em;
+}
+
+#content #breadcrumb #ad-connection-badge .ad-card-icon {
+	width: 1.3em;
+	height: 1.3em;
+}
+
+/* The badge takes Logout's place (before-paint/header.js); the start screen's cards log out. */
+body:has(#ad-connection-badge) .logout {
+	display: none;
 }
 
 /* Logout is its own form; pin it to the window's top-right corner so it stays in the
@@ -294,7 +316,7 @@ body {
  * Adminer's own narrow layout (default.css, the same 800px) turns #foot into a dropdown under
  * a burger at the content's top-left — which in the panels lands over the breadcrumb — and
  * shoves the breadcrumb and #content aside with !important, which only !important undoes.
- * Kept: its burger (#menuopen, moved into the breadcrumb row by breadcrumb-logout.js), its
+ * Kept: its burger (#menuopen, moved into the breadcrumb row by before-paint/header.js), its
  * `.foot` class for closed, and its script, which toggles that class and closes on any click
  * outside. Changed: open, the sidebar is a full-height drawer over the content's left edge. */
 @media (max-width: 800px) {
@@ -374,18 +396,6 @@ body {
 	/* Closed. Adminer's own `.js .foot` says the same, but loses to `#foot { display: flex }`. */
 	.js #foot.foot {
 		display: none;
-	}
-
-	/* Logout, moved under the logo by breadcrumb-logout.js: a row of the sidebar like the
-	   others — its padding and divider come from `#menu p` — rather than the corner widget
-	   adminer and the wide layout make of it. */
-	#menu .logout {
-		position: static;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		background: transparent;
-		box-shadow: none;
 	}
 
 	/* Adminer's dropdown dressing, which the drawer's own border and shadow replace. */
