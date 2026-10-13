@@ -14,10 +14,15 @@ on:
     # cron is UTC and has no timezone, so the choice is which half of the year to be right in.
     - cron: "30 21 * * *"
   workflow_dispatch:
-  # Only when this file itself changes. A nightly that has never run is a nightly nobody
-  # knows is broken, and the first honest run must not be at 21:30 unwatched.
+  # Only when the suite itself could break: this file (a nightly that has never run is one
+  # nobody knows is broken), the scenarios, steps and config under tests/e2e, and the composer
+  # lock that pins behat and playwright-php — a behat bump once broke `make e2e` with nothing
+  # to say so until somebody ran it.
   pull_request:
-    paths: [".github/workflows/e2e.yml"]
+    paths:
+      - ".github/workflows/e2e.yml"
+      - "tests/e2e/**"
+      - "app/composer.lock"
 
 jobs:
   e2e:
