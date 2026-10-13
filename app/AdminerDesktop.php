@@ -310,16 +310,21 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	/** Adminer's sidebar, with ours ahead of it: the settings dialog and, on the login page, the
-	* dialogs that edit the saved connections.
+	* versions beside its gear and the dialogs that edit the saved connections.
 	* @param string $missing
 	* @return void
 	*/
 	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
-		$this->dialog->render();
-		if ($missing == "auth") {
-			$this->connections->dialogs();
-			$this->connections->versions();
+		if ($missing != "auth") {
+			$this->dialog->render();
+			return;
 		}
+		// One row for the versions and the gear, so our design can centre them as a pair.
+		echo "<div class='ad-login-foot'>";
+		$this->connections->versions();
+		$this->dialog->render();
+		echo "</div>\n";
+		$this->connections->dialogs();
 	}
 
 	/** The badge of the connection you are in, under the logo and the gear rather than above them.

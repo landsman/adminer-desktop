@@ -437,26 +437,32 @@ body:has(input[name="auth[username]"]) #menu h1 {
 
 /* The version and the gear, side by side at the foot of the window, out of the way: neither is
    what this page is for. The versions are our own links (Connections::versions()); adminer's,
-   part of the logo's heading, steps aside. Fixed rather than moved, and meeting at the middle —
-   the version ending at it, the gear starting there — centres the pair without knowing either's
-   width. Nothing above #foot sets a transform or a filter, so the viewport is what they are fixed
-   to. */
+   part of the logo's heading, steps aside. One fixed row (AdminerDesktop::navigation() wraps
+   both), as wide as its content and centred by its auto margins, so the pair is centred rather
+   than meeting at the middle. Not a transform: the settings dialog sits inside it. Nothing above
+   #foot sets a transform or a filter, so the viewport is what it is fixed to. */
 body:has(input[name="auth[username]"]) #menu .version {
 	display: none;
 }
 
-body:has(input[name="auth[username]"]) .ad-versions,
-body:has(input[name="auth[username]"]) #desktop-gear {
+body:has(input[name="auth[username]"]) .ad-login-foot {
 	position: fixed;
-	bottom: 1rem;
-	top: auto;
+	inset: auto 0 1rem;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	width: fit-content;
+	margin-inline: auto;
+}
+
+body:has(input[name="auth[username]"]) .ad-login-foot #desktop-gear {
+	position: static;
 	transform: none;
 }
 
 body:has(input[name="auth[username]"]) .ad-versions {
 	display: block;
-	right: calc(50% + 0.2rem);
-	left: auto;
 	line-height: 1.6rem;
 	font-size: 0.8rem;
 	white-space: nowrap;
@@ -471,11 +477,6 @@ body:has(input[name="auth[username]"]) .ad-versions a {
 body:has(input[name="auth[username]"]) .ad-versions a:hover {
 	color: var(--fg);
 	text-decoration: underline;
-}
-
-body:has(input[name="auth[username]"]) #desktop-gear {
-	left: calc(50% + 0.2rem);
-	right: auto;
 }
 
 body:has(input[name="auth[username]"]) #content {
