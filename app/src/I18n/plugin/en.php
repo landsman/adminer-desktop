@@ -30,6 +30,15 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'of',
 
+	// Saved connections on the login page (src/Connections/).
+	'connections.new' => 'New connection',
+	'connections.edit' => 'Edit',
+	'connections.name' => 'Name',
+	'connections.environment' => 'Environment',
+	'connections.color' => 'Colour',
+	'connections.none' => 'None',
+	'connections.color_auto' => "The environment's colour",
+
 	// Theme panel (theme-panel.latte, Theme.php).
 	'theme.appearance' => 'Appearance',
 	'theme.appearance_hint' => 'Adminer Desktop follows the system light and dark, or pin it to Light or Dark. Either scheme uses the design chosen for it below.',

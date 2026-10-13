@@ -22,6 +22,15 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'von',
 
+	// Saved connections.
+	'connections.new' => 'Neue Verbindung',
+	'connections.edit' => 'Bearbeiten',
+	'connections.name' => 'Name',
+	'connections.environment' => 'Umgebung',
+	'connections.color' => 'Farbe',
+	'connections.none' => 'Keine',
+	'connections.color_auto' => 'Farbe der Umgebung',
+
 	// Theme panel.
 	'theme.appearance' => 'Erscheinungsbild',
 	'theme.appearance_hint' => 'Adminer Desktop folgt dem hellen und dunklen Modus des Systems, oder Sie legen ihn fest auf Hell oder Dunkel. Jeder Modus verwendet das unten gewählte Design.',

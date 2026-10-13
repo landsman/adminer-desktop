@@ -22,6 +22,15 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'din',
 
+	// Saved connections.
+	'connections.new' => 'Conexiune nouă',
+	'connections.edit' => 'Editează',
+	'connections.name' => 'Nume',
+	'connections.environment' => 'Mediu',
+	'connections.color' => 'Culoare',
+	'connections.none' => 'Niciunul',
+	'connections.color_auto' => 'Culoarea mediului',
+
 	// Theme panel.
 	'theme.appearance' => 'Mod de culoare',
 	'theme.appearance_hint' => 'Adminer Desktop urmează modul luminos și întunecat al sistemului sau îl puteți fixa pe Luminos ori Întunecat. Fiecare mod folosește tema aleasă mai jos.',

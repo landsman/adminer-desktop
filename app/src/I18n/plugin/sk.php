@@ -22,6 +22,15 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'z',
 
+	// Saved connections.
+	'connections.new' => 'Nové pripojenie',
+	'connections.edit' => 'Upraviť',
+	'connections.name' => 'Názov',
+	'connections.environment' => 'Prostredie',
+	'connections.color' => 'Farba',
+	'connections.none' => 'Žiadne',
+	'connections.color_auto' => 'Farba prostredia',
+
 	// Theme panel.
 	'theme.appearance' => 'Farebný režim',
 	'theme.appearance_hint' => 'Adminer Desktop sa riadi svetlým a tmavým režimom systému, alebo ho môžete pripnúť na Svetlý či Tmavý. Každý režim použije vzhľad zvolený nižšie.',

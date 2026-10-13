@@ -1,0 +1,31 @@
+{* The saved connections, printed inside adminer's login form ahead of its own fields
+	(Connections::cards()). The form itself stays adminer's: it is folded away behind
+	"New connection" by connections.css, keyed off .ad-adding, which connections.js toggles. *}
+{parameters
+	\AdminerDesktop $desktop,
+	array $connections,
+	bool $adding
+}
+<div id="ad-connections" n:class="$adding ? ad-adding">
+	<ul class="ad-cards">
+		{foreach $connections as $connection}
+			{* noescape on the colour only: it is whitelisted against Connections::COLORS, and
+				Latte's CSS escaping would turn the # into an escape that is no longer a colour. *}
+			<li class="ad-card" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
+				<a class="ad-card-link" href="{$connection->url()|nocheck}">
+					<span class="ad-card-icon" title="{$connection->system()}">{$connection->icon()|noescape}</span>
+					<span class="ad-card-text">
+						<strong>{$connection->title()}</strong>
+						<small>{$connection->system()}{if $connection->name !== ''} · {$connection->address()}{/if}</small>
+					</span>
+					<span n:if="$connection->environment" class="ad-env ad-env-{$connection->environment->value}">{$connection->environment->label()}</span>
+				</a>
+				<button type="button" class="ad-card-edit" data-dialog="ad-connection-{$iterator->counter}" title="{$desktop->t('connections.edit')}" aria-label="{$desktop->t('connections.edit')}">&#9998;</button>
+				<span n:if="$connection->databases" class="ad-card-databases">
+					<a n:foreach="$connection->databases as $database" href="{$connection->url($database)|nocheck}">{$database}</a>
+				</span>
+			</li>
+		{/foreach}
+	</ul>
+	<button type="button" id="ad-new-connection" aria-expanded="{$adding ? 'true' : 'false'}">+ {$desktop->t('connections.new')}</button>
+</div>

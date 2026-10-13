@@ -876,6 +876,85 @@ class DesktopContext implements Context
 		}
 	}
 
+	// ── saved connections ────────────────────────────────────────────────────────────────────
+
+	/** The address with no login in it: adminer answers with the login page, saved logins and all. */
+	#[When('I go to the login page')]
+	public function goToLoginPage(): void
+	{
+		$this->goto((string) $this->fix['base']);
+	}
+
+	#[Then('the saved connection is a card')]
+	public function savedConnectionIsCard(): void
+	{
+		$cards = (int) $this->page->evaluate('() => document.querySelectorAll("#ad-connections .ad-card").length');
+		if ($cards !== 1) {
+			throw new RuntimeException("$cards cards on the login page");
+		}
+	}
+
+	#[Then('the login form is folded away')]
+	public function loginFormFolded(): void
+	{
+		if ($this->page->locator('input[name="auth[username]"]')->isVisible()) {
+			throw new RuntimeException('the login form is still showing');
+		}
+	}
+
+	#[When('I ask for a new connection')]
+	public function askForNewConnection(): void
+	{
+		$this->page->locator('#ad-new-connection')->click();
+	}
+
+	#[Then('the login form is shown')]
+	public function loginFormShown(): void
+	{
+		if (!$this->page->locator('input[name="auth[username]"]')->isVisible()) {
+			throw new RuntimeException('the login form stayed folded');
+		}
+	}
+
+	#[When('I label the connection :name as :env in :color')]
+	public function labelConnection(string $name, string $env, string $color): void
+	{
+		$this->page->locator('.ad-card-edit')->click();
+		$dialog = $this->page->locator('dialog.ad-connection-dialog[open]');
+		$dialog->locator('input[name="name"]')->fill($name);
+		$dialog->locator("input[name=\"env\"][value=\"$env\"]")->check(['force' => true]);
+		$dialog->locator("input[name=\"color\"][value=\"$color\"]")->check(['force' => true]);
+		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector("dialog[open] .ad-save").click(); }');
+		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+	}
+
+	#[Then('the card reads :name with a :env tag')]
+	public function cardReads(string $name, string $env): void
+	{
+		$card = (string) $this->page->evaluate('() => document.querySelector("#ad-connections .ad-card").innerText');
+		if (!str_contains($card, $name) || !str_contains($card, $env)) {
+			throw new RuntimeException("the card reads '$card'");
+		}
+	}
+
+	#[When('I open the connection from its card')]
+	public function openFromCard(): void
+	{
+		// Marked so the wait survives the navigation and resolves on the page it lands on — a
+		// load-state wait right after the click returns on the login page that is still there.
+		$this->page->evaluate('() => { window.e2eLeaving = true; document.querySelector(".ad-card-link").click(); }');
+		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
+	}
+
+	#[Then('the sidebar badge reads :name')]
+	public function sidebarBadgeReads(string $name): void
+	{
+		$badge = (string) $this->page->evaluate('() => document.querySelector("#ad-connection-badge")?.innerText ?? ""');
+		if (!str_contains($badge, $name)) {
+			throw new RuntimeException("the badge reads '$badge'");
+		}
+	}
+
 	#[Then('the body carries the :class class')]
 	public function bodyCarriesClass(string $class): void
 	{

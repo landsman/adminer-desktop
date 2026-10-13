@@ -22,6 +22,15 @@ return [
 	// out of the rows there are.
 	'pager.of' => 'z',
 
+	// Saved connections.
+	'connections.new' => 'Nowe połączenie',
+	'connections.edit' => 'Edytuj',
+	'connections.name' => 'Nazwa',
+	'connections.environment' => 'Środowisko',
+	'connections.color' => 'Kolor',
+	'connections.none' => 'Brak',
+	'connections.color_auto' => 'Kolor środowiska',
+
 	// Theme panel.
 	'theme.appearance' => 'Tryb kolorów',
 	'theme.appearance_hint' => 'Adminer Desktop podąża za jasnym i ciemnym trybem systemu, albo można go ustawić na stałe na Jasny lub Ciemny. Każdy tryb używa motywu wybranego poniżej.',

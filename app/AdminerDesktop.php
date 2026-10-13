@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Desktop\Assets\Javascript;
 use Desktop\Assets\Styles;
+use Desktop\Connections\Connections;
 use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
@@ -35,6 +36,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	private Dialog $dialog;
 	private Mcp\Panel $mcp;
 	private UserSettings $userSettings;
+	private Connections $connections;
 
 	function __construct() {
 		// Before anything reads the request: sql.inc.php parses the import as soon as it
@@ -51,6 +53,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->theme = new Theme($this, $this->userSettings);
 		$this->plugins = new PluginList($this, $this->userSettings);
 		$this->mcp = new Mcp\Panel($this, $this->userSettings);
+		$this->connections = new Connections($this, $this->userSettings);
 		$this->dialog = new Dialog($this, $this->theme, $this->plugins, $this->mcp);
 	}
 
@@ -128,6 +131,15 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null; // let adminer handle every other field
 	}
 
+	/** The saved connections as cards above the login form, which they fold away behind
+	* "New connection". Prints and abstains, so adminer still prints its own form after them.
+	* @return null
+	*/
+	function loginForm() {
+		$this->connections->cards();
+		return null;
+	}
+
 	/**
 	* @param bool $create
 	* @return string
@@ -188,6 +200,11 @@ class AdminerDesktop extends Adminer\Plugin {
 			if (isset($properties[$what])) {
 				$css .= $properties[$what] . ':' . (int) $size . 'px;';
 			}
+		}
+		// The colour of the connection this window is in, for the stripe and the badge
+		// (connections.css). Whitelisted in Connections, so it is only ever a hex colour.
+		if ($color = $this->connections->current()?->color()) {
+			$css .= '--ad-conn:' . $color . ';';
 		}
 		if ($css !== '') {
 			echo "<style>:root{" . $css . "}</style>\n";
@@ -253,6 +270,13 @@ class AdminerDesktop extends Adminer\Plugin {
 			echo " debug";
 		}
 		$this->theme->bodyClass();
+		$current = $this->connections->current();
+		if ($current?->color()) {
+			echo " ad-connected";
+		}
+		if ($current?->environment) {
+			echo " env-" . $current->environment->value;
+		}
 	}
 
 	/** The logo leads where the breadcrumb's home mark does, not out to adminer.org in a new
@@ -265,11 +289,18 @@ class AdminerDesktop extends Adminer\Plugin {
 		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", (new Adminer\Adminer)->name());
 	}
 
-	/**
+	/** Adminer's sidebar, with ours ahead of it: the settings dialog, and either the badge of the
+	* connection you are in or, on the login page, the dialogs that edit the saved ones.
+	* @param string $missing
 	* @return void
 	*/
-	function navigation(): void {
+	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
 		$this->dialog->render();
+		if ($missing == "auth") {
+			$this->connections->dialogs();
+		} else {
+			$this->connections->badge();
+		}
 	}
 
 	/** Apply settings posted from the dialog. Called from adminer-plugins.php rather than
@@ -280,6 +311,10 @@ class AdminerDesktop extends Adminer\Plugin {
 	function handlePost(): void {
 		// empty(), not adminer's bare $_POST["x"]: this one runs on every request, including
 		// every GET, so the warning it would leave is on every page in the debug bar.
+		if (!empty($_POST["desktop_connection"]) && Adminer\verify_token()) {
+			$this->connections->apply();
+			Adminer\redirect($_SERVER["REQUEST_URI"]);
+		}
 		if (empty($_POST["desktop_settings"]) || !Adminer\verify_token()) {
 			return;
 		}

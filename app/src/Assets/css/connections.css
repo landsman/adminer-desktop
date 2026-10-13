@@ -1,0 +1,311 @@
+/* Saved connections: the cards on the login page, their edit dialogs, and the stripe and badge
+ * that carry a connection's colour once you are in it (src/Connections/). Built on adminer's
+ * --bg/--fg so it follows whichever design is active; --ad-conn is the connection's colour,
+ * set per card inline and for the whole page by head(). */
+
+/* Adminer's own list of the same logins, in the sidebar: the cards replace it. */
+body:has(#ad-connections) #logins {
+	display: none;
+}
+
+/* The login form folds away behind "New connection" while there are cards to pick from. Its
+   table and its submit row are direct children of adminer's form, after our block. */
+form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
+	display: none;
+}
+
+#ad-connections {
+	max-width: 46em;
+	margin-bottom: var(--ad-gap-lg);
+}
+
+.ad-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+	gap: var(--ad-gap-lg);
+	margin: 0 0 var(--ad-gap-lg);
+	padding: 0;
+	list-style: none;
+}
+
+.ad-card {
+	--ad-conn-tint: var(--ad-conn, var(--fg));
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--ad-border);
+	border-left: 4px solid var(--ad-conn, var(--ad-border));
+	border-radius: var(--ad-radius);
+	background: var(--bg);
+}
+
+.ad-card:hover {
+	background: color-mix(in srgb, var(--ad-conn-tint) 6%, var(--bg));
+}
+
+.ad-card-link {
+	display: flex;
+	align-items: center;
+	gap: 0.75em;
+	/* Room on the right for the edit button, which sits over the corner. */
+	padding: 0.8em 2.6em 0.8em 0.8em;
+	color: inherit;
+	text-decoration: none;
+}
+
+.ad-card-icon {
+	display: inline-grid;
+	place-items: center;
+	flex: none;
+	width: 2.2em;
+	height: 2.2em;
+	border-radius: var(--ad-radius-sm);
+	background: color-mix(
+		in srgb,
+		var(--ad-conn-tint, var(--fg)) 14%,
+		transparent
+	);
+	color: var(--ad-conn-tint, var(--fg));
+}
+
+.ad-card-icon svg {
+	width: 70%;
+	height: 70%;
+}
+
+.ad-card-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+}
+
+.ad-card-text strong,
+.ad-card-text small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ad-card-text small {
+	color: var(--ad-fg-quiet);
+}
+
+.ad-card-edit {
+	position: absolute;
+	top: 0.5em;
+	right: 0.5em;
+	border: 0;
+	border-radius: var(--ad-radius-sm);
+	padding: 0.2em 0.45em;
+	background: none;
+	color: var(--ad-fg-quiet);
+	cursor: pointer;
+}
+
+.ad-card-edit:hover,
+.ad-card-edit:focus-visible {
+	background: color-mix(in srgb, var(--fg) 10%, transparent);
+	color: var(--fg);
+}
+
+.ad-card-databases {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35em;
+	padding: 0 0.8em 0.8em calc(0.8em + 2.95em);
+}
+
+.ad-card-databases a {
+	border: 1px solid var(--ad-border);
+	border-radius: 999px;
+	padding: 0.05em 0.6em;
+	font-size: 0.85em;
+	text-decoration: none;
+}
+
+/* The environment tag. Fixed hues, the same ones Environment::color() falls back to, so PROD
+   reads red whatever colour the connection itself was given. */
+.ad-env {
+	flex: none;
+	border-radius: var(--ad-radius-sm);
+	padding: 0.1em 0.45em;
+	font-size: 0.75em;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: #fff;
+	background: #667085;
+}
+
+.ad-env-dev {
+	background: #079455;
+}
+
+.ad-env-stage {
+	background: #dc6803;
+}
+
+.ad-env-prod {
+	background: #d92d20;
+}
+
+#ad-new-connection {
+	border: 1px dashed var(--ad-border);
+	border-radius: var(--ad-radius);
+	padding: 0.6em 1.2em;
+	background: none;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+#ad-new-connection:hover,
+#ad-new-connection[aria-expanded="true"] {
+	border-style: solid;
+	background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+
+/* The edit dialog. Printed inside #menu, so it undoes nothing the sidebar styles — it uses no
+   <p>, which the sidebar draws as menu rows (see settings.css). */
+.ad-connection-dialog {
+	width: 26em;
+	max-width: var(--ad-dialog-max-width);
+	padding: var(--ad-dialog-padding);
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius);
+	background: var(--bg);
+	color: var(--fg);
+}
+
+.ad-connection-dialog::backdrop {
+	background: rgb(0 0 0 / 0.45);
+}
+
+.ad-connection-dialog h2 {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	margin: 0 0 1em;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-size: 1.05em;
+	overflow-wrap: anywhere;
+}
+
+.ad-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3em;
+	margin-bottom: 1em;
+}
+
+.ad-field input {
+	padding: 0.4em;
+}
+
+.ad-choices {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4em 0.9em;
+	margin: 0 0 1em;
+	padding: 0;
+	border: 0;
+}
+
+.ad-choices legend {
+	margin-bottom: 0.4em;
+	padding: 0;
+}
+
+.ad-choices label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3em;
+	cursor: pointer;
+}
+
+/* Swatches: the radio is the state, the circle is what you see and click. */
+.ad-swatches input {
+	position: absolute;
+	opacity: 0;
+}
+
+.ad-swatch {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 50%;
+	outline-offset: 2px;
+}
+
+.ad-swatch-auto {
+	border: 1px dashed var(--ad-fg-quiet);
+}
+
+.ad-swatches input:checked + .ad-swatch {
+	outline: 2px solid var(--fg);
+}
+
+.ad-swatches input:focus-visible + .ad-swatch {
+	outline: 2px solid AccentColor;
+}
+
+.ad-dialog-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--ad-gap);
+}
+
+.ad-dialog-actions button {
+	padding: var(--ad-button-padding);
+}
+
+.ad-dialog-actions .ad-save {
+	border: 0;
+	border-radius: var(--ad-radius-sm);
+	background: var(--ad-ok);
+	color: var(--ad-ok-fg);
+}
+
+/* Inside a connection: a stripe across the top of the window, and the badge at the top of the
+   sidebar, both in its colour — so a PROD window never looks like a LOCAL one. */
+body.ad-connected::before {
+	content: "";
+	position: fixed;
+	inset: 0 0 auto;
+	z-index: 100;
+	height: 3px;
+	background: var(--ad-conn);
+	pointer-events: none;
+}
+
+#ad-connection-badge {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+	/* Clear of the settings gear, which the default design pins to the sidebar's top-right. */
+	margin: 0.6em 2.8em 0 0.8em;
+	padding: 0.35em 0.5em;
+	border: 1px solid
+		color-mix(in srgb, var(--ad-conn, var(--fg)) 45%, transparent);
+	border-radius: var(--ad-radius);
+	background: color-mix(in srgb, var(--ad-conn, var(--fg)) 10%, transparent);
+	color: inherit;
+	text-decoration: none;
+}
+
+#ad-connection-badge .ad-card-icon {
+	--ad-conn-tint: var(--ad-conn, var(--fg));
+	width: 1.6em;
+	height: 1.6em;
+}
+
+.ad-badge-name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 600;
+}
