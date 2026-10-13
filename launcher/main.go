@@ -116,7 +116,9 @@ func freePort() (int, error) {
 // waitReady polls until PHP actually answers. Adminer's own page is the probe, so a
 // server that boots but cannot run the app still counts as not ready. It returns how
 // long that first successful request took -- the cold compile of adminer.php and its
-// includes, which is the one part of startup opcache.file_cache could shorten.
+// includes, which is the one part of startup opcache.file_cache could shorten. Only that
+// last attempt is timed, so on a machine slow enough for earlier ones to time out it
+// reads low: part of the compile happened in requests that were given up on.
 func waitReady(url string, timeout time.Duration) (cold time.Duration, err error) {
 	deadline := time.Now().Add(timeout)
 	// Per-request timeout so the deadline below actually bounds the wait: http.Get uses
