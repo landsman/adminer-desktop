@@ -239,6 +239,8 @@ func main() {
 	srv.Env = append(os.Environ(), "PHP_INI_SCAN_DIR="+filepath.Join(root, "php"))
 	if dir, err := dataDir(); err == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
+		// desktop.ini's opcache.file_cache points here, and PHP will not create it.
+		os.MkdirAll(filepath.Join(dir, "opcache"), 0o700) //nolint:errcheck // missing just means a cold launch
 	}
 	// Our own path, so the settings dialog can print the exact `claude mcp add` line for this
 	// install rather than making the user work out where the app landed. Only the launcher
