@@ -104,24 +104,43 @@ td.sticky {
 /* Adminer marks that cell .hover as well, and `td.hover` drops its bottom and start borders and
    paints it --bg — so it read as a gap in the grid, without the row lines, the zebra or the
    hover tint. The borders come back, and the tints are laid over an opaque --bg: they are
-   translucent, and the cell has to hide the values scrolling under it. `:first-child` to
-   outrank adminer's `td.hover:first-child`, which is the rule taking the start border. */
-td.sticky:first-child {
+   translucent, and the cell has to hide the values scrolling under it. The hover covers the
+   th too — the table list pins the name, and a translucent tint let the next cell show through.
+
+   The borders by #table, since only the data list has the cell: adminer strips them again on
+   `tr:hover td.hover`, `.checked td.hover` and the header's `table > :first-child >
+   :first-child > td.hover`, and anything less specific lost to one of them — the row went a
+   pixel shorter under the pointer and the grid below jumped. */
+#table td.sticky {
 	border-bottom-width: 1px;
 	border-inline-start-width: 1px;
+}
+
+/* The select-all cell over them, which `td.hover` also turns from the header's grey to --bg. */
+#table thead td.sticky {
+	border-top-width: 1px;
+	background: var(--dim);
 }
 
 .odds tbody tr:nth-child(2n) td.sticky {
 	background: linear-gradient(var(--ad-zebra), var(--ad-zebra)) var(--bg);
 }
 
-tbody tr:hover td.sticky {
+tbody tr:hover .sticky {
 	background: linear-gradient(var(--ad-accent-quiet), var(--ad-accent-quiet))
 		var(--bg);
 }
 
 .js .checkable .checked td.sticky {
 	background: var(--lit);
+}
+
+/* As wide as the table, so the action bar below it is too. Adminer gets this from
+   `body { min-width: fit-content }`, but here #content is what scrolls, and the form and div
+   between it and the footer stayed the panel's width — the bar stopped there, with rows
+   showing to its right once scrolled. */
+#content :has(.footer) {
+	min-width: fit-content;
 }
 
 /* The row actions, stuck to the bottom of the content panel.
@@ -164,6 +183,12 @@ tbody tr:hover td.sticky {
 	gap: 0.5rem;
 	background: transparent;
 	padding: 0;
+	/* The bar is as wide as the table; its controls stay in the visible part of it while the
+	   table scrolls sideways, and wrap against that width rather than the table's. */
+	position: sticky;
+	left: 0;
+	width: fit-content;
+	max-width: 100cqi;
 }
 
 /* Each box centres what it holds, now that the box is taller than its contents. */

@@ -97,6 +97,10 @@ body {
 	   With overflow-y alone it spills out of the panel and the window scrolls instead,
 	   taking the sidebar with it. */
 	overflow: auto;
+	/* So what sits in a wider-than-panel row can measure the visible width (cqi) — the action
+	   bar under a wide table, in tables.css. Safe: the width comes from the flex row above,
+	   never from the content. */
+	container-type: inline-size;
 	background: var(--ad-panel);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius);
@@ -105,13 +109,49 @@ body {
 /* Breadcrumb becomes the content panel's sticky header, always in view. */
 #content #breadcrumb {
 	position: sticky;
-	inset: 0 auto auto 0;
+	/* Minus the padding: sticky stops at the panel's padding box, so with 0 the header came to
+	   rest one padding in once the table was scrolled sideways, short of the panel's edges. */
+	inset: 0 auto auto calc(-1 * var(--ad-panel-pad));
+	/* One row: the links shrink to an ellipsis before the current page's name does (it is the
+	   text after them, which a flex row cannot shrink), and Logout is the last item
+	   (breadcrumb-logout.js) — the path gives way rather than running under it. The gap is
+	   the spaces around the », which a flex row trims. */
+	display: flex;
+	align-items: center;
+	gap: 0.35em;
+	white-space: nowrap;
 	width: auto;
 	margin: 0 calc(-1 * var(--ad-panel-pad)) 0.6rem;
 	padding: 0.55rem var(--ad-panel-pad);
 	background: var(--ad-panel);
 	border-bottom: 1px solid var(--ad-border);
 	z-index: 3;
+}
+
+#content #breadcrumb > a,
+#content #breadcrumb > .ad-breadcrumb-current {
+	min-width: 1.5em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Flex takes from each item in proportion to its shrink factor, so the links give nearly all
+   of it until they are down to their minimum, and only then the page's name. The big number
+   goes on the links, not a tiny one on the name: shrink factors summing under 1 take only that
+   fraction of the overflow, and the name, last one left, would barely move. */
+#content #breadcrumb > a {
+	flex-shrink: 1000;
+}
+
+#content #breadcrumb > form {
+	flex: none;
+	margin-inline-start: auto;
+	padding-inline-start: 0.6rem;
+}
+
+#content #breadcrumb .logout {
+	position: static;
+	margin: 0;
 }
 
 /* Logout is its own form; pin it to the window's top-right corner so it stays in the
