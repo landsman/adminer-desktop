@@ -15,13 +15,14 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 }
 
 #ad-connections {
-	max-width: 46em;
 	margin-bottom: var(--ad-gap-lg);
 }
 
 .ad-cards {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+	/* One per row: a column of connections reads as a list to pick from, and the name and the
+	   address get the whole width instead of an ellipsis. */
+	grid-template-columns: 1fr;
 	gap: var(--ad-gap-lg);
 	margin: 0 0 var(--ad-gap-lg);
 	padding: 0;
@@ -150,6 +151,7 @@ form:has(> #ad-connections:not(.ad-adding)) > :is(table, p) {
 }
 
 #ad-new-connection {
+	width: 100%;
 	border: 1px dashed var(--ad-border);
 	border-radius: var(--ad-radius);
 	padding: 0.6em 1.2em;

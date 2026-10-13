@@ -358,3 +358,89 @@ body {
 		box-shadow: none;
 	}
 }
+
+/* The login page: one centred column, not the two islands. There is nothing to navigate before
+   you are connected — the sidebar held only the logo and the gear, beside a panel mostly empty —
+   so the sidebar becomes a slim header over the panel, and the panel sizes to its content.
+   Keyed off adminer's own login field, which is on the page whether the form is folded behind
+   the saved connections or not. #menu stays rendered: the dialogs live in it. */
+body:has(input[name="auth[username]"]) {
+	flex-direction: column;
+	align-items: center;
+	gap: 0;
+	padding: 2rem 1rem;
+	overflow-y: auto;
+}
+
+/* Above the middle, not in it: a block centred exactly looks low, because the eye's centre of a
+   page sits above its geometric one. The free space is split at the golden section — 38.2% above,
+   61.8% below — by two spacers that grow in that ratio. Spacers rather than justify-content,
+   which pushes the top out of reach once the unfolded form is taller than the window; these
+   shrink to nothing instead. The header comes first (#foot has order -1), the panel after. */
+body:has(input[name="auth[username]"])::before,
+body:has(input[name="auth[username]"])::after {
+	content: "";
+	flex: 382 1 0;
+	order: -2;
+}
+
+body:has(input[name="auth[username]"])::after {
+	flex-grow: 618;
+	order: 1;
+}
+
+body:has(input[name="auth[username]"]) #ad-sidebar-resizer {
+	display: none;
+}
+
+body:has(input[name="auth[username]"]) :is(#foot, #content) {
+	flex: none;
+	width: min(40rem, 100%);
+}
+
+body:has(input[name="auth[username]"]) #foot {
+	overflow: visible;
+	background: none;
+	border: 0;
+}
+
+body:has(input[name="auth[username]"]) #menu {
+	overflow: visible;
+	background: none;
+}
+
+body:has(input[name="auth[username]"]) #menu h1 {
+	padding: 0 0 0.8rem;
+	border: 0;
+	background: none;
+}
+
+body:has(input[name="auth[username]"]) #desktop-gear {
+	top: 0;
+	right: 0;
+}
+
+body:has(input[name="auth[username]"]) #content {
+	overflow: visible;
+	padding-bottom: 1.4rem;
+	box-shadow:
+		0 1px 2px rgb(0 0 0 / 0.04),
+		0 8px 24px rgb(0 0 0 / 0.06);
+}
+
+/* Adminer's login table is as wide as its fields; in a column of its own it fills it. */
+body:has(input[name="auth[username]"]) #content table.layout {
+	width: 100%;
+}
+
+body:has(input[name="auth[username]"]) #content table.layout th {
+	width: 7rem;
+}
+
+body:has(input[name="auth[username]"])
+	#content
+	table.layout
+	:is(input:not([type="checkbox"]), select) {
+	box-sizing: border-box;
+	width: 100%;
+}
