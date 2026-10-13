@@ -10,7 +10,7 @@ declare(strict_types=1);
  * e2e_report() to save the page a step failed on.
  *
  * Which driver a process is testing arrives in ADMINER_DESKTOP_E2E_DRIVER, set by the context
- * from the Behat suite it belongs to — see tests/e2e/behat.yml.
+ * from the Behat suite it belongs to — see tests/e2e/behat.php.
  */
 
 require dirname(__DIR__, 3) . '/app/vendor/autoload.php';
