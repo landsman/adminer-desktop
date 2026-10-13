@@ -165,6 +165,30 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Delete sits beside Save, so it must not wear Save's fill: forms.css paints adminer's
+	 * destructive submits, which it marks only by name, in the danger colour. */
+	#[Then('Delete is not painted like Save')]
+	public function deleteUnlikeSave(): void
+	{
+		/** @var array{save: ?string, delete: ?string} $bg */
+		$bg = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const bg = (el) => el ? getComputedStyle(el).backgroundColor : null;
+				return {
+					save: bg(document.querySelector("#form input[type=submit]:not([name])")),
+					delete: bg(document.querySelector("#form input[type=submit][name=delete]")),
+				};
+			}',
+		);
+		if ($bg['save'] === null || $bg['delete'] === null) {
+			throw new RuntimeException('the edit form has no Save or no Delete: ' . json_encode($bg));
+		}
+		if ($bg['save'] === $bg['delete']) {
+			throw new RuntimeException("Delete shares Save's background, {$bg['save']}");
+		}
+	}
+
 	/** The import page is the sql page in import mode: `import=` is what flips it (adminer.php sets
 	 * $_GET["sql"] from it), and that is the page carrying the sql_file[] upload.
 	 */

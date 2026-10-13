@@ -192,6 +192,40 @@ button:focus-visible {
 	outline-offset: 2px;
 }
 
+/* Adminer's destructive submits, which it marks by name alone: Delete (edit form, select page),
+   Drop (table, view, database, schema, routine, user …), Truncate, and Clear (SQL history). Red
+   on the danger tint, not the primary fill — Delete sits beside Save, and on a prod connection
+   the two must not look alike. Tinted rather than filled, like the modal's .ad-danger: it is the
+   button nobody should be drawn to. Kill on the process list has no name to match. */
+input[type="submit"]:is(
+	[name="delete"],
+	[name="drop"],
+	[name="truncate"],
+	[name="clear"]
+) {
+	background: var(--ad-danger-bg);
+	color: var(--ad-danger);
+	border-color: color-mix(in srgb, var(--ad-danger) 45%, transparent);
+}
+
+input[type="submit"]:is(
+	[name="delete"],
+	[name="drop"],
+	[name="truncate"],
+	[name="clear"]
+):hover {
+	background: color-mix(in srgb, var(--ad-danger) 16%, var(--ad-danger-bg));
+}
+
+input[type="submit"]:is(
+	[name="delete"],
+	[name="drop"],
+	[name="truncate"],
+	[name="clear"]
+):focus-visible {
+	outline-color: var(--ad-danger);
+}
+
 input.default {
 	box-shadow: none;
 	font-weight: 600;
