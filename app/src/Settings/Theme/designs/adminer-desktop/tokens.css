@@ -59,6 +59,9 @@ html {
 	   rules have to agree on it: the panel's padding, and the breadcrumb and row actions that
 	   escape it to span the full width. */
 	--ad-panel-pad: 1.2rem;
+	/* The height of the two header rows, the sidebar's logo and the content's breadcrumb, so
+	   their rules run on as one line across the gutter. Scaled by hand: rem ignores --ad-scale. */
+	--ad-header-h: calc(2.4rem * var(--ad-scale, 1));
 	--ad-zebra: light-dark(
 		color-mix(in srgb, var(--fg) 3%, transparent),
 		color-mix(in srgb, #ffffff 4%, transparent)
