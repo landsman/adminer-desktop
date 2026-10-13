@@ -167,6 +167,12 @@ passwordless block is satisfied. `make e2e` runs it; it stays out of `qa` becaus
 needs docker. `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows
 either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`.
 
+A step's JavaScript and selectors are strings, so nothing checks them until a scenario fails. Mark
+each with PhpStorm's language-injection comment on the line before the literal — `// language=JavaScript`
+for what goes to `evaluate()` or `waitForFunction()`, `// language=JQuery-CSS` for a selector in
+`locator()` — giving the literal its own line inside the call. The IDE then highlights and checks it
+as code. New steps carry it; older ones get it when they are next touched.
+
 `tests/e2e/behat.php` has one suite per driver, and the folder decides which run a feature:
 `features/data/` (what Adminer reads through a driver) runs on both, `features/shell/` (our own
 chrome — theme, settings, sidebar, import, MCP) and `features/pgsql/` on postgres only. A new

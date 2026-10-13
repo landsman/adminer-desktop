@@ -53,12 +53,32 @@ select.size {
 /* The edit form's fields, on one width the user owns (src/Assets/javascript/edit-field-width.js).
    Adminer hardcodes cols='50' on every textarea, which is a terminal's idea of wide, not a
    desktop window's — so the column is driven by the property instead, and dragging any one
-   textarea's native grip moves all of them. Bounded by what is actually on screen, so a
-   width dragged wide on a big display can't push the form off a small one. */
+   textarea's native grip moves all of them.
+
+   Never wider than the cell it is in: the table spans the panel, the name and function columns
+   keep their own width, and the field takes what is left, up to the width the user chose. A cap
+   from the viewport (100vw minus the sidebar) left out those two columns, so on a narrow window
+   the right side of every field sat past the panel's edge. The text wraps instead. min() rather
+   than max-width, so the inline width a drag writes still wins while the grip is held. */
+#form > table.layout {
+	width: 100%;
+}
+
+#form > table.layout > tbody > tr > :not(:last-child) {
+	width: 1%;
+	white-space: nowrap;
+}
+
 #form > table.layout textarea {
 	box-sizing: border-box;
-	width: var(--ad-edit-field-width);
-	max-width: calc(100vw - var(--ad-sidebar-width) - 6em);
+	width: min(var(--ad-edit-field-width), 100%);
+}
+
+/* JUSH sizes its <pre> once, in pixels, from the textarea it hides; max-width is the one thing
+   that still reaches past that inline width. */
+#form > table.layout pre.jush {
+	box-sizing: border-box;
+	max-width: 100%;
 }
 
 /* Adminer 6 gives a JSON field 110% monospace (textarea[class*="jush-"]), which outranks the

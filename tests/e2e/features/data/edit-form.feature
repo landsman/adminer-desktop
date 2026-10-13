@@ -15,3 +15,8 @@ Feature: Resizing the fields of the edit form
     And every other field on the form followed it
     And the "edit_field" width is stored, matching what is on screen
     And a fresh page opens the "edit_field" at the stored width
+
+  Scenario: In a narrow window every field still fits the panel, its text wrapping instead
+    When the window is 1000 pixels wide
+    And I reload the page
+    Then every field fits inside the content panel
