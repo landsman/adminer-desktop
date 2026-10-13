@@ -114,10 +114,8 @@ if (pagerGrid && pagerBox) {
 
 	const total = document.createElement("span");
 	total.className = "ad-page-total";
-	// The word between the rows on screen and the rows there are, translated server-side
-	// (AdminerDesktop::head) because this file has no language of its own.
-	const word =
-		document.querySelector('meta[name="ad-pager-of"]')?.content ?? "/";
+	// The word between the rows on screen and the rows there are.
+	const word = window.desktopLang("pager.of", "/");
 
 	/** Draw the row for the page we are on. Called again after each move, because every part of
 	 * it — which arrows lead anywhere, which page is selected — is that number. */

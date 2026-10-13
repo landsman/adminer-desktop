@@ -20,9 +20,11 @@ a cache-buster; nothing lists them by name.
 
 These are plain scripts, not modules, so what one file offers another it offers on `window`,
 and the file that defines it sorts earlier by name — `api.js` before its callers, `refresh.js`
-before `table-columns.js`. Three so far:
+before `table-columns.js`. Four so far:
 
 - `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
+- `window.desktopLang(id, fallback)` — a string of ours, translated. Add it to the plugin
+  catalogue (`app/src/I18n/plugin/`) as `js.<id>` and it is on every page; nothing else lists it.
 - `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
 - `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the

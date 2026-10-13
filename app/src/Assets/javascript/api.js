@@ -14,3 +14,13 @@ window.desktopApi = Object.freeze({
 	// edit_field); read back by head() on the next load.
 	resize: "api.php?action=resize",
 });
+
+/**
+ * A string of ours in the page's language: the catalogue ID without its "js." prefix
+ * (app/src/I18n/plugin/), which AdminerDesktop::head() hands over in #ad-i18n. The fallback is
+ * for a page that has no block, which only a broken head() would leave.
+ */
+const strings = JSON.parse(
+	document.getElementById("ad-i18n")?.textContent || "{}",
+);
+window.desktopLang = (id, fallback) => strings[id] ?? fallback;

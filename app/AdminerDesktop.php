@@ -17,6 +17,7 @@ use Desktop\DestructiveAction;
 use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
+use Desktop\I18n\Locale;
 use Desktop\Import;
 use Desktop\Latte;
 use Desktop\Mcp;
@@ -229,18 +230,17 @@ class AdminerDesktop extends Adminer\Plugin {
 		if ($demo = Env::Demo->get()) {
 			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
 		}
-		// The whole-page import dropzone (src/Assets/javascript/drag-drop-import.js) is client
-		// side, but its label is ours to translate — so hand it over server-side in a meta the
-		// script reads. Only on the import page, which is the one the dropzone wires itself to.
-		if (isset($_GET["import"])) {
-			echo '<meta name="ad-import-drop" content="' . Adminer\h($this->t('import.drop_hint')) . "\">\n";
+		// The strings our scripts show, for window.desktopLang (src/Assets/javascript/api.js): every
+		// catalogue ID under js., translated, in one JSON block — so a new one is a catalogue entry
+		// and nothing here. A data block, never executed, so the CSP has nothing to say about it;
+		// the HEX flags keep a "</script>" in a translation from closing it.
+		$strings = [];
+		foreach (array_keys($this->translations[Locale::En->value]) as $id) {
+			if (str_starts_with($id, 'js.')) {
+				$strings[substr($id, 3)] = $this->lang($id);
+			}
 		}
-		// Same again for the pager's "1-20 of 50" (src/Assets/javascript/table-pager.js): the
-		// numbers are the page's, the word between them is ours to translate. Only on the data
-		// list, which is the only page with rows to count.
-		if (isset($_GET["select"])) {
-			echo '<meta name="ad-pager-of" content="' . Adminer\h($this->t('pager.of')) . "\">\n";
-		}
+		echo '<script type="application/json" id="ad-i18n">' . json_encode($strings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . "</script>\n";
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 

@@ -28,7 +28,7 @@ return [
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
-	'pager.of' => 'of',
+	'js.pager.of' => 'of',
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
@@ -69,7 +69,7 @@ return [
 	'plugins.col_desc' => 'What it does',
 
 	// Whole-page import dropzone (AdminerDesktop::head()).
-	'import.drop_hint' => 'Drop the SQL file to import',
+	'js.import.drop_hint' => 'Drop the SQL file to import',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'AI access',
