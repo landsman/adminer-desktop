@@ -57,6 +57,9 @@ class Latte {
 	static function precompile(): int {
 		$latte = self::engine();
 		$latte->setCacheDirectory(self::PRECOMPILED);
+		// engine() turns the check off once latte-cache/ exists, and a stray one copied in from
+		// the checkout would then ship as is: the file name hashes the path, not the content.
+		$latte->setAutoRefresh(true);
 		$files = Files::find(dirname(__DIR__) . "/src", "latte");
 		foreach ($files as $file) {
 			$latte->warmupCache($file);
