@@ -405,7 +405,7 @@ body:has(input[name="auth[username]"]) #foot {
 }
 
 body:has(input[name="auth[username]"]) #menu {
-	padding-bottom: 0.8rem;
+	padding-bottom: 2rem;
 	overflow: visible;
 	background: none;
 }
@@ -420,11 +420,16 @@ body:has(input[name="auth[username]"]) #menu h1 {
 }
 
 /* The version and the gear, side by side at the foot of the window, out of the way: neither is
-   what this page is for. Fixed rather than moved, since both are adminer's or the sidebar's
-   markup; meeting at the middle — the version ending at it, the gear starting there — centres the
-   pair without knowing either's width. Nothing above #foot sets a transform or a filter, so the
-   viewport is what they are fixed to. */
-body:has(input[name="auth[username]"]) #menu .version,
+   what this page is for. The version is our own link (AdminerDesktop::navigation()); adminer's,
+   part of the logo's heading, steps aside. Fixed rather than moved, and meeting at the middle —
+   the version ending at it, the gear starting there — centres the pair without knowing either's
+   width. Nothing above #foot sets a transform or a filter, so the viewport is what they are fixed
+   to. */
+body:has(input[name="auth[username]"]) #menu .version {
+	display: none;
+}
+
+body:has(input[name="auth[username]"]) .ad-version,
 body:has(input[name="auth[username]"]) #desktop-gear {
 	position: fixed;
 	bottom: 1rem;
@@ -432,10 +437,19 @@ body:has(input[name="auth[username]"]) #desktop-gear {
 	transform: none;
 }
 
-body:has(input[name="auth[username]"]) #menu .version {
+body:has(input[name="auth[username]"]) .ad-version {
+	display: block;
 	right: calc(50% + 0.2rem);
 	left: auto;
 	line-height: 1.6rem;
+	font-size: 0.8rem;
+	color: color-mix(in srgb, var(--fg) 55%, transparent);
+	text-decoration: none;
+}
+
+body:has(input[name="auth[username]"]) .ad-version:hover {
+	color: var(--fg);
+	text-decoration: underline;
 }
 
 body:has(input[name="auth[username]"]) #desktop-gear {

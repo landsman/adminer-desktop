@@ -12,6 +12,8 @@ Feature: Saved connections
   Scenario: The saved login is a card, and a new one is a modal with Permanent login ticked
     Then the saved connection is a card
     And the login form is folded away
+    And the logo is not a link
+    And the version links to adminer's releases
     When I ask for a new connection
     Then the login form is shown
     And Permanent login is ticked

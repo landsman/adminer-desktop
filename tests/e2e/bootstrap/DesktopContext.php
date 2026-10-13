@@ -928,6 +928,23 @@ class DesktopContext implements Context
 		$this->page->waitForFunction('() => !window.e2eLeaving && document.readyState === "complete"');
 	}
 
+	#[Then('the logo is not a link')]
+	public function logoNotLink(): void
+	{
+		if ((bool) $this->page->evaluate('() => !!document.querySelector("a#h1")')) {
+			throw new RuntimeException('the logo is still a link');
+		}
+	}
+
+	#[Then("the version links to adminer's releases")]
+	public function versionLinksReleases(): void
+	{
+		$href = (string) $this->page->evaluate('() => document.querySelector(".ad-version")?.getAttribute("href") ?? ""');
+		if ($href !== 'https://github.com/vrana/adminer/releases') {
+			throw new RuntimeException("the version links to '$href'");
+		}
+	}
+
 	#[Then('Permanent login is ticked')]
 	public function permanentTicked(): void
 	{

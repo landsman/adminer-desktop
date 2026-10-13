@@ -3,6 +3,12 @@
  * --bg/--fg so it follows whichever design is active; --ad-conn is the connection's colour,
  * set per card inline and for the whole page by head(). */
 
+/* The version link the login page prints (AdminerDesktop::navigation()). Only our own design
+   places it, at the foot of the window; every other design keeps adminer's version by the logo. */
+.ad-version {
+	display: none;
+}
+
 /* Adminer's own list of the same logins, in the sidebar: the cards replace it. */
 body:has(#ad-connections) #logins {
 	display: none;

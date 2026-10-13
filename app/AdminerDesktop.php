@@ -284,8 +284,14 @@ class AdminerDesktop extends Adminer\Plugin {
 	* one adminer builds for the breadcrumb's first link (include/design.inc.php).
 	*/
 	function name(): string {
+		$name = (new Adminer\Adminer)->name();
+		// On the login page there is no home to lead to — it is the home — so the logo is a name
+		// and not a link.
+		if (!isset($_GET["username"])) {
+			return (string) preg_replace("~<a href='[^']*'[^>]*?( id='h1'[^>]*>)(.*?)</a>~s", '<span$1$2</span>', $name);
+		}
 		$home = substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1);
-		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", (new Adminer\Adminer)->name());
+		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", $name);
 	}
 
 	/** Adminer's sidebar, with ours ahead of it: the settings dialog and, on the login page, the
@@ -297,6 +303,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->dialog->render();
 		if ($missing == "auth") {
 			$this->connections->dialogs();
+			// The version, at the foot of the login page beside the gear, as a link to what changed
+			// in it. Ours rather than adminer's .version, which is part of the logo's heading and
+			// links to a download page; target=_blank, which the launcher opens in the browser.
+			echo "<a class='ad-version' href='https://github.com/vrana/adminer/releases' target='_blank' rel='noopener'>" . Adminer\h(Adminer\VERSION) . "</a>\n";
 		}
 	}
 
