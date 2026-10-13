@@ -273,13 +273,31 @@ function e2e_login(PageInterface $page, array $fix): void
 		$page->goto((string) $fix['base']);
 		// The login form is adminer's, inside the "New connection" modal on our login page; open
 		// it the way a user does. Without our login page (served bare) there is no button.
-		$page->evaluate('() => document.querySelector("#ad-new-connection")?.click()');
-		$page->locator('select[name="auth[driver]"]')->selectOption((string) $driver['key']);
+		$page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("#ad-new-connection")?.click()',
+		);
+		$page->locator(
+			// language=JQuery-CSS
+			'select[name="auth[driver]"]',
+		)->selectOption((string) $driver['key']);
 		usleep(400_000 * $attempt); // let the rebuild settle, and wait longer each time round
-		$page->locator('input[name="auth[server]"]')->fill((string) $fix['database']);
-		$page->locator('input[name="auth[username]"]')->fill((string) $driver['username']);
-		$page->locator('input[name="auth[password]"]')->fill((string) $driver['password']);
-		$page->locator('input[name="auth[db]"]')->fill(E2E_DATABASE);
+		$page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[server]"]',
+		)->fill((string) $fix['database']);
+		$page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[username]"]',
+		)->fill((string) $driver['username']);
+		$page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[password]"]',
+		)->fill((string) $driver['password']);
+		$page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[db]"]',
+		)->fill(E2E_DATABASE);
 		// Submit the form rather than clicking: the rebuild leaves the button intermittently "not
 		// actionable", and this depends on neither its markup nor its label.
 		// The mark is how the answer is told from the form it answers. requestSubmit() only starts the
@@ -288,8 +306,14 @@ function e2e_login(PageInterface $page, array $fix): void
 		// scenario met the login form one step later. A fresh MySQL's first, slow authentication is
 		// what opened that window. waitForFunction survives the navigation; the page it resolves on
 		// is Adminer's answer, whichever way it went.
-		$page->evaluate('() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }');
-		$page->waitForFunction('() => !window.e2eSubmitted && document.readyState === "complete"');
+		$page->evaluate(
+			// language=JavaScript
+			'() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }',
+		);
+		$page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eSubmitted && document.readyState === "complete"',
+		);
 		// A rejected login comes back as the login page, and its title says so.
 		if (!str_starts_with($page->title(), 'Login')) {
 			return;

@@ -97,6 +97,38 @@ foreach ($filenames as $filename) {
 
 echo ($errors ? "$errors problem(s)\n" : "php ok\n");
 
+// The e2e steps hand the browser JavaScript and selectors as strings, which nothing checks until
+// a scenario fails. A `// language=` comment on the line before makes PhpStorm treat the literal
+// as code, so a typo shows in the editor instead; this keeps the habit from depending on memory.
+// Only a literal is held to it: a variable or an expression was marked where it was written.
+$languages = ["evaluate" => "JavaScript", "waitForFunction" => "JavaScript", "addInitScript" => "JavaScript", "locator" => "JQuery-CSS"];
+$unmarked = 0;
+foreach (Desktop\Files::find($root . "/tests/e2e", "php") as $filename) {
+	$tokens = array_values(array_filter(
+		token_get_all(file_get_contents($filename)),
+		fn($token) => !is_array($token) || $token[0] !== T_WHITESPACE
+	));
+	foreach ($tokens as $i => $token) {
+		if (!is_array($token) || !isset($languages[$token[1]]) || ($tokens[$i + 1] ?? null) !== "(") {
+			continue;
+		}
+		// The first argument, past the comment that should be sitting in front of it.
+		$before = $tokens[$i + 2] ?? null;
+		$arg = is_array($before) && $before[0] === T_COMMENT ? $tokens[$i + 3] : $before;
+		if (!(is_array($arg) ? in_array($arg[0], [T_CONSTANT_ENCAPSED_STRING, T_START_HEREDOC], true) : $arg === '"')) {
+			continue;
+		}
+		$mark = "// language=" . $languages[$token[1]];
+		if ($before === $arg || trim($before[1]) !== $mark) {
+			$short = str_replace($root . "/", "", $filename);
+			fwrite(STDERR, "$short:$token[2]: $token[1]() takes a literal with no `$mark` on the line before it\n");
+			$unmarked++;
+		}
+	}
+}
+$errors += $unmarked;
+echo ($unmarked ? "$unmarked unmarked e2e literal(s)\n" : "e2e literals ok\n");
+
 // The templates, through the same engine the app builds — so the linter knows the
 // functions registered on it and does not report them as unknown. Skipped rather than
 // failed when the deps are not installed, like the JS tooling in the Makefile: this file

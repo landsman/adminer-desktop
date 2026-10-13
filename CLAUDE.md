@@ -169,9 +169,10 @@ either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`.
 
 A step's JavaScript and selectors are strings, so nothing checks them until a scenario fails. Mark
 each with PhpStorm's language-injection comment on the line before the literal — `// language=JavaScript`
-for what goes to `evaluate()` or `waitForFunction()`, `// language=JQuery-CSS` for a selector in
-`locator()` — giving the literal its own line inside the call. The IDE then highlights and checks it
-as code. New steps carry it; older ones get it when they are next touched.
+for what goes to `evaluate()`, `waitForFunction()` or `addInitScript()`, `// language=JQuery-CSS` for a
+selector in `locator()` — giving the literal its own line inside the call. The IDE then highlights and
+checks it as code, and `make qa` (`cli/lint.php`) fails on a literal there without it. The app itself
+has no JavaScript in strings to mark: it lives in files under `src/Assets/javascript/`.
 
 `tests/e2e/behat.php` has one suite per driver, and the folder decides which run a feature:
 `features/data/` (what Adminer reads through a driver) runs on both, `features/shell/` (our own
