@@ -1,7 +1,7 @@
 /**
  * Put Logout at the end of the breadcrumb's row and the narrow window's burger at its start,
  * so a long path shrinks instead of running under either. A narrow window moves Logout into
- * the sidebar's drawer instead.
+ * the sidebar's drawer instead, and the path starts at a home mark rather than the driver's name.
  *
  * Adminer prints Logout as a form of its own, outside the breadcrumb; the adminer-desktop
  * theme pinned it over the panel's corner, and nothing kept the path out of its way. Moved
@@ -24,6 +24,15 @@ if (breadcrumb && logout && getComputedStyle(breadcrumb).display === "flex") {
 		span.className = "ad-breadcrumb-current";
 		span.textContent = current.textContent.replace(/^\s*»?\s*/, "").trim();
 		current.replaceWith(" » ", span);
+	}
+	// The driver's name ("PostgreSQL") is where the path starts, not something to read on
+	// every page: a home mark, with the name kept as its label and tooltip.
+	const home = breadcrumb.querySelector(":scope > a");
+	if (home) {
+		home.title = home.textContent;
+		home.setAttribute("aria-label", home.textContent);
+		home.className = "ad-breadcrumb-home";
+		home.textContent = "";
 	}
 	// In a narrow window the header row is the burger and the path, and Logout goes in the
 	// drawer, under the logo; the same breakpoint as the burger's (layout.css), and live, so
