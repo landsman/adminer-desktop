@@ -121,8 +121,10 @@ body {
 	gap: 0.35em;
 	white-space: nowrap;
 	width: auto;
+	box-sizing: border-box;
+	height: var(--ad-header-h);
 	margin: 0 calc(-1 * var(--ad-panel-pad)) 0.6rem;
-	padding: 0.55rem var(--ad-panel-pad);
+	padding: 0 var(--ad-panel-pad);
 	background: var(--ad-panel);
 	border-bottom: 1px solid var(--ad-border);
 	z-index: 3;
@@ -215,17 +217,46 @@ body {
 	box-shadow: none;
 }
 
+/* The logo row, as tall as the breadcrumb beside it. */
+#menu h1 {
+	display: flex;
+	align-items: center;
+	gap: 0.3em;
+	box-sizing: border-box;
+	height: var(--ad-header-h);
+	padding-block: 0;
+	white-space: nowrap;
+}
+
 /* Settings gear: at the sidebar's top-right, by the Adminer logo, as a quiet icon rather
    than a filled button floating over the content panel (where it also caught its clicks). */
 #desktop-gear {
 	/* absolute inside #menu, so it scrolls away with the logo instead of hanging over the
 	   sidebar; right-anchored so it follows the panel's width rather than a magic offset. */
 	position: absolute;
-	inset: 1rem 0.6rem auto auto;
-	padding: 0.15rem 0.4rem;
+	/* Centred on the logo's row (#menu h1), whatever the scale makes of its height. */
+	inset: calc(var(--ad-header-h) / 2) 0.6rem auto auto;
+	transform: translateY(-50%);
+	width: 1.6rem;
+	height: 1.6rem;
+	padding: 0;
+	/* The ⚙ glyph sits low in its line box, so it never centred on the row; a mask of the
+	   same shape does, like the home mark in the breadcrumb. */
+	font-size: 0;
 	background: transparent;
 	border: 1px solid transparent;
 	color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+
+#desktop-gear::before {
+	content: "";
+	display: block;
+	width: 1rem;
+	height: 1rem;
+	margin: auto;
+	background: currentcolor;
+	-webkit-mask: url("icons/settings.svg") center / contain no-repeat;
+	mask: url("icons/settings.svg") center / contain no-repeat;
 }
 
 #desktop-gear:hover {
