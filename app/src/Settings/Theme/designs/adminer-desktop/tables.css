@@ -191,11 +191,14 @@ tbody tr:hover .sticky {
 	max-width: 100cqi;
 }
 
-/* Each box centres what it holds, now that the box is taller than its contents. */
+/* Each box centres what it holds, now that the box is taller than its contents. The border
+   runs through the middle of the legend, so half the legend already sits above the contents:
+   the padding is lopsided by that half to put them midway between the two lines. */
 .footer fieldset {
 	display: flex;
 	align-items: center;
 	margin: 0;
+	padding-block: 0.25rem 0.9rem;
 }
 
 /* Adminer wraps a box's controls in a <div>, where they sat as inline text: a space between
