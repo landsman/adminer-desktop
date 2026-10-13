@@ -14,6 +14,7 @@ Feature: Saved connections
     And the login form is folded away
     And the logo is not a link
     And the version links to adminer's releases
+    And the version and the gear are centred as a pair
     When I ask for a new connection
     Then the login form is shown
     And Permanent login is ticked

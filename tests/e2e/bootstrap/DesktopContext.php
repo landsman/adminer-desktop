@@ -1149,6 +1149,27 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** One row at the foot of the login page, centred as a whole: its left and right gaps to the
+	 * window match, and the gear sits right of the versions on the same line. */
+	#[Then('the version and the gear are centred as a pair')]
+	public function versionAndGearCentred(): void
+	{
+		$skew = $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const v = document.querySelector('.ad-versions').getBoundingClientRect();
+				const g = document.querySelector('#desktop-gear').getBoundingClientRect();
+				if (g.left < v.right || Math.abs((g.top + g.bottom) - (v.top + v.bottom)) > 2) {
+					return 999;
+				}
+				return Math.abs(v.left - (document.documentElement.clientWidth - g.right));
+			}",
+		);
+		if ((float) $skew > 2) {
+			throw new RuntimeException("the version and the gear are off centre by {$skew}px");
+		}
+	}
+
 	#[When('the window is :width by :height pixels')]
 	public function windowIs(string $width, string $height): void
 	{
