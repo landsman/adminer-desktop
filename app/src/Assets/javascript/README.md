@@ -24,7 +24,8 @@ before `table-columns.js`. Four so far:
 
 - `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
 - `window.desktopLang(id, fallback)` — a string of ours, translated. Add it to the plugin
-  catalogue (`app/src/I18n/plugin/`) as `js.<id>` and it is on every page; nothing else lists it.
+  catalogue (`app/src/I18n/plugin/`) as `js.<id>` and it is on every page; nothing else lists
+  it. It goes through adminer's `lang()`, so sprintf: a placeholder is `{n}`, never `%`.
 - `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
 - `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the

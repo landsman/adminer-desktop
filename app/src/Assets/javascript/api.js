@@ -20,7 +20,9 @@ window.desktopApi = Object.freeze({
  * (app/src/I18n/plugin/), which AdminerDesktop::head() hands over in #ad-i18n. The fallback is
  * for a page that has no block, which only a broken head() would leave.
  */
-const strings = JSON.parse(
-	document.getElementById("ad-i18n")?.textContent || "{}",
-);
-window.desktopLang = (id, fallback) => strings[id] ?? fallback;
+// Closed over, not a top-level const: classic scripts share one global scope, so a "strings"
+// declared here would break any later file that declares its own.
+window.desktopLang = (
+	(strings) => (id, fallback) =>
+		strings[id] ?? fallback
+)(JSON.parse(document.getElementById("ad-i18n")?.textContent || "{}"));

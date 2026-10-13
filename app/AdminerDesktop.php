@@ -233,14 +233,14 @@ class AdminerDesktop extends Adminer\Plugin {
 		// The strings our scripts show, for window.desktopLang (src/Assets/javascript/api.js): every
 		// catalogue ID under js., translated, in one JSON block — so a new one is a catalogue entry
 		// and nothing here. A data block, never executed, so the CSP has nothing to say about it;
-		// the HEX flags keep a "</script>" in a translation from closing it.
+		// JSON_HEX_TAG keeps a "</script>" or "<!--" in a translation from breaking out of it.
 		$strings = [];
 		foreach (array_keys($this->translations[Locale::En->value]) as $id) {
 			if (str_starts_with($id, 'js.')) {
 				$strings[substr($id, 3)] = $this->lang($id);
 			}
 		}
-		echo '<script type="application/json" id="ad-i18n">' . json_encode($strings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . "</script>\n";
+		echo '<script type="application/json" id="ad-i18n">' . json_encode($strings, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) . "</script>\n";
 		return null; // let adminer's own head() run; it prints the favicon
 	}
 
