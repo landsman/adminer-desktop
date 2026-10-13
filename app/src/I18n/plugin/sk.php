@@ -103,4 +103,21 @@ return [
 	'mcp.agent_unknown_method' => 'neznáma metóda',
 	'mcp.agent_unknown_tool' => 'neznámy nástroj',
 	'mcp.agent_missing_argument' => 'chýba povinný argument',
+
+	// Keyboard shortcuts dialog (src/Shortcuts/).
+	'shortcuts.title' => 'Klávesové skratky',
+	'shortcuts.close_dialog' => 'Zavrieť',
+	'shortcuts.group_app' => 'Aplikácia',
+	'shortcuts.group_forms' => 'Formuláre a SQL',
+	'shortcuts.help' => 'Zobraziť tento zoznam',
+	'shortcuts.reload' => 'Znova načítať stránku',
+	'shortcuts.close' => 'Zavrieť dialóg alebo menu',
+	'shortcuts.adminer' => 'Prepnúť na Adminer',
+	'shortcuts.editor' => 'Prepnúť na Editor',
+	'shortcuts.logs' => 'Otvoriť logy',
+	'shortcuts.quit' => 'Ukončiť',
+	'shortcuts.submit' => 'Spustiť SQL alebo uložiť formulár',
+	'shortcuts.insert_next' => 'Uložiť a vložiť ďalší riadok',
+	'shortcuts.field_up' => 'Prejsť na pole vyššie',
+	'shortcuts.field_down' => 'Prejsť na pole nižšie',
 ];

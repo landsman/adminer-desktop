@@ -23,3 +23,29 @@ function reloadShortcut(e) {
 }
 
 addEventListener("keydown", reloadShortcut);
+
+/**
+ * Open the list of shortcuts on ?, the key GitHub, Gmail and most web apps use for it.
+ *
+ * Not while typing — ? is a character there — and not over another dialog. The list itself is
+ * src/Shortcuts/, printed for the platform the app runs on; a shortcut added here gets a row
+ * there.
+ *
+ * @param {KeyboardEvent} e
+ */
+function helpShortcut(e) {
+	if (
+		e.key !== "?" ||
+		e.metaKey ||
+		e.ctrlKey ||
+		e.altKey ||
+		e.target.closest?.("input, textarea, select, [contenteditable]") ||
+		document.querySelector("dialog[open]")
+	) {
+		return;
+	}
+	e.preventDefault();
+	window.desktopOpenDialog?.("desktop-shortcuts");
+}
+
+addEventListener("keydown", helpShortcut);

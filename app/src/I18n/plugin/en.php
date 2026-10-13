@@ -110,4 +110,21 @@ return [
 	'mcp.agent_unknown_method' => 'unknown method',
 	'mcp.agent_unknown_tool' => 'unknown tool',
 	'mcp.agent_missing_argument' => 'missing required argument',
+
+	// Keyboard shortcuts dialog (src/Shortcuts/). Adminer and Editor are product names.
+	'shortcuts.title' => 'Keyboard shortcuts',
+	'shortcuts.close_dialog' => 'Close',
+	'shortcuts.group_app' => 'App',
+	'shortcuts.group_forms' => 'Forms and SQL',
+	'shortcuts.help' => 'Show this list',
+	'shortcuts.reload' => 'Reload the page',
+	'shortcuts.close' => 'Close a dialog or a menu',
+	'shortcuts.adminer' => 'Switch to Adminer',
+	'shortcuts.editor' => 'Switch to Editor',
+	'shortcuts.logs' => 'Open the logs',
+	'shortcuts.quit' => 'Quit',
+	'shortcuts.submit' => 'Run the SQL, or save the form',
+	'shortcuts.insert_next' => 'Save and insert the next row',
+	'shortcuts.field_up' => 'Move to the field above',
+	'shortcuts.field_down' => 'Move to the field below',
 ];

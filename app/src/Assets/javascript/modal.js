@@ -133,6 +133,9 @@
 		}
 	});
 
+	// For a script that opens a dialog without a button to click — shortcuts.js on ?.
+	window.desktopOpenDialog = (id) => open(document.getElementById(id));
+
 	for (const marker of document.querySelectorAll("[data-open-dialog]")) {
 		open(document.getElementById(marker.dataset.openDialog));
 	}

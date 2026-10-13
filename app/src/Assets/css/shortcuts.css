@@ -1,0 +1,51 @@
+/* The keyboard shortcuts dialog (src/Shortcuts/shortcuts-dialog.latte): a group per table, the
+ * action on the left and its keys right-aligned, the way a mac menu lists them. */
+
+.ad-shortcuts {
+	width: 28em;
+}
+
+.ad-shortcuts table {
+	width: 100%;
+	border: 0;
+	border-collapse: collapse;
+	margin: 0 0 1.2em;
+}
+
+.ad-shortcuts table:last-child {
+	margin-bottom: 0;
+}
+
+.ad-shortcuts caption {
+	text-align: left;
+	font-weight: 600;
+	padding-bottom: 0.4em;
+}
+
+.ad-shortcuts td {
+	border: 0;
+	border-top: 1px solid var(--ad-border);
+	padding: 0.45em 0;
+	background: none;
+}
+
+.ad-shortcuts td:last-child {
+	text-align: right;
+	white-space: nowrap;
+	padding-left: 1em;
+}
+
+.ad-shortcuts kbd {
+	display: inline-block;
+	min-width: 1.4em;
+	margin-left: 0.3em;
+	padding: 0.1em 0.45em;
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius-sm);
+	background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+	text-align: center;
+	/* Not the theme's monospace: ⌘ and ⇧ come out tiny in it. The system font draws them the
+	   size the mac menu bar does. */
+	font-family: system-ui;
+	font-size: 0.85em;
+}

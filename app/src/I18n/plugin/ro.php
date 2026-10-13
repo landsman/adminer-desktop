@@ -103,4 +103,21 @@ return [
 	'mcp.agent_unknown_method' => 'metodă necunoscută',
 	'mcp.agent_unknown_tool' => 'unealtă necunoscută',
 	'mcp.agent_missing_argument' => 'lipsește un argument obligatoriu',
+
+	// Keyboard shortcuts dialog (src/Shortcuts/).
+	'shortcuts.title' => 'Comenzi rapide de la tastatură',
+	'shortcuts.close_dialog' => 'Închide',
+	'shortcuts.group_app' => 'Aplicație',
+	'shortcuts.group_forms' => 'Formulare și SQL',
+	'shortcuts.help' => 'Afișează această listă',
+	'shortcuts.reload' => 'Reîncarcă pagina',
+	'shortcuts.close' => 'Închide un dialog sau un meniu',
+	'shortcuts.adminer' => 'Comută la Adminer',
+	'shortcuts.editor' => 'Comută la Editor',
+	'shortcuts.logs' => 'Deschide jurnalele',
+	'shortcuts.quit' => 'Ieșire',
+	'shortcuts.submit' => 'Rulează SQL-ul sau salvează formularul',
+	'shortcuts.insert_next' => 'Salvează și inserează rândul următor',
+	'shortcuts.field_up' => 'Mergi la câmpul de deasupra',
+	'shortcuts.field_down' => 'Mergi la câmpul de dedesubt',
 ];

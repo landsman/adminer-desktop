@@ -103,4 +103,21 @@ return [
 	'mcp.agent_unknown_method' => 'nieznana metoda',
 	'mcp.agent_unknown_tool' => 'nieznane narzędzie',
 	'mcp.agent_missing_argument' => 'brak wymaganego argumentu',
+
+	// Keyboard shortcuts dialog (src/Shortcuts/).
+	'shortcuts.title' => 'Skróty klawiszowe',
+	'shortcuts.close_dialog' => 'Zamknij',
+	'shortcuts.group_app' => 'Aplikacja',
+	'shortcuts.group_forms' => 'Formularze i SQL',
+	'shortcuts.help' => 'Pokaż tę listę',
+	'shortcuts.reload' => 'Odśwież stronę',
+	'shortcuts.close' => 'Zamknij okno dialogowe lub menu',
+	'shortcuts.adminer' => 'Przełącz na Adminer',
+	'shortcuts.editor' => 'Przełącz na Editor',
+	'shortcuts.logs' => 'Otwórz logi',
+	'shortcuts.quit' => 'Zakończ',
+	'shortcuts.submit' => 'Uruchom SQL lub zapisz formularz',
+	'shortcuts.insert_next' => 'Zapisz i wstaw następny wiersz',
+	'shortcuts.field_up' => 'Przejdź do pola wyżej',
+	'shortcuts.field_down' => 'Przejdź do pola niżej',
 ];

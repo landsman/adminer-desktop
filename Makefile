@@ -294,6 +294,7 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
 	./bin/frankenphp$(EXE) php-cli tests/i18n/GeneratorTest.php
 	./bin/frankenphp$(EXE) php-cli tests/version/AppVersionTest.php
+	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
