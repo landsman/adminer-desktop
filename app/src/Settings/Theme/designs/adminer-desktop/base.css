@@ -10,6 +10,25 @@
 	navigation: auto;
 }
 
+/* A panel that changes shape — the login's header becoming the sidebar — morphs. By default the
+   browser scales each snapshot to the box's width, so the new sidebar starts 2–3x too big and
+   shrinks as it lands: that is the lurch at the end. At their own size, only cropped by the
+   moving box, the snapshots stay still and just the box travels. A decelerating curve, a touch
+   shorter than the 0.25s default, settles it instead of easing out of it. */
+::view-transition-group(*) {
+	animation-duration: 0.2s;
+	animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+::view-transition-old(ad-sidebar),
+::view-transition-new(ad-sidebar),
+::view-transition-old(ad-content),
+::view-transition-new(ad-content) {
+	height: 100%;
+	object-fit: none;
+	object-position: top center;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	@view-transition {
 		navigation: none;
