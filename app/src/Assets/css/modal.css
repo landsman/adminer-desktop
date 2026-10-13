@@ -31,8 +31,9 @@
 	flex: 1;
 }
 
-/* A dialog that takes the focus itself (focusSelf) is not a control, so no ring around all of it. */
-.ad-modal:focus {
+/* A dialog that takes the focus itself (focusSelf) is not a control, so no ring around all of it.
+   `dialog.` to outrank a design's `[tabindex]:focus-visible`, which loads later and ties. */
+dialog.ad-modal:focus {
 	outline: none;
 }
 
