@@ -202,9 +202,16 @@ body {
  * `.foot` class for closed, and its script, which toggles that class and closes on any click
  * outside. Changed: open, the sidebar is a full-height drawer over the content's left edge. */
 @media (max-width: 800px) {
+	/* One panel left on screen, so no gutter around it and no frame: the window is the frame. */
+	body {
+		padding: 0;
+	}
+
 	#content {
 		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
 		margin-inline-start: 0 !important;
+		border: 0;
+		border-radius: 0;
 	}
 
 	#content #breadcrumb {
@@ -224,8 +231,11 @@ body {
 		background: currentcolor;
 		color: color-mix(in srgb, var(--fg) 70%, transparent);
 		cursor: pointer;
-		-webkit-mask: url("icons/menu.svg") center / 1.1rem no-repeat;
-		mask: url("icons/menu.svg") center / 1.1rem no-repeat;
+		/* Drawn edge to edge and pinned left, so the lines start at the panel's padding — the
+		   same inset as Logout's border at the other end of the row. The button stays wider
+		   than the mark, to be hit. */
+		-webkit-mask: url("icons/menu.svg") left center / 1rem no-repeat;
+		mask: url("icons/menu.svg") left center / 1rem no-repeat;
 	}
 
 	#menuopen button:hover,
@@ -239,8 +249,10 @@ body {
 
 	.js #foot {
 		position: fixed;
-		inset: 0.5rem auto 0.5rem 0.5rem;
+		inset: 0 auto 0 0;
 		z-index: 10;
+		border-width: 0 1px 0 0;
+		border-radius: 0;
 		width: min(var(--ad-sidebar-width), calc(100vw - 4rem));
 		box-shadow: 0 8px 28px color-mix(in srgb, #000 22%, transparent);
 	}
