@@ -160,12 +160,14 @@ function e2e_sql(array $driver, string $sql): string
 
 /** Serve the app and return everything a scenario needs.
  *
- * @return array{root:string, data:string, artifacts:string, server:Process, base:string,
+ * @return array{root:string, app:string, data:string, artifacts:string, server:Process, base:string,
  *     database:string, driver:array<string, mixed>}
  */
 function e2e_boot(): array
 {
 	$root = dirname(__DIR__, 3);
+	// `make e2e-packaged` points this at a packaged, read-only copy; the checkout's app/ otherwise.
+	$app = getenv('ADMINER_DESKTOP_E2E_APP') ?: $root . '/app';
 	$artifacts = dirname(__DIR__) . '/artifacts';
 	$driver = e2e_driver();
 	// One data dir per driver: the suites run in one process and settings.json is what half the
@@ -179,7 +181,7 @@ function e2e_boot(): array
 	// every scenario would then wait on a port it is never going to get.
 	$port = e2e_free_port((int) $driver['appPort']);
 	$server = new Process(
-		[$root . '/bin/frankenphp', 'php-server', '--root', $root . '/app', '--listen', "127.0.0.1:$port", '--no-compress'],
+		[$root . '/bin/frankenphp', 'php-server', '--root', $app, '--listen', "127.0.0.1:$port", '--no-compress'],
 		null,
 		['ADMINER_DESKTOP_DATA' => $data],
 	);
@@ -202,7 +204,7 @@ function e2e_boot(): array
 		}
 		usleep(200_000);
 	}
-	return compact('root', 'data', 'artifacts', 'server', 'base', 'database', 'driver');
+	return compact('root', 'app', 'data', 'artifacts', 'server', 'base', 'database', 'driver');
 }
 
 /** The fixture for the driver this process is testing, booted once.

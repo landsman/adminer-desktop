@@ -27,9 +27,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-24.04
-    # docker pull, then 15 checks each with its own server and browser — ~5 minutes in
-    # practice. The default is 6 hours, which is what a wedged run costs before anyone looks.
-    timeout-minutes: 20
+    # docker pull, then the suite twice, against the checkout and then the packaged app/. The
+    # default is 6 hours, which is what a wedged run costs before anyone looks.
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -71,6 +71,13 @@ jobs:
       # frankenphp and a headless chromium, never the native shell, so a second platform would
       # re-run the same assertions — at 10x on macOS.
       - run: make e2e FRANKEN_ASSET=frankenphp-linux-x86_64
+
+      # Again, against app/ as a release ships it: precompiled templates in a read-only tree, where a
+      # template the build missed is a fatal page. Nightly only — a pull request here changes the
+      # suite, which the run above already proves — and after a red first run too, so one night
+      # says whether both broke.
+      - if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+        run: make e2e-packaged FRANKEN_ASSET=frankenphp-linux-x86_64
 
       # A failed step names the scenario and the step; the picture and the HTML beside it are the
       # only way to see what the page actually looked like on a runner nobody was watching.
