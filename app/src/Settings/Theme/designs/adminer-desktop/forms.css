@@ -67,6 +67,15 @@ textarea,
 	padding: 0.5em 0.65em;
 }
 
+/* The SQL editor is not a textarea once adminer's highlighter has run: it swaps in a
+   contenteditable <pre class="sqlarea"> with a grey border of its own and square corners, which
+   the field rules above never reach. Its monospace font stays. */
+pre.sqlarea {
+	border: 1px solid var(--ad-border-strong);
+	border-radius: var(--ad-radius-sm);
+	background: var(--bg);
+}
+
 /* Adminer's small boxes — Limit, Text length — are 7ex wide, which is two digits and a spinner
    with nothing to spare. Three digits is ordinary in both: a column dragged wide writes them
    into Text length itself, and Limit is a list of sizes up to 1000 now
@@ -124,13 +133,15 @@ select.size {
 
 input:where(:not(:disabled)):hover,
 select:where(:not(:disabled)):hover,
-textarea:where(:not(:disabled)):hover {
+textarea:where(:not(:disabled)):hover,
+pre.sqlarea:hover {
 	border-color: var(--fg);
 }
 
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+pre.sqlarea:focus {
 	border-color: var(--ad-accent);
 	outline: 2px solid var(--ad-accent-quiet);
 	outline-offset: 0;

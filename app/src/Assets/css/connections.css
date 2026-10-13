@@ -360,6 +360,17 @@ body.ad-connected::before {
 	pointer-events: none;
 }
 
+/* In a PROD window the SQL editor is framed in the stripe's colour too, at rest and focused: it
+   is where a statement meant for a local database gets run against the real one. */
+body.env-prod .sqlarea,
+body.env-prod .sqlarea:is(:hover, :focus) {
+	border-color: var(--ad-conn, #d92d20);
+}
+
+body.env-prod .sqlarea:focus {
+	outline-color: color-mix(in srgb, var(--ad-conn, #d92d20) 25%, transparent);
+}
+
 #ad-connection-badge {
 	display: flex;
 	align-items: center;
