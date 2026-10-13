@@ -1930,6 +1930,52 @@ class DesktopContext implements Context
 		);
 	}
 
+	// ── the shortcuts dialog ─────────────────────────────────────────────────────────────────
+
+	#[When('I press the :key key')]
+	public function press(string $key): void
+	{
+		$this->page->keyboard()->press($key);
+		usleep(300_000); // showModal() animates, and its contents are display:none until it lands
+	}
+
+	#[When('I press :key in the first field')]
+	public function pressInFirstField(string $key): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#form [name^="fields["]',
+		)->first()->press($key);
+		usleep(300_000);
+	}
+
+	#[Then('the shortcuts dialog is :state')]
+	public function shortcutsDialog(string $state): void
+	{
+		$open = (bool) $this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('#desktop-shortcuts').open",
+		);
+		if ($open !== ($state === 'open')) {
+			throw new RuntimeException('the shortcuts dialog is ' . ($open ? 'open' : 'closed'));
+		}
+	}
+
+	/** The reload shortcut in the notation of the machine the app runs on — the fixture serves it
+	 * from this one, so PHP_OS_FAMILY here is the app's too. */
+	#[Then('it lists reload in this platform\'s notation')]
+	public function reloadInPlatformNotation(): void
+	{
+		$expected = PHP_OS_FAMILY === 'Darwin' ? '⌘R' : 'Ctrl+R';
+		$keys = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => [...document.querySelectorAll('#desktop-shortcuts kbd')].map((k) => k.textContent.trim())",
+		);
+		if (!in_array($expected, $keys, true)) {
+			throw new RuntimeException("no $expected among the shortcuts: " . implode(', ', $keys));
+		}
+	}
+
 	/** The width of every field the user can see, and the grip of the first — its bottom-right
 	 * corner, where the browser puts the resize handle. The hidden textarea behind a JUSH <pre> is
 	 * skipped; it has no width to speak of.

@@ -1,0 +1,19 @@
+{* The keyboard shortcuts, listed for the platform the app runs on (Shortcuts.php). Opened by ?
+	(javascript/shortcuts.js); read-only, so a click outside closes it and there is no form. *}
+{parameters
+	\AdminerDesktop $desktop,
+	array $rows
+}
+{embed '../Assets/modal.latte', id: 'desktop-shortcuts', class: 'ad-shortcuts', form: false, labelledBy: 'desktop-shortcuts-title'}
+	{block header}<h2 id="desktop-shortcuts-title">{$desktop->t('shortcuts.title')}</h2>{/block}
+	{block body}
+		<table n:foreach="$rows as $group => $shortcuts">
+			<caption>{$group}</caption>
+			<tr n:foreach="$shortcuts as [$label, $combos]">
+				<td>{$label}</td>
+				<td><kbd n:foreach="$combos as $combo">{$combo}</kbd></td>
+			</tr>
+		</table>
+	{/block}
+	{block footer}<button type="button" data-close>{$desktop->t('shortcuts.close_dialog')}</button>{/block}
+{/embed}

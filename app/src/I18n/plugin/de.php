@@ -103,4 +103,21 @@ return [
 	'mcp.agent_unknown_method' => 'unbekannte Methode',
 	'mcp.agent_unknown_tool' => 'unbekanntes Werkzeug',
 	'mcp.agent_missing_argument' => 'erforderliches Argument fehlt',
+
+	// Keyboard shortcuts dialog (src/Shortcuts/).
+	'shortcuts.title' => 'Tastenkürzel',
+	'shortcuts.close_dialog' => 'Schließen',
+	'shortcuts.group_app' => 'App',
+	'shortcuts.group_forms' => 'Formulare und SQL',
+	'shortcuts.help' => 'Diese Liste anzeigen',
+	'shortcuts.reload' => 'Seite neu laden',
+	'shortcuts.close' => 'Dialog oder Menü schließen',
+	'shortcuts.adminer' => 'Zu Adminer wechseln',
+	'shortcuts.editor' => 'Zu Editor wechseln',
+	'shortcuts.logs' => 'Logs öffnen',
+	'shortcuts.quit' => 'Beenden',
+	'shortcuts.submit' => 'SQL ausführen oder Formular speichern',
+	'shortcuts.insert_next' => 'Speichern und nächste Zeile einfügen',
+	'shortcuts.field_up' => 'Zum Feld darüber',
+	'shortcuts.field_down' => 'Zum Feld darunter',
 ];
