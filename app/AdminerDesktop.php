@@ -289,8 +289,8 @@ class AdminerDesktop extends Adminer\Plugin {
 		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", (new Adminer\Adminer)->name());
 	}
 
-	/** Adminer's sidebar, with ours ahead of it: the settings dialog, and either the badge of the
-	* connection you are in or, on the login page, the dialogs that edit the saved ones.
+	/** Adminer's sidebar, with ours ahead of it: the settings dialog and, on the login page, the
+	* dialogs that edit the saved connections.
 	* @param string $missing
 	* @return void
 	*/
@@ -298,9 +298,18 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->dialog->render();
 		if ($missing == "auth") {
 			$this->connections->dialogs();
-		} else {
-			$this->connections->badge();
 		}
+	}
+
+	/** The badge of the connection you are in, under the logo and the gear rather than above them.
+	* navigation() runs before adminer prints the logo; this is the first hook after it, and adminer
+	* only calls it once you are logged in. Prints and abstains, so the database list follows.
+	* @param string $missing
+	* @return null
+	*/
+	function databasesPrint($missing) { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
+		$this->connections->badge();
+		return null;
 	}
 
 	/** Apply settings posted from the dialog. Called from adminer-plugins.php rather than
