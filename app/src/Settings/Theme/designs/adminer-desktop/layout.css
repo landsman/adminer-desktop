@@ -152,6 +152,10 @@ body {
 #content #breadcrumb .logout {
 	position: static;
 	margin: 0;
+	/* Adminer's narrow layout paints it --dim with a halo again (`.js .logout`), a grey box in
+	   the middle of the header row. */
+	background: transparent;
+	box-shadow: none;
 }
 
 /* Logout is its own form; pin it to the window's top-right corner so it stays in the
@@ -187,4 +191,70 @@ body {
 /* The hover tooltip floats; keep it out of the flex flow. */
 #help {
 	position: fixed;
+}
+
+/* A narrow window: the sidebar folds behind a burger.
+ *
+ * Adminer's own narrow layout (default.css, the same 800px) turns #foot into a dropdown under
+ * a burger at the content's top-left — which in the panels lands over the breadcrumb — and
+ * shoves the breadcrumb and #content aside with !important, which only !important undoes.
+ * Kept: its burger (#menuopen, moved into the breadcrumb row by breadcrumb-logout.js), its
+ * `.foot` class for closed, and its script, which toggles that class and closes on any click
+ * outside. Changed: open, the sidebar is a full-height drawer over the content's left edge. */
+@media (max-width: 800px) {
+	#content {
+		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
+		margin-inline-start: 0 !important;
+	}
+
+	#content #breadcrumb {
+		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
+		left: calc(-1 * var(--ad-panel-pad)) !important;
+	}
+
+	#content #breadcrumb > #menuopen {
+		position: static;
+		flex: none;
+		margin-inline-end: 0.2rem;
+	}
+
+	#menuopen button {
+		width: 1.4rem;
+		height: 1.4rem;
+		background: currentcolor;
+		color: color-mix(in srgb, var(--fg) 70%, transparent);
+		cursor: pointer;
+		-webkit-mask: url("icons/menu.svg") center / 1.1rem no-repeat;
+		mask: url("icons/menu.svg") center / 1.1rem no-repeat;
+	}
+
+	#menuopen button:hover,
+	#menuopen button[aria-expanded="true"] {
+		color: var(--fg);
+	}
+
+	#ad-sidebar-resizer {
+		display: none;
+	}
+
+	.js #foot {
+		position: fixed;
+		inset: 0.5rem auto 0.5rem 0.5rem;
+		z-index: 10;
+		width: min(var(--ad-sidebar-width), calc(100vw - 4rem));
+		box-shadow: 0 8px 28px color-mix(in srgb, #000 22%, transparent);
+	}
+
+	/* Closed. Adminer's own `.js .foot` says the same, but loses to `#foot { display: flex }`. */
+	.js #foot.foot {
+		display: none;
+	}
+
+	/* Adminer's dropdown dressing, which the drawer's own border and shadow replace. */
+	#menu {
+		min-width: 0;
+		margin-top: 0;
+		border: 0;
+		box-shadow: none;
+	}
 }
