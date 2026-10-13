@@ -262,6 +262,18 @@ body {
 		display: none;
 	}
 
+	/* Logout, moved under the logo by breadcrumb-logout.js: a row of the sidebar like the
+	   others — its padding and divider come from `#menu p` — rather than the corner widget
+	   adminer and the wide layout make of it. */
+	#menu .logout {
+		position: static;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: transparent;
+		box-shadow: none;
+	}
+
 	/* Adminer's dropdown dressing, which the drawer's own border and shadow replace. */
 	#menu {
 		min-width: 0;

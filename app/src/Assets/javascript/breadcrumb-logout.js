@@ -1,6 +1,7 @@
 /**
  * Put Logout at the end of the breadcrumb's row and the narrow window's burger at its start,
- * so a long path shrinks instead of running under either.
+ * so a long path shrinks instead of running under either. A narrow window moves Logout into
+ * the sidebar's drawer instead.
  *
  * Adminer prints Logout as a form of its own, outside the breadcrumb; the adminer-desktop
  * theme pinned it over the panel's corner, and nothing kept the path out of its way. Moved
@@ -24,7 +25,20 @@ if (breadcrumb && logout && getComputedStyle(breadcrumb).display === "flex") {
 		span.textContent = current.textContent.replace(/^\s*»?\s*/, "").trim();
 		current.replaceWith(" » ", span);
 	}
-	breadcrumb.append(logout);
+	// In a narrow window the header row is the burger and the path, and Logout goes in the
+	// drawer, under the logo; the same breakpoint as the burger's (layout.css), and live, so
+	// resizing the window moves it back.
+	const narrow = matchMedia("(max-width: 800px)");
+	const heading = document.querySelector("#menu h1");
+	const place = () => {
+		if (narrow.matches && heading) {
+			heading.after(logout);
+		} else {
+			breadcrumb.append(logout);
+		}
+	};
+	place();
+	narrow.addEventListener("change", place);
 	// Adminer's burger for a narrow window, which it floats over the corner the breadcrumb
 	// occupies here; at the start of the row it is beside the path instead of on top of it.
 	const burger = document.querySelector("#menuopen");
