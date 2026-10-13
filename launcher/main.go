@@ -124,10 +124,17 @@ func waitReady(url string, timeout time.Duration) (cold time.Duration, err error
 	// bound the port and logged "Caddy serving" but the first hit stalls while PHP warms up --
 	// blocks forever, the deadline never fires, and the GUI never opens. A bounded request
 	// times out and the loop just retries.
-	client := &http.Client{Timeout: 2 * time.Second}
+	// Short at first, doubling to 2s: the stalled hit is one that connects in the moment
+	// between caddy binding the port and frankenphp starting, and is never answered at all, so
+	// waiting it out cost a full 2s on about one launch in ten. A slow but live first request
+	// still gets its 2s by the fifth try.
+	client := &http.Client{Timeout: 100 * time.Millisecond}
 	for time.Now().Before(deadline) {
 		start := time.Now()
 		resp, err := client.Get(url)
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			client.Timeout = min(2*client.Timeout, 2*time.Second)
+		}
 		if err == nil {
 			ok := resp.StatusCode == http.StatusOK
 			if ok {
@@ -140,7 +147,8 @@ func waitReady(url string, timeout time.Duration) (cold time.Duration, err error
 				return time.Since(start), nil
 			}
 		}
-		time.Sleep(50 * time.Millisecond)
+		// 10 ms: a refused connect costs nothing, and every tick is time the window waits.
+		time.Sleep(10 * time.Millisecond)
 	}
 	return 0, fmt.Errorf("server did not become ready within %s", timeout)
 }
