@@ -20,5 +20,7 @@ Assert::same('Ctrl+Shift+Enter', Shortcuts::write($keys, Os::Linux));
 Assert::same('⌘R', Shortcuts::write([Key::Mod, 'R'], Os::Mac));
 Assert::same('Ctrl+Alt+↑', Shortcuts::write([Key::Alt, Key::Mod, Key::Up], Os::Windows));
 Assert::same('⌥⇧⌘↑', Shortcuts::write([Key::Mod, Key::Shift, Key::Alt, Key::Up], Os::Mac));
+Assert::same('⇧⇧', Shortcuts::sequence([[Key::Shift], [Key::Shift]], Os::Mac));
+Assert::same('Shift Shift', Shortcuts::sequence([[Key::Shift], [Key::Shift]], Os::Linux));
 
 echo "shortcuts ok\n";

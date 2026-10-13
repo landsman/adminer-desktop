@@ -72,6 +72,9 @@
 				});
 			}
 		}
+		for (const item of found) {
+			item.lower = item.name.toLowerCase();
+		}
 		return found;
 	};
 
@@ -82,14 +85,16 @@
 	// Substring, case-insensitive; a name that starts with it first, otherwise the sidebar's order.
 	const render = () => {
 		const query = input.value.trim().toLowerCase();
-		const hits = all.filter((item) => item.name.toLowerCase().includes(query));
-		const starts = hits.filter((item) =>
-			item.name.toLowerCase().startsWith(query),
-		);
-		shown = [...starts, ...hits.filter((item) => !starts.includes(item))].slice(
-			0,
-			LIMIT,
-		);
+		const starts = [];
+		const contains = [];
+		for (const item of all) {
+			if (item.lower.startsWith(query)) {
+				starts.push(item);
+			} else if (item.lower.includes(query)) {
+				contains.push(item);
+			}
+		}
+		shown = [...starts, ...contains].slice(0, LIMIT);
 		active = 0;
 		list.replaceChildren(
 			...shown.map((item, i) => {
@@ -147,7 +152,7 @@
 		if (e.key === "ArrowDown" || e.key === "ArrowUp") {
 			e.preventDefault();
 			highlight(active + (e.key === "ArrowDown" ? 1 : -1));
-		} else if (e.key === "Enter") {
+		} else if (e.key === "Enter" && !e.isComposing) {
 			e.preventDefault();
 			go(active);
 		}
@@ -156,6 +161,10 @@
 	// A capital letter is Shift then the letter, so it resets the count: typing in a field is
 	// never two lone Shifts, and the gesture can stay on there too.
 	let last = -Infinity;
+	// Nor is Shift+click, adminer's range pick over the select page's row checkboxes.
+	addEventListener("pointerdown", () => {
+		last = -Infinity;
+	});
 	addEventListener("keydown", (e) => {
 		if (e.repeat) {
 			return;
