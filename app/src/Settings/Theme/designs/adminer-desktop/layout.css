@@ -399,6 +399,14 @@ body:has(input[name="auth[username]"]) #ad-sidebar-resizer {
 	display: none;
 }
 
+/* Unnamed here: this header and column are not the sidebar and panel of the next page, and
+   paired with them the transition morphs one box into the other — a stretched snapshot sliding
+   left, resized every frame on the main thread, so it stutters. Unpaired, leaving the login is
+   a plain crossfade of the window, opacity only. */
+body:has(input[name="auth[username]"]) :is(#foot, #content) {
+	view-transition-name: none;
+}
+
 /* border-box: the 100% is the window's room, and the panel's padding and border on top of it ran
    the panel past a narrow window's edge. */
 body:has(input[name="auth[username]"]) :is(#foot, #content) {
