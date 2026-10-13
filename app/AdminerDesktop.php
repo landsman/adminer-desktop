@@ -213,7 +213,8 @@ class AdminerDesktop extends Adminer\Plugin {
 		// the same tables: opening another database slides the new list in (base.css) instead of
 		// holding the old one still. Hashed, so the name is always a valid CSS identifier; `body`
 		// outranks the theme's own #foot rule, which loads after this.
-		echo "<style>body #foot{view-transition-name:ad-sidebar-" . substr(md5($_GET["db"] ?? ''), 0, 8) . "}</style>\n";
+		$db = defined('Adminer\DB') ? (string) Adminer\DB : '';
+		echo "<style>body #foot{view-transition-name:ad-sidebar-" . substr(md5($db), 0, 8) . "}</style>\n";
 		// Adminer prints the sidebar after the content, and a long page paints before the parser
 		// gets there: the transition then runs without it and it pops in afterwards, in place. Hold
 		// the first paint until it is parsed.
