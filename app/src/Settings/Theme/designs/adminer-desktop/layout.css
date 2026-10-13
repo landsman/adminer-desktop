@@ -323,6 +323,12 @@ body {
 		mask: url("icons/menu.svg") left center / 1rem no-repeat;
 	}
 
+	/* Adminer gives it the .icon class, which the dark scheme inverts (base.css) for adminer's
+	   gif sprites; this is a mask in currentcolor, so inverted it went dark on dark. */
+	#menuopen button {
+		filter: none;
+	}
+
 	#menuopen button:hover,
 	#menuopen button[aria-expanded="true"] {
 		color: var(--fg);
