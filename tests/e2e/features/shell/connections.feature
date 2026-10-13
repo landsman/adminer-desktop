@@ -25,6 +25,11 @@ Feature: Saved connections
     When I open the connection from its card
     Then the body carries the "env-prod" class
     And the connection badge reads "Fixture"
+    # The colour's stripe marks only the pages that change something.
+    When I open the "users" table
+    Then the body does not carry the "ad-writing" class
+    When I open the edit form for "users" row 1
+    Then the body carries the "ad-writing" class
 
   Scenario: Picking an environment picks its colour, which stays changeable
     When I open the connection's editor

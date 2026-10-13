@@ -1404,6 +1404,18 @@ class DesktopContext implements Context
 		}
 	}
 
+	#[Then('the body does not carry the :class class')]
+	public function bodyDoesNotCarryClass(string $class): void
+	{
+		$body = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.body.className',
+		);
+		if (in_array($class, explode(' ', $body), true)) {
+			throw new RuntimeException("the body class is '$body'");
+		}
+	}
+
 	#[Then('the surface is dark')]
 	public function surfaceIsDarkStep(): void
 	{
