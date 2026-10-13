@@ -19,6 +19,9 @@
 /* The shell — bands, backdrop, animation, page lock — is modal.css; this is only its size. */
 #desktop-settings {
 	width: var(--ad-dialog-width);
+	/* A fixed height, not one sized to the open tab: the panels differ in length, so the dialog
+	   jumped on every tab switch. The short ones get room at the foot, like any settings window. */
+	height: var(--ad-dialog-max-height);
 }
 
 /* `#menu p, #logins, #tables { padding: .8em 1em; margin: 0; border-bottom: 1px solid }` styles
@@ -67,6 +70,21 @@ dialog#desktop-settings p.message {
    the band's own border. */
 #desktop-settings .ad-modal-header {
 	padding-bottom: 0;
+	/* The edge the panels' content starts at, so the title, the first tab's text and the content
+	   below share one left edge: the body's padding plus a panel's 0.4em, both at the body's
+	   1.05em text size. Kept in step with the two rules below that set them. */
+	padding-left: calc(1.05 * (var(--ad-dialog-padding) + 0.4em));
+}
+
+/* The title above the tab strip, which also names the dialog (aria-labelledby). */
+#desktop-settings .ad-modal-header h2 {
+	margin-bottom: 0.4em;
+}
+
+/* Pulled left by a label's own side padding, so the first tab's text lines up with the title
+   above it rather than sitting a padding further in. */
+#desktop-tabs {
+	margin-left: calc(-1 * var(--ad-gap-lg));
 }
 
 #desktop-tabs label {
@@ -97,11 +115,13 @@ dialog#desktop-settings p.message {
 	border-bottom-color: currentColor;
 }
 
-/* No focus ring on the tabs: opening the dialog moves focus onto the checked tab, so the
-   ring flashed on every open. The checked tab already shows its state (underline + weight),
-   so keyboard users still see where they are. */
+/* The ring the hidden radio cannot show, on its label: the underline says which tab is chosen,
+   this says where the keyboard is (WCAG 2.4.7). The dialog takes the focus when it opens, not the
+   checked tab, so it does not flash on every open. Same ring as the footer buttons. */
 #desktop-tabs input:focus-visible + label {
 	outline: none;
+	box-shadow: 0 0 0 2px AccentColor;
+	border-radius: var(--ad-radius-sm) var(--ad-radius-sm) 0 0;
 }
 
 /* The modal body, minus its top padding: the panels are the scrollport, and padding-top on one
@@ -351,9 +371,19 @@ dialog#desktop-settings p.message {
 }
 
 /* Adminer makes thead sticky but gives it no stacking order, so scrolling rows paint
-   over the header instead of under it. */
+   over the header instead of under it.
+
+   It sticks a gap below the tab strip rather than flush against it, where it read as a second
+   grey band glued to the first. The gap is the one the table has above it before any scrolling,
+   so it does not move when it sticks; the --bg shadow cast upward fills that gap, so rows
+   scrolling past do not show through it, and its 1px spread covers the table's side borders. */
 #desktop-panels thead {
 	z-index: 1;
+	top: var(--ad-dialog-padding);
+}
+
+#desktop-panels thead th {
+	box-shadow: 0 calc(-1 * var(--ad-dialog-padding)) 0 1px var(--bg);
 }
 
 #desktop-panels td {

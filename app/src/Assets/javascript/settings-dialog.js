@@ -1,8 +1,6 @@
 /**
- * The settings dialog's two buttons.
- *
- * <dialog> brings the backdrop, focus trapping, top-layer stacking and escape-to-close
- * with it, so what is left is opening it, and asking before closing throws edits away.
+ * What the settings dialog does beyond every other modal: Reset asks first, and the dialog
+ * survives a reload. Opening it, closing it and asking about unsaved edits are modal.js's.
  *
  * A file rather than the inline script this used to be: inline meant adminer's qsl(),
  * which binds the last matching element in the whole document, so each script had to be
@@ -12,7 +10,6 @@
 
 const gear = document.querySelector("#desktop-gear");
 const dialog = document.querySelector("#desktop-settings");
-const cancel = document.querySelector("#desktop-close");
 const reset = document.querySelector("#desktop-reset");
 
 // Reset throws away every preference the app stores, so it asks first — and the question is
@@ -43,22 +40,15 @@ const REOPEN_KEY = "ad-settings-reopen";
 const reloaded =
 	performance.getEntriesByType("navigation")[0]?.type === "reload";
 
-if (gear && dialog && cancel) {
+if (gear && dialog) {
 	const tabs = document.querySelector("#desktop-tabs");
 	const remember = () => {
 		const tab = tabs?.querySelector("input:checked");
 		sessionStorage.setItem(OPEN_KEY, tab ? tab.id : "");
 	};
 
-	gear.onclick = () => {
-		// showModal() on an open dialog throws InvalidStateError, and since the restore above
-		// the gear can be clicked while it is already open — the gear sits behind the backdrop,
-		// but a script or a synthetic click still reaches it.
-		if (!dialog.open) {
-			dialog.showModal();
-		}
-		remember();
-	};
+	// modal.js opens it, through the gear's data-dialog.
+	gear.addEventListener("click", remember);
 	// Every way out at once: escape, the Cancel button, and submitting the form all fire close.
 	dialog.addEventListener("close", () => sessionStorage.removeItem(OPEN_KEY));
 	tabs?.addEventListener("change", () => {
@@ -85,39 +75,8 @@ if (gear && dialog && cancel) {
 			if (input) {
 				input.checked = true;
 			}
-			dialog.showModal();
+			// Through the gear, so modal.js snapshots the fields and the guard works.
+			gear.click();
 		}
 	}
-
-	cancel.onclick = () => {
-		// Same rule the stylesheet highlights rows by: defaultChecked is the attribute as
-		// rendered, checked is what it is now. Radios only count when turned on, since
-		// choosing a design necessarily turns the previous one off.
-		let changed = 0;
-		for (const input of dialog.querySelectorAll("#desktop-panels input")) {
-			const edited =
-				input.type === "checkbox"
-					? input.checked !== input.defaultChecked
-					: input.checked && !input.defaultChecked;
-			if (edited) {
-				changed++;
-			}
-		}
-		for (const select of dialog.querySelectorAll("#desktop-panels select")) {
-			if (!select.options[select.selectedIndex].defaultSelected) {
-				changed++;
-			}
-		}
-		// The question is translated, so it arrives on the button rather than living here.
-		// {n}, not %d: adminer's lang() runs strings through sprintf.
-		if (
-			!changed ||
-			confirm(cancel.dataset.unsaved.replace("{n}", String(changed)))
-		) {
-			// reset() before closing, or the discarded edits are still sitting there next
-			// time the dialog opens, looking like they were kept.
-			dialog.close();
-			cancel.form.reset();
-		}
-	};
 }

@@ -1,6 +1,6 @@
 {* The dialogs the cards open (Connections::dialogs()), in the same order as the cards, so
 	ad-connection-N is card N: its editor, and the questions before logging out of it and before
-	forgetting it. Then the one question every guarded modal asks before discarding a changed form.
+	forgetting it.
 
 	Printed in the sidebar, outside adminer's login form: a form cannot nest, and Enter in the name
 	field has to save the name rather than log in. Posted to AdminerDesktop::handlePost(). *}
@@ -85,14 +85,3 @@
 		{/block}
 	{/embed}
 {/foreach}
-
-{* The question a guarded modal asks before a changed form is thrown away (javascript/modal.js).
-	Keep editing is the safe answer, so it has the focus; Escape answers it too. *}
-{embed '../Assets/modal.latte', id: 'ad-discard', class: 'ad-confirm-dialog', form: false, labelledBy: 'ad-discard-title'}
-	{block header}<h2 id="ad-discard-title">{$desktop->t('connections.discard_title')}</h2>{/block}
-	{block body}{$desktop->t('connections.discard_text')}{/block}
-	{block footer}
-		<button type="button" data-close autofocus>{$desktop->t('connections.keep_editing')}</button>
-		<button type="button" class="ad-destructive" data-discard>{$desktop->t('connections.discard')}</button>
-	{/block}
-{/embed}

@@ -8,21 +8,27 @@
 	\AdminerDesktop $desktop,
 	\Desktop\Settings\Theme\Theme $theme,
 	\Desktop\Settings\Plugins\PluginList $plugins,
-	\Desktop\Mcp\Panel $mcp,
-	string $unsaved
+	\Desktop\Mcp\Panel $mcp
 }
-<button type="button" id="desktop-gear" title="{$desktop->t('settings.title')}">&#9881;</button>
+<button type="button" id="desktop-gear" data-dialog="desktop-settings" title="{$desktop->t('settings.title')}">&#9881;</button>
 
-{* Not light-dismissed and not guarded here: settings-dialog.js asks about unsaved edits itself. *}
-{embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, label: $desktop->t('settings.title')}
+{* Not light-dismissed: a stray click beside a dialog this large is too easy. Guarded, so Escape and
+	Cancel ask before throwing edits away (javascript/modal.js). Focus lands on the dialog itself
+	rather than on the checked tab, so opening it with the mouse does not ring the tab. *}
+{embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, guard: true, focusSelf: true, labelledBy: 'desktop-settings-title'}
 	{block hidden}
 		{input_hidden('desktop_settings', 1)|noescape}
 		{input_token()|noescape}
 	{/block}
 
 	{* Tabs are hidden radios plus :has() in the stylesheet: no JS, and a checked radio is
-		also the state, so nothing has to be restored when the dialog reopens. *}
+		also the state, so nothing has to be restored when the dialog reopens. A screen reader
+		hears a radio group of three, which is what it is — arrows move between them natively,
+		where the ARIA tab pattern would need a roving tabindex in script to do the same. They
+		carry no value, so whichever is checked posts the same desktop_tab=on, and switching tabs
+		is not an unsaved change to the guard. *}
 	{block header}
+		<h2 id="desktop-settings-title">{$desktop->t('settings.title')}</h2>
 		<div id="desktop-tabs">
 			<input type="radio" name="desktop_tab" id="desktop-tab-themes" checked>
 			<label for="desktop-tab-themes">{$desktop->t('settings.tab_theme')}</label>
@@ -48,9 +54,19 @@
 			the others, away from the one people press without reading. *}
 		<button type="submit" name="desktop_reset" value="1" id="desktop-reset" class="ad-danger"
 			data-confirm="{$desktop->t('settings.reset_confirm')}">{$desktop->t('settings.reset')}</button>
-		{* The question the script asks before discarding edits, translated here because
-			this is where the translations are. *}
-		<button type="button" id="desktop-close" data-unsaved="{$unsaved}">{$desktop->t('settings.close')}</button>
+		<button type="button" id="desktop-close" data-close>{$desktop->t('settings.close')}</button>
 		<button type="submit" id="desktop-save" class="ad-primary">{$desktop->t('settings.save')}</button>
+	{/block}
+{/embed}
+
+{* The question every guarded modal asks before a changed form is thrown away (javascript/modal.js).
+	Here because this template is printed on every page, and the settings dialog is guarded too.
+	Keep editing is the safe answer, so it has the focus; Escape answers it too. *}
+{embed '../Assets/modal.latte', id: 'ad-discard', class: 'ad-confirm-dialog', form: false, labelledBy: 'ad-discard-title'}
+	{block header}<h2 id="ad-discard-title">{$desktop->t('connections.discard_title')}</h2>{/block}
+	{block body}{$desktop->t('connections.discard_text')}{/block}
+	{block footer}
+		<button type="button" data-close autofocus>{$desktop->t('connections.keep_editing')}</button>
+		<button type="button" class="ad-destructive" data-discard>{$desktop->t('connections.discard')}</button>
 	{/block}
 {/embed}

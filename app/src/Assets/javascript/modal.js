@@ -9,8 +9,6 @@
  *   preventDefault() on a second Escape with no click between, and can skip `cancel` right after
  *   the click that opened the dialog — on `close` it is reopened and asked instead, its fields
  *   intact, since closing a dialog does not reset its form.
- *
- * The settings dialog is not guarded here; settings-dialog.js asks about unsaved edits itself.
  */
 
 // In a block of its own: these files are classic scripts sharing one global scope, and a
@@ -34,12 +32,21 @@
 		!discarded.has(dialog) &&
 		fields(dialog) !== opened.get(dialog);
 
+	// data-focus-self: the dialog takes the focus, not its first control. showModal() would honour
+	// autofocus on the dialog itself, but not in every webview yet.
+	function show(dialog) {
+		dialog.showModal();
+		if (dialog.hasAttribute("data-focus-self")) {
+			dialog.focus();
+		}
+	}
+
 	function open(dialog) {
 		if (!dialog || dialog.open) {
 			return;
 		}
 		discarded.delete(dialog);
-		dialog.showModal();
+		show(dialog);
 		opened.set(dialog, fields(dialog));
 	}
 
@@ -88,7 +95,7 @@
 		});
 		dialog.addEventListener("close", () => {
 			if (changed(dialog)) {
-				dialog.showModal();
+				show(dialog);
 				ask(dialog);
 			}
 		});

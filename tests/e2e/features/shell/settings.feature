@@ -48,3 +48,27 @@ Feature: The settings dialog
     And I reset the settings to their defaults
     Then nothing is stored any more
     And the body carries the "density-cozy" class
+
+  Scenario: The dialog is named by its visible title and takes the focus itself
+    Then the settings dialog is named by its "Settings" title
+    And the focus is on the settings dialog
+
+  Scenario: The keyboard sees which tab it is on
+    When I tab into the settings dialog
+    Then the focused tab shows a focus ring
+
+  Scenario: Escape on a changed form asks before throwing it away
+    When I pick the "compact" row density
+    And I press Escape
+    Then I am asked whether to discard the changes
+    When I keep editing
+    Then the settings dialog is still open with "compact" picked
+
+  Scenario: Escape on an untouched form closes it and hands the focus back to the gear
+    When I press Escape
+    Then the settings dialog is closed
+    And the focus is back on the gear
+
+  Scenario: Reduced motion turns the fade off
+    When the OS asks for reduced motion
+    Then the settings dialog does not fade

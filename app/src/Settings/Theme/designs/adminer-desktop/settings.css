@@ -20,6 +20,9 @@
    be told apart at a glance, and the theme's indigo says "default action" without saying which.
    Anything restated here would only have to be kept in step with it. */
 
-.ad-modal-footer button:focus-visible {
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--ad-accent) 45%, transparent);
+/* The theme's indigo for the base sheet's AccentColor, at the same full strength: a 45% wash of it
+   was under 3:1 against the band (WCAG 1.4.11). */
+.ad-modal-footer button:focus-visible,
+#desktop-tabs input:focus-visible + label {
+	box-shadow: 0 0 0 2px var(--ad-accent);
 }
