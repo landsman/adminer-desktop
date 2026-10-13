@@ -22,7 +22,7 @@ use RuntimeException;
  * app server are not: they are booted once per driver and kept in $fixtures, which is by far the
  * slowest part of a run and has nothing a scenario can spoil.
  *
- * Which driver an instance is for comes from the Behat suite it belongs to, see behat.yml.
+ * Which driver an instance is for comes from the Behat suite it belongs to, see behat.php.
  *
  * One file, deliberately. The steps are named for what the user is doing and are used across
  * features — splitting them by subject would mean either several contexts that cannot share the
