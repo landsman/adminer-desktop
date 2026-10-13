@@ -23,13 +23,15 @@ class Shortcuts {
 	}
 
 	/** Groups of rows: a translation ID, the combinations that do it, and the platforms it exists
-	* on (null for all). Each combination is its keys, a Key or the character printed on the key.
-	* @return array<string, list<array{string, list<list<Key|string>>, ?list<Os>}>>
+	* on (null for all). Each combination is its keys, a Key or the character printed on the key —
+	* or a list of combinations, for keys pressed one after the other rather than held together.
+	* @return array<string, list<array{string, list<list<Key|string>|list<list<Key|string>>>, ?list<Os>}>>
 	*/
 	private function groups(): array {
 		return [
 			'shortcuts.group_app' => [
 				['shortcuts.help', [['?']], null],
+				['shortcuts.search', [[[Key::Shift], [Key::Shift]]], null],
 				['shortcuts.reload', [[Key::Mod, 'R'], ['F5']], null],
 				['shortcuts.close', [[Key::Escape]], null],
 				['shortcuts.adminer', [[Key::Mod, '1']], [Os::Mac]],
@@ -56,7 +58,7 @@ class Shortcuts {
 		foreach ($this->groups() as $group => $shortcuts) {
 			foreach ($shortcuts as [$id, $combos, $only]) {
 				if ($only === null || in_array($this->os, $only, true)) {
-					$rows[$this->desktop->t($group)][] = [$this->desktop->t($id), array_map(fn($keys) => self::write($keys, $this->os), $combos)];
+					$rows[$this->desktop->t($group)][] = [$this->desktop->t($id), array_map(fn($keys) => is_array($keys[0]) ? self::sequence($keys, $this->os) : self::write($keys, $this->os), $combos)];
 				}
 			}
 		}
@@ -72,6 +74,14 @@ class Shortcuts {
 		usort($keys, fn($a, $b) => $order($a) <=> $order($b));
 		$labels = array_map(fn(Key|string $key): string => $key instanceof Key ? $key->label($os) : $key, $keys);
 		return implode($os === Os::Mac ? '' : '+', $labels);
+	}
+
+	/** Combinations pressed in turn: ⇧⇧ on a mac, where one key is one glyph, Shift Shift elsewhere,
+	* since Shift+Shift would read as two keys held together.
+	* @param list<list<Key|string>> $presses
+	*/
+	static function sequence(array $presses, Os $os): string {
+		return implode($os === Os::Mac ? '' : ' ', array_map(fn($keys) => self::write($keys, $os), $presses));
 	}
 
 	function panel(): void {

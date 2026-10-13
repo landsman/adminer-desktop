@@ -17,6 +17,7 @@ use Desktop\Env;
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
 use Desktop\Import;
+use Desktop\Latte;
 use Desktop\Mcp;
 use Desktop\Os;
 use Desktop\SettingKey;
@@ -310,14 +311,16 @@ class AdminerDesktop extends Adminer\Plugin {
 		return (string) preg_replace("~<a href='[^']*'[^>]*?(?= id='h1')~", "<a href='" . Adminer\h($home ?: ".") . "'", $name);
 	}
 
-	/** Adminer's sidebar, with ours ahead of it: the settings dialog and, on the login page, the
-	* versions beside its gear and the dialogs that edit the saved connections.
+	/** Adminer's sidebar, with ours ahead of it: the settings dialog, the search box once logged in
+	* and, on the login page, the versions beside its gear and the dialogs that edit the saved
+	* connections.
 	* @param string $missing
 	* @return void
 	*/
 	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
 		if ($missing != "auth") {
 			$this->dialog->render();
+			Latte::engine()->render(__DIR__ . "/src/Search/search-dialog.latte", ["desktop" => $this]);
 			return;
 		}
 		// One row for the versions and the gear, so our design can centre them as a pair.

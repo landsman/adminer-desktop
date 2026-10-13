@@ -119,4 +119,14 @@ return [
 	'shortcuts.insert_next' => 'Salvează și inserează rândul următor',
 	'shortcuts.field_up' => 'Mergi la câmpul de deasupra',
 	'shortcuts.field_down' => 'Mergi la câmpul de dedesubt',
+	'shortcuts.search' => 'Caută tabele și baze de date',
+
+	// Search everywhere, on Shift twice (src/Search/).
+	'search.title' => 'Caută',
+	'search.placeholder' => 'Scrie o parte din nume',
+	'search.table' => 'tabel',
+	'search.view' => 'vizualizare',
+	'search.database' => 'bază de date',
+	'search.schema' => 'schemă',
+	'search.none' => 'Nicio potrivire',
 ];

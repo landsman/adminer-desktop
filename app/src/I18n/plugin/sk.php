@@ -119,4 +119,14 @@ return [
 	'shortcuts.insert_next' => 'Uložiť a vložiť ďalší riadok',
 	'shortcuts.field_up' => 'Prejsť na pole vyššie',
 	'shortcuts.field_down' => 'Prejsť na pole nižšie',
+	'shortcuts.search' => 'Hľadať tabuľky a databázy',
+
+	// Search everywhere, on Shift twice (src/Search/).
+	'search.title' => 'Hľadať',
+	'search.placeholder' => 'Napíšte časť názvu',
+	'search.table' => 'tabuľka',
+	'search.view' => 'pohľad',
+	'search.database' => 'databáza',
+	'search.schema' => 'schéma',
+	'search.none' => 'Nič nezodpovedá',
 ];
