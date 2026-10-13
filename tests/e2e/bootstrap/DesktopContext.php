@@ -1930,7 +1930,7 @@ class DesktopContext implements Context
 		);
 	}
 
-	// ── the shortcuts dialog ─────────────────────────────────────────────────────────────────
+	// ── the shortcuts tab ────────────────────────────────────────────────────────────────────
 
 	#[When('I press the :key key')]
 	public function press(string $key): void
@@ -1949,15 +1949,28 @@ class DesktopContext implements Context
 		usleep(300_000);
 	}
 
-	#[Then('the shortcuts dialog is :state')]
-	public function shortcutsDialog(string $state): void
+	#[When('I open the shortcuts tab')]
+	public function openShortcutsTab(): void
 	{
-		$open = (bool) $this->page->evaluate(
+		$this->page->locator(
+			// language=JQuery-CSS
+			'label[for="desktop-tab-shortcuts"]',
+		)->click();
+	}
+
+	#[Then('the settings dialog is open on the shortcuts tab')]
+	public function settingsOnShortcuts(): void
+	{
+		$state = (string) $this->page->evaluate(
 			// language=JavaScript
-			"() => document.querySelector('#desktop-shortcuts').open",
+			"() => {
+				const dialog = document.querySelector('#desktop-settings');
+				const panel = document.querySelector('#desktop-panel-shortcuts');
+				return !dialog.open ? 'closed' : panel.checkVisibility() ? 'ok' : 'open on another tab';
+			}",
 		);
-		if ($open !== ($state === 'open')) {
-			throw new RuntimeException('the shortcuts dialog is ' . ($open ? 'open' : 'closed'));
+		if ($state !== 'ok') {
+			throw new RuntimeException("the settings dialog is $state");
 		}
 	}
 
@@ -1969,7 +1982,7 @@ class DesktopContext implements Context
 		$expected = PHP_OS_FAMILY === 'Darwin' ? '⌘R' : 'Ctrl+R';
 		$keys = (array) $this->page->evaluate(
 			// language=JavaScript
-			"() => [...document.querySelectorAll('#desktop-shortcuts kbd')].map((k) => k.textContent.trim())",
+			"() => [...document.querySelectorAll('#desktop-panel-shortcuts kbd')].map((k) => k.textContent.trim())",
 		);
 		if (!in_array($expected, $keys, true)) {
 			throw new RuntimeException("no $expected among the shortcuts: " . implode(', ', $keys));

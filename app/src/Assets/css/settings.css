@@ -146,6 +146,7 @@ dialog#desktop-settings p.message {
 
 #desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
 #desktop-settings:has(#desktop-tab-mcp:checked) #desktop-panel-mcp,
+#desktop-settings:has(#desktop-tab-shortcuts:checked) #desktop-panel-shortcuts,
 #desktop-settings:has(#desktop-tab-themes:checked) #desktop-panel-themes {
 	display: block;
 }

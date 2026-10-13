@@ -6,7 +6,7 @@ namespace Desktop\Shortcuts;
 use Desktop\Latte;
 use Desktop\Os;
 
-/** The keyboard shortcuts the app answers to, and the dialog that lists them (? opens it).
+/** The keyboard shortcuts the app answers to, and the settings tab that lists them (? opens it).
 *
 * One list for every platform, printed in the platform's own notation — ⇧⌘↩ on a mac,
 * Ctrl+Shift+Enter elsewhere. A row that only one platform has, such as the mac menu bar's,
@@ -74,10 +74,7 @@ class Shortcuts {
 		return implode($os === Os::Mac ? '' : '+', $labels);
 	}
 
-	function render(): void {
-		Latte::engine()->render(__DIR__ . "/shortcuts-dialog.latte", [
-			"desktop" => $this->desktop,
-			"rows" => $this->rows(),
-		]);
+	function panel(): void {
+		Latte::engine()->render(__DIR__ . "/shortcuts-panel.latte", ["rows" => $this->rows()]);
 	}
 }

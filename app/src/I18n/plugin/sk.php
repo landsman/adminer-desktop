@@ -12,6 +12,7 @@ return [
 	'settings.title' => 'Nastavenia',
 	'settings.tab_theme' => 'Vzhľad',
 	'settings.tab_plugins' => 'Pluginy',
+	'settings.tab_shortcuts' => 'Skratky',
 	'settings.save' => 'Uložiť',
 	'settings.close' => 'Zavrieť',
 	'settings.reset' => 'Obnoviť predvolené',
@@ -104,9 +105,7 @@ return [
 	'mcp.agent_unknown_tool' => 'neznámy nástroj',
 	'mcp.agent_missing_argument' => 'chýba povinný argument',
 
-	// Keyboard shortcuts dialog (src/Shortcuts/).
-	'shortcuts.title' => 'Klávesové skratky',
-	'shortcuts.close_dialog' => 'Zavrieť',
+	// Keyboard shortcuts tab (src/Shortcuts/).
 	'shortcuts.group_app' => 'Aplikácia',
 	'shortcuts.group_forms' => 'Formuláre a SQL',
 	'shortcuts.help' => 'Zobraziť tento zoznam',
