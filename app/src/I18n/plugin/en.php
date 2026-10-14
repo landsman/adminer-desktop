@@ -32,6 +32,10 @@ return [
 	// out of the rows there are.
 	'js.pager.of' => 'of',
 
+	// A long select narrowed by typing (src/Assets/javascript/select-filter.js).
+	'js.select_filter.placeholder' => 'Type part of a name',
+	'js.select_filter.none' => 'Nothing matches',
+
 	// What a screen reader announces for the activity indicator over a page waiting on the
 	// server (src/Assets/busy.latte).
 	'busy.loading' => 'Loading…',

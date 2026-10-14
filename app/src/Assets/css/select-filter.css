@@ -1,0 +1,82 @@
+/* The filter over a long select (javascript/select-filter.js): a field for the letters and the
+ * options left under it, dropped from the select the way its own menu would be. In the DOM only
+ * while open, so the display below never fights the popover's hidden state. */
+
+.ad-select-filter {
+	position: fixed;
+	inset: auto;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: max-content;
+	max-height: min(22em, var(--ad-room, 22em));
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid var(--ad-border);
+	border-radius: var(--ad-radius-sm);
+	background: var(--bg);
+	color: var(--fg);
+	box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+}
+
+.ad-select-filter input {
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0;
+	padding: 0.4em 0.6em;
+	border: 0;
+	border-bottom: 1px solid var(--ad-border);
+	border-radius: 0;
+	background: none;
+	color: var(--fg);
+	font: inherit;
+	outline: none;
+}
+
+.ad-select-filter ul {
+	margin: 0;
+	padding: 0.25em 0;
+	overflow-y: auto;
+	list-style: none;
+}
+
+.ad-select-filter li {
+	overflow: hidden;
+	padding: 0.25em 0.6em;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	cursor: pointer;
+}
+
+.ad-select-filter li[aria-selected="true"] {
+	background: color-mix(in srgb, var(--fg) 8%, var(--bg));
+}
+
+/* A group reads as a section of its own: a rule over its heading and its options indented
+   under it, the way a native menu sets an optgroup apart. Adminer puts the ungrouped options
+   (a schema's own) first, so everything after a heading is grouped. */
+.ad-select-filter .ad-select-filter-group {
+	padding-top: 0.6em;
+	color: var(--ad-fg-quiet);
+	font-size: 0.75em;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	cursor: default;
+}
+
+.ad-select-filter .ad-select-filter-group:not(:first-child) {
+	margin-top: 0.3em;
+	border-top: 1px solid var(--ad-border);
+}
+
+.ad-select-filter .ad-select-filter-group ~ [role="option"] {
+	padding-left: 1.4em;
+}
+
+.ad-select-filter .ad-select-filter-none {
+	color: var(--ad-fg-quiet);
+	cursor: default;
+}

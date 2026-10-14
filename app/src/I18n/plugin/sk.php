@@ -22,6 +22,11 @@ return [
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
 	'js.pager.of' => 'z',
+
+	// A long select narrowed by typing (src/Assets/javascript/select-filter.js).
+	'js.select_filter.placeholder' => 'Napíšte časť názvu',
+	'js.select_filter.none' => 'Nič nezodpovedá',
+
 	'busy.loading' => 'Načítava sa…',
 
 	// Saved connections.

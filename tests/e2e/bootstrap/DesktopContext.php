@@ -2246,6 +2246,28 @@ class DesktopContext implements Context
 		$this->page->waitForURL("**select=$table**");
 	}
 
+	// ── a long select, filtered ──────────────────────────────────────────────────────────────
+
+	/** A click, as a mouse would: select-filter.js takes the mousedown the native menu opens on. */
+	#[When('I open the schema switch')]
+	public function openSchemaSwitch(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#dbs select[name=ns]',
+		)->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'.ad-select-filter input',
+		)->waitFor();
+	}
+
+	#[Then('the :schema schema is open')]
+	public function schemaIsOpen(string $schema): void
+	{
+		$this->page->waitForURL("**ns=$schema**");
+	}
+
 	/** The reload shortcut in the notation of the machine the app runs on — the fixture serves it
 	 * from this one, so PHP_OS_FAMILY here is the app's too. */
 	#[Then('it lists reload in this platform\'s notation')]
