@@ -53,6 +53,12 @@ semgrep — run through Docker rather than being skipped.
 
 ## Things that will bite
 
+**A quit app can leave its server running.** The launcher stops frankenphp when its run loop
+returns or on Ctrl-C, and on macOS Cmd+Q never returns (AppKit exits the process), nor does a
+`kill` or a crash: the server stays, reparented to init, holding its port. `make kill-orphans`
+stops every such server, the installed app's too, and the SessionEnd hook in
+`.claude/settings.json` runs it after each agent session.
+
 **Anything named `Adminer*` becomes a plugin.** Adminer instantiates every declared class
 whose name starts with `Adminer` and registers it (`include/plugins.inc.php:33`). Helper
 classes live in the `Desktop\` namespace for that reason.

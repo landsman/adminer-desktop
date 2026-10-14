@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e e2e-visual e2e-packaged i18n i18n-check build run dev editor debug demo down destroy bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e e2e-visual e2e-packaged i18n i18n-check build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -297,14 +297,15 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh cli/compile-adminer.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh tests/cli/kill-orphans-test.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
 	./bin/frankenphp$(EXE) php-cli tests/i18n/GeneratorTest.php
 	./bin/frankenphp$(EXE) php-cli tests/version/AppVersionTest.php
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
+	@sh tests/cli/kill-orphans-test.sh
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
@@ -416,6 +417,11 @@ down:  ## Stop the demo database containers
 # this machine with it — this removes the ones attached to our containers and nothing else.
 destroy:  ## Remove the demo database containers and their data volumes
 	-docker rm -fv $(DEMO_PG) $(DEMO_MYSQL)
+
+# A window that crashed or was killed leaves its server running; the SessionEnd hook in
+# .claude/settings.json runs the same at the end of every agent session.
+kill-orphans:  ## Stop the app servers whose window is gone (the installed app's too)
+	@sh cli/kill-orphans.sh
 
 # Same startup path as `run`, minus the window — so it works over ssh and in CI.
 check-app: build
