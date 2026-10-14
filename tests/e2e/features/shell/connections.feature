@@ -20,6 +20,10 @@ Feature: Saved connections
     And Permanent login is ticked
     And logging in, from the form or a card, shows the activity indicator
 
+  Scenario: A login that fails says why in the modal, with what was typed still in it
+    When I log in with the password "not-the-password"
+    Then the new connection says why, with the password "not-the-password" still in it
+
   Scenario: A name, an environment and a colour stick, and follow you in
     When I label the connection "Fixture" as "prod" in "purple"
     Then the card reads "Fixture" with a "PROD" tag

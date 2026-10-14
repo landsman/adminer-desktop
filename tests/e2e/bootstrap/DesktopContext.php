@@ -1160,6 +1160,53 @@ class DesktopContext implements Context
 		}
 	}
 
+	#[When('I log in with the password :password')]
+	public function logInWith(string $password): void
+	{
+		$this->page->goto((string) $this->fix['base']);
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-new-connection',
+		)->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'select[name="auth[driver]"]',
+		)->selectOption((string) $this->fix['driver']['key']);
+		usleep(400_000); // the driver's rebuild of the fields, as in e2e_login()
+		foreach (['server' => $this->fix['database'], 'username' => $this->fix['driver']['username'], 'password' => $password] as $name => $value) {
+			$this->page->locator(
+				// language=JQuery-CSS
+				"input[name=\"auth[$name]\"]",
+			)->fill((string) $value);
+		}
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }',
+		);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eSubmitted && document.readyState === "complete"',
+		);
+	}
+
+	#[Then('the new connection says why, with the password :password still in it')]
+	public function failedLoginInModal(string $password): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.querySelector("#ad-new-connection-dialog[open] .ad-modal-body > .error")',
+		);
+		$kept = $this->page->evaluate(
+			// language=JavaScript
+			'() => Object.fromEntries(["server", "username", "password"].map((name) =>
+				[name, document.querySelector(`#ad-new-connection-dialog [name="auth[${name}]"]`).value]))',
+		);
+		$typed = ['server' => $this->fix['database'], 'username' => $this->fix['driver']['username'], 'password' => $password];
+		if ($kept !== $typed) {
+			throw new RuntimeException('the form came back as ' . json_encode($kept) . ', typed was ' . json_encode($typed));
+		}
+	}
+
 	#[When('I connect to it again')]
 	public function connectAgain(): void
 	{

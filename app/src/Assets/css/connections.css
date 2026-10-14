@@ -311,6 +311,12 @@ body:has(#ad-connections) #logins {
 	margin: 0;
 }
 
+/* A failed login's error, moved above the fields (connections.js), with the same right margin
+   and the page's top margin besides. */
+.ad-new-connection-dialog .error {
+	margin: 0 0 1em;
+}
+
 .ad-new-connection-dialog .ad-modal-footer p {
 	display: contents;
 }
