@@ -211,22 +211,17 @@ launcher/dialogs_darwin.m    what WKWebView leaves out: JS dialogs, file picker,
 launcher/download_darwin.m   turn an Export > save attachment into a real download + progress
 tests/e2e/                   Behat: features/, bootstrap/ (steps), harness/fixture.php, seed/<driver>.sql
 mise.toml                    node, and the install/format/lint/e2e tasks
-patches/                     fixes to adminer's sources until upstream releases them; cli/compile-adminer.sh builds
+patches/                     fixes to adminer's sources until upstream releases them, applied by cli/compile-adminer.sh
 ```
 
 Everything from upstream — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
-comes out of one pin, the exact `vrana/adminer` version in `app/composer.json`. Nothing
+comes out of one release zip pinned in the `Makefile` and is checksum-verified. Nothing
 resolves "latest", and those files are never edited: behaviour changes go in the plugin.
 
-**A fix to adminer itself is a pull request upstream first, and a patch here only until it
-ships.** composer installs adminer as source (a dev dependency), `cweagans/composer-patches`
-applies `patches/*.patch` to it, and `cli/compile-adminer.sh` compiles the single files.
-With no patches the build is the release byte for byte, so `checksums.txt` changes only
-when a patch does. Adding or dropping one in `app/composer.json` takes `composer
-patches-relock` (`.cache/composer.phar --working-dir=app`, like any composer command here),
-then `make fetch` and `make checksums`. Drop a patch once the release carrying it is pinned;
-bumping adminer also means the submodule commits in that script, which refuses to run for
-any other version.
+**A fix to adminer itself is a pull request upstream first, and a patch in `patches/` only
+until a release carries it.** `cli/compile-adminer.sh` applies the patches to the zip's sources
+and compiles the two files, which with no patches are the release's own byte for byte — so
+`checksums.txt` changes only with a patch or a version bump. `patches/README.md` has the steps.
 
 The `adminer-desktop` theme under `src/Settings/Theme/designs/` is not upstream's — it is
 ours, and the `.gitignore` negates the designs-are-downloaded rule to keep it.
