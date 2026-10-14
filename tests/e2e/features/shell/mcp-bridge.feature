@@ -11,9 +11,9 @@ Feature: The stdio bridge when there is no app behind it
     Given the app is not running
     When a client initializes through the bridge
     Then initialize still succeeds
+    And the agent is told not to reach the database another way
     When a client lists the tools through the bridge
-    Then exactly one tool is advertised, named "need_attention_read_me"
-    And it is described with what to do about it
+    Then the tools offered include "current_connection, list_tables, describe_table, preview_table_data, execute_query"
     When a client calls a tool through the bridge
     Then the call is a tool error saying "AI access"
 

@@ -110,8 +110,12 @@ class Stdio {
 	*
 	* So the handshake always succeeds — we are a working server whose backend happens to be
 	* unavailable — and the explanation is delivered as a tool *result* instead, which clients
-	* render into the conversation where somebody will read it. tools/list answers with nothing
-	* rather than an error for the same reason: an empty toolbox is a state, not a breakage.
+	* render into the conversation where somebody will read it.
+	*
+	* tools/list advertises the real tools, not a placeholder. A single `need_attention_read_me`
+	* was the previous answer, and a model seeing no database tools concluded the server was not
+	* connected and wrote its own bridge to the database. The real list also means opening the app
+	* is enough: the next call goes through, with no reconnect to remember.
 	*/
 	private function unavailable(mixed $id, string $method, string $message): ?string {
 		if ($id === null) {
@@ -119,20 +123,12 @@ class Stdio {
 		}
 		return match ($method) {
 			'initialize' => $this->result($id, [
-				'protocolVersion' => '2025-11-25',
+				'protocolVersion' => Server::PROTOCOL,
 				'capabilities' => ['tools' => new \stdClass()],
 				'serverInfo' => ['name' => 'adminer-desktop', 'version' => 'offline'],
+				'instructions' => Server::INSTRUCTIONS,
 			]),
-			// One tool, whose name and description are the whole message. An empty list was the
-			// first attempt and it is a dead end: a client shows "connected, no tools" and there
-			// is then nothing to call, so the explanation can never be reached. This puts the
-			// reason in the tool list itself, where it is visible without calling anything, and
-			// still answers with it if the model does call.
-			'tools/list' => $this->result($id, ['tools' => [[
-				'name' => 'need_attention_read_me',
-				'description' => $message,
-				'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()],
-			]]]),
+			'tools/list' => $this->result($id, ['tools' => Server::catalogue()]),
 			'ping' => $this->result($id, new \stdClass()),
 			// tools/call and anything else: an error the model can read and repeat to the user.
 			default => $this->result($id, [

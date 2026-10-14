@@ -553,27 +553,15 @@ class McpContext implements Context
 		}
 	}
 
-	/** Not an empty list: "connected, no tools" leaves nothing to call, so the reason can never be
-	 * reached. The one tool advertised is the reason, readable in the client's own tool list.
+	/** Without this, a model that met an unavailable app concluded the server was not connected
+	 * and wrote its own bridge to the database. Instructions reach its system prompt before any call.
 	 */
-	#[Then('exactly one tool is advertised, named :name')]
-	public function oneToolAdvertised(string $name): void
+	#[Then('the agent is told not to reach the database another way')]
+	public function toldNotToWorkAround(): void
 	{
-		$tools = (array) ($this->answer['result']['tools'] ?? []);
-		if (count($tools) !== 1) {
-			throw new RuntimeException(count($tools) . ' tools are advertised while unavailable, not one');
-		}
-		if (($tools[0]['name'] ?? null) !== $name) {
-			throw new RuntimeException('the tool advertised is ' . json_encode($tools[0]['name'] ?? null));
-		}
-	}
-
-	#[Then('it is described with what to do about it')]
-	public function describedWithWhatToDo(): void
-	{
-		$description = (string) ($this->answer['result']['tools'][0]['description'] ?? '');
-		if (!str_contains($description, 'AI access')) {
-			throw new RuntimeException("the description does not say what to do: $description");
+		$instructions = (string) ($this->answer['result']['instructions'] ?? '');
+		if (!str_contains($instructions, 'write a bridge of your own')) {
+			throw new RuntimeException("initialize does not say to stay on these tools: $instructions");
 		}
 	}
 
