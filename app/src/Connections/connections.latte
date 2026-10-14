@@ -8,8 +8,7 @@
 	string $submit,
 	bool $adding
 }
-{* data-busy: a card connects, which waits on the database server (javascript/busy.js). *}
-<div id="ad-connections" data-busy>
+<div id="ad-connections">
 	<p n:if="!$connections" class="ad-empty">{$desktop->t('connections.empty')}</p>
 	<ul n:if="$connections" class="ad-cards">
 		{foreach $connections as $connection}
