@@ -70,7 +70,7 @@ return [
 	'mcp.description' => 'Ein unten registrierter Agent kann die Datenbank lesen, in der dieses Fenster angemeldet ist — die Struktur und Abfragen, um die Sie ihn bitten. Schreiben kann er nicht: Jede Abfrage läuft in einer Transaktion, die zurückgerollt wird. Der Zugriff besteht nur, solange dieses Fenster geöffnet und angemeldet ist.',
 	'mcp.status_off' => 'Aus. Nichts erreicht die Datenbank.',
 	'mcp.status_waiting' => 'An, aber noch nicht erreichbar — melden Sie sich an einer Datenbank an, dann kann der Agent sie abfragen.',
-	'mcp.status_ready' => 'Bereit. Ein registrierter Agent kann die Datenbank abfragen, in der Sie angemeldet sind — verbinden Sie ihn neu, falls er bereits lief.',
+	'mcp.status_ready' => 'Bereit. Ein registrierter Agent kann die Datenbank abfragen, in der Sie angemeldet sind.',
 	'mcp.register_on' => 'Beim Agenten registrieren unter',
 	'mcp.register_hint' => 'Kopieren und einmal im Terminal ausführen. Funktioniert auch nach einem Neustart.',
 	'mcp.readonly_note' => 'Ein Rollback macht Datenänderungen rückgängig. Manche Datenbanken bestätigen eine Strukturänderung sofort, dort lässt sie sich nicht zurücknehmen. Damit Schreibzugriffe unmöglich statt rückgängig gemacht werden, melden Sie sich als schreibgeschützter Datenbankbenutzer an.',
@@ -92,9 +92,9 @@ return [
 	// Was der Agent erfährt, nicht was das Panel zeigt (Mcp\Stdio, Server, Tools, Endpoint).
 	// Ein Mensch liest es über den Agenten, deshalb übersetzt; die Namen der Werkzeuge und
 	// ihre Beschreibungen nicht — siehe Desktop\I18n\Strings.
-	'mcp.agent_not_running' => 'Adminer Desktop läuft nicht, oder der Datenbankzugriff für Agenten ist in den Einstellungen abgeschaltet. Öffnen Sie die App, melden Sie sich an und schalten Sie ihn unter Einstellungen > KI-Zugriff ein — verbinden Sie diesen Server danach neu, denn die Werkzeugliste wird nur beim Verbindungsaufbau gelesen.',
-	'mcp.agent_window_closed' => 'Adminer Desktop antwortet nicht mehr — das Fenster wurde vermutlich geschlossen. Öffnen Sie es erneut und verbinden Sie diesen Server neu; die Registrierung selbst bleibt bestehen.',
-	'mcp.agent_session_expired' => 'Die Sitzung von Adminer Desktop ist abgelaufen. Melden Sie sich in der App erneut an der Datenbank an und verbinden Sie diesen Server dann neu.',
+	'mcp.agent_not_running' => 'Adminer Desktop läuft nicht, oder der Datenbankzugriff für Agenten ist in den Einstellungen abgeschaltet. Öffnen Sie die App, melden Sie sich an und schalten Sie ihn unter Einstellungen > KI-Zugriff ein, dann fragen Sie erneut — der nächste Aufruf geht ohne neues Verbinden durch.',
+	'mcp.agent_window_closed' => 'Adminer Desktop antwortet nicht mehr — das Fenster wurde vermutlich geschlossen. Öffnen Sie es erneut und fragen Sie noch einmal; nichts muss neu verbunden werden.',
+	'mcp.agent_session_expired' => 'Die Sitzung von Adminer Desktop ist abgelaufen. Melden Sie sich in der App erneut an der Datenbank an und fragen Sie dann noch einmal.',
 	'mcp.agent_not_connected' => 'Adminer Desktop ist mit keiner Datenbank verbunden. Melden Sie sich in der App erneut an.',
 	'mcp.agent_note_committed' => 'Schreibzugriffe sind erlaubt: Was diese Anweisung geändert hat, wurde festgeschrieben.',
 	'mcp.agent_note_rolled_back' => 'Dies lief in einer Transaktion, die zurückgerollt wurde. Es wurde nichts geschrieben. Eine von RETURNING gelieferte id stammt aus einer Sequenz und bezeichnet keine gespeicherte Zeile.',

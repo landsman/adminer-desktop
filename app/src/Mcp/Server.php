@@ -29,7 +29,15 @@ class Server {
 	* Naming a version we do not implement would be the actual bug: `tools/list` and
 	* `tools/call` are all we serve, and they are unchanged across every handshake revision.
 	*/
-	private const string PROTOCOL = '2025-11-25';
+	public const string PROTOCOL = '2025-11-25';
+
+	/** Sent with `initialize`, which clients put in the model's system prompt — said before the
+	* first call, so an unavailable app reads as "ask the user" rather than as a missing server
+	* the model then builds its own way around.
+	*/
+	public const string INSTRUCTIONS = 'The database the Adminer Desktop window is logged into, read-only. These tools are the only'
+		. ' sanctioned way to reach it. When a tool answers that the app is unavailable, tell the user what it said and wait:'
+		. ' do not connect to the database another way, read its credentials, or write a bridge of your own.';
 
 	private Tools $tools;
 
@@ -68,8 +76,9 @@ class Server {
 					'protocolVersion' => $this->negotiate($params),
 					'capabilities' => ['tools' => new \stdClass()],
 					'serverInfo' => ['name' => 'adminer-desktop', 'version' => \Adminer\VERSION],
+					'instructions' => self::INSTRUCTIONS,
 				]),
-				'tools/list' => $this->result($id, ['tools' => $this->catalogue()]),
+				'tools/list' => $this->result($id, ['tools' => self::catalogue($this->whole)]),
 				'tools/call' => $this->result($id, $this->call($params)),
 				'ping' => $this->result($id, new \stdClass()),
 				default => $this->error($id, -32601, Strings::t('mcp.agent_unknown_method') . ": $method"),
@@ -102,13 +111,15 @@ class Server {
 
 	/** What `tools/list` advertises. Descriptions are written for the model, not for us — they
 	* are the only instructions it gets about when to reach for each one.
+	*
+	* Static so the bridge can advertise it with no app behind it: see Stdio::unavailable().
 	* @return list<array<string,mixed>>
 	*/
-	private function catalogue(): array {
+	static function catalogue(bool $whole = false): array {
 		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
 		// Said in the description, so the agent can choose whole_values before its first call
 		// rather than learning about the cut from a result it then has to ask for again.
-		$cells = $this->whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
+		$cells = $whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
 			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells (row is 0-based) with their full length;'
 			. ' pass whole_values: true when you need them whole.';
 		return [

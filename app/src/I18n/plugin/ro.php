@@ -70,7 +70,7 @@ return [
 	'mcp.description' => 'Un agent înregistrat mai jos poate citi baza de date în care este autentificată această fereastră — structura și interogările pe care i le ceri. Nu poate scrie: fiecare interogare rulează într-o tranzacție care este anulată. Accesul durează doar cât timp fereastra este deschisă și autentificată.',
 	'mcp.status_off' => 'Oprit. Nimic nu ajunge la baza de date.',
 	'mcp.status_waiting' => 'Pornit, dar încă inaccesibil — autentifică-te la o bază de date și agentul o va putea interoga.',
-	'mcp.status_ready' => 'Gata. Un agent înregistrat poate interoga baza de date în care ești autentificat — reconectează-l dacă rula deja.',
+	'mcp.status_ready' => 'Gata. Un agent înregistrat poate interoga baza de date în care ești autentificat.',
 	'mcp.register_on' => 'Înregistrează la agentul tău pe',
 	'mcp.register_hint' => 'Copiază-l și rulează-l o dată în terminal. Funcționează și după repornire.',
 	'mcp.readonly_note' => 'Anularea tranzacției revine asupra modificărilor de date. Unele baze de date confirmă imediat o modificare de structură, așa că acolo nu poate fi anulată. Pentru ca scrierile să fie imposibile, nu doar anulate, autentifică-te ca utilizator de bază de date doar cu drept de citire.',
@@ -92,9 +92,9 @@ return [
 	// Ce află agentul, nu ce arată panoul (Mcp\Stdio, Server, Tools, Endpoint). Este citit de
 	// un om prin intermediul agentului, deci se traduce; numele uneltelor și descrierile lor
 	// nu — vezi Desktop\I18n\Strings.
-	'mcp.agent_not_running' => 'Adminer Desktop nu rulează sau accesul agenților la bază este dezactivat în setările sale. Deschideți aplicația, autentificați-vă și activați-l din Setări > Acces AI — apoi reconectați acest server, fiindcă lista de unelte este citită o singură dată, la deschiderea conexiunii.',
-	'mcp.agent_window_closed' => 'Adminer Desktop a încetat să răspundă — fereastra a fost probabil închisă. Deschideți-o din nou și reconectați acest server; înregistrarea în sine rămâne valabilă.',
-	'mcp.agent_session_expired' => 'Sesiunea Adminer Desktop a expirat. Autentificați-vă din nou la baza de date în aplicație, apoi reconectați acest server.',
+	'mcp.agent_not_running' => 'Adminer Desktop nu rulează sau accesul agenților la bază este dezactivat în setările sale. Deschideți aplicația, autentificați-vă și activați-l din Setări > Acces AI, apoi întrebați din nou — următorul apel trece fără reconectare.',
+	'mcp.agent_window_closed' => 'Adminer Desktop a încetat să răspundă — fereastra a fost probabil închisă. Deschideți-o din nou și întrebați din nou; nu trebuie reconectat nimic.',
+	'mcp.agent_session_expired' => 'Sesiunea Adminer Desktop a expirat. Autentificați-vă din nou la baza de date în aplicație, apoi întrebați din nou.',
 	'mcp.agent_not_connected' => 'Adminer Desktop nu este conectat la nicio bază de date. Autentificați-vă din nou în aplicație.',
 	'mcp.agent_note_committed' => 'Scrierile sunt permise: tot ce a modificat această instrucțiune a fost confirmat.',
 	'mcp.agent_note_rolled_back' => 'Aceasta a rulat într-o tranzacție anulată. Nu s-a scris nimic. Orice id returnat de RETURNING provine dintr-o secvență și nu identifică un rând stocat.',

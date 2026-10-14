@@ -70,7 +70,7 @@ return [
 	'mcp.description' => 'Agent, ktorého nižšie zaregistrujete, môže čítať databázu, do ktorej je toto okno prihlásené — štruktúru aj dopyty, o ktoré ho požiadate. Zapisovať nemôže: každý dopyt beží v transakcii, ktorá sa vráti späť. Prístup trvá len počas toho, kým je okno otvorené a prihlásené.',
 	'mcp.status_off' => 'Vypnuté. K databáze sa nič nedostane.',
 	'mcp.status_waiting' => 'Zapnuté, ale zatiaľ nedostupné — prihláste sa k databáze a agent sa môže pýtať.',
-	'mcp.status_ready' => 'Pripravené. Zaregistrovaný agent sa môže pýtať databázy, do ktorej ste prihlásení — ak už bežal, znova ho pripojte.',
+	'mcp.status_ready' => 'Pripravené. Zaregistrovaný agent sa môže pýtať databázy, do ktorej ste prihlásení.',
 	'mcp.register_on' => 'Zaregistrovať u agenta na',
 	'mcp.register_hint' => 'Skopírujte a spustite raz v termináli. Funguje aj po reštarte.',
 	'mcp.readonly_note' => 'Vrátenie transakcie vráti zmeny dát. Niektoré databázy potvrdia zmenu štruktúry okamžite, takže pri nich ju vrátiť nemožno. Ak chcete zápis úplne znemožniť namiesto vracania, prihláste sa ako používateľ s právom len na čítanie.',
@@ -92,9 +92,9 @@ return [
 	// Čo sa dozvie agent, nie čo ukazuje panel (Mcp\Stdio, Server, Tools, Endpoint). Číta to
 	// človek prostredníctvom agenta, preto sa to prekladá; názvy nástrojov a ich popisy nie —
 	// pozri Desktop\I18n\Strings.
-	'mcp.agent_not_running' => 'Adminer Desktop nebeží, alebo je v jeho nastaveniach vypnutý prístup agentov k databáze. Otvorte aplikáciu, prihláste sa a zapnite ho v Nastavenia > Prístup AI — potom tento server znovu pripojte, pretože zoznam nástrojov sa načíta raz pri otvorení spojenia.',
-	'mcp.agent_window_closed' => 'Adminer Desktop prestal odpovedať — okno bolo pravdepodobne zatvorené. Otvorte ho znovu a znovu pripojte tento server; samotná registrácia funguje ďalej.',
-	'mcp.agent_session_expired' => 'Relácia Adminer Desktopu vypršala. Prihláste sa v aplikácii znovu k databáze a potom znovu pripojte tento server.',
+	'mcp.agent_not_running' => 'Adminer Desktop nebeží, alebo je v jeho nastaveniach vypnutý prístup agentov k databáze. Otvorte aplikáciu, prihláste sa a zapnite ho v Nastavenia > Prístup AI, potom sa opýtajte znovu — ďalšie volanie prejde bez nového pripojenia.',
+	'mcp.agent_window_closed' => 'Adminer Desktop prestal odpovedať — okno bolo pravdepodobne zatvorené. Otvorte ho znovu a opýtajte sa znovu; nie je potrebné nič znovu pripájať.',
+	'mcp.agent_session_expired' => 'Relácia Adminer Desktopu vypršala. Prihláste sa v aplikácii znovu k databáze a potom sa opýtajte znovu.',
 	'mcp.agent_not_connected' => 'Adminer Desktop nie je pripojený k databáze. Prihláste sa v aplikácii znovu.',
 	'mcp.agent_note_committed' => 'Zápisy sú povolené: všetko, čo tento príkaz zmenil, bolo potvrdené.',
 	'mcp.agent_note_rolled_back' => 'Toto prebehlo v transakcii, ktorá bola vrátená späť. Nič sa nezapísalo. Akékoľvek id vrátené klauzulou RETURNING pochádza zo sekvencie a neoznačuje uložený riadok.',
