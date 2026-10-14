@@ -887,6 +887,37 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Measured where each column starts, not where its box does: a row pads its own highlight
+	 * and the list around it gives that back, so changing either alone moves the icons off. */
+	#[Then('each table is marked with an icon, in line with the actions and the labels above')]
+	public function tablesAreMarked(): void
+	{
+		/** @var array{unmarked: int, label: float, action: float, table: float} $state */
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const names = [...document.querySelectorAll("#tables li > a:not(.select)")];
+				const range = document.createRange();
+				range.selectNodeContents(document.querySelector("#dbs label"));
+				const first = names[0];
+				return {
+					unmarked: names.filter((a) => !getComputedStyle(a, "::before").maskImage.includes("icons/")).length,
+					label: range.getBoundingClientRect().left,
+					action: document.querySelector("#menu .links .ad-icon").getBoundingClientRect().left,
+					table: first.getBoundingClientRect().left + parseFloat(getComputedStyle(first).paddingLeft),
+				};
+			}',
+		);
+		if ($state['unmarked'] > 0) {
+			throw new RuntimeException("{$state['unmarked']} tables in the sidebar have no icon");
+		}
+		foreach (['action', 'table'] as $what) {
+			if (abs($state[$what] - $state['label']) > 0.5) {
+				throw new RuntimeException("the first $what icon starts at {$state[$what]}px, the label at {$state['label']}px");
+			}
+		}
+	}
+
 	// ── the theme ────────────────────────────────────────────────────────────────────────────
 
 	/** The theme's own token is only defined by our stylesheet, so a non-empty value proves the

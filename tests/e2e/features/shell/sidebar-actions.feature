@@ -7,3 +7,4 @@ Feature: The sidebar's actions are icons
     And I am logged in
     When I open the database
     Then the sidebar offers "SQL command, Import, Export, Create table", each an icon
+    And each table is marked with an icon, in line with the actions and the labels above
