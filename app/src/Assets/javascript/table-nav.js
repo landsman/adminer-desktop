@@ -32,7 +32,7 @@ function onClick(e) {
 	clearTimeout(pendingNav);
 	const href = name.href;
 	pendingNav = setTimeout(() => {
-		location.href = href;
+		window.desktopGo(href);
 	}, DOUBLE_CLICK_MS);
 }
 
@@ -46,7 +46,7 @@ function onDoubleClick(e) {
 	clearTimeout(pendingNav);
 	const select = name.closest("li").querySelector("a.select");
 	if (select) {
-		location.href = select.href;
+		window.desktopGo(select.href);
 	}
 }
 
@@ -60,4 +60,7 @@ if (
 ) {
 	addEventListener("click", onClick);
 	addEventListener("dblclick", onDoubleClick);
+} else {
+	// Adminer's own links, which show the activity indicator as they are followed (busy.js).
+	document.getElementById("tables")?.setAttribute("data-busy", "");
 }

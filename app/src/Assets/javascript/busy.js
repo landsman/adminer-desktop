@@ -1,21 +1,11 @@
 /**
- * The activity indicator over the page while it waits on the server (css/busy.css), which would
- * otherwise sit unchanged until the answer comes.
- *
- * - A form marked data-busy, or inside an element that is, shows it when it is submitted, and a
- *   link the same when it is followed. Mark only what navigates this page: nothing else takes the
- *   indicator away again.
- * - A script waiting on work of its own calls window.desktopBusy() and desktopBusy(false).
+ * The activity indicator over the page while it waits on the server. Which waits show it, what a
+ * new one uses, and why each navigation here waits for it to be drawn: ../busy.md.
  *
  * The indicator is the page's own (src/Assets/busy.latte, printed in the sidebar), moved to the end
  * of <body> so a sidebar hidden in a narrow window cannot hide it with it. A popover, so it lies
  * over an open modal too. Back restores the page as it was left, indicator and all, so pageshow
  * takes it down.
- *
- * The form is sent, and the link followed, only once the indicator has been drawn: WKWebView
- * draws nothing more of a page after it starts navigating away, so one shown in the same moment
- * never appeared. What it has drawn by then keeps moving: its fade-in and its turn are CSS
- * animations of opacity and transform, which run in the compositor, not the page.
  */
 
 // In a block of its own: these files are classic scripts sharing one global scope.
@@ -30,6 +20,27 @@
 	// Two frames: the first draws the indicator, the second starts once that frame is out.
 	const afterPaint = (then) =>
 		requestAnimationFrame(() => requestAnimationFrame(then));
+
+	window.desktopGo = (href) => {
+		window.desktopBusy();
+		afterPaint(() => location.assign(href));
+	};
+
+	// Adminer sends these menus by form.submit() as one changes, which fires no submit event to
+	// wait on, so the change is taken here, ahead of its handler, and the form sent once the
+	// indicator is drawn. requestSubmit() still goes through adminer's own GET serialisation.
+	document.addEventListener(
+		"change",
+		(event) => {
+			const form = event.target.closest?.("#dbs")?.closest("form");
+			if (form) {
+				event.stopPropagation();
+				window.desktopBusy();
+				afterPaint(() => form.requestSubmit());
+			}
+		},
+		true,
+	);
 
 	// On the document, so a listener nearer the target that stops the navigation is heard first.
 	// The form goes again with the same button, which a form.submit() would leave out, and the
@@ -64,8 +75,7 @@
 			!event.shiftKey
 		) {
 			event.preventDefault();
-			window.desktopBusy();
-			afterPaint(() => location.assign(link.href));
+			window.desktopGo(link.href);
 		}
 	});
 
