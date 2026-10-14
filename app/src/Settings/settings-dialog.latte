@@ -14,7 +14,7 @@
 <button type="button" id="desktop-gear" data-dialog="desktop-settings" title="{$desktop->t('settings.title')}">&#9881;</button>
 
 {* Not light-dismissed: a stray click beside a dialog this large is too easy. Guarded, so Escape and
-	Cancel ask before throwing edits away (javascript/modal.js). Focus lands on the dialog itself
+	the × ask before throwing edits away (javascript/modal.js). Focus lands on the dialog itself
 	rather than on the checked tab, so opening it with the mouse does not ring the tab. *}
 {embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, guard: true, focusSelf: true, labelledBy: 'desktop-settings-title'}
 	{block hidden}
@@ -58,7 +58,6 @@
 			the others, away from the one people press without reading. *}
 		<button type="submit" name="desktop_reset" value="1" id="desktop-reset" class="ad-danger"
 			data-confirm="{$desktop->t('settings.reset_confirm')}">{$desktop->t('settings.reset')}</button>
-		<button type="button" id="desktop-close" data-close>{$desktop->t('settings.close')}</button>
 		<button type="submit" id="desktop-save" class="ad-primary">{$desktop->t('settings.save')}</button>
 	{/block}
 {/embed}

@@ -21,6 +21,8 @@ return [
 	'settings.tab_shortcuts' => 'Shortcuts',
 	'settings.save' => 'Save',
 	'settings.close' => 'Cancel',
+	// The × in every modal's header (src/Assets/modal.latte): its accessible name and tooltip.
+	'modal.close' => 'Close',
 	// {n}, not %d: Adminer's lang() runs the string through sprintf, which would replace %d with 0
 	// before the browser (which fills in {n}) ever sees it.
 	'settings.reset' => 'Reset to defaults',

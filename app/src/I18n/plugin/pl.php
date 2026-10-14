@@ -15,6 +15,7 @@ return [
 	'settings.tab_shortcuts' => 'Skróty',
 	'settings.save' => 'Zapisz',
 	'settings.close' => 'Zamknij',
+	'modal.close' => 'Zamknij',
 	'settings.reset' => 'Przywróć domyślne',
 	'settings.reset_confirm' => 'Przywrócić wszystkie ustawienia do domyślnych? Wygląd, wtyczki i zmienione przez Ciebie szerokości zostaną zapomniane. Język i zapisane serwery Adminera pozostaną.',
 

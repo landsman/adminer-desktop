@@ -26,3 +26,7 @@
 #desktop-tabs input:focus-visible + label {
 	box-shadow: 0 0 0 2px var(--ad-accent);
 }
+
+.ad-modal-header .ad-modal-close:focus-visible {
+	outline-color: var(--ad-accent);
+}

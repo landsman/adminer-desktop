@@ -49,6 +49,8 @@ class AdminerDesktop extends Adminer\Plugin {
 		// The plugin UI strings live in app/src/I18n/plugin/ (per-language files, dotted IDs) and
 		// feed Adminer's Plugin::lang() through $translations. See Desktop\I18n\Catalog.
 		$this->translations = Catalog::load(Domain::Plugin)->all();
+		// What {t()} translates through, in templates that are handed no $desktop (Latte::engine()).
+		Latte::engine()->addProvider("desktop", $this);
 		$this->userSettings = new UserSettings();
 		$this->styles = new Styles(__DIR__ . "/src/Assets/css");
 		// dir(), not raw __DIR__: Javascript globs its folder, and glob() treats the

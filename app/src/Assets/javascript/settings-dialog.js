@@ -49,7 +49,7 @@ if (gear && dialog) {
 
 	// modal.js opens it, through the gear's data-dialog.
 	gear.addEventListener("click", remember);
-	// Every way out at once: escape, the Cancel button, and submitting the form all fire close.
+	// Every way out at once: escape, the ×, and submitting the form all fire close.
 	dialog.addEventListener("close", () => sessionStorage.removeItem(OPEN_KEY));
 	tabs?.addEventListener("change", () => {
 		if (dialog.open) {

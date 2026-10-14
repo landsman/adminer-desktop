@@ -48,10 +48,7 @@
 {embed '../Assets/modal.latte', id: 'ad-new-connection-dialog', class: 'ad-new-connection-dialog', guard: true, form: false, labelledBy: 'ad-new-connection-title'}
 	{block header}<h2 id="ad-new-connection-title">{$desktop->t('connections.new')}</h2>{/block}
 	{block body}{$fields|noescape}{/block}
-	{block footer}
-		<button type="button" data-close>{$desktop->t('settings.close')}</button>
-		{$submit|noescape}
-	{/block}
+	{block footer}{$submit|noescape}{/block}
 {/embed}
 {* Opened on load — see Connections::loginPage(). An attribute the script reads rather than an
 	inline script, which the CSP would want a nonce for. *}

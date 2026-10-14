@@ -295,7 +295,7 @@ body:has(#ad-connections) #logins {
 
 /* The new-connection modal holds adminer's own form: its field table in the body, its submit row
    in the footer. The row's paragraph steps aside so Permanent login sits on the left and Login
-   lines up with Cancel on the right, styled as the modal's primary. */
+   on the right, styled as the modal's primary. */
 .ad-new-connection-dialog {
 	width: 34em;
 }
@@ -314,14 +314,6 @@ body:has(#ad-connections) #logins {
 	order: -1;
 	margin-right: auto;
 	white-space: nowrap;
-}
-
-/* Too narrow for the three on one row: Permanent login takes the first row, so Cancel and Login
-   stay together on the second rather than Login wrapping alone. */
-@media (max-width: 30rem) {
-	.ad-new-connection-dialog .ad-modal-footer label {
-		flex-basis: 100%;
-	}
 }
 
 .ad-new-connection-dialog .ad-modal-footer input[type="submit"] {
