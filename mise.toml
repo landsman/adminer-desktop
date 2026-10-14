@@ -57,13 +57,15 @@ run = "npx --no-install @biomejs/biome check ."
 
 # Behat, on the bundled frankenphp like everything else here. SUITE picks one driver
 # (`make e2e SUITE=mysql`) and ARGS is passed through, so a single feature or a scenario by name
-# needs no second task: `make e2e ARGS=--name=Sorting`.
+# needs no second task: `make e2e ARGS=--name=Sorting`. --strict, or a step no context defines is
+# reported "undefined" and the run still exits 0; not in behat.php, where it would fail `make qa`'s
+# dry run too (strict counts a skipped step as a failure, and a dry run skips them all).
 [tasks.e2e]
 description = "Run the end-to-end scenarios"
-run = './bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php ${SUITE:+--suite=$SUITE} $ARGS'
+run = './bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict ${SUITE:+--suite=$SUITE} $ARGS'
 
 # The browser, shown and slowed down enough to follow. The fixture reads the variable.
 [tasks.e2e-visual]
 description = "Run the end-to-end scenarios in a browser you can watch"
 env = { ADMINER_DESKTOP_E2E_HEADED = "1" }
-run = './bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php ${SUITE:+--suite=$SUITE} $ARGS'
+run = './bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict ${SUITE:+--suite=$SUITE} $ARGS'

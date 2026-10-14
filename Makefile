@@ -284,6 +284,10 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
+	@# Every step a .feature uses has a definition, read off a dry run: no docker, no browser. Not
+	@# --strict, which fails every step a dry run skips; the exit code still catches a broken config.
+	@out=$$(./bin/frankenphp$(EXE) php-cli app/vendor/bin/behat -c tests/e2e/behat.php --dry-run --format=progress --no-colors --snippets-for='Desktop\Tests\DesktopContext' 2>&1) \
+		&& ! echo "$$out" | grep -q undefined && echo "e2e steps ok" || { echo "$$out"; exit 1; }
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
 	@# Every darwin-only function needs a non-darwin definition, or the build breaks on
