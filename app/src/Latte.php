@@ -37,6 +37,11 @@ class Latte {
 			// already: the linter builds this engine with no adminer loaded at all.
 			$latte->addFunction("input_hidden", fn(string $name, $value = 1) => \Adminer\input_hidden($name, $value));
 			$latte->addFunction("input_token", fn() => \Adminer\input_token());
+			// Our plugin strings, for a template handed no $desktop: an {embed}ded one such as
+			// modal.latte sees only its arguments. Registered here so the linter and the build
+			// compile the same call the app runs; the strings come from the AdminerDesktop the
+			// request created, which hands itself over as the "desktop" provider.
+			$latte->addFunction("t", fn(string $id): string => $latte->getProviders()["desktop"]->t($id));
 			$dir = Env::DataDir->get();
 			if (is_dir(self::PRECOMPILED) && PHP_OS_FAMILY != "Windows") {
 				// A packaged build: its templates never change under it, so no freshness check —

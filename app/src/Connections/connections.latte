@@ -45,7 +45,7 @@
 	<button type="button" id="ad-new-connection" data-dialog="ad-new-connection-dialog">+ {$desktop->t('connections.new')}</button>
 </div>
 
-{embed '../Assets/modal.latte', id: 'ad-new-connection-dialog', close: $desktop->t('modal.close'), class: 'ad-new-connection-dialog', guard: true, form: false, labelledBy: 'ad-new-connection-title'}
+{embed '../Assets/modal.latte', id: 'ad-new-connection-dialog', class: 'ad-new-connection-dialog', guard: true, form: false, labelledBy: 'ad-new-connection-title'}
 	{block header}<h2 id="ad-new-connection-title">{$desktop->t('connections.new')}</h2>{/block}
 	{block body}{$fields|noescape}{/block}
 	{block footer}{$submit|noescape}{/block}
