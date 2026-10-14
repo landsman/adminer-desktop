@@ -8,4 +8,5 @@ as a CSS mask over the text colour: only a file's shape counts, so each is drawn
 is ours: the fallback for a driver with no logo here (MS SQL — simple-icons dropped Microsoft's).
 
 The rest are ours too: `edit`, `logout` and `forget` on a card, `close` in a modal's header,
-`spinner` in the activity indicator.
+`spinner` in the activity indicator, and `sql`, `import`, `export` and `create-table` for the
+sidebar's actions.

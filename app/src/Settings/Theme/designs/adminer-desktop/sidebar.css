@@ -77,6 +77,32 @@
 	color: var(--ad-accent);
 }
 
+/* The actions under the database picker are icons (AdminerDesktop::menuActions()): a row of
+   toolbar buttons, each a square to be hit in. The paragraph gives up what each button pads,
+   so the first icon still lines up with the labels above it. */
+#menu .links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3em;
+	padding: 0.5em 0.65em;
+}
+
+#menu .links a {
+	display: inline-flex;
+	margin: 0;
+	padding: 0.35em;
+	border-radius: var(--ad-radius-sm);
+}
+
+#menu .links a:hover {
+	background: var(--ad-accent-quiet);
+}
+
+#menu .links .ad-icon {
+	width: 1.15em;
+	height: 1.15em;
+}
+
 /* Top strip: breadcrumb, logout and the language switch. Kept quiet so the data below is
    the focus. The breadcrumb loses Adminer's grey fill and reads as a plain path; logout
    becomes a ghost button instead of a loud filled one in the corner. */

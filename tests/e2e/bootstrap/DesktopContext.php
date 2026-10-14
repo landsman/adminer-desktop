@@ -860,6 +860,33 @@ class DesktopContext implements Context
 		}
 	}
 
+	// ── the sidebar's actions ────────────────────────────────────────────────────────────────
+
+	/** Each found by the name a screen reader reads, which is adminer's label through the title,
+	 * showing no text of its own and drawn from an icon file — a path that stopped resolving
+	 * would leave a blank button and the name still passing. */
+	#[Then('the sidebar offers :actions, each an icon')]
+	public function sidebarActionsAreIcons(string $actions): void
+	{
+		$menu = $this->page->locator(
+			// language=JQuery-CSS
+			'#menu .links',
+		);
+		foreach (explode(', ', $actions) as $name) {
+			$link = $menu->getByRole('link', ['name' => $name, 'exact' => true]);
+			if ($link->count() !== 1) {
+				throw new RuntimeException("the sidebar has {$link->count()} links named '$name'");
+			}
+			$drawn = (bool) $link->evaluate(
+				// language=JavaScript
+				'(a) => a.textContent.trim() === "" && getComputedStyle(a.querySelector(".ad-icon")).maskImage.includes("icons/")',
+			);
+			if (!$drawn) {
+				throw new RuntimeException("'$name' in the sidebar is not an icon");
+			}
+		}
+	}
+
 	// ── the theme ────────────────────────────────────────────────────────────────────────────
 
 	/** The theme's own token is only defined by our stylesheet, so a non-empty value proves the

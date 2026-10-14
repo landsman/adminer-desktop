@@ -359,6 +359,22 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null;
 	}
 
+	/** The sidebar's actions as icons, adminer's own label kept as the tooltip and as the name a
+	* screen reader reads. Changed in place rather than returned, so a later plugin still gets its
+	* turn: an action of its own stays text.
+	* @param array<string,string> $actions
+	*/
+	function menuActions(array &$actions, string $missing): void {
+		$icons = ['sql' => Icon::Sql, 'import' => Icon::Import, 'dump' => Icon::Export, 'create' => Icon::CreateTable];
+		foreach (array_intersect_key($icons, $actions) as $key => $icon) {
+			$actions[$key] = (string) preg_replace_callback(
+				'~^(<a\b[^>]*)>(.*)</a>$~s',
+				fn(array $m): string => "$m[1] title='" . Adminer\h(strip_tags($m[2])) . "'>" . $icon->html() . "</a>",
+				$actions[$key],
+			);
+		}
+	}
+
 	/** A table's or column's comment, allowed to wrap (.ad-text-wrap, utilities.css). Adminer prints
 	* both in a `nowrap` cell or paragraph, so one long comment widened the whole structure table
 	* past the window. Routine comments abstain: adminer formats those itself.
