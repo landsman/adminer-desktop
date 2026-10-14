@@ -42,7 +42,7 @@ test harness to iterate against. The three-platform build only runs on manual di
 mise trust         # once per clone: mise.toml carries a [settings] block
 gh auth login      # once per machine: make verify reads frankenphp's attestation over the API
 mise run install   # once: node deps, composer deps, and the e2e browser
-make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
+make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet, every e2e step defined
 make verify        # adminer build checksums + proof frankenphp is the binary upstream built
 make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
@@ -179,6 +179,8 @@ needs docker. `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--nam
 either. A failed step leaves its screenshot and HTML in `tests/e2e/artifacts/`. `make e2e-packaged`
 runs the same scenarios against `app/` as a release ships it — production deps, templates
 precompiled, read-only — so a template the build missed fails a scenario; CI runs it nightly only.
+A step no context defines fails: the e2e tasks run Behat with `--strict` (without it, "undefined"
+exits 0), and `make qa` dry-runs every feature to catch one with no docker and no browser.
 
 A step's JavaScript and selectors are strings, so nothing checks them until a scenario fails. Mark
 each with PhpStorm's language-injection comment on the line before the literal — `// language=JavaScript`
