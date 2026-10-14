@@ -43,6 +43,11 @@
             "behat/behat": true,
             "behat/gherkin": true,
             "vrana/adminer": true
+        },
+        "patches": {
+            "vrana/adminer": {
+                "Spell out Auto Increment, https://github.com/vrana/adminer/pull/1360": "../patches/adminer-auto-increment.patch"
+            }
         }
     }
 }
