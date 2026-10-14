@@ -43,7 +43,7 @@ mise trust         # once per clone: mise.toml carries a [settings] block
 gh auth login      # once per machine: make verify reads frankenphp's attestation over the API
 mise run install   # once: node deps, composer deps, and the e2e browser
 make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
-make verify        # adminer checksums + proof frankenphp is the binary upstream built
+make verify        # adminer build checksums + proof frankenphp is the binary upstream built
 make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
 ```
@@ -211,11 +211,20 @@ launcher/dialogs_darwin.m    what WKWebView leaves out: JS dialogs, file picker,
 launcher/download_darwin.m   turn an Export > save attachment into a real download + progress
 tests/e2e/                   Behat: features/, bootstrap/ (steps), harness/fixture.php, seed/<driver>.sql
 mise.toml                    node, and the install/format/lint/e2e tasks
+patches/                     fixes to adminer's sources until upstream releases them; cli/compile-adminer.sh builds
 ```
 
-Everything downloaded — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
-is pinned in the `Makefile` and checksum-verified. Nothing resolves "latest", and those
-files are never edited: behaviour changes go in the plugin. The `adminer-desktop` theme
+Everything from upstream — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
+comes out of one pin, the exact `vrana/adminer` version in `app/composer.json`. Nothing
+resolves "latest", and those files are never edited: behaviour changes go in the plugin.
+
+**A fix to adminer itself is a pull request upstream first, and a patch here only until it
+ships.** composer installs adminer as source (a dev dependency), `cweagans/composer-patches`
+applies `patches/*.patch` to it, and `cli/compile-adminer.sh` compiles the single files.
+With no patches the build is the release byte for byte, so `checksums.txt` changes only
+when a patch does: `make checksums` after adding or dropping one, and delete the patch once
+the release carrying it is pinned. Bumping adminer also means the submodule commits in
+that script, which refuses to run for any other version. The `adminer-desktop` theme
 under `src/Settings/Theme/designs/` is the exception — it is ours, and the `.gitignore` negates
 the designs-are-downloaded rule to keep it.
 
