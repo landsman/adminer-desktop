@@ -32,8 +32,14 @@ return [
 	// out of the rows there are.
 	'js.pager.of' => 'of',
 
+	// What a screen reader announces for the activity indicator over a page waiting on the
+	// server (src/Assets/busy.latte).
+	'busy.loading' => 'Loading…',
+
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
+	// Atop the editor that opens on the first page a new connection lands on.
+	'connections.added' => 'Connected. Name it, so it is easy to tell apart from the others.',
 	'connections.empty' => 'No saved connections yet.',
 	'connections.edit' => 'Edit',
 	'connections.name' => 'Name',

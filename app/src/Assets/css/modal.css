@@ -90,6 +90,11 @@ body:has(.ad-modal[open]) {
 	cursor: pointer;
 }
 
+.ad-modal-header .ad-modal-close .ad-icon {
+	width: 14px;
+	height: 14px;
+}
+
 .ad-modal-header .ad-modal-close:hover {
 	background: color-mix(in srgb, var(--fg) 8%, transparent);
 	color: var(--fg);
@@ -257,5 +262,12 @@ body:has(.ad-modal[open]) {
 		.ad-modal[open] {
 			transform: translateY(8px);
 		}
+	}
+
+	/* Opened as the page loads (before-paint/open-on-load.js): the frame before is the previous
+	   page, so there is nothing to fade in from. */
+	.ad-modal-instant,
+	.ad-modal-instant::backdrop {
+		transition: none;
 	}
 }

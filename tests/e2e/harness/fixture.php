@@ -225,6 +225,26 @@ function e2e_fixture(): array
 }
 
 /** Get a port nothing is listening on yet, starting from the one asked for. */
+/** A database server that answers late and then hangs up (slow-server.php), started on first use
+ * and stopped with the run: where a scenario logs in to wait, and then to fail.
+ *
+ * @return string its address, for the login form's server field
+ */
+function e2e_slow_server(): string
+{
+	static $server = null, $address = '';
+	if (!$server) {
+		$port = e2e_free_port(55999);
+		$server = new Process([dirname(__DIR__, 3) . '/bin/frankenphp', 'php-cli', __DIR__ . '/slow-server.php', (string) $port, '1']);
+		$server->start();
+		// Listening, not merely started: a login sent before would be refused, not kept waiting.
+		$server->waitUntil(fn (string $type, string $output): bool => str_contains($output, 'listening'));
+		register_shutdown_function(fn () => $server->stop());
+		$address = "127.0.0.1:$port";
+	}
+	return $address;
+}
+
 function e2e_free_port(int $port): int
 {
 	for ($i = 0; $i < 20; $i++) {

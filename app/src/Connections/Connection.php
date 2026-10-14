@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Desktop\Connections;
 
+use Desktop\Assets\Icon;
+
 /** One saved login — what adminer remembers (driver, server, username, the databases opened)
 * plus what the user said about it: a name, a colour, an environment.
 *
@@ -55,11 +57,9 @@ final readonly class Connection {
 		return \Adminer\get_setting("vendor-$this->driver-$this->server") ?: \Adminer\get_driver($this->driver);
 	}
 
-	/** The logo as inline SVG — inline so it takes currentColor from the card. */
-	function icon(): string {
-		$file = $this->driver === 'server' && $this->system() === 'MariaDB' ? 'mariadb' : $this->driver;
-		$path = __DIR__ . "/icons/" . preg_replace('~\W~', '', $file) . ".svg";
-		return (string) file_get_contents(is_file($path) ? $path : __DIR__ . "/icons/database.svg");
+	/** The database's logo, drawn in the card's colour (css/icons.css). */
+	function icon(): Icon {
+		return Icon::forDriver($this->driver === 'server' && $this->system() === 'MariaDB' ? 'mariadb' : $this->driver);
 	}
 
 	/** Where a click goes: the server's database list, or straight into one database.

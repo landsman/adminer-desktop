@@ -10,6 +10,7 @@ declare(strict_types=1);
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
 
+use Desktop\Assets\Icon;
 use Desktop\Assets\Javascript;
 use Desktop\Assets\Styles;
 use Desktop\Connections\Connections;
@@ -192,8 +193,10 @@ class AdminerDesktop extends Adminer\Plugin {
 	*/
 	function head(): ?string {
 		$this->styles->link();
+		Icon::preload();
 		$this->javascript->link();
 		$this->javascript->beforePaint("header.js");
+		$this->javascript->beforePaint("open-on-load.js");
 		// Restore the sizes the user set themselves — the sidebar, and the edit form's fields —
 		// before the body paints, so a cold start opens at them instead of flashing the default
 		// then jumping. Each is a property the theme reads, named by what the api stored
@@ -322,16 +325,19 @@ class AdminerDesktop extends Adminer\Plugin {
 		return substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1) ?: ".";
 	}
 
-	/** Adminer's sidebar, with ours ahead of it: the settings dialog, the search box once logged in
+	/** Adminer's sidebar, with ours ahead of it: the activity indicator (busy.js moves it out), the
+	* settings dialog, the search box once logged in (and the editor of a connection just added)
 	* and, on the login page, the versions beside its gear and the dialogs that edit the saved
 	* connections.
 	* @param string $missing
 	* @return void
 	*/
 	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
+		Latte::engine()->render(__DIR__ . "/src/Assets/busy.latte");
 		if ($missing != "auth") {
 			$this->dialog->render();
 			Latte::engine()->render(__DIR__ . "/src/Search/search-dialog.latte", ["desktop" => $this]);
+			$this->connections->offer();
 			return;
 		}
 		// One row for the versions and the gear, so our design can centre them as a pair.
@@ -359,6 +365,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* connected, so nothing here would work on the login screen.
 	*/
 	function handlePost(): void {
+		$this->connections->follow();
 		// empty(), not adminer's bare $_POST["x"]: this one runs on every request, including
 		// every GET, so the warning it would leave is on every page in the debug bar.
 		if (!empty($_POST["desktop_connection"]) && Adminer\verify_token()) {

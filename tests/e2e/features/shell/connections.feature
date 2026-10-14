@@ -18,6 +18,16 @@ Feature: Saved connections
     When I ask for a new connection
     Then the login form is shown
     And Permanent login is ticked
+    And logging in, from the form or a card, shows the activity indicator
+
+  Scenario: A login that fails says why in the modal, with what was typed still in it
+    When I log in with the password "not-the-password"
+    Then the new connection says why, with what I typed still in it
+
+  Scenario: A login that waits shows the activity indicator, then says why it failed
+    When I log in to a server that does not answer
+    Then the activity indicator turns while it waits
+    And the new connection says why, with what I typed still in it
 
   Scenario: A name, an environment and a colour stick, and follow you in
     When I label the connection "Fixture" as "prod" in "purple"
@@ -54,6 +64,16 @@ Feature: Saved connections
   Scenario: Forgetting takes it off the list
     When I forget the connection
     Then no connection is listed
+
+  Scenario: A connection added anew offers its name as soon as it connects
+    When I forget the connection
+    And I connect to it again
+    Then I am offered to name it
+    When I name it "Fixture" as "prod" in "purple"
+    Then the connection badge reads "Fixture"
+    And the body carries the "env-prod" class
+    When I go to the login page
+    Then the card reads "Fixture" with a "PROD" tag
 
   Scenario: A narrow window keeps the login page in one column, its modal included
     When the window is 320 by 640 pixels

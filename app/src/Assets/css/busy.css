@@ -1,0 +1,40 @@
+/* The activity indicator. Icon::Spinner turns wherever it is, a button as well as the page; #ad-busy
+ * is the one over the whole page while it waits on the server (busy.latte, javascript/busy.js).
+ * Both move by CSS animations of transform and opacity only, which run in the compositor: WKWebView
+ * draws nothing more of a page navigating away, and they keep going. */
+
+.ad-icon-spinner {
+	/* Linear, not the native one's twelve steps: the compositor does not take a stepped animation,
+	   and in WKWebView it then stood still the moment the page started navigating away. */
+	animation: ad-spin 1s linear infinite;
+}
+
+/* Centred where the UA puts a popover, and only once the wait has taken a moment, so a quick
+   answer never flashes it. Clicks pass through: the page stays as live as it was without it. */
+#ad-busy {
+	padding: 14px;
+	border: 1px solid var(--ad-border);
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--bg) 92%, transparent);
+	color: var(--fg);
+	font-size: 32px;
+	line-height: 0;
+	box-shadow: 0 4px 24px rgb(0 0 0 / 20%);
+	pointer-events: none;
+	animation: ad-appear 0.45s;
+}
+
+@keyframes ad-spin {
+	to {
+		transform: rotate(1turn);
+	}
+}
+
+/* The wait is part of the animation, not a delay before it: an animation still in its delay has
+   not reached the compositor, and once the page navigates away, it never does. */
+@keyframes ad-appear {
+	0%,
+	66% {
+		opacity: 0;
+	}
+}

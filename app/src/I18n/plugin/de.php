@@ -22,9 +22,11 @@ return [
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
 	'js.pager.of' => 'von',
+	'busy.loading' => 'Wird geladen…',
 
 	// Saved connections.
 	'connections.new' => 'Neue Verbindung',
+	'connections.added' => 'Verbunden. Mit einem Namen ist die Verbindung leicht von den anderen zu unterscheiden.',
 	'connections.empty' => 'Noch keine gespeicherten Verbindungen.',
 	'connections.edit' => 'Bearbeiten',
 	'connections.name' => 'Name',

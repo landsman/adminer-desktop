@@ -22,9 +22,11 @@ return [
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
 	'js.pager.of' => 'din',
+	'busy.loading' => 'Se încarcă…',
 
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',
+	'connections.added' => 'Conectat. Dă-i un nume, ca s-o deosebești ușor de celelalte.',
 	'connections.empty' => 'Încă nu există conexiuni salvate.',
 	'connections.edit' => 'Editează',
 	'connections.name' => 'Nume',

@@ -18,6 +18,7 @@ use Desktop\UserSettings;
 */
 class Connections {
 	private const int NAME_MAX = 60;
+	private const string ADDED = "desktop_added_connection";
 
 	private \AdminerDesktop $desktop;
 	private UserSettings $settings;
@@ -89,7 +90,6 @@ class Connections {
 		Latte::engine()->render(__DIR__ . "/connections.latte", [
 			"desktop" => $this->desktop,
 			"connections" => $saved,
-			"icons" => $this->icons(),
 			"fields" => $at === false ? $form : substr($form, 0, $at),
 			"submit" => $at === false ? '' : substr($form, $at),
 			// Open the modal on load for a login that was just posted and failed, and for a
@@ -108,15 +108,6 @@ class Connections {
 		]);
 	}
 
-	/** @return array<string,string> name => inline SVG, for the card's buttons */
-	private function icons(): array {
-		$return = [];
-		foreach (["edit", "logout", "forget"] as $name) {
-			$return[$name] = (string) file_get_contents(__DIR__ . "/icons/$name.svg");
-		}
-		return $return;
-	}
-
 	/** One edit dialog per card. Printed from navigation(), outside adminer's login form, because
 	* a form cannot sit inside another and Enter in a name field must not log in. */
 	function dialogs(): void {
@@ -125,6 +116,45 @@ class Connections {
 			"connections" => $this->saved(),
 			"colors" => Color::cases(),
 			"environments" => Environment::cases(),
+		]);
+	}
+
+	/** A login posted for a connection not on the list, marked in the session for offer(). Called
+	* before adminer reads the request, while the session is open: adminer answers the post with a
+	* redirect, and the page that connects is one or two redirects further on.
+	*/
+	function follow(): void {
+		$auth = $_POST["auth"] ?? null;
+		if (!is_array($auth)) {
+			return;
+		}
+		$key = ($auth["driver"] ?? "") . "|" . ($auth["server"] ?? "") . "|" . ($auth["username"] ?? "");
+		if (!isset($this->stored()[$key])) {
+			$_SESSION[self::ADDED] = $key;
+		}
+	}
+
+	/** The editor of the connection just added, opened on the first page it connects to, so it is
+	* named while it is in mind rather than from the start screen later. Saying no is closing it:
+	* it is remembered from here on either way, unlabelled, and offered only this once. A login
+	* that failed lands on the login page instead, and keeps the mark for the next try.
+	*/
+	function offer(): void {
+		$current = $this->current();
+		if (!$current || $current->key() !== ($_SESSION[self::ADDED] ?? null)) {
+			return;
+		}
+		// Adminer has closed the session by now; reopened the way it does mid-page, written at the end.
+		\Adminer\restart_session();
+		unset($_SESSION[self::ADDED]);
+		$this->settings->set(SettingKey::Connections, $this->stored() + [$current->key() => []]);
+		Latte::engine()->render(__DIR__ . "/connection-editor.latte", [
+			"desktop" => $this->desktop,
+			"connection" => $current,
+			"id" => "ad-connection-added",
+			"colors" => Color::cases(),
+			"environments" => Environment::cases(),
+			"added" => true,
 		]);
 	}
 

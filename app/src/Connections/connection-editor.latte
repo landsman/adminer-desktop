@@ -1,0 +1,58 @@
+{* A connection's editor: its name, environment and colour. Each card on the login page opens one
+	(connection-dialogs.latte), and a connection just added opens it on the page it lands on
+	(Connections::offer()), with a line saying why it is there.
+
+	Posted to AdminerDesktop::handlePost(). *}
+{parameters
+	\AdminerDesktop $desktop,
+	\Desktop\Connections\Connection $connection,
+	string $id,
+	array $colors,
+	array $environments,
+	bool $added = false
+}
+{embed '../Assets/modal.latte', id: $id, class: 'ad-connection-dialog', guard: true, labelledBy: $id . '-title'}
+	{block hidden}
+		{input_hidden('desktop_connection', $connection->key())|noescape}
+		{input_token()|noescape}
+	{/block}
+
+	{block header}
+		<h2 id="{$id}-title"><span class="ad-card-icon">{$connection->icon()->html()|noescape}</span> {$connection->address()}</h2>
+	{/block}
+
+	{block body}
+		{* A div, not a p: printed inside #menu, which draws a p as a menu row. *}
+		<div n:if="$added" class="ad-connection-added">{$desktop->t('connections.added')}</div>
+
+		<label class="ad-field">
+			<span>{$desktop->t('connections.name')}</span>
+			<input name="name" value="{$connection->name}" placeholder="{$connection->address()}" maxlength="60" autocomplete="off" autofocus>
+		</label>
+
+		{* Each environment carries its colour, so picking one picks that swatch too
+			(connections.js); the swatch stays the user's to change. *}
+		<label class="ad-field">
+			<span>{$desktop->t('connections.environment')}</span>
+			<select name="env">
+				<option value="">{$desktop->t('connections.none')}</option>
+				<option n:foreach="$environments as $environment" value="{$environment->value}" data-color="{$environment->color()->value}" n:attr="selected: $connection->environment === $environment">{$environment->label()}</option>
+			</select>
+		</label>
+
+		<fieldset class="ad-swatches">
+			<legend>{$desktop->t('connections.color')}</legend>
+			<label title="{$desktop->t('connections.none')}"><input type="radio" name="color" value="" n:attr="checked: !$connection->suggestedColor()"><span class="ad-swatch ad-swatch-none"></span></label>
+			<label n:foreach="$colors as $color" title="{$color->value}">
+				<input type="radio" name="color" value="{$color->value}" n:attr="checked: $connection->suggestedColor() === $color">
+				<span class="ad-swatch" style="background: {$color->hex()|noescape}"></span>
+			</label>
+		</fieldset>
+	{/block}
+
+	{block footer}
+		<button type="submit" class="ad-primary ad-save">{$desktop->t('settings.save')}</button>
+	{/block}
+{/embed}
+{* Opened on load, the way connections.latte opens the new-connection modal. *}
+<span n:if="$added" hidden data-open-dialog="{$id}"></span>
