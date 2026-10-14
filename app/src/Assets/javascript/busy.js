@@ -63,11 +63,23 @@
 			});
 		}
 	});
+
+	// A link in adminer's content goes to another page, so it needs no data-busy; the two that do
+	// not are a download (a blob's cell) and an anchor on this page (#routines, a query's error).
+	const leaves = (link) =>
+		link.closest("[data-busy]") ||
+		(link.closest("#content") &&
+			!new URLSearchParams(link.search).has("download") &&
+			!(
+				link.hash &&
+				link.pathname + link.search === location.pathname + location.search
+			));
 	document.addEventListener("click", (event) => {
 		const link = event.target.closest?.("a[href]");
 		// A modified click, or a link to another window, leaves this page where it is.
 		if (
-			link?.closest("[data-busy]") &&
+			link &&
+			leaves(link) &&
 			!link.target &&
 			!event.defaultPrevented &&
 			!event.metaKey &&

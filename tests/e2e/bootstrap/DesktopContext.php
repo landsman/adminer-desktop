@@ -145,6 +145,25 @@ class DesktopContext implements Context
 		$this->go(['select' => $table, 'limit' => $limit]);
 	}
 
+	/** No db, so adminer lists the server's databases; null drops it from the query. */
+	#[When('I open the server\'s list of databases')]
+	public function openDatabaseList(): void
+	{
+		$this->go(['db' => null, 'ns' => null]);
+	}
+
+	#[When('I open the database')]
+	public function openDatabase(): void
+	{
+		$this->go([]);
+	}
+
+	#[When('I open the structure of the :table table')]
+	public function openStructure(string $table): void
+	{
+		$this->go(['table' => $table]);
+	}
+
 	#[When('I open the edit form for :table row :id')]
 	public function openEditForm(string $table, string $id): void
 	{
@@ -735,6 +754,26 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** sidebar-resize.js adds the handle to the row after the first paint, so any room it takes is
+	 * the content drawn and then pushed aside. Measured with it and without, not by frames, which
+	 * would depend on when the browser happens to paint. */
+	#[Then('the handle takes no room from the content')]
+	public function handleTakesNoRoom(): void
+	{
+		$x = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const x = () => document.querySelector("#content").getBoundingClientRect().x;
+				const withHandle = x();
+				document.querySelector("#ad-sidebar-resizer").remove();
+				return [withHandle, x()];
+			}',
+		);
+		if (!is_array($x) || $x[0] !== $x[1]) {
+			throw new RuntimeException('the handle moved the content from ' . json_encode($x));
+		}
+	}
+
 	/** sendBeacon is fire-and-forget, so the file appears a beat after mouseup with no response to
 	 * await: poll for it rather than reading once.
 	 */
@@ -1215,6 +1254,43 @@ class DesktopContext implements Context
 		if ($shown !== true) {
 			throw new RuntimeException("opening $table from the sidebar did not show the activity indicator");
 		}
+	}
+
+	/** A link of adminer's content, which busy.js takes with no data-busy on it; read in the same
+	 * task as the click, as the page it then loads takes the indicator down again. */
+	#[Then('following :link in the content shows the activity indicator')]
+	public function contentLinkShowsIndicator(string $link): void
+	{
+		if ($this->followContentLink($link) !== true) {
+			throw new RuntimeException("following $link in the content did not show the activity indicator");
+		}
+	}
+
+	/** An anchor on the same page loads nothing, so nothing would take the indicator down again. */
+	#[Then('following :link in the content leaves the activity indicator down')]
+	public function contentLinkLeavesIndicator(string $link): void
+	{
+		if ($this->followContentLink($link) !== false) {
+			throw new RuntimeException("following $link in the content showed the activity indicator");
+		}
+	}
+
+	#[Then('it lands on a URL with :text')]
+	public function landsOn(string $text): void
+	{
+		$this->page->waitForURL("**$text**");
+	}
+
+	private function followContentLink(string $link): bool
+	{
+		return (bool) $this->page->evaluate(
+			// language=JavaScript
+			'(text) => {
+				[...document.querySelectorAll("#content a")].find((a) => a.textContent.trim() === text).click();
+				return document.querySelector("#ad-busy").matches(":popover-open");
+			}',
+			$link,
+		);
 	}
 
 	/** The in-place swap paging and sorting go through (refresh.js): up while it waits, down once

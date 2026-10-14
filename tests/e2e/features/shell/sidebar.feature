@@ -15,6 +15,9 @@ Feature: Resizing the sidebar
     And the "sidebar" width is stored, matching what is on screen
     And a fresh page opens the "sidebar" at the stored width
 
+  Scenario: The handle, added after the page is drawn, does not push the content aside
+    Then the handle takes no room from the content
+
   Scenario: The keyboard moves the splitter too
     When I drag the sidebar handle 120 pixels right
     And I nudge the sidebar handle left with the keyboard

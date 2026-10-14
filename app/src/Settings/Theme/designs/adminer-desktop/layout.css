@@ -55,11 +55,12 @@ body {
 
 /* The drag handle between the two panels. sidebar-resize.js inserts it into the flex row
    only under this layout, so it needs no markup elsewhere. A thin gutter that stays quiet
-   until hover or keyboard focus reveals the grip; the negative margins pull it back into
-   the panels' 0.5rem gaps so it adds no net width. */
+   until hover or keyboard focus reveals the grip. It arrives after the first paint, so it must
+   add no net width or the content jumps aside on every load: the negative margins take back
+   its own 5px and the second gap it opens in the row, centring it in the gap that was there. */
 #ad-sidebar-resizer {
 	flex: 0 0 5px;
-	margin: 0 -0.25rem;
+	margin: 0 calc((5px + 0.5rem) / -2);
 	cursor: col-resize;
 	border-radius: var(--ad-radius-sm);
 	background: transparent;

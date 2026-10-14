@@ -19,7 +19,8 @@ waits are listed that way.
 
 | How it starts | For example | What shows the indicator |
 |---|---|---|
-| A link followed | a connection's card; the sidebar's tables on a gallery design | `data-busy` on it or on an element around it |
+| A link in the content followed | a connection's card; the lists of databases and of tables; Select data | nothing: busy.js takes every one, but a download and an anchor on the same page |
+| A link elsewhere followed | the sidebar's tables on a gallery design | `data-busy` on it or on an element around it |
 | A POST form sent | logging in | `data-busy` on it or on an element around it |
 | A script setting `location` | the sidebar's tables on our design (`table-nav.js`); the search | `window.desktopGo(href)` in its place |
 | Adminer's `form.submit()` on `#dbs` | the database and schema menus | a change listener in busy.js |
