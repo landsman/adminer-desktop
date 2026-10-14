@@ -2268,6 +2268,32 @@ class DesktopContext implements Context
 		$this->page->waitForURL("**ns=$schema**");
 	}
 
+	/** From the keyboard: the first letter on the focused select opens the filter, the rest land in
+	 * its field. */
+	#[When('I type :text into the language switch')]
+	public function typeIntoLanguageSwitch(string $text): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#desktop-lang-slot select',
+		)->focus();
+		$this->page->keyboard()->type($text);
+	}
+
+	#[Then('the filter is closed, the settings dialog still open and the language still :lang')]
+	public function filterClosedInSettings(string $lang): void
+	{
+		$state = (string) $this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector(".ad-select-filter") ? "the filter is still open"
+				: !document.querySelector("#desktop-settings").open ? "the settings dialog closed"
+				: document.querySelector("#desktop-lang-slot select").value',
+		);
+		if ($state !== $lang) {
+			throw new RuntimeException("after Escape: $state");
+		}
+	}
+
 	/** The reload shortcut in the notation of the machine the app runs on — the fixture serves it
 	 * from this one, so PHP_OS_FAMILY here is the app's too. */
 	#[Then('it lists reload in this platform\'s notation')]
