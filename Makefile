@@ -186,6 +186,9 @@ $(WIN_INI)/openssl.ini:
 # --working-dir.
 app/vendor: app/composer.json app/composer.lock app/patches.lock.json $(wildcard patches/*.patch) bin/frankenphp$(EXE) .cache/composer.phar $(if $(EXE),$(WIN_INI)/openssl.ini)
 	$(COMPOSER) install --no-interaction --working-dir=app
+	@# install applies patches to a package only as it installs it, so one already in vendor/
+	@# keeps the old set: a patch added, changed or dropped reaches it only through a repatch.
+	$(COMPOSER) patches-repatch --no-interaction --working-dir=app
 	@touch app/vendor
 
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
