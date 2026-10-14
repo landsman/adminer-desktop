@@ -1,23 +1,11 @@
 /**
- * The activity indicator over the page while it waits on the server (css/busy.css), which would
- * otherwise sit unchanged until the answer comes.
- *
- * - A form marked data-busy, or inside an element that is, shows it when it is submitted, and a
- *   link the same when it is followed. Mark only what navigates this page: nothing else takes the
- *   indicator away again.
- * - A script waiting on work of its own calls window.desktopBusy() and desktopBusy(false).
- * - A script that navigates calls window.desktopGo(href) rather than setting location.
- * - The database and schema menus show it as one is changed.
+ * The activity indicator over the page while it waits on the server. Which waits show it, what a
+ * new one uses, and why each navigation here waits for it to be drawn: ../busy.md.
  *
  * The indicator is the page's own (src/Assets/busy.latte, printed in the sidebar), moved to the end
  * of <body> so a sidebar hidden in a narrow window cannot hide it with it. A popover, so it lies
  * over an open modal too. Back restores the page as it was left, indicator and all, so pageshow
  * takes it down.
- *
- * The form is sent, and the link followed, only once the indicator has been drawn: WKWebView
- * draws nothing more of a page after it starts navigating away, so one shown in the same moment
- * never appeared. What it has drawn by then keeps moving: its fade-in and its turn are CSS
- * animations of opacity and transform, which run in the compositor, not the page.
  */
 
 // In a block of its own: these files are classic scripts sharing one global scope.

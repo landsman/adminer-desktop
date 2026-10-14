@@ -20,18 +20,14 @@ a cache-buster; nothing lists them by name.
 
 These are plain scripts, not modules, so what one file offers another it offers on `window`,
 and the file that defines it sorts earlier by name — `api.js` before its callers, `refresh.js`
-before `table-columns.js`. Six so far:
+before `table-columns.js`. These so far:
 
 - `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
 - `window.desktopLang(id, fallback)` — a string of ours, translated. Add it to the plugin
   catalogue (`app/src/I18n/plugin/`) as `js.<id>` and it is on every page; nothing else lists
   it. It goes through adminer's `lang()`, so sprintf: a placeholder is `{n}`, never `%`.
-- `window.desktopBusy(on = true)` — the activity indicator over the page, for a script waiting on
-  work of its own. A form or a link that navigates needs no script: `data-busy` on it, or on an
-  element around it, shows the indicator when it is followed. For a spinner inside something
-  else, a button say, `Icon::Spinner->html()` is the same icon, turning, sized by the font.
-- `window.desktopGo(href)` — go to another page with the activity indicator up, for a script
-  that would otherwise set `location`: shown in the same moment, it would never be drawn.
+- `window.desktopBusy(on = true)` and `window.desktopGo(href)` — the activity indicator over the
+  page; which wait takes which is in [../busy.md](../busy.md).
 - `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
 - `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the
