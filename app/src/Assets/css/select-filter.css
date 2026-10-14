@@ -54,12 +54,26 @@
 	background: color-mix(in srgb, var(--fg) 8%, var(--bg));
 }
 
+/* A group reads as a section of its own: a rule over its heading and its options indented
+   under it, the way a native menu sets an optgroup apart. Adminer puts the ungrouped options
+   (a schema's own) first, so everything after a heading is grouped. */
 .ad-select-filter .ad-select-filter-group {
-	padding-top: 0.5em;
+	padding-top: 0.6em;
 	color: var(--ad-fg-quiet);
-	font-size: 0.85em;
+	font-size: 0.75em;
 	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
 	cursor: default;
+}
+
+.ad-select-filter .ad-select-filter-group:not(:first-child) {
+	margin-top: 0.3em;
+	border-top: 1px solid var(--ad-border);
+}
+
+.ad-select-filter .ad-select-filter-group ~ [role="option"] {
+	padding-left: 1.4em;
 }
 
 .ad-select-filter .ad-select-filter-none {
