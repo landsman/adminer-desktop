@@ -194,6 +194,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		$this->styles->link();
 		$this->javascript->link();
 		$this->javascript->beforePaint("header.js");
+		$this->javascript->beforePaint("open-on-load.js");
 		// Restore the sizes the user set themselves — the sidebar, and the edit form's fields —
 		// before the body paints, so a cold start opens at them instead of flashing the default
 		// then jumping. Each is a property the theme reads, named by what the api stored

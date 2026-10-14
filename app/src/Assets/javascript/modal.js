@@ -136,7 +136,14 @@
 	// For a script that opens a dialog without a button to click — shortcuts.js on ?.
 	window.desktopOpenDialog = (id) => open(document.getElementById(id));
 
+	// Opened already, before the first paint (before-paint/open-on-load.js): the guard still needs
+	// its fields as they were.
 	for (const marker of document.querySelectorAll("[data-open-dialog]")) {
-		open(document.getElementById(marker.dataset.openDialog));
+		const dialog = document.getElementById(marker.dataset.openDialog);
+		if (dialog?.open) {
+			opened.set(dialog, fields(dialog));
+		} else {
+			open(dialog);
+		}
 	}
 }
