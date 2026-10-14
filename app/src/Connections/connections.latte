@@ -4,7 +4,6 @@
 {parameters
 	\AdminerDesktop $desktop,
 	array $connections,
-	array $icons,
 	string $fields,
 	string $submit,
 	bool $adding
@@ -20,7 +19,7 @@
 			<li n:class="ad-card, !$connection->signedIn ? ad-signed-out" n:attr="style: $connection->color() ? '--ad-conn: ' . $connection->color()">
 				<div class="ad-card-row">
 					<a class="ad-card-link" href="{$connection->url()|nocheck}">
-						<span class="ad-card-icon" title="{$connection->system()}">{$connection->icon()|noescape}</span>
+						<span class="ad-card-icon" title="{$connection->system()}">{$connection->icon()->html()|noescape}</span>
 						<span class="ad-card-text">
 							<strong>{$connection->title()}</strong>
 							<small>
@@ -32,9 +31,9 @@
 					</a>
 					{* Beside the link, not over it: targets of their own, centred on the title row. *}
 					<span class="ad-card-actions">
-						<button type="button" class="ad-card-action ad-card-edit" data-dialog="ad-connection-{$n}" title="{$desktop->t('connections.edit')}" aria-label="{$desktop->t('connections.edit')}">{$icons['edit']|noescape}</button>
-						<button n:if="$connection->signedIn" type="button" class="ad-card-action" data-dialog="ad-connection-logout-{$n}" title="{$desktop->t('connections.logout')}" aria-label="{$desktop->t('connections.logout')}">{$icons['logout']|noescape}</button>
-						<button type="button" class="ad-card-action ad-card-forget" data-dialog="ad-connection-forget-{$n}" title="{$desktop->t('connections.forget')}" aria-label="{$desktop->t('connections.forget')}">{$icons['forget']|noescape}</button>
+						<button type="button" class="ad-card-action ad-card-edit" data-dialog="ad-connection-{$n}" title="{$desktop->t('connections.edit')}" aria-label="{$desktop->t('connections.edit')}">{\Desktop\Assets\Icon::Edit->html()|noescape}</button>
+						<button n:if="$connection->signedIn" type="button" class="ad-card-action" data-dialog="ad-connection-logout-{$n}" title="{$desktop->t('connections.logout')}" aria-label="{$desktop->t('connections.logout')}">{\Desktop\Assets\Icon::Logout->html()|noescape}</button>
+						<button type="button" class="ad-card-action ad-card-forget" data-dialog="ad-connection-forget-{$n}" title="{$desktop->t('connections.forget')}" aria-label="{$desktop->t('connections.forget')}">{\Desktop\Assets\Icon::Forget->html()|noescape}</button>
 					</span>
 				</div>
 				<span n:if="$connection->databases" class="ad-card-databases">

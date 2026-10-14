@@ -18,7 +18,7 @@
 	{/block}
 
 	{block header}
-		<h2 id="{$id}-title"><span class="ad-card-icon">{$connection->icon()|noescape}</span> {$connection->address()}</h2>
+		<h2 id="{$id}-title"><span class="ad-card-icon">{$connection->icon()->html()|noescape}</span> {$connection->address()}</h2>
 	{/block}
 
 	{block body}

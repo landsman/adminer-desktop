@@ -86,7 +86,7 @@ body:has(#ad-connections) #logins {
 	color: var(--ad-conn-tint, var(--fg));
 }
 
-.ad-card-icon svg {
+.ad-card-icon .ad-icon {
 	width: 70%;
 	height: 70%;
 }
@@ -144,7 +144,7 @@ body:has(#ad-connections) #logins {
 	cursor: pointer;
 }
 
-.ad-card-action svg {
+.ad-card-action .ad-icon {
 	width: 1.1em;
 	height: 1.1em;
 }

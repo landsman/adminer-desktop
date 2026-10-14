@@ -90,7 +90,6 @@ class Connections {
 		Latte::engine()->render(__DIR__ . "/connections.latte", [
 			"desktop" => $this->desktop,
 			"connections" => $saved,
-			"icons" => $this->icons(),
 			"fields" => $at === false ? $form : substr($form, 0, $at),
 			"submit" => $at === false ? '' : substr($form, $at),
 			// Open the modal on load for a login that was just posted and failed, and for a
@@ -107,15 +106,6 @@ class Connections {
 			"adminer" => \Adminer\VERSION,
 			"desktop" => AppVersion::current(),
 		]);
-	}
-
-	/** @return array<string,string> name => inline SVG, for the card's buttons */
-	private function icons(): array {
-		$return = [];
-		foreach (["edit", "logout", "forget"] as $name) {
-			$return[$name] = (string) file_get_contents(__DIR__ . "/icons/$name.svg");
-		}
-		return $return;
 	}
 
 	/** One edit dialog per card. Printed from navigation(), outside adminer's login form, because

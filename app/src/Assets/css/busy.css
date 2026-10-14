@@ -1,13 +1,9 @@
-/* The activity indicator. .ad-spinner is its icon (an <img> of icons/spinner.svg), sized by the
- * font like a glyph, so the same icon fits a button as well as the page. #ad-busy is the one over
- * the whole page while it waits on the server (busy.latte, javascript/busy.js). Both move by CSS
- * animations of transform and opacity only, which run in the compositor: WKWebView draws nothing
- * more of a page navigating away, and they keep going. */
+/* The activity indicator. Icon::Spinner turns wherever it is, a button as well as the page; #ad-busy
+ * is the one over the whole page while it waits on the server (busy.latte, javascript/busy.js).
+ * Both move by CSS animations of transform and opacity only, which run in the compositor: WKWebView
+ * draws nothing more of a page navigating away, and they keep going. */
 
-.ad-spinner {
-	width: 1em;
-	height: 1em;
-	vertical-align: middle;
+.ad-icon-spinner {
 	/* Linear, not the native one's twelve steps: the compositor does not take a stepped animation,
 	   and in WKWebView it then stood still the moment the page started navigating away. */
 	animation: ad-spin 1s linear infinite;

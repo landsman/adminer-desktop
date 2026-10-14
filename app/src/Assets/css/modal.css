@@ -90,6 +90,11 @@ body:has(.ad-modal[open]) {
 	cursor: pointer;
 }
 
+.ad-modal-header .ad-modal-close .ad-icon {
+	width: 14px;
+	height: 14px;
+}
+
 .ad-modal-header .ad-modal-close:hover {
 	background: color-mix(in srgb, var(--fg) 8%, transparent);
 	color: var(--fg);

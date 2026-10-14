@@ -29,8 +29,7 @@ before `table-columns.js`. Five so far:
 - `window.desktopBusy(on = true)` — the activity indicator over the page, for a script waiting on
   work of its own. A form or a link that navigates needs no script: `data-busy` on it, or on an
   element around it, shows the indicator when it is followed. For a spinner inside something
-  else, a button say, an `<img class="ad-spinner">` of `Icon::Spinner->url()` is the same
-  icon, sized by the font.
+  else, a button say, `Icon::Spinner->html()` is the same icon, turning, sized by the font.
 - `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
 - `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the

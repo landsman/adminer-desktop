@@ -1,0 +1,94 @@
+/* The app's own icons (Desktop\Assets\Icon, files in ../icons/): a span painted in the text colour
+ * through the file's shape. The colour is the theme's — light, dark, hover all come from what
+ * holds the icon — and each file is cached once rather than repeated in every page. Sized by the
+ * font like a glyph; what holds an icon sets another size where it needs one. */
+
+.ad-icon {
+	display: inline-block;
+	flex: none;
+	width: 1em;
+	height: 1em;
+	vertical-align: middle;
+	background: currentcolor;
+	-webkit-mask: center / contain no-repeat;
+	mask: center / contain no-repeat;
+}
+
+/* Forced colours replace every background with the page's, which would leave the mask painting
+   nothing: the system's text colour instead, as an inline icon's stroke would have taken. */
+@media (forced-colors: active) {
+	.ad-icon {
+		forced-color-adjust: none;
+		background: CanvasText;
+	}
+}
+
+.ad-icon-close {
+	-webkit-mask-image: url("../icons/close.svg");
+	mask-image: url("../icons/close.svg");
+}
+
+.ad-icon-spinner {
+	-webkit-mask-image: url("../icons/spinner.svg");
+	mask-image: url("../icons/spinner.svg");
+}
+
+.ad-icon-edit {
+	-webkit-mask-image: url("../icons/edit.svg");
+	mask-image: url("../icons/edit.svg");
+}
+
+.ad-icon-logout {
+	-webkit-mask-image: url("../icons/logout.svg");
+	mask-image: url("../icons/logout.svg");
+}
+
+.ad-icon-forget {
+	-webkit-mask-image: url("../icons/forget.svg");
+	mask-image: url("../icons/forget.svg");
+}
+
+.ad-icon-database {
+	-webkit-mask-image: url("../icons/database.svg");
+	mask-image: url("../icons/database.svg");
+}
+
+.ad-icon-db-clickhouse {
+	-webkit-mask-image: url("../icons/db-clickhouse.svg");
+	mask-image: url("../icons/db-clickhouse.svg");
+}
+
+.ad-icon-db-elastic {
+	-webkit-mask-image: url("../icons/db-elastic.svg");
+	mask-image: url("../icons/db-elastic.svg");
+}
+
+.ad-icon-db-mariadb {
+	-webkit-mask-image: url("../icons/db-mariadb.svg");
+	mask-image: url("../icons/db-mariadb.svg");
+}
+
+.ad-icon-db-mongo {
+	-webkit-mask-image: url("../icons/db-mongo.svg");
+	mask-image: url("../icons/db-mongo.svg");
+}
+
+.ad-icon-db-oracle {
+	-webkit-mask-image: url("../icons/db-oracle.svg");
+	mask-image: url("../icons/db-oracle.svg");
+}
+
+.ad-icon-db-pgsql {
+	-webkit-mask-image: url("../icons/db-pgsql.svg");
+	mask-image: url("../icons/db-pgsql.svg");
+}
+
+.ad-icon-db-server {
+	-webkit-mask-image: url("../icons/db-server.svg");
+	mask-image: url("../icons/db-server.svg");
+}
+
+.ad-icon-db-sqlite {
+	-webkit-mask-image: url("../icons/db-sqlite.svg");
+	mask-image: url("../icons/db-sqlite.svg");
+}

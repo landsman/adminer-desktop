@@ -11,7 +11,7 @@
 	The look is css/modal.css. Buttons in the footer are quiet unless they take .ad-primary (the
 	one green action, last) or .ad-danger (outlined red, pushed to the left).
 
-	The way out is the × in the header's top-right corner, on every modal (icons/close.latte), so
+	The way out is the × in the header's top-right corner, on every modal (Icon::Close), so
 	the footer carries no Close of its own — only a question does, as its safe answer beside the
 	destructive one.
 
@@ -45,7 +45,7 @@
 			{block header}{/block}
 			{* Named by aria-label alone: a title saying the same would be read out a second time, as
 				the button's description. *}
-			<button type="button" class="ad-modal-close" data-close aria-label="{t('modal.close')}">{include 'icons/close.latte'}</button>
+			<button type="button" class="ad-modal-close" data-close aria-label="{t('modal.close')}">{\Desktop\Assets\Icon::Close->html()|noescape}</button>
 		</div>
 		<div class="ad-modal-body">{block body}{/block}</div>
 		<div class="ad-modal-footer">{block footer}{/block}</div>
