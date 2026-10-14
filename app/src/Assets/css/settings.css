@@ -74,11 +74,9 @@ dialog#desktop-settings p.message {
 	   below share one left edge: the body's padding plus a panel's 0.4em, both at the body's
 	   1.05em text size. Kept in step with the two rules below that set them. */
 	padding-left: calc(1.05 * (var(--ad-dialog-padding) + 0.4em));
-}
-
-/* The title above the tab strip, which also names the dialog (aria-labelledby). */
-#desktop-settings .ad-modal-header h2 {
-	margin-bottom: 0.4em;
+	/* Between the title and the tab strip. A gap rather than the title's margin, which the × beside
+	   the title would count as part of the title's row and sit below its middle. */
+	row-gap: 0.4em;
 }
 
 /* Pulled left by a label's own side padding, so the first tab's text lines up with the title

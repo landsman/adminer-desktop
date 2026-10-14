@@ -14,9 +14,9 @@
 <button type="button" id="desktop-gear" data-dialog="desktop-settings" title="{$desktop->t('settings.title')}">&#9881;</button>
 
 {* Not light-dismissed: a stray click beside a dialog this large is too easy. Guarded, so Escape and
-	Cancel ask before throwing edits away (javascript/modal.js). Focus lands on the dialog itself
+	the × ask before throwing edits away (javascript/modal.js). Focus lands on the dialog itself
 	rather than on the checked tab, so opening it with the mouse does not ring the tab. *}
-{embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, guard: true, focusSelf: true, labelledBy: 'desktop-settings-title'}
+{embed '../Assets/modal.latte', id: 'desktop-settings', close: $desktop->t('modal.close'), lightDismiss: false, guard: true, focusSelf: true, labelledBy: 'desktop-settings-title'}
 	{block hidden}
 		{input_hidden('desktop_settings', 1)|noescape}
 		{input_token()|noescape}
@@ -58,7 +58,6 @@
 			the others, away from the one people press without reading. *}
 		<button type="submit" name="desktop_reset" value="1" id="desktop-reset" class="ad-danger"
 			data-confirm="{$desktop->t('settings.reset_confirm')}">{$desktop->t('settings.reset')}</button>
-		<button type="button" id="desktop-close" data-close>{$desktop->t('settings.close')}</button>
 		<button type="submit" id="desktop-save" class="ad-primary">{$desktop->t('settings.save')}</button>
 	{/block}
 {/embed}
@@ -66,7 +65,7 @@
 {* The question every guarded modal asks before a changed form is thrown away (javascript/modal.js).
 	Here because this template is printed on every page, and the settings dialog is guarded too.
 	Keep editing is the safe answer, so it has the focus; Escape answers it too. *}
-{embed '../Assets/modal.latte', id: 'ad-discard', class: 'ad-confirm-dialog', form: false, labelledBy: 'ad-discard-title'}
+{embed '../Assets/modal.latte', id: 'ad-discard', close: $desktop->t('modal.close'), class: 'ad-confirm-dialog', form: false, labelledBy: 'ad-discard-title'}
 	{block header}<h2 id="ad-discard-title">{$desktop->t('connections.discard_title')}</h2>{/block}
 	{block body}{$desktop->t('connections.discard_text')}{/block}
 	{block footer}

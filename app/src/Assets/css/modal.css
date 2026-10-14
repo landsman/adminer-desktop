@@ -44,7 +44,7 @@ dialog.ad-modal:focus {
 }
 
 /* Lock the page behind. CSS rather than JS toggling a class: <dialog> closes on escape and on
-   form submission as well as from Cancel, and a handler on the button would miss both, leaving
+   form submission as well as from the ×, and a handler on the button would miss both, leaving
    the page unscrollable with nothing to explain it. */
 body:has(.ad-modal[open]) {
 	overflow: hidden;
@@ -57,8 +57,49 @@ body:has(.ad-modal[open]) {
 	background: color-mix(in srgb, var(--fg) 4%, var(--bg));
 }
 
+/* Two columns: whatever the dialog puts in its header on the left, the × on the right of the first
+   row — beside the title, and above a second row such as the settings tabs, not centred on both. */
 .ad-modal-header {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	column-gap: var(--ad-gap);
 	border-bottom: 1px solid var(--ad-border);
+}
+
+.ad-modal-header > * {
+	grid-column: 1;
+}
+
+/* Quiet until pointed at, like the close button of a mac panel. The negative margins let it be a
+   28px target (WCAG 2.5.8 asks for 24) without making the band taller than its title. `.ad-modal-header` in front to
+   outrank the theme's `button:hover`, which would fill it with the accent. */
+.ad-modal-header .ad-modal-close {
+	grid-column: 2;
+	grid-row: 1;
+	display: grid;
+	place-items: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	margin: -0.4rem -0.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: var(--ad-radius-sm);
+	background: none;
+	color: var(--ad-fg-quiet);
+	cursor: pointer;
+}
+
+.ad-modal-header .ad-modal-close:hover {
+	background: color-mix(in srgb, var(--fg) 8%, transparent);
+	color: var(--fg);
+}
+
+/* An outline, not the footer's box-shadow ring: forced-colors mode drops shadows, and an icon
+   button with no border would then show no focus at all. */
+.ad-modal-header .ad-modal-close:focus-visible {
+	outline: 2px solid AccentColor;
+	outline-offset: 0;
 }
 
 /* A plain title. Adminer styles h2 as a page heading with its own band and border; inside a

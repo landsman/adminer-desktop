@@ -4,7 +4,7 @@
 {parameters
 	\AdminerDesktop $desktop
 }
-{embed '../Assets/modal.latte', id: 'desktop-search', class: 'ad-search', form: false, label: $desktop->t('search.title')}
+{embed '../Assets/modal.latte', id: 'desktop-search', close: $desktop->t('modal.close'), class: 'ad-search', form: false, label: $desktop->t('search.title')}
 	{block body}
 		<input type="text" role="combobox" aria-expanded="true" aria-controls="desktop-search-list" aria-autocomplete="list" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="{$desktop->t('search.placeholder')}" aria-label="{$desktop->t('search.title')}">
 		<ul id="desktop-search-list" role="listbox" aria-label="{$desktop->t('search.title')}" data-table="{$desktop->t('search.table')}" data-view="{$desktop->t('search.view')}" data-database="{$desktop->t('search.database')}" data-schema="{$desktop->t('search.schema')}" data-none="{$desktop->t('search.none')}"></ul>

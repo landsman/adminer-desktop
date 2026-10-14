@@ -1283,6 +1283,16 @@ class DesktopContext implements Context
 		$this->page->keyboard()->press('Escape');
 	}
 
+	/** By role and name, so it also proves the × is a button a screen reader announces as Close. */
+	#[When('I click the close button')]
+	public function clickClose(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'dialog[open]',
+		)->getByRole('button', ['name' => 'Close', 'exact' => true])->click();
+	}
+
 	#[Then('I am asked whether to discard the changes')]
 	public function askedToDiscard(): void
 	{
@@ -1297,7 +1307,7 @@ class DesktopContext implements Context
 	{
 		$this->page->locator(
 			// language=JQuery-CSS
-			'#ad-discard [data-close]',
+			'#ad-discard .ad-modal-footer [data-close]',
 		)->click();
 	}
 

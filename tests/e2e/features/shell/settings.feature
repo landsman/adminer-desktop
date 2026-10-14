@@ -69,6 +69,18 @@ Feature: The settings dialog
     Then the settings dialog is closed
     And the focus is back on the gear
 
+  Scenario: The × on an untouched form closes it and hands the focus back to the gear
+    When I click the close button
+    Then the settings dialog is closed
+    And the focus is back on the gear
+
+  Scenario: The × on a changed form asks before throwing it away
+    When I pick the "compact" row density
+    And I click the close button
+    Then I am asked whether to discard the changes
+    When I keep editing
+    Then the settings dialog is still open with "compact" picked
+
   Scenario: Reduced motion turns the fade off
     When the OS asks for reduced motion
     Then the settings dialog does not fade

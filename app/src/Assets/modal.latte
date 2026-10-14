@@ -1,18 +1,23 @@
 {* Every dialog the app adds: a header band, a body that scrolls, a footer band with the actions,
 	around one POST form. Used with {embed}, filling the slots:
 
-		{embed '../Assets/modal.latte', id: 'my-dialog', class: 'my-dialog', lightDismiss: true}
+		{embed '../Assets/modal.latte', id: 'my-dialog', class: 'my-dialog', close: $desktop->t('modal.close')}
 			{block hidden}{input_token()|noescape}{/block}
 			{block header}<h2>Title</h2>{/block}
 			{block body}…fields…{/block}
-			{block footer}<button formmethod="dialog">Cancel</button> <button class="ad-primary">Save</button>{/block}
+			{block footer}<button class="ad-primary">Save</button>{/block}
 		{/embed}
 
 	The look is css/modal.css. Buttons in the footer are quiet unless they take .ad-primary (the
 	one green action, last) or .ad-danger (outlined red, pushed to the left).
 
-	Every way out — Escape, a click outside (lightDismiss), a button with data-close — is one close
-	request, and with guard on, a changed form asks before it is discarded (javascript/modal.js).
+	The way out is the × in the header's top-right corner, on every modal; close is its translated
+	name, passed in because an embedded template sees only what it is given. So the footer carries
+	no Close of its own — only a question does, as its safe answer beside the destructive one.
+
+	Every way out — Escape, a click outside (lightDismiss), the ×, any button with data-close — is
+	one close request, and with guard on, a changed form asks before it is discarded
+	(javascript/modal.js).
 	A button with data-dialog="<id>" anywhere on the page opens it.
 
 	form: false for a modal that sits inside a form it belongs to — adminer's login form, whose
@@ -22,6 +27,7 @@
 	first focusable element is not where the user starts. *}
 {parameters
 	string $id,
+	string $close,
 	string $class = '',
 	bool $lightDismiss = true,
 	bool $guard = false,
@@ -33,7 +39,14 @@
 <dialog id="{$id}" class="ad-modal {$class}" n:attr="closedby: $lightDismiss ? 'any', data-guard: $guard, aria-labelledby: $labelledBy ?: null, aria-label: $label ?: null, tabindex: $focusSelf ? -1 : null, data-focus-self: $focusSelf">
 	<form n:tag-if="$form" action="" method="post">
 		{block hidden}{/block}
-		<div class="ad-modal-header">{block header}{/block}</div>
+		<div class="ad-modal-header">
+			{block header}{/block}
+			{* Named by aria-label alone: a title saying the same would be read out a second time, as
+				the button's description. *}
+			<button type="button" class="ad-modal-close" data-close aria-label="{$close}">
+				<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 3.5l9 9m0-9l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+			</button>
+		</div>
 		<div class="ad-modal-body">{block body}{/block}</div>
 		<div class="ad-modal-footer">{block footer}{/block}</div>
 	</form>

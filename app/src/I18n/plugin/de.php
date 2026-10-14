@@ -15,6 +15,7 @@ return [
 	'settings.tab_shortcuts' => 'Tastenkürzel',
 	'settings.save' => 'Speichern',
 	'settings.close' => 'Schließen',
+	'modal.close' => 'Schließen',
 	'settings.reset' => 'Auf Standard zurücksetzen',
 	'settings.reset_confirm' => 'Alle Einstellungen auf den Standard zurücksetzen? Design, Plugins und die von Ihnen angepassten Breiten gehen verloren. Adminers eigene Sprache und gespeicherte Server bleiben erhalten.',
 

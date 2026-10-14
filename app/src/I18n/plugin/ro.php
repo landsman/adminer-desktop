@@ -15,6 +15,7 @@ return [
 	'settings.tab_shortcuts' => 'Comenzi rapide',
 	'settings.save' => 'Salvează',
 	'settings.close' => 'Închide',
+	'modal.close' => 'Închide',
 	'settings.reset' => 'Resetează la implicit',
 	'settings.reset_confirm' => 'Resetați toate setările la valorile implicite? Aspectul, pluginurile și lățimile modificate de dumneavoastră se pierd. Limba și serverele salvate în Adminer rămân.',
 

@@ -12,7 +12,7 @@
 }
 {foreach $connections as $connection}
 	{var $n = $iterator->counter}
-	{embed '../Assets/modal.latte', id: 'ad-connection-' . $n, class: 'ad-connection-dialog', guard: true, labelledBy: 'ad-connection-title-' . $n}
+	{embed '../Assets/modal.latte', id: 'ad-connection-' . $n, close: $desktop->t('modal.close'), class: 'ad-connection-dialog', guard: true, labelledBy: 'ad-connection-title-' . $n}
 		{block hidden}
 			{input_hidden('desktop_connection', $connection->key())|noescape}
 			{input_token()|noescape}
@@ -49,14 +49,13 @@
 		{/block}
 
 		{block footer}
-			<button type="button" data-close>{$desktop->t('settings.close')}</button>
 			<button type="submit" class="ad-primary ad-save">{$desktop->t('settings.save')}</button>
 		{/block}
 	{/embed}
 
 	{* Logging out keeps the card; it only drops the password. Not a danger: nothing is lost
 		that cannot be typed again. *}
-	{embed '../Assets/modal.latte', id: 'ad-connection-logout-' . $n, class: 'ad-confirm-dialog', labelledBy: 'ad-connection-logout-title-' . $n}
+	{embed '../Assets/modal.latte', id: 'ad-connection-logout-' . $n, close: $desktop->t('modal.close'), class: 'ad-confirm-dialog', labelledBy: 'ad-connection-logout-title-' . $n}
 		{block hidden}
 			{input_hidden('desktop_connection', $connection->key())|noescape}
 			{input_hidden('desktop_connection_action', 'logout')|noescape}
@@ -71,7 +70,7 @@
 	{/embed}
 
 	{* Forgetting cannot be undone from here: Forget is the red answer, Cancel before it keeps the focus. *}
-	{embed '../Assets/modal.latte', id: 'ad-connection-forget-' . $n, class: 'ad-confirm-dialog', labelledBy: 'ad-connection-forget-title-' . $n}
+	{embed '../Assets/modal.latte', id: 'ad-connection-forget-' . $n, close: $desktop->t('modal.close'), class: 'ad-confirm-dialog', labelledBy: 'ad-connection-forget-title-' . $n}
 		{block hidden}
 			{input_hidden('desktop_connection', $connection->key())|noescape}
 			{input_hidden('desktop_connection_action', 'forget')|noescape}

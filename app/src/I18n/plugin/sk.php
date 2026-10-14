@@ -15,6 +15,7 @@ return [
 	'settings.tab_shortcuts' => 'Skratky',
 	'settings.save' => 'Uložiť',
 	'settings.close' => 'Zavrieť',
+	'modal.close' => 'Zavrieť',
 	'settings.reset' => 'Obnoviť predvolené',
 	'settings.reset_confirm' => 'Obnoviť všetky nastavenia na predvolené? Vzhľad, pluginy aj šírky, ktoré ste si upravili, sa zabudnú. Jazyk a uložené servery Admineru zostanú.',
 
