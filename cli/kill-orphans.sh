@@ -2,9 +2,9 @@
 # Stop the frankenphp servers whose window is gone: `make kill-orphans`, and the SessionEnd hook in
 # .claude/settings.json, so an agent's session leaves none behind.
 #
-# The launcher takes its server down with the window, but one that crashed, was force-quit or
-# was stopped outright leaves the server running, reparented to init and holding its port. That
-# is the installed app as much as a checkout's or a worktree's. A server whose window is still
+# The launcher stops its server when its run loop returns, and on macOS a Cmd+Q never returns
+# (AppKit exits the process), nor does a kill or a crash: the server stays, reparented to init
+# and holding its port. That is the installed app as much as a checkout's or a worktree's. A server whose window is still
 # open has its launcher as parent, and an e2e run's has PHP, so ppid 1 is what tells an orphan
 # apart and nothing alive is touched.
 #
