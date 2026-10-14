@@ -5,19 +5,16 @@
     "type": "project",
     "require-dev": {
         "behat/behat": "^4.0",
-        "cweagans/composer-patches": "^2.0",
         "dg/composer-cleaner": "^2.2",
         "nette/tester": "^2.5",
         "playwright-php/playwright": "^1.2",
         "slevomat/coding-standard": "^8.16",
-        "squizlabs/php_codesniffer": "^4.0",
-        "vrana/adminer": "6.1.1"
+        "squizlabs/php_codesniffer": "^4.0"
     },
     "config": {
         "allow-plugins": {
             "dg/composer-cleaner": true,
-            "dealerdirect/phpcodesniffer-composer-installer": false,
-            "cweagans/composer-patches": true
+            "dealerdirect/phpcodesniffer-composer-installer": false
         },
         "sort-packages": true
     },
@@ -28,10 +25,7 @@
     "autoload": {
         "psr-4": {
             "Desktop\\": "src/"
-        },
-        "exclude-from-classmap": [
-            "vendor/vrana/adminer/"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -41,13 +35,7 @@
     "extra": {
         "cleaner-ignore": {
             "behat/behat": true,
-            "behat/gherkin": true,
-            "vrana/adminer": true
-        },
-        "patches": {
-            "vrana/adminer": {
-                "Spell out Auto Increment, https://github.com/vrana/adminer/pull/1360": "../patches/adminer-auto-increment.patch"
-            }
+            "behat/gherkin": true
         }
     }
 }

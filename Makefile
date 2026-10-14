@@ -1,8 +1,8 @@
-# Every artifact below is derived from these two pins. Never "latest". Adminer's is the exact
-# version app/composer.json requires, read from there so it is pinned in one place.
-ADMINER_VERSION    = $(shell sed -n 's/.*"vrana\/adminer": "\([^"]*\)".*/\1/p' app/composer.json)
+# Every artifact below is derived from these two pins. Never "latest".
+ADMINER_VERSION    = 6.1.1
 FRANKENPHP_VERSION = 1.12.6
 
+ADMINER_URL = https://github.com/vrana/adminer/releases/download/v$(ADMINER_VERSION)
 FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_VERSION)
 
 # Which frankenphp build to fetch. Defaults to this machine; CI overrides it per runner.
@@ -62,26 +62,50 @@ linux-deps:  ## Install the Linux webview build deps (GTK/WebKit dev headers, De
 	@pkg-config --exists webkit2gtk-4.0 2>/dev/null || printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
 		| sudo tee /usr/lib/$(UNAME_M)-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
-fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download frankenphp, build adminer from its patched sources (pinned, checksum-verified)
+fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download frankenphp, build adminer from its release sources + patches/ (pinned, checksum-verified)
 
-# Adminer comes from composer as source, so patches/ can carry a fix upstream has not released
-# yet (cweagans/composer-patches applies them on install), and is compiled into the one file it
-# ships as. A dev dependency, so the packaged app's `install --no-dev` drops the sources again.
-ADMINER_SRC = app/vendor/vrana/adminer
+# Compiled from the release zip's sources with patches/*.patch applied, so a fix upstream has
+# not released yet can ship. With no patches the output is the release's own two files byte
+# for byte. The patches/ folder is a prerequisite too: deleting a patch changes only its mtime.
+ADMINER_SRC   = .cache/adminer-src
+ADMINER_BUILD = .cache/adminer-build
 
-app/adminer.php: app/vendor cli/compile-adminer.sh
-	./cli/compile-adminer.sh $(ADMINER_VERSION) bin/frankenphp$(EXE)
+$(ADMINER_BUILD): $(ADMINER_SRC) patches $(wildcard patches/*.patch) cli/compile-adminer.sh bin/frankenphp$(EXE)
+	./cli/compile-adminer.sh $(ADMINER_SRC) $@ bin/frankenphp$(EXE) $(wildcard patches/*.patch)
 
-# Built by the same run.
-app/editor.php: app/adminer.php
+app/adminer.php: $(ADMINER_BUILD)
+	@mkdir -p app
+	cp $(ADMINER_BUILD)/adminer-$(ADMINER_VERSION).php $@
+
+app/editor.php: $(ADMINER_BUILD)
+	@mkdir -p app
+	cp $(ADMINER_BUILD)/editor-$(ADMINER_VERSION).php $@
+
+# The release zip is the full source tree: adminer.php and editor.php are compiled from it, and
+# plugins/ and designs/ copied out of it. Same zip, same pinned tag — plugins can never drift from the core.
+.cache/adminer-src.zip:
+	@mkdir -p .cache
+	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).zip
+
+# Extracted whole, once. Selecting with a pattern like 'designs/*' is not portable:
+# macOS and linux unzip let * match a slash and recurse, the windows one does not, so
+# only the file directly inside designs/ came out and every design silently vanished.
+.cache/adminer-src: .cache/adminer-src.zip
+	rm -rf $@ .cache/src-tmp
+	unzip -qo $< -d .cache/src-tmp
+	mv .cache/src-tmp/adminer-$(ADMINER_VERSION) $@
+	rm -rf .cache/src-tmp
+	# unzip restores the mtimes stored in the archive and mv keeps them, so without this the
+	# extracted tree is older than the zip it came from and every `make fetch` re-extracts it.
+	@touch $@
 
 # The whole upstream set, shipped but not loaded: Settings\Plugins\PluginList picks the
 # ones that make sense here by name and instantiates those. It must not land anywhere
 # adminer globs — a directory called adminer-plugins/ at the document root is auto-included
 # and auto-enabled by it (include/plugins.inc.php:17-19), which is why there is not one.
-app/src/Settings/Plugins/available: app/vendor
+app/src/Settings/Plugins/available: .cache/adminer-src
 	@mkdir -p app/src/Settings/Plugins
-	rm -rf $@ && cp -R $(ADMINER_SRC)/plugins $@
+	rm -rf $@ && cp -R .cache/adminer-src/plugins $@
 	# Left over from when enabling a plugin meant symlinking it in here. A checkout that
 	# still has it would have adminer load and enable whatever is inside, behind the app's back.
 	@rm -rf app/adminer-plugins
@@ -92,9 +116,9 @@ app/src/Settings/Plugins/available: app/vendor
 # list of one and `make check` failed on a design it had been offered. Same reason there is
 # no rm -rf here, and why it copies the contents (designs/.) rather than the folder — the
 # folder is half ours.
-app/src/Settings/Theme/designs/README.md: app/vendor
+app/src/Settings/Theme/designs/README.md: .cache/adminer-src
 	@mkdir -p app/src/Settings/Theme/designs
-	cp -R $(ADMINER_SRC)/designs/. app/src/Settings/Theme/designs/
+	cp -R .cache/adminer-src/designs/. app/src/Settings/Theme/designs/
 
 bin/frankenphp$(EXE):
 	@mkdir -p bin .cache
@@ -122,9 +146,8 @@ FRANKEN_DL = $(if $(filter .zip,$(suffix $(FRANKEN_ASSET))),.cache/frankenphp.zi
 # with. Two artifacts, two mechanisms, because upstream offers different things.
 #
 # Adminer publishes no signatures, so checksums.txt is a hash we recorded ourselves of the
-# adminer.php and editor.php we build — it proves the sources, the patches and the compile
-# produced the same bytes as when it was recorded, and nothing more. With no patches they are
-# the release's own files byte for byte.
+# adminer.php and editor.php built at a version we chose, with patches/ applied — it proves the
+# sources, the patches and the compile give the same bytes as then, and nothing more.
 #
 # frankenphp used to be skipped here, on the grounds that four per-OS checksum files were
 # more to keep in step than the check was worth. It never needed one: every release asset
@@ -136,7 +159,7 @@ FRANKEN_DL = $(if $(filter .zip,$(suffix $(FRANKEN_ASSET))),.cache/frankenphp.zi
 # still reports success. mise pins it and `mise run install` refuses to finish without it
 # authenticated, which is what the check needs: it reads the attestation over the API, so
 # an installed-but-logged-out gh fails here too.
-verify: fetch  ## Verify adminer's build checksums and frankenphp's build provenance
+verify: fetch  ## Verify the downloads: adminer checksums, frankenphp build provenance
 	$(SHA256) -c checksums.txt
 	gh attestation verify $(FRANKEN_DL) --repo php/frankenphp
 
@@ -184,11 +207,8 @@ $(WIN_INI)/openssl.ini:
 # and the template linter is one of the packages. composer.json lives in app/ so vendor/
 # lands beside the code it autoloads (and out of Go's way at the module root), hence
 # --working-dir.
-app/vendor: app/composer.json app/composer.lock app/patches.lock.json $(wildcard patches/*.patch) bin/frankenphp$(EXE) .cache/composer.phar $(if $(EXE),$(WIN_INI)/openssl.ini)
+app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/composer.phar $(if $(EXE),$(WIN_INI)/openssl.ini)
 	$(COMPOSER) install --no-interaction --working-dir=app
-	@# install applies patches to a package only as it installs it, so one already in vendor/
-	@# keeps the old set: a patch added, changed or dropped reaches it only through a repatch.
-	$(COMPOSER) patches-repatch --no-interaction --working-dir=app
 	@touch app/vendor
 
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,

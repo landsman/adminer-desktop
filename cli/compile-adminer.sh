@@ -1,50 +1,35 @@
 #!/bin/sh
-# Builds app/adminer.php and app/editor.php from the adminer sources composer installed, with
-# patches/ applied by cweagans/composer-patches. Unpatched, the output is byte-identical to the
-# release's own files, which is what checksums.txt was first recorded against.
+# Compiles adminer.php and editor.php from the extracted release zip, with the given patches
+# applied. Unpatched, the output is byte-identical to the release's own files.
 #
-# Usage: cli/compile-adminer.sh <adminer version> <frankenphp binary>
+# Usage: cli/compile-adminer.sh <source dir> <output dir> <frankenphp binary> [patch...]
+#
+# Builds in <output dir>.tmp and moves it into place only at the end, so a patch that stops
+# applying leaves no output dir, and make tries again instead of shipping an unpatched build.
 set -eu
 
-version=$1
-frankenphp=$2
+src=$1
+out=$2
+frankenphp=$(pwd)/$3
+shift 3
 
-# The three submodules the release is compiled with. Composer's download is GitHub's zipball,
-# which leaves submodules out, so they come from git at the commit the tag points them at:
-#   git ls-tree v<version> adminer/static/jush conf/JsShrink conf/PhpShrink
-# Fetched by commit, so git checks the content against its hash.
-pinned_for=6.1.1
-if [ "$version" != "$pinned_for" ]; then
-	echo "compile-adminer: the submodule commits below are for $pinned_for, not $version. Update them from git ls-tree v$version." >&2
-	exit 1
-fi
+rm -rf "$out" "$out.tmp"
+cp -R "$src" "$out.tmp"
+for p in "$@"; do
+	patch -p1 -s -N -d "$out.tmp" < "$p"
+done
 
-src=app/vendor/vrana/adminer
-build=.cache/adminer-build
-
-rm -rf "$build"
-mkdir -p .cache
-cp -R "$src" "$build"
-
-submodule() {
-	rm -rf "${build:?}/$1"
-	git init -q "$build/$1"
-	git -C "$build/$1" fetch -q --depth 1 "$2" "$3"
-	git -C "$build/$1" checkout -q FETCH_HEAD
-}
-submodule adminer/static/jush https://github.com/vrana/jush 2de48f298628de73aea71f1af12a63f2ad03878f
-submodule conf/JsShrink https://github.com/vrana/JsShrink b878053f1c2195cc189f86bf48f09b4a8d64d17e
-submodule conf/PhpShrink https://github.com/vrana/PhpShrink c884864c0fa50a9502c42ed2a7f8fbf29922169e
-
-# compile.php writes into the directory it runs in. drivers/ first: the release is built after
-# it, and the plugin hashes compiled into adminer.php come from there.
-root=$PWD
+# compile.php writes into the directory it runs in. drivers/ first: the plugin hashes compiled
+# into adminer.php are read from there.
 (
-	cd "$build"
+	cd "$out.tmp"
 	mkdir drivers
-	"$root/$frankenphp" php-cli compile.php drivers
-	"$root/$frankenphp" php-cli compile.php
-	"$root/$frankenphp" php-cli compile.php editor
+	"$frankenphp" php-cli compile.php drivers
+	"$frankenphp" php-cli compile.php
+	"$frankenphp" php-cli compile.php editor
 )
-cp "$build/adminer-$version.php" app/adminer.php
-cp "$build/editor-$version.php" app/editor.php
+
+# Only the two files, so the tree (and its copy in the CI cache) stays the size of the output.
+mkdir "$out"
+mv "$out.tmp"/adminer-*.php "$out.tmp"/editor-*.php "$out"
+rm -rf "$out.tmp"
