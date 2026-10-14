@@ -10,6 +10,7 @@ declare(strict_types=1);
 * @license https://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
 */
 
+use Desktop\Assets\Icon;
 use Desktop\Assets\Javascript;
 use Desktop\Assets\Styles;
 use Desktop\Connections\Connections;
@@ -192,6 +193,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	*/
 	function head(): ?string {
 		$this->styles->link();
+		Icon::preload();
 		$this->javascript->link();
 		$this->javascript->beforePaint("header.js");
 		$this->javascript->beforePaint("open-on-load.js");

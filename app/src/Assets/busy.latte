@@ -1,4 +1,5 @@
 {* The activity indicator over the whole page while it waits on the server, on every page and shown
-	by javascript/busy.js. Here rather than built by the script, so it is drawn from what the page
-	already has the moment it is needed. *}
-<div id="ad-busy" popover="manual" role="progressbar" aria-label="{t('busy.loading')}">{include 'icons/spinner.latte'}</div>
+	by javascript/busy.js. Here rather than built by the script, and its icon an <img> on every page
+	(preloaded, Icon::preload()), so it is in the cache and drawn the moment it is needed: a page that
+	has started navigating away loads nothing more. *}
+<div id="ad-busy" popover="manual" role="progressbar" aria-label="{t('busy.loading')}"><img class="ad-spinner" src="{\Desktop\Assets\Icon::Spinner->url()}" alt=""></div>

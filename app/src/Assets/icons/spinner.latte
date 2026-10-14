@@ -1,5 +1,0 @@
-{* The activity indicator: the native one's twelve spokes, the brightest leading. Inline rather than
-	an <img>, so CSS colours it (currentColor) and sizes it (1em), and nothing is fetched for it —
-	a page that has started navigating away loads nothing more. It turns in css/busy.css. Hidden
-	from screen readers; what holds it carries the name. *}
-<svg class="ad-spinner" viewBox="0 0 32 32" aria-hidden="true"><rect n:for="$i = 0; $i < 12; $i++" x="14.5" y="2" width="3" height="8" rx="1.5" opacity="{round(($i + 3) / 14, 2)}" transform="rotate({$i * 30} 16 16)"/></svg>
