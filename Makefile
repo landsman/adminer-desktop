@@ -62,18 +62,27 @@ linux-deps:  ## Install the Linux webview build deps (GTK/WebKit dev headers, De
 	@pkg-config --exists webkit2gtk-4.0 2>/dev/null || printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
 		| sudo tee /usr/lib/$(UNAME_M)-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
-fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download adminer + frankenphp (pinned, checksum-verified)
+fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download frankenphp, build adminer from its release sources + patches/ (pinned, checksum-verified)
 
-app/adminer.php:
+# Compiled from the release zip's sources with patches/*.patch applied, so a fix upstream has
+# not released yet can ship. With no patches the output is the release's own two files byte
+# for byte. The patches/ folder is a prerequisite too: deleting a patch changes only its mtime.
+ADMINER_SRC   = .cache/adminer-src
+ADMINER_BUILD = .cache/adminer-build
+
+$(ADMINER_BUILD): $(ADMINER_SRC) patches $(wildcard patches/*.patch) cli/compile-adminer.sh bin/frankenphp$(EXE)
+	./cli/compile-adminer.sh $(ADMINER_SRC) $@ bin/frankenphp$(EXE) $(wildcard patches/*.patch)
+
+app/adminer.php: $(ADMINER_BUILD)
 	@mkdir -p app
-	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).php
+	cp $(ADMINER_BUILD)/adminer-$(ADMINER_VERSION).php $@
 
-app/editor.php:
+app/editor.php: $(ADMINER_BUILD)
 	@mkdir -p app
-	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/editor-$(ADMINER_VERSION).php
+	cp $(ADMINER_BUILD)/editor-$(ADMINER_VERSION).php $@
 
-# The release zip is the full source tree; we want plugins/ and designs/ out of it.
-# Same zip, same pinned tag as adminer.php — plugins can never drift from the core.
+# The release zip is the full source tree: adminer.php and editor.php are compiled from it, and
+# plugins/ and designs/ copied out of it. Same zip, same pinned tag — plugins can never drift from the core.
 .cache/adminer-src.zip:
 	@mkdir -p .cache
 	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).zip
@@ -136,8 +145,9 @@ FRANKEN_DL = $(if $(filter .zip,$(suffix $(FRANKEN_ASSET))),.cache/frankenphp.zi
 # Hard fail on mismatch: means the release was re-uploaded or the download was tampered
 # with. Two artifacts, two mechanisms, because upstream offers different things.
 #
-# Adminer publishes no signatures, so checksums.txt is a hash we recorded ourselves at a
-# version we chose — it proves the download did not change since, and nothing more.
+# Adminer publishes no signatures, so checksums.txt is a hash we recorded ourselves of the
+# adminer.php and editor.php built at a version we chose, with patches/ applied — it proves the
+# sources, the patches and the compile give the same bytes as then, and nothing more.
 #
 # frankenphp used to be skipped here, on the grounds that four per-OS checksum files were
 # more to keep in step than the check was worth. It never needed one: every release asset
@@ -153,7 +163,7 @@ verify: fetch  ## Verify the downloads: adminer checksums, frankenphp build prov
 	$(SHA256) -c checksums.txt
 	gh attestation verify $(FRANKEN_DL) --repo php/frankenphp
 
-# Regenerate after a deliberate version bump. Review the diff.
+# Regenerate after a deliberate version bump or a change in patches/. Review the diff.
 checksums:
 	$(SHA256) app/adminer.php app/editor.php > checksums.txt
 
@@ -287,8 +297,8 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh cli/compile-adminer.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.

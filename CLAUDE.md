@@ -43,7 +43,7 @@ mise trust         # once per clone: mise.toml carries a [settings] block
 gh auth login      # once per machine: make verify reads frankenphp's attestation over the API
 mise run install   # once: node deps, composer deps, and the e2e browser
 make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet
-make verify        # adminer checksums + proof frankenphp is the binary upstream built
+make verify        # adminer build checksums + proof frankenphp is the binary upstream built
 make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
 ```
@@ -211,13 +211,20 @@ launcher/dialogs_darwin.m    what WKWebView leaves out: JS dialogs, file picker,
 launcher/download_darwin.m   turn an Export > save attachment into a real download + progress
 tests/e2e/                   Behat: features/, bootstrap/ (steps), harness/fixture.php, seed/<driver>.sql
 mise.toml                    node, and the install/format/lint/e2e tasks
+patches/                     fixes to adminer's sources until upstream releases them, applied by cli/compile-adminer.sh
 ```
 
-Everything downloaded — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
-is pinned in the `Makefile` and checksum-verified. Nothing resolves "latest", and those
-files are never edited: behaviour changes go in the plugin. The `adminer-desktop` theme
-under `src/Settings/Theme/designs/` is the exception — it is ours, and the `.gitignore` negates
-the designs-are-downloaded rule to keep it.
+Everything from upstream — `adminer.php`, `editor.php`, the catalogue, the gallery designs —
+comes out of one release zip pinned in the `Makefile` and is checksum-verified. Nothing
+resolves "latest", and those files are never edited: behaviour changes go in the plugin.
+
+**A fix to adminer itself is a pull request upstream first, and a patch in `patches/` only
+until a release carries it.** `cli/compile-adminer.sh` applies the patches to the zip's sources
+and compiles the two files, which with no patches are the release's own byte for byte — so
+`checksums.txt` changes only with a patch or a version bump. `patches/README.md` has the steps.
+
+The `adminer-desktop` theme under `src/Settings/Theme/designs/` is not upstream's — it is
+ours, and the `.gitignore` negates the designs-are-downloaded rule to keep it.
 
 ## Conventions
 

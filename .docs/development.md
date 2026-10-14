@@ -51,11 +51,14 @@ ADMINER_VERSION    = 6.1.1
 FRANKENPHP_VERSION = 1.12.6
 ```
 
-`adminer.php`, `editor.php`, 49 plugins and 28 designs all come from that one Adminer tag, so
+`adminer.php`, `editor.php` (compiled from its sources), 49 plugins and 28 designs all come from
+that one Adminer tag, so
 they cannot drift apart. Nothing ever resolves "latest", every download is checksum-verified,
 and frankenphp is checked against the build provenance GitHub publishes for it.
 
-Adminer itself is never edited. Behaviour changes go in the plugin the app loads alongside it.
+Adminer itself is never edited. Behaviour changes go in the plugin the app loads alongside it,
+and a fix to adminer goes upstream first and is carried in `patches/` only until a release has
+it — see `patches/README.md`.
 
 ## Where things are
 
