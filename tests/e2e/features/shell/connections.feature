@@ -22,7 +22,12 @@ Feature: Saved connections
 
   Scenario: A login that fails says why in the modal, with what was typed still in it
     When I log in with the password "not-the-password"
-    Then the new connection says why, with the password "not-the-password" still in it
+    Then the new connection says why, with what I typed still in it
+
+  Scenario: A login that waits shows the activity indicator, then says why it failed
+    When I log in to a server that does not answer
+    Then the activity indicator turns while it waits
+    And the new connection says why, with what I typed still in it
 
   Scenario: A name, an environment and a colour stick, and follow you in
     When I label the connection "Fixture" as "prod" in "purple"

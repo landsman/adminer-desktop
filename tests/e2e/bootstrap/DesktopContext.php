@@ -51,6 +51,9 @@ class DesktopContext implements Context
 	/** @var ?string the column the last drag grabbed, so the assertions need not name it twice */
 	private ?string $dragged = null;
 
+	/** @var array<string, string> what the last login typed, which a failed one gives back */
+	private array $typed = [];
+
 	public function __construct(string $driver)
 	{
 		$this->driver = $driver;
@@ -1135,8 +1138,9 @@ class DesktopContext implements Context
 		$this->nameIt($name, $env, $color);
 	}
 
-	/** Both ways in show it, read in the same task as the submit and the click. A listener on the
-	 * document added after busy.js's keeps the page from leaving, so there is no navigation to race.
+	/** Both ways in show it, read in the same task as the submit and the click, before busy.js sends
+	 * either on. The form is then kept from leaving by a listener on the document added after
+	 * busy.js's; the card is let go, and its page waited for.
 	 */
 	#[Then('logging in, from the form or a card, shows the activity indicator')]
 	public function connectingShowsIndicator(): void
@@ -1145,12 +1149,11 @@ class DesktopContext implements Context
 			// language=JavaScript
 			'() => {
 				const shown = () => document.querySelector("#ad-busy")?.matches(":popover-open") ?? false;
-				const stay = (event) => event.preventDefault();
-				document.addEventListener("submit", stay);
-				document.addEventListener("click", stay);
+				document.addEventListener("submit", (event) => event.preventDefault());
 				document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit();
 				const byForm = shown();
 				window.desktopBusy(false);
+				window.e2eLeaving = true;
 				document.querySelector(".ad-card-link").click();
 				return { byForm, byCard: shown() };
 			}',
@@ -1158,39 +1161,45 @@ class DesktopContext implements Context
 		if ($shown !== ['byForm' => true, 'byCard' => true]) {
 			throw new RuntimeException('the activity indicator did not show: ' . json_encode($shown));
 		}
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eLeaving && document.readyState === "complete"',
+		);
 	}
 
 	#[When('I log in with the password :password')]
 	public function logInWith(string $password): void
 	{
-		$this->page->goto((string) $this->fix['base']);
-		$this->page->locator(
-			// language=JQuery-CSS
-			'#ad-new-connection',
-		)->click();
-		$this->page->locator(
-			// language=JQuery-CSS
-			'select[name="auth[driver]"]',
-		)->selectOption((string) $this->fix['driver']['key']);
-		usleep(400_000); // the driver's rebuild of the fields, as in e2e_login()
-		foreach (['server' => $this->fix['database'], 'username' => $this->fix['driver']['username'], 'password' => $password] as $name => $value) {
-			$this->page->locator(
-				// language=JQuery-CSS
-				"input[name=\"auth[$name]\"]",
-			)->fill((string) $value);
-		}
-		$this->page->evaluate(
-			// language=JavaScript
-			'() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }',
-		);
+		$this->submitLogin((string) $this->fix['database'], $password);
 		$this->page->waitForFunction(
 			// language=JavaScript
 			'() => !window.e2eSubmitted && document.readyState === "complete"',
 		);
 	}
 
-	#[Then('the new connection says why, with the password :password still in it')]
-	public function failedLoginInModal(string $password): void
+	/** Sent, not waited out: the steps after this one look at the page while it waits. */
+	#[When('I log in to a server that does not answer')]
+	public function logInToSlowServer(): void
+	{
+		$this->submitLogin(e2e_slow_server(), 'any');
+	}
+
+	/** Shown, past its fade-in, and turning, while the page still waits on the login. */
+	#[Then('the activity indicator turns while it waits')]
+	public function indicatorTurns(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => {
+				const busy = document.querySelector("#ad-busy:popover-open");
+				return window.e2eSubmitted && busy && getComputedStyle(busy).opacity === "1"
+					&& busy.firstChild.getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running");
+			}',
+		);
+	}
+
+	#[Then('the new connection says why, with what I typed still in it')]
+	public function failedLoginInModal(): void
 	{
 		$this->page->waitForFunction(
 			// language=JavaScript
@@ -1201,9 +1210,8 @@ class DesktopContext implements Context
 			'() => Object.fromEntries(["server", "username", "password"].map((name) =>
 				[name, document.querySelector(`#ad-new-connection-dialog [name="auth[${name}]"]`).value]))',
 		);
-		$typed = ['server' => $this->fix['database'], 'username' => $this->fix['driver']['username'], 'password' => $password];
-		if ($kept !== $typed) {
-			throw new RuntimeException('the form came back as ' . json_encode($kept) . ', typed was ' . json_encode($typed));
+		if ($kept !== $this->typed) {
+			throw new RuntimeException('the form came back as ' . json_encode($kept) . ', typed was ' . json_encode($this->typed));
 		}
 	}
 
@@ -1859,6 +1867,34 @@ class DesktopContext implements Context
 		$this->page->waitForFunction(
 			// language=JavaScript
 			'() => !window.e2eLeaving && document.readyState === "complete"',
+		);
+	}
+
+	/** Fill the new connection as this driver's user and send it, marking the page it leaves
+	 * (window.e2eSubmitted) so a step can tell the answer from the form.
+	 */
+	private function submitLogin(string $server, string $password): void
+	{
+		$this->page->goto((string) $this->fix['base']);
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-new-connection',
+		)->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'select[name="auth[driver]"]',
+		)->selectOption((string) $this->fix['driver']['key']);
+		usleep(400_000); // the driver's rebuild of the fields, as in e2e_login()
+		$this->typed = ['server' => $server, 'username' => (string) $this->fix['driver']['username'], 'password' => $password];
+		foreach ($this->typed as $name => $value) {
+			$this->page->locator(
+				// language=JQuery-CSS
+				"input[name=\"auth[$name]\"]",
+			)->fill($value);
+		}
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }',
 		);
 	}
 
