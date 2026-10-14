@@ -359,6 +359,17 @@ class AdminerDesktop extends Adminer\Plugin {
 		return null;
 	}
 
+	/** A table's or column's comment, allowed to wrap (.ad-text-wrap, utilities.css). Adminer prints
+	* both in a `nowrap` cell or paragraph, so one long comment widened the whole structure table
+	* past the window. Routine comments abstain: adminer formats those itself.
+	*/
+	function commentValue(string $type, ?string $comment): ?string {
+		if ($comment == "" || ($type != 'TABLE' && $type != 'COLUMN')) {
+			return null;
+		}
+		return "<span class='ad-text-wrap'>" . Adminer\h($comment) . "</span>";
+	}
+
 	/** Apply settings posted from the dialog. Called from adminer-plugins.php rather than
 	* from a hook: it runs after session_start() and before any output, which is what both
 	* the session write and the redirect need. afterConnect() would only fire once you are

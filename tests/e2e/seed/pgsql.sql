@@ -43,6 +43,11 @@ INSERT INTO orders (user_id, total, status) VALUES
 	(3,   15.00, 'cancelled'),
 	(4,  880.00, 'paid');
 
+-- Wider than any window on one line, for features/shell/comments.feature: the structure page and
+-- the list of tables have to wrap them rather than scroll sideways.
+COMMENT ON TABLE orders IS 'Orders placed by users. A row is written when the basket is confirmed and is never deleted afterwards: a cancelled order keeps its row with the status set to cancelled, so the history of what a customer bought, and when, stays complete for invoicing.';
+COMMENT ON COLUMN orders.status IS 'Where the order is: pending until the payment arrives, paid once it has, cancelled when the customer or an operator calls it off. Set by the payment webhook and by the back office, never by the storefront, which only reads it to show the customer how far their order got.';
+
 -- A foreign key pointing at more rows than AdminerEditForeign is allowed to put in a dropdown
 -- (PluginList::ARGUMENTS caps it at 100). orders.user_id is the other side of that test — six
 -- users, comfortably under — and this is the side where the plugin has to give up and leave
