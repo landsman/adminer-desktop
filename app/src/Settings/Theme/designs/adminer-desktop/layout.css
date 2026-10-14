@@ -24,10 +24,20 @@ body {
 	   layout that wide, and nothing inside it has a width worth wrapping against. */
 	min-width: 0;
 	display: flex;
-	gap: 0.5rem;
-	padding: 0.5rem;
-	/* the gutter around and between the panels */
+	gap: var(--ad-gutter);
+	padding: var(--ad-gutter);
 	background: var(--ad-menu-bg);
+}
+
+/* The panels' corners are concentric with the window's: its radius less the gutter between
+   them, so the gutter keeps its width round the corner instead of widening into it. Never
+   tighter than the rest of the UI's corners, which is what a square-cornered window gets. */
+#foot,
+#content {
+	border-radius: max(
+		var(--ad-radius),
+		calc(var(--ad-window-radius) - var(--ad-gutter))
+	);
 }
 
 /* Left panel: #menu lives inside #foot. Its width is a variable so the drag handle
@@ -50,7 +60,6 @@ body {
 	overflow: hidden;
 	background: var(--bg);
 	border: 1px solid var(--ad-border);
-	border-radius: var(--ad-radius);
 }
 
 /* The drag handle between the two panels. sidebar-resize.js inserts it into the flex row
@@ -60,7 +69,7 @@ body {
    its own 5px and the second gap it opens in the row, centring it in the gap that was there. */
 #ad-sidebar-resizer {
 	flex: 0 0 5px;
-	margin: 0 calc((5px + 0.5rem) / -2);
+	margin: 0 calc((5px + var(--ad-gutter)) / -2);
 	cursor: col-resize;
 	border-radius: var(--ad-radius-sm);
 	background: transparent;
@@ -107,7 +116,6 @@ body {
 	container-type: inline-size;
 	background: var(--ad-panel);
 	border: 1px solid var(--ad-border);
-	border-radius: var(--ad-radius);
 }
 
 /* Breadcrumb becomes the content panel's sticky header, always in view. */

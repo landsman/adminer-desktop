@@ -170,12 +170,6 @@ class DesktopContext implements Context
 		$this->go(['edit' => $table, 'where[id]' => $id]);
 	}
 
-	#[When('I open the structure of the :table table')]
-	public function openStructure(string $table): void
-	{
-		$this->go(['table' => $table]);
-	}
-
 	#[When('the window is :width pixels wide')]
 	public function windowIsWide(string $width): void
 	{

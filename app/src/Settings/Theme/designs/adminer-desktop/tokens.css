@@ -36,6 +36,12 @@ html {
 	);
 	--ad-radius: 7px;
 	--ad-radius-sm: 5px;
+	/* The window's own corner radius, which the panels' corners nest in (layout.css). 0 leaves
+	   them at --ad-radius. */
+	--ad-window-radius: 0px;
+	/* The gutter around and between the panels. Named because the panels' corners are
+	   computed from it, and the sidebar's drag handle has to sit in it. */
+	--ad-gutter: 0.5rem;
 	--ad-menu-bg: light-dark(#f7f8fa, #191c23);
 
 	/* Sidebar width — the default the layout opens at. sidebar-resize.js overrides it live
@@ -93,6 +99,13 @@ html {
 	   value here would beat the meta and defeat a Light/Dark override. accent-color rides on
 	   --ad-accent, which is already scheme-aware above. */
 	accent-color: var(--ad-accent);
+}
+
+/* macOS 26+ rounds a titled window with a continuous curve, not a circle: 16.5pt at its apex,
+   easing into the edges 24pt from the corner (measured off a screenshot of ours). A circular
+   corner cannot follow both; 20 sits between them and is the one that reads as parallel. */
+.os-mac {
+	--ad-window-radius: 20px;
 }
 
 /* Row density. These set variables only; padding and line-height read them from
