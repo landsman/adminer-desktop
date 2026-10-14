@@ -237,6 +237,11 @@ body:has(#ad-connections) #logins {
 	width: 26em;
 }
 
+/* Why the editor opened by itself, on the first page a new connection lands on. */
+.ad-connection-added {
+	margin-bottom: 1em;
+}
+
 .ad-field {
 	display: flex;
 	flex-direction: column;

@@ -323,8 +323,8 @@ class AdminerDesktop extends Adminer\Plugin {
 	}
 
 	/** Adminer's sidebar, with ours ahead of it: the settings dialog, the search box once logged in
-	* and, on the login page, the versions beside its gear and the dialogs that edit the saved
-	* connections.
+	* (and the editor of a connection just added) and, on the login page, the versions beside its
+	* gear and the dialogs that edit the saved connections.
 	* @param string $missing
 	* @return void
 	*/
@@ -332,6 +332,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		if ($missing != "auth") {
 			$this->dialog->render();
 			Latte::engine()->render(__DIR__ . "/src/Search/search-dialog.latte", ["desktop" => $this]);
+			$this->connections->offer();
 			return;
 		}
 		// One row for the versions and the gear, so our design can centre them as a pair.
@@ -359,6 +360,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* connected, so nothing here would work on the login screen.
 	*/
 	function handlePost(): void {
+		$this->connections->follow();
 		// empty(), not adminer's bare $_POST["x"]: this one runs on every request, including
 		// every GET, so the warning it would leave is on every page in the debug bar.
 		if (!empty($_POST["desktop_connection"]) && Adminer\verify_token()) {

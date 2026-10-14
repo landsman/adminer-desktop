@@ -55,6 +55,16 @@ Feature: Saved connections
     When I forget the connection
     Then no connection is listed
 
+  Scenario: A connection added anew offers its name as soon as it connects
+    When I forget the connection
+    And I connect to it again
+    Then I am offered to name it
+    When I name it "Fixture" as "prod" in "purple"
+    Then the connection badge reads "Fixture"
+    And the body carries the "env-prod" class
+    When I go to the login page
+    Then the card reads "Fixture" with a "PROD" tag
+
   Scenario: A narrow window keeps the login page in one column, its modal included
     When the window is 320 by 640 pixels
     And I label the connection "A very long connection name for the production replica" as "prod" in "red"

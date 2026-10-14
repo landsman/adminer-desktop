@@ -25,6 +25,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Nowe połączenie',
+	'connections.added' => 'Połączono. Nazwa pozwoli łatwo odróżnić to połączenie od pozostałych.',
 	'connections.empty' => 'Brak zapisanych połączeń.',
 	'connections.edit' => 'Edytuj',
 	'connections.name' => 'Nazwa',

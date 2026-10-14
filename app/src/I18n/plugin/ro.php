@@ -25,6 +25,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',
+	'connections.added' => 'Conectat. Dă-i un nume, ca s-o deosebești ușor de celelalte.',
 	'connections.empty' => 'Încă nu există conexiuni salvate.',
 	'connections.edit' => 'Editează',
 	'connections.name' => 'Nume',

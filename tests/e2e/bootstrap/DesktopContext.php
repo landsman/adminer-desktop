@@ -115,10 +115,17 @@ class DesktopContext implements Context
 		$this->page = $this->newPage(['colorScheme' => $scheme]);
 	}
 
+	/** Past the offer to name the connection too, which a first login opens over the page: closed,
+	 * the way a user who has no name for it yet would, so it covers nothing the scenario clicks.
+	 */
 	#[Given('I am logged in')]
 	public function logIn(): void
 	{
 		e2e_login($this->page, $this->fix);
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => document.querySelector("#ad-connection-added[open] [data-close]")?.click()',
+		);
 	}
 
 	// ── going places ─────────────────────────────────────────────────────────────────────────
@@ -1125,6 +1132,33 @@ class DesktopContext implements Context
 			// language=JQuery-CSS
 			'.ad-card-edit',
 		)->click();
+		$this->nameIt($name, $env, $color);
+	}
+
+	#[When('I connect to it again')]
+	public function connectAgain(): void
+	{
+		e2e_login($this->page, $this->fix);
+	}
+
+	/** With the cursor in its name, and once the page has landed: the view transition in from the
+	 * login covers the page while it runs, so a click then is a click outside the dialog, which
+	 * closes it.
+	 */
+	#[Then('I am offered to name it')]
+	public function offeredToNameIt(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.activeElement?.matches("#ad-connection-added[open] input[name=name]")
+				&& !document.getAnimations().some((a) => a.effect?.pseudoElement?.startsWith("::view-transition"))',
+		);
+	}
+
+	/** In whichever editor is open: a card's, or the one a new connection lands on. */
+	#[When('I name it :name as :env in :color')]
+	public function nameIt(string $name, string $env, string $color): void
+	{
 		$dialog = $this->page->locator(
 			// language=JQuery-CSS
 			'dialog.ad-connection-dialog[open]',
