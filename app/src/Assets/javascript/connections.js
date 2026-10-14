@@ -26,3 +26,8 @@ const permanent = document.querySelector('input[name="auth[permanent]"]');
 if (permanent) {
 	permanent.checked = true;
 }
+
+// A login waits on the database server for as long as it takes to answer or to give up, over a
+// minute for a host that never answers, so it shows the activity indicator (busy.js) meanwhile.
+const login = document.querySelector('[name="auth[driver]"]')?.form;
+login?.setAttribute("data-busy", "");

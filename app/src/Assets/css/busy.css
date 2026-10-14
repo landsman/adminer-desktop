@@ -1,0 +1,43 @@
+/* The activity indicator. .ad-spinner is the native one's twelve spokes, the brightest leading,
+ * drawn in the text colour and sized by the font like a glyph, so the same span fits a button as
+ * well as the page. #ad-busy is the one over the whole page while it waits on the server
+ * (javascript/busy.js). */
+
+.ad-spinner {
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	vertical-align: middle;
+	background: currentColor;
+	mask:
+		url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><g transform='translate(14.5 2)'><rect width='3' height='8' rx='1.5' opacity='.21' transform='rotate(0 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.29' transform='rotate(30 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.36' transform='rotate(60 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.43' transform='rotate(90 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.5' transform='rotate(120 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.57' transform='rotate(150 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.64' transform='rotate(180 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.71' transform='rotate(210 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.79' transform='rotate(240 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.86' transform='rotate(270 1.5 14)'/><rect width='3' height='8' rx='1.5' opacity='.93' transform='rotate(300 1.5 14)'/><rect width='3' height='8' rx='1.5' transform='rotate(330 1.5 14)'/></g></svg>")
+		center / contain no-repeat;
+	animation: ad-spin 1s steps(12) infinite;
+}
+
+/* Centred where the UA puts a popover, and only once the wait has taken a moment, so a quick
+   answer never flashes it. Clicks pass through: the page stays as live as it was without it. */
+#ad-busy {
+	padding: 14px;
+	border: 1px solid var(--ad-border);
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--bg) 92%, transparent);
+	color: var(--fg);
+	font-size: 32px;
+	line-height: 0;
+	box-shadow: 0 4px 24px rgb(0 0 0 / 20%);
+	pointer-events: none;
+	animation: ad-appear 0.15s 0.3s both;
+}
+
+@keyframes ad-spin {
+	to {
+		transform: rotate(1turn);
+	}
+}
+
+@keyframes ad-appear {
+	from {
+		opacity: 0;
+	}
+}

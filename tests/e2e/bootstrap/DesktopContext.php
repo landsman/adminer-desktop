@@ -1135,6 +1135,31 @@ class DesktopContext implements Context
 		$this->nameIt($name, $env, $color);
 	}
 
+	/** Both ways in show it, read in the same task as the submit and the click. A listener on the
+	 * document added after busy.js's keeps the page from leaving, so there is no navigation to race.
+	 */
+	#[Then('logging in, from the form or a card, shows the activity indicator')]
+	public function connectingShowsIndicator(): void
+	{
+		$shown = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const shown = () => document.querySelector("#ad-busy")?.matches(":popover-open") ?? false;
+				const stay = (event) => event.preventDefault();
+				document.addEventListener("submit", stay);
+				document.addEventListener("click", stay);
+				document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit();
+				const byForm = shown();
+				window.desktopBusy(false);
+				document.querySelector(".ad-card-link").click();
+				return { byForm, byCard: shown() };
+			}',
+		);
+		if ($shown !== ['byForm' => true, 'byCard' => true]) {
+			throw new RuntimeException('the activity indicator did not show: ' . json_encode($shown));
+		}
+	}
+
 	#[When('I connect to it again')]
 	public function connectAgain(): void
 	{

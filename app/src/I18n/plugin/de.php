@@ -22,6 +22,7 @@ return [
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
 	'js.pager.of' => 'von',
+	'js.busy' => 'Wird geladen…',
 
 	// Saved connections.
 	'connections.new' => 'Neue Verbindung',

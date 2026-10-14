@@ -18,6 +18,7 @@ Feature: Saved connections
     When I ask for a new connection
     Then the login form is shown
     And Permanent login is ticked
+    And logging in, from the form or a card, shows the activity indicator
 
   Scenario: A name, an environment and a colour stick, and follow you in
     When I label the connection "Fixture" as "prod" in "purple"
