@@ -754,6 +754,26 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** sidebar-resize.js adds the handle to the row after the first paint, so any room it takes is
+	 * the content drawn and then pushed aside. Measured with it and without, not by frames, which
+	 * would depend on when the browser happens to paint. */
+	#[Then('the handle takes no room from the content')]
+	public function handleTakesNoRoom(): void
+	{
+		$x = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const x = () => document.querySelector("#content").getBoundingClientRect().x;
+				const withHandle = x();
+				document.querySelector("#ad-sidebar-resizer").remove();
+				return [withHandle, x()];
+			}',
+		);
+		if (!is_array($x) || $x[0] !== $x[1]) {
+			throw new RuntimeException('the handle moved the content from ' . json_encode($x));
+		}
+	}
+
 	/** sendBeacon is fire-and-forget, so the file appears a beat after mouseup with no response to
 	 * await: poll for it rather than reading once.
 	 */
