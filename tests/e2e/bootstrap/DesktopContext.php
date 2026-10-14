@@ -170,10 +170,45 @@ class DesktopContext implements Context
 		$this->go(['edit' => $table, 'where[id]' => $id]);
 	}
 
+	#[When('I open the structure of the :table table')]
+	public function openStructure(string $table): void
+	{
+		$this->go(['table' => $table]);
+	}
+
 	#[When('the window is :width pixels wide')]
 	public function windowIsWide(string $width): void
 	{
 		$this->page->setViewportSize((int) $width, 900);
+	}
+
+	#[When('I open the list of tables')]
+	public function openTableList(): void
+	{
+		$this->go([]);
+	}
+
+	/** Nothing in the panel wider than the panel, a table's own scroller included — and the comment
+	 * the seed gives orders is on the page, or this would pass on one without it. */
+	#[Then('the page fits inside the content panel')]
+	public function pageFitsPanel(): void
+	{
+		/** @var array{comment: bool, over: list<string>} $state */
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => ({
+				comment: document.querySelector("#content").textContent.includes("Orders placed by users."),
+				over: [document.querySelector("#content"), ...document.querySelectorAll("#content .scrollable")]
+					.filter((e) => e.scrollWidth > e.clientWidth + 1)
+					.map((e) => e.id || e.className),
+			})',
+		);
+		if (!$state['comment']) {
+			throw new RuntimeException("the seeded comment on orders is not on the page");
+		}
+		if ($state['over'] !== []) {
+			throw new RuntimeException('scrolls sideways: ' . implode(', ', $state['over']));
+		}
 	}
 
 	/** Every field's right edge inside the content panel's, the JSON editor's <pre> included —

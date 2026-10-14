@@ -1,0 +1,14 @@
+/* Single-purpose classes for markup we print into adminer's pages, each doing one thing so it
+ * can go on any element that needs it. Prefixed ad- like the tokens.
+ */
+
+/* Text that may wrap even inside adminer's `nowrap` tables and paragraphs, which set
+   white-space: pre on every cell. pre-wrap rather than normal keeps the line breaks the text
+   was written with.
+
+   The table list's Comment cells are adminer's own markup, filled in by its script without a
+   hook to tag them, so they are matched by the id adminer gives each one. */
+.ad-text-wrap,
+.nowrap td[id^="Comment-"] {
+	white-space: pre-wrap;
+}
