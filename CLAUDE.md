@@ -222,11 +222,14 @@ resolves "latest", and those files are never edited: behaviour changes go in the
 ships.** composer installs adminer as source (a dev dependency), `cweagans/composer-patches`
 applies `patches/*.patch` to it, and `cli/compile-adminer.sh` compiles the single files.
 With no patches the build is the release byte for byte, so `checksums.txt` changes only
-when a patch does: `make checksums` after adding or dropping one, and delete the patch once
-the release carrying it is pinned. Bumping adminer also means the submodule commits in
-that script, which refuses to run for any other version. The `adminer-desktop` theme
-under `src/Settings/Theme/designs/` is the exception — it is ours, and the `.gitignore` negates
-the designs-are-downloaded rule to keep it.
+when a patch does. Adding or dropping one in `app/composer.json` takes `composer
+patches-relock` (`.cache/composer.phar --working-dir=app`, like any composer command here),
+then `make fetch` and `make checksums`. Drop a patch once the release carrying it is pinned;
+bumping adminer also means the submodule commits in that script, which refuses to run for
+any other version.
+
+The `adminer-desktop` theme under `src/Settings/Theme/designs/` is not upstream's — it is
+ours, and the `.gitignore` negates the designs-are-downloaded rule to keep it.
 
 ## Conventions
 
