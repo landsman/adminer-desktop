@@ -1193,7 +1193,7 @@ class DesktopContext implements Context
 			'() => {
 				const busy = document.querySelector("#ad-busy:popover-open");
 				return window.e2eSubmitted && busy && getComputedStyle(busy).opacity === "1"
-					&& busy.firstChild.getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running");
+					&& busy.querySelector(".ad-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running");
 			}',
 		);
 	}

@@ -22,7 +22,7 @@ return [
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
 	'js.pager.of' => 'z',
-	'js.busy' => 'Načítání…',
+	'busy.loading' => 'Načítání…',
 
 	// Saved connections.
 	'connections.new' => 'Nové připojení',

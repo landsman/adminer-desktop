@@ -33,8 +33,8 @@ return [
 	'js.pager.of' => 'of',
 
 	// What a screen reader announces for the activity indicator over a page waiting on the
-	// server (src/Assets/javascript/busy.js).
-	'js.busy' => 'Loading…',
+	// server (src/Assets/busy.latte).
+	'busy.loading' => 'Loading…',
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',

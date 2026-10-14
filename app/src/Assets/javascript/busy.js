@@ -7,8 +7,10 @@
  *   indicator away again.
  * - A script waiting on work of its own calls window.desktopBusy() and desktopBusy(false).
  *
- * A popover, so it lies over an open modal too. Back restores the page as it was left, indicator
- * and all, so pageshow takes it down.
+ * The indicator is the page's own (src/Assets/busy.latte, printed in the sidebar), moved to the end
+ * of <body> so a sidebar hidden in a narrow window cannot hide it with it. A popover, so it lies
+ * over an open modal too. Back restores the page as it was left, indicator and all, so pageshow
+ * takes it down.
  *
  * The form is sent, and the link followed, only once the indicator has been drawn: WKWebView
  * draws nothing more of a page after it starts navigating away, so one shown in the same moment
@@ -18,23 +20,12 @@
 
 // In a block of its own: these files are classic scripts sharing one global scope.
 {
-	let indicator = null;
+	const indicator = document.getElementById("ad-busy");
+	if (indicator) {
+		document.body.append(indicator);
+	}
 
-	window.desktopBusy = (on = true) => {
-		if (!indicator) {
-			indicator = document.createElement("div");
-			indicator.id = "ad-busy";
-			indicator.popover = "manual";
-			indicator.setAttribute("role", "progressbar");
-			indicator.setAttribute(
-				"aria-label",
-				window.desktopLang("busy", "Loading…"),
-			);
-			indicator.innerHTML = '<span class="ad-spinner"></span>';
-			document.body.append(indicator);
-		}
-		indicator.togglePopover(on);
-	};
+	window.desktopBusy = (on = true) => indicator?.togglePopover(on);
 
 	// Two frames: the first draws the indicator, the second starts once that frame is out.
 	const afterPaint = (then) =>

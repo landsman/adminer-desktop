@@ -323,13 +323,15 @@ class AdminerDesktop extends Adminer\Plugin {
 		return substr((string) preg_replace('~\b(username|db|ns)=[^&]*&~', '', Adminer\ME), 0, -1) ?: ".";
 	}
 
-	/** Adminer's sidebar, with ours ahead of it: the settings dialog, the search box once logged in
-	* (and the editor of a connection just added) and, on the login page, the versions beside its
-	* gear and the dialogs that edit the saved connections.
+	/** Adminer's sidebar, with ours ahead of it: the activity indicator (busy.js moves it out), the
+	* settings dialog, the search box once logged in (and the editor of a connection just added)
+	* and, on the login page, the versions beside its gear and the dialogs that edit the saved
+	* connections.
 	* @param string $missing
 	* @return void
 	*/
 	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
+		Latte::engine()->render(__DIR__ . "/src/Assets/busy.latte");
 		if ($missing != "auth") {
 			$this->dialog->render();
 			Latte::engine()->render(__DIR__ . "/src/Search/search-dialog.latte", ["desktop" => $this]);
