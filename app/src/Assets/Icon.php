@@ -17,6 +17,12 @@ enum Icon: string {
 	case Logout = "logout";
 	case Forget = "forget";
 
+	// The sidebar's actions (AdminerDesktop::menuActions()).
+	case Sql = "sql";
+	case Import = "import";
+	case Export = "export";
+	case CreateTable = "create-table";
+
 	// The saved connections' database logos, by adminer driver id (forDriver()).
 	case Database = "database";
 	case ClickHouse = "db-clickhouse";

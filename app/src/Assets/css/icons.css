@@ -48,6 +48,26 @@
 	mask-image: url("../icons/forget.svg");
 }
 
+.ad-icon-sql {
+	-webkit-mask-image: url("../icons/sql.svg");
+	mask-image: url("../icons/sql.svg");
+}
+
+.ad-icon-import {
+	-webkit-mask-image: url("../icons/import.svg");
+	mask-image: url("../icons/import.svg");
+}
+
+.ad-icon-export {
+	-webkit-mask-image: url("../icons/export.svg");
+	mask-image: url("../icons/export.svg");
+}
+
+.ad-icon-create-table {
+	-webkit-mask-image: url("../icons/create-table.svg");
+	mask-image: url("../icons/create-table.svg");
+}
+
 .ad-icon-database {
 	-webkit-mask-image: url("../icons/database.svg");
 	mask-image: url("../icons/database.svg");
