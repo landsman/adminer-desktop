@@ -6,6 +6,8 @@
  *   link the same when it is followed. Mark only what navigates this page: nothing else takes the
  *   indicator away again.
  * - A script waiting on work of its own calls window.desktopBusy() and desktopBusy(false).
+ * - A script that navigates calls window.desktopGo(href) rather than setting location.
+ * - The database and schema menus show it as one is changed.
  *
  * The indicator is the page's own (src/Assets/busy.latte, printed in the sidebar), moved to the end
  * of <body> so a sidebar hidden in a narrow window cannot hide it with it. A popover, so it lies
@@ -30,6 +32,27 @@
 	// Two frames: the first draws the indicator, the second starts once that frame is out.
 	const afterPaint = (then) =>
 		requestAnimationFrame(() => requestAnimationFrame(then));
+
+	window.desktopGo = (href) => {
+		window.desktopBusy();
+		afterPaint(() => location.assign(href));
+	};
+
+	// Adminer sends these menus by form.submit() as one changes, which fires no submit event to
+	// wait on, so the change is taken here, ahead of its handler, and the form sent once the
+	// indicator is drawn. requestSubmit() still goes through adminer's own GET serialisation.
+	document.addEventListener(
+		"change",
+		(event) => {
+			const form = event.target.closest?.("#dbs")?.closest("form");
+			if (form) {
+				event.stopPropagation();
+				window.desktopBusy();
+				afterPaint(() => form.requestSubmit());
+			}
+		},
+		true,
+	);
 
 	// On the document, so a listener nearer the target that stops the navigation is heard first.
 	// The form goes again with the same button, which a form.submit() would leave out, and the
@@ -64,8 +87,7 @@
 			!event.shiftKey
 		) {
 			event.preventDefault();
-			window.desktopBusy();
-			afterPaint(() => location.assign(link.href));
+			window.desktopGo(link.href);
 		}
 	});
 

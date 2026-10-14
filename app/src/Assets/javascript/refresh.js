@@ -34,6 +34,8 @@ window.desktopRefresh = async (href) => {
 	// adminer's GET expects them.
 	const url =
 		href ?? `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
+	// Left up on a failure, which falls back to loading the page.
+	window.desktopBusy();
 	try {
 		const answer = await fetch(url);
 		const page = new DOMParser().parseFromString(
@@ -51,6 +53,7 @@ window.desktopRefresh = async (href) => {
 		body.replaceWith(fresh);
 		// So a reload asks for what is on screen rather than what was asked for first.
 		history.replaceState(null, "", url);
+		window.desktopBusy(false);
 		return true;
 	} catch {
 		// Whatever went wrong, do what the browser would have done unaided: follow the link, or

@@ -135,7 +135,7 @@
 
 	const go = (i) => {
 		if (shown[i]) {
-			location.href = shown[i].href;
+			window.desktopGo(shown[i].href);
 		}
 	};
 

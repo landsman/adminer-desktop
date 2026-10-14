@@ -1198,6 +1198,63 @@ class DesktopContext implements Context
 		);
 	}
 
+	/** A double-click, which goes straight to the rows (table-nav.js); read in the same task, as
+	 * the page it then loads takes the indicator down again. */
+	#[Then('opening :table from the sidebar shows the activity indicator')]
+	public function sidebarShowsIndicator(string $table): void
+	{
+		$shown = $this->page->evaluate(
+			// language=JavaScript
+			'(table) => {
+				const name = [...document.querySelectorAll("#tables li a:not(.select)")].find((a) => a.textContent.trim() === table);
+				name.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+				return document.querySelector("#ad-busy").matches(":popover-open");
+			}',
+			$table,
+		);
+		if ($shown !== true) {
+			throw new RuntimeException("opening $table from the sidebar did not show the activity indicator");
+		}
+	}
+
+	/** The in-place swap paging and sorting go through (refresh.js): up while it waits, down once
+	 * the rows are in, with no page load to take it down. */
+	#[Then('fetching the rows shows the activity indicator until they are in')]
+	public function refreshShowsIndicator(): void
+	{
+		$shown = $this->page->evaluate(
+			// language=JavaScript
+			'async () => {
+				const shown = () => document.querySelector("#ad-busy").matches(":popover-open");
+				const swapped = window.desktopRefresh();
+				const during = shown();
+				return { swapped: await swapped, during, after: shown() };
+			}',
+		);
+		if ($shown !== ['swapped' => true, 'during' => true, 'after' => false]) {
+			throw new RuntimeException('the activity indicator around the rows was ' . json_encode($shown));
+		}
+	}
+
+	/** Another schema picked in adminer's menu, which sends its form on change. */
+	#[Then('switching the schema shows the activity indicator')]
+	public function schemaShowsIndicator(): void
+	{
+		$ns = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const menu = document.querySelector("#dbs select[name=ns]");
+				menu.value = [...menu.options].find((o) => o.value && o.value !== menu.value).value;
+				menu.dispatchEvent(new Event("change", { bubbles: true }));
+				return document.querySelector("#ad-busy").matches(":popover-open") ? menu.value : null;
+			}',
+		);
+		if (!is_string($ns)) {
+			throw new RuntimeException('switching the schema did not show the activity indicator');
+		}
+		$this->page->waitForURL("**ns=$ns**");
+	}
+
 	#[Then('the new connection says why, with what I typed still in it')]
 	public function failedLoginInModal(): void
 	{
