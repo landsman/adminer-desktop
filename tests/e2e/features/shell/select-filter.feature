@@ -11,3 +11,9 @@ Feature: Filter a long select by typing
     And I type "format"
     And I press the "Enter" key
     Then the "information_schema" schema is open
+
+  Scenario: Escape in the settings dialog closes the filter, not the dialog, and keeps the language
+    When I open the settings dialog
+    And I type "deu" into the language switch
+    And I press the "Escape" key
+    Then the filter is closed, the settings dialog still open and the language still "en"
