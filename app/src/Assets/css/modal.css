@@ -63,12 +63,14 @@ body:has(.ad-modal[open]) {
 
 /* A plain title. Adminer styles h2 as a page heading with its own band and border; inside a
    dialog that is a band within a band. Restated under #content too, where the theme gives the
-   page title its padding and margins by id, which a class alone cannot outrank. */
+   page title its padding, margins and height by id, which a class alone cannot outrank — the
+   height is what made the new-connection dialog's header twice as tall as its title. */
 .ad-modal-header h2,
 #content .ad-modal-header h2 {
 	display: flex;
 	align-items: center;
 	gap: 0.6em;
+	min-height: 0;
 	margin: 0;
 	padding: 0;
 	border: 0;
