@@ -22,6 +22,11 @@ return [
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
 	'js.pager.of' => 'din',
+
+	// A long select narrowed by typing (src/Assets/javascript/select-filter.js).
+	'js.select_filter.placeholder' => 'Scrie o parte din nume',
+	'js.select_filter.none' => 'Nicio potrivire',
+
 	'busy.loading' => 'Se încarcă…',
 
 	// Saved connections.
