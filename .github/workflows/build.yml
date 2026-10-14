@@ -56,6 +56,10 @@ jobs:
       # to be in place before it can say anything useful.
       - run: make fetch FRANKEN_ASSET=frankenphp-linux-x86_64
 
+      # adminer.php and editor.php are compiled here with patches/ applied, so a patch merged
+      # without `make checksums` would otherwise stay green until the dispatched build verifies.
+      - run: sha256sum -c checksums.txt
+
       # php syntax and style, phpstan, golangci-lint, gofmt, go vet, shell syntax.
       - run: make qa FRANKEN_ASSET=frankenphp-linux-x86_64
 
@@ -66,7 +70,7 @@ jobs:
       - run: make i18n-check FRANKEN_ASSET=frankenphp-linux-x86_64
 
       # shellcheck is already on the runner and says far more than `sh -n` does.
-      - run: shellcheck check.sh
+      - run: shellcheck check.sh cli/compile-adminer.sh
 
   # Security rules for php and go, on top of the leaked-secret and workflow rules every
   # caller gets. The shared scan from landsman/config: it pins the semgrep version that

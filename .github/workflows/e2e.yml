@@ -17,12 +17,13 @@ on:
   # Only when the suite itself could break: this file (a nightly that has never run is one
   # nobody knows is broken), the scenarios, steps and config under tests/e2e, and the composer
   # lock that pins behat and playwright-php — a behat bump once broke `make e2e` with nothing
-  # to say so until somebody ran it.
+  # to say so until somebody ran it — and patches/, which changes adminer itself.
   pull_request:
     paths:
       - ".github/workflows/e2e.yml"
       - "tests/e2e/**"
       - "app/composer.lock"
+      - "patches/**"
 
 jobs:
   e2e:
