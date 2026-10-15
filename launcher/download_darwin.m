@@ -59,6 +59,33 @@ static const char kDownloadDest = 0;
 	download.delegate = self;
 }
 
+/* The SQL command's Export > CSV builds the file in JavaScript and clicks an <a download> on a
+ * blob: URL. That is a navigation action, not a response, and without this method WebKit dropped
+ * it: the click did nothing. Implementing it replaces WebKit's default for every navigation, so
+ * the rest keeps that default: a scheme WebKit loads itself navigates, any other (a mailto: in a
+ * result cell) goes to the app that handles it. */
+- (void)webView:(WKWebView *)webView
+		decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction
+		decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+	if (navigationAction.shouldPerformDownload) {
+		decisionHandler(WKNavigationActionPolicyDownload);
+		return;
+	}
+	NSURL *url = navigationAction.request.URL;
+	if (navigationAction.targetFrame && url.scheme && ![WKWebView handlesURLScheme:url.scheme]) {
+		[[NSWorkspace sharedWorkspace] openURL:url];
+		decisionHandler(WKNavigationActionPolicyCancel);
+		return;
+	}
+	decisionHandler(WKNavigationActionPolicyAllow);
+}
+
+- (void)webView:(WKWebView *)webView
+		navigationAction:(WKNavigationAction *)navigationAction
+		didBecomeDownload:(WKDownload *)download API_AVAILABLE(macos(11.3)) {
+	download.delegate = self;
+}
+
 - (void)download:(WKDownload *)download
 		decideDestinationUsingResponse:(NSURLResponse *)response
 		suggestedFilename:(NSString *)suggestedFilename
