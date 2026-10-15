@@ -23,6 +23,24 @@
 	animation: ad-appear 0.45s;
 }
 
+/* A SQL command prints each query as it starts it and the result once it is done, so the query with
+   nothing after it yet is the one running. WebKit paints that half-loaded page before the end of a
+   long query, and neither #ad-busy, printed in the sidebar at the end, nor busy.js, deferred, has
+   arrived by then: only a stylesheet can mark it. Not :last-child, which matches nothing in an
+   element still being parsed, as #content is for as long as the query runs. */
+#content > pre[id^="sql-"]:not(:has(~ *))::after {
+	content: "";
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	margin-left: 0.5em;
+	vertical-align: middle;
+	background: currentcolor;
+	-webkit-mask: url("../icons/spinner.svg") center / contain no-repeat;
+	mask: url("../icons/spinner.svg") center / contain no-repeat;
+	animation: ad-spin 1s linear infinite;
+}
+
 @keyframes ad-spin {
 	to {
 		transform: rotate(1turn);
