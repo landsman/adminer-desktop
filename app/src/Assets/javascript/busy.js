@@ -42,25 +42,53 @@
 		true,
 	);
 
-	// On the document, so a listener nearer the target that stops the navigation is heard first.
-	// The form goes again with the same button, which a form.submit() would leave out, and the
-	// second time round it is let through.
+	// A form in adminer's content goes to another page, so it needs no data-busy, but for one sent
+	// to another window (a Ctrl+click) and an export saved to a file, which is a download: any
+	// output but "text", sent by the export page's one button or by an Export beside the rows.
+	const download = (form, submitter) => {
+		const output = form.elements.output?.value;
+		return (
+			output &&
+			output !== "text" &&
+			(!submitter?.name || submitter.name === "export")
+		);
+	};
+	const leavesBy = (form, submitter) =>
+		form.closest("[data-busy], #content") &&
+		form.method !== "dialog" &&
+		!form.target &&
+		!download(form, submitter);
+
+	// Taken while it is captured, ahead of adminer's own handler, which sends a GET form itself
+	// (bodySubmit). The form goes again with the same button, which a form.submit() would leave
+	// out, and the second time round every handler hears it.
 	const resent = new WeakSet();
+	document.addEventListener(
+		"submit",
+		(event) => {
+			const form = event.target;
+			if (!resent.has(form) && leavesBy(form, event.submitter)) {
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				window.desktopBusy();
+				afterPaint(() => {
+					resent.add(form);
+					form.requestSubmit(event.submitter);
+				});
+			}
+		},
+		true,
+	);
+	// A POST a handler stopped the second time round stays on this page. A stopped GET does not:
+	// that is adminer sending it.
 	document.addEventListener("submit", (event) => {
 		const form = event.target;
-		if (resent.delete(form)) {
-			if (event.defaultPrevented) {
-				window.desktopBusy(false);
-			}
-			return;
-		}
-		if (!event.defaultPrevented && form.closest("[data-busy]")) {
-			event.preventDefault();
-			window.desktopBusy();
-			afterPaint(() => {
-				resent.add(form);
-				form.requestSubmit(event.submitter);
-			});
+		if (
+			resent.delete(form) &&
+			event.defaultPrevented &&
+			form.method === "post"
+		) {
+			window.desktopBusy(false);
 		}
 	});
 

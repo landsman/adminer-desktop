@@ -27,10 +27,7 @@ if (permanent) {
 	permanent.checked = true;
 }
 
-// A login waits on the database server for as long as it takes to answer or to give up, over a
-// minute for a host that never answers, so it shows the activity indicator (busy.js) meanwhile.
 const login = document.querySelector('[name="auth[driver]"]')?.form;
-login?.setAttribute("data-busy", "");
 
 // A login that failed comes back as this page with the modal open again on its fields, and
 // adminer's error at the top of the page, behind it: moved into the modal, where it is read beside

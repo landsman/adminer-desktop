@@ -256,6 +256,29 @@ class DesktopContext implements Context
 		$this->go(['import' => '']);
 	}
 
+	/** Adminer puts `sql=` into the command's textarea. */
+	#[When('I open the SQL command with :query')]
+	public function openSqlCommand(string $query): void
+	{
+		$this->go(['sql' => $query]);
+	}
+
+	#[When('I open the export')]
+	public function openExport(): void
+	{
+		$this->go(['dump' => '']);
+	}
+
+	#[When('I pick :output as the export\'s output')]
+	public function pickExportOutput(string $output): void
+	{
+		$this->page->evaluate(
+			// language=JavaScript
+			'(output) => document.querySelector(`#content [name=output][value="${output}"]`).click()',
+			$output,
+		);
+	}
+
 	#[When('I reload the page')]
 	public function reload(): void
 	{
@@ -1360,6 +1383,77 @@ class DesktopContext implements Context
 		if ($this->followContentLink($link) !== false) {
 			throw new RuntimeException("following $link in the content showed the activity indicator");
 		}
+	}
+
+	/** A form of adminer's content, which busy.js takes with no data-busy on it; read in the same
+	 * task as the click, then the page it sends waited for. */
+	#[Then('pressing :button in the content shows the activity indicator')]
+	public function contentButtonShowsIndicator(string $button): void
+	{
+		if ($this->pressInContent($button) !== true) {
+			throw new RuntimeException("pressing $button in the content did not show the activity indicator");
+		}
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => !window.e2eLeaving && document.readyState === "complete"',
+		);
+	}
+
+	/** A download loads no page, so nothing would take the indicator down again. */
+	#[Then('pressing :button in the content leaves the activity indicator down')]
+	public function contentButtonLeavesIndicator(string $button): void
+	{
+		if ($this->pressInContent($button) !== false) {
+			throw new RuntimeException("pressing $button in the content showed the activity indicator");
+		}
+	}
+
+	/** Adminer streams the page as it runs the query, so the page is still loading while it does:
+	 * looked at then, every 100 ms, as the page holds its first paint (and so its animation frames)
+	 * until the sidebar, which comes after the result. */
+	#[Then('running it turns the activity indicator beside the query until its result is in')]
+	public function runningQueryShowsIndicator(): void
+	{
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				window.e2eLeaving = true;
+				document.querySelector("#form input[type=submit]").click();
+			}',
+		);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => {
+				const query = !window.e2eLeaving && document.readyState === "loading" && document.querySelector("#sql-1");
+				return query && getComputedStyle(query, "::after").animationName === "ad-spin";
+			}',
+			null,
+			['polling' => 100],
+		);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.readyState === "complete"',
+		);
+		$done = $this->page->evaluate(
+			// language=JavaScript
+			'() => getComputedStyle(document.querySelector("#sql-1"), "::after").animationName',
+		);
+		if ($done !== 'none') {
+			throw new RuntimeException("the query's indicator still turns after its result: $done");
+		}
+	}
+
+	private function pressInContent(string $button): bool
+	{
+		return (bool) $this->page->evaluate(
+			// language=JavaScript
+			'(value) => {
+				window.e2eLeaving = true;
+				[...document.querySelectorAll("#content input[type=submit]")].find((b) => b.value === value).click();
+				return document.querySelector("#ad-busy").matches(":popover-open");
+			}',
+			$button,
+		);
 	}
 
 	#[Then('it lands on a URL with :text')]
