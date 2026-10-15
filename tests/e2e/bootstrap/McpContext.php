@@ -108,32 +108,18 @@ class McpContext implements Context
 	#[Given('a window is logged in to the demo database')]
 	public function windowIsLoggedIn(): void
 	{
-		/** @var array<string, mixed> $driver */
-		$driver = $this->fix['driver'];
-		$base = (string) $this->fix['base'];
-		$page = $this->get($base);
-		preg_match("~name='token' value='([^']*)'~", $page, $token);
-
-		$after = $this->post($base, http_build_query([
-			'auth' => [
-				'driver' => (string) $driver['key'],
-				'server' => (string) $this->fix['database'],
-				'username' => (string) $driver['username'],
-				'password' => (string) $driver['password'],
-				'db' => E2E_DATABASE,
-			],
-			'token' => $token[1] ?? '',
-		]), follow: true);
-		if (!str_contains($after, 'Logout') && !str_contains($after, 'logout=1')) {
-			throw new RuntimeException('could not log in with curl, the rest of the scenario would be meaningless');
-		}
+		$this->logIn((string) $this->fix['driver']['username'], E2E_DATABASE);
 		$this->get(e2e_url($this->fix, ['select' => 'users']));
-		// Where the handshake says to post, if there is one: a bare adminer.php would reach an
-		// adminer with no driver, and every tool call would die on a null.
-		$path = $this->fix['data'] . '/mcp.json';
-		clearstatcache(true, $path);
-		$handshake = is_file($path) ? (array) json_decode((string) file_get_contents($path), true) : [];
-		$this->mcpUrl = is_string($handshake['url'] ?? null) ? $handshake['url'] : $base;
+		$this->followHandshake();
+	}
+
+	/** The seed's SELECT-only login, into its own database: the login the docs tell you to give
+	 * an agent, and the one to prove least privilege against. */
+	#[Given('the window is logged in as the SELECT-only reader instead')]
+	public function windowIsReader(): void
+	{
+		$this->logIn(E2E_READER, E2E_SECOND_DATABASE);
+		$this->followHandshake();
 	}
 
 	#[Then('a handshake is written, pointing at this window')]
@@ -343,24 +329,28 @@ class McpContext implements Context
 		return null;
 	}
 
+	#[Then('the answer is an error mentioning :text')]
+	public function answerIsError(string $text): void
+	{
+		$said = (string) ($this->answer['result']['content'][0]['text'] ?? '');
+		if (($this->answer['result']['isError'] ?? null) !== true || !str_contains($said, $text)) {
+			throw new RuntimeException("expected an error mentioning $text: " . substr($said, 0, 300));
+		}
+	}
+
+	/** The database said no, not us: what least privilege is meant to look like from the agent. */
+	#[Then('the database refused it')]
+	public function databaseRefused(): void
+	{
+		$this->answerIsError('permission denied');
+	}
+
 	#[Then('the answer mentions :text')]
 	public function answerMentions(string $text): void
 	{
 		$said = (string) ($this->answer['result']['content'][0]['text'] ?? '');
 		if (!str_contains($said, $text)) {
 			throw new RuntimeException("the answer does not mention $text: " . substr($said, 0, 200));
-		}
-	}
-
-	/** RETURNING makes an INSERT produce an ordinary result set, so without this the caller sees
-	 * rows and concludes it wrote — which is exactly what happened in use, and is worse than
-	 * refusing the write outright.
-	 */
-	#[Then('the answer says it was rolled back')]
-	public function answerSaysRolledBack(): void
-	{
-		if (($this->payload['rolled_back'] ?? null) !== true) {
-			throw new RuntimeException('a write answered without saying it was rolled back: ' . json_encode($this->payload));
 		}
 	}
 
@@ -823,6 +813,41 @@ class McpContext implements Context
 	}
 
 	// ── the plumbing ─────────────────────────────────────────────────────────────────────────
+
+	/** Log in with curl on the demo server, keeping the cookies — the same borrow the bridge
+	 * performs. Every login of the fixture shares the driver's password. */
+	private function logIn(string $username, string $database): void
+	{
+		/** @var array<string, mixed> $driver */
+		$driver = $this->fix['driver'];
+		$base = (string) $this->fix['base'];
+		$page = $this->get($base);
+		preg_match("~name='token' value='([^']*)'~", $page, $token);
+
+		$after = $this->post($base, http_build_query([
+			'auth' => [
+				'driver' => (string) $driver['key'],
+				'server' => (string) $this->fix['database'],
+				'username' => $username,
+				'password' => (string) $driver['password'],
+				'db' => $database,
+			],
+			'token' => $token[1] ?? '',
+		]), follow: true);
+		if (!str_contains($after, 'Logout') && !str_contains($after, 'logout=1')) {
+			throw new RuntimeException("could not log in as $username with curl, the rest of the scenario would be meaningless");
+		}
+	}
+
+	/** Post where the handshake says, if there is one: a bare adminer.php would reach an adminer
+	 * with no driver, and every tool call would die on a null. */
+	private function followHandshake(): void
+	{
+		$path = $this->fix['data'] . '/mcp.json';
+		clearstatcache(true, $path);
+		$handshake = is_file($path) ? (array) json_decode((string) file_get_contents($path), true) : [];
+		$this->mcpUrl = is_string($handshake['url'] ?? null) ? $handshake['url'] : (string) $this->fix['base'];
+	}
 
 	/** @param array<string, mixed> $settings */
 	private function writeSettings(array $settings): void

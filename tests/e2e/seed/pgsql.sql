@@ -231,3 +231,32 @@ BEGIN
 		EXECUTE format('INSERT INTO %I (note) VALUES (''first row''), (''second row'')', filler);
 	END LOOP;
 END $$;
+
+-- A second connection and a second database, so that an agent reaching a saved connection the
+-- window is not on is a scenario like any other (features/shell/mcp.feature). The login is the
+-- one the MCP docs tell you to hand an agent: no superuser, SELECT and nothing else — which makes
+-- it the role to assert least privilege against, too. Created once (a role and a database
+-- outlive the drops above), granted on every run, because the tables it reads were just
+-- recreated. Same password as postgres, so the fixture needs no second secret.
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'reader') THEN
+		CREATE ROLE reader LOGIN PASSWORD 'demo';
+	END IF;
+END $$;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO reader;
+
+-- CREATE DATABASE has no IF NOT EXISTS and cannot run inside a DO block, so psql builds it.
+SELECT 'CREATE DATABASE inventory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'inventory')\gexec
+\connect inventory
+DROP TABLE IF EXISTS products;
+CREATE TABLE products (
+	id    serial PRIMARY KEY,
+	name  text NOT NULL,
+	stock integer NOT NULL DEFAULT 0
+);
+INSERT INTO products (name, stock) VALUES
+	('Hrnek', 12),
+	('Konvice', 3),
+	('Podšálek', 40);
+GRANT SELECT ON products TO reader;

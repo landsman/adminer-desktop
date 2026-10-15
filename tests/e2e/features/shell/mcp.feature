@@ -32,11 +32,29 @@ Feature: An agent reaching the database this window is logged into
     When an agent calls "list_tables"
     Then the answer mentions "users"
 
-  Scenario: A write through the tool leaves nothing behind
+  Scenario: A write through the tool is refused as read-only and leaves nothing behind
     Given the same statement lands when it is run straight at the database
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-rollback-probe') RETURNING id"
-    Then the answer says it was rolled back
+    Then the answer is an error mentioning "read-only transaction"
     And no row named "mcp-rollback-probe" survived
+
+  Scenario: A COMMIT smuggled into the query does not let a write escape
+    When an agent runs the query "COMMIT; INSERT INTO users (name) VALUES ('mcp-commit-escape')"
+    Then the answer is an error mentioning "multiple commands"
+    And no row named "mcp-commit-escape" survived
+
+  Scenario: A SELECT-only login refuses what a superuser gets away with inside a read-only query
+    Inside BEGIN READ ONLY a superuser still runs a program on the database server, reads its
+    files and the password hashes. The login is the boundary, and this is the login to give.
+    Given the window is logged in as the SELECT-only reader instead
+    When an agent runs the query "COPY (SELECT 1) TO PROGRAM 'id'"
+    Then the database refused it
+    When an agent runs the query "SELECT pg_read_file('/etc/passwd')"
+    Then the database refused it
+    When an agent runs the query "SELECT rolpassword FROM pg_authid"
+    Then the database refused it
+    When an agent runs the query "SELECT name FROM products"
+    Then the answer mentions "Konvice"
 
   Scenario: A long value is cut on a character and reported, and comes back whole on request
     When an agent runs the query "SELECT body, payload FROM long_values"
