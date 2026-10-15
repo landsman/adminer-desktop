@@ -36,7 +36,9 @@ that slot free, it only uses the UI delegate — that turns a download into a re
 
 1. **Detect** — `decidePolicyForNavigationResponse` returns `.download` for a response whose
    `Content-Disposition` is `attachment`, or whose type the view can't render (an
-   `application/octet-stream`, a `.zip`).
+   `application/octet-stream`, a `.zip`). `decidePolicyForNavigationAction` returns `.download`
+   for a link with a `download` attribute: the SQL command's Export → CSV builds the file in
+   JavaScript and clicks one on a `blob:` URL, which WebKit's default otherwise drops.
 2. **Destination** — a save panel picks the path. The file then downloads to a sibling
    **`.part`** in that same folder — so while it grows it is plainly a still-downloading file,
    the way a browser marks one — and is renamed to the real name once it finishes. The same
@@ -51,6 +53,10 @@ that slot free, it only uses the UI delegate — that turns a download into a re
    ("casec.sql — 1.2 MB") as the real progress. When a `Content-Length` is present the bar fills
    and the label reads "written / total".
 
+`tests/launcher/downloads.sh`, in `make qa`, drives this code on a real WKWebView or
+WebKitGTK through every way adminer starts a download — the JS link, a saved and a gzipped
+server export, "open", a `mailto:` — with only the dialogs stubbed, and checks the saved file.
+
 `WKDownload` is macOS **11.3+**; the app's floor is 11.0, so the whole path is behind
 `@available` and does nothing on the few point-releases below — there the response displays as
 it did before.
@@ -63,5 +69,7 @@ response or an unrenderable type; `download-started` on the web context then wir
 `decide-destination` (a native `GtkFileChooserNative` Save dialog, KDE-native through the
 portal on Wayland), the same sibling-`.part`-then-rename, and a small `GtkWindow` progress bar
 pulsing on `received-data`. `webkit_download_set_destination` takes a path here (not the URI
-older WebKitGTK wanted). Off both, on **Windows**, the stub is empty: WebView2 downloads files
+older WebKitGTK wanted). A link with a `download` attribute (the SQL command's Export → CSV)
+needs no policy handler here: WebKitGTK starts the download itself. So does an `attachment`
+on WebKitGTK 2.52 (Ubuntu 24.04); the handler stays for the versions that render one. Off both, on **Windows**, the stub is empty: WebView2 downloads files
 itself.
