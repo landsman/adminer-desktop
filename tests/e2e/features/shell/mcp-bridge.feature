@@ -43,7 +43,7 @@ Feature: The stdio bridge when there is no app behind it
 
   Scenario: It posts where the handshake says, with the session it was given
     When a client asks the bridge for anything
-    Then it posts to the connected url with mcp=1, replaying the session cookie
+    Then it posts to the connected url with mcp=1, showing the gate its token
 
   Scenario: It pumps a stream, blank lines and all
     Then the bridge answers each request once and every notification never

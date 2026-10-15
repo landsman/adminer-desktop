@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\Env;
 use Desktop\I18n\Strings;
 use Desktop\SettingKey;
 use Desktop\UserSettings;
@@ -17,7 +18,8 @@ use Desktop\UserSettings;
 * this needs.
 *
 * Two jobs, both only ever on such a request: refresh the handshake so the agent can still find
-* this window, and answer ?mcp=1 as JSON-RPC instead of HTML.
+* this window — and tell the launcher's gate which session to lend it — and answer ?mcp=1 as
+* JSON-RPC instead of HTML.
 *
 * serve() does the I/O and exits; url() and answer() are the decisions behind it, kept separate
 * so they can be checked without a request to make or a process to end.
@@ -46,17 +48,22 @@ class Endpoint {
 	*/
 	function serve(): ?string {
 		if (!$this->settings->get(SettingKey::Mcp, false)) {
-			// Off, or turned off since the last run: a handshake left on disk would still name
-			// a live session, so retract it rather than merely ignoring it.
+			// Off, or turned off since the last run: a handshake left on disk, or a session left
+			// with the gate, would still let an agent in, so retract both rather than ignore them.
 			$this->handshake->clear();
+			$this->report('');
 			return null;
 		}
 		$connected = \Adminer\driver() !== null;
-		$url = $this->url($_SERVER, $connected, \Adminer\ME);
-		if ($url !== null) {
-			/** @var array<string,string> $cookies */
-			$cookies = array_filter($_COOKIE, 'is_string');
-			$this->handshake->write($url, $cookies, $this->target());
+		// The gate's address, not ours: the bridge reaches this window through the launcher, which
+		// adds the session the agent never sees. Without a launcher there is no gate, nothing to
+		// hold the session, and so no handshake at all.
+		$gate = Env::McpGate->get();
+		$token = Env::McpToken->get();
+		$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
+		if ($url !== null && $token !== false && $token !== '') {
+			$this->report($this->cookie());
+			$this->handshake->write($url, $token, $this->target());
 		}
 		if (!isset($_GET["mcp"])) {
 			return null;
@@ -77,6 +84,35 @@ class Endpoint {
 			echo $answer;
 		}
 		exit;
+	}
+
+	/** Tell the gate which session an agent's call may borrow, over its unix socket: only the
+	* launcher reads it, and nothing is ever sent back (launcher/mcpgate). One connection per
+	* report, so two requests reporting at once cannot interleave.
+	*/
+	private function report(string $cookie): void {
+		$socket = Env::McpReport->get();
+		if ($socket === false || $socket === '') {
+			return;
+		}
+		$gate = @stream_socket_client("unix://$socket", $errno, $error, 1);
+		if ($gate !== false) {
+			@fwrite($gate, json_encode(['cookie' => $cookie]) . "\n");
+			fclose($gate);
+		}
+	}
+
+	/** The two cookies that unlock this session: its id, and adminer_key, which the passwords in
+	* it are encrypted with. Nothing else is needed to borrow it, adminer_permanent included.
+	*/
+	private function cookie(): string {
+		$pairs = [];
+		foreach ([(string) session_name(), 'adminer_key'] as $name) {
+			if (isset($_COOKIE[$name]) && is_string($_COOKIE[$name])) {
+				$pairs[] = rawurlencode($name) . '=' . rawurlencode($_COOKIE[$name]);
+			}
+		}
+		return implode('; ', $pairs);
 	}
 
 	/** The absolute URL to record, or null when there is nothing worth recording.

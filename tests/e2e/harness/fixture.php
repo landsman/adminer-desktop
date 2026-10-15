@@ -185,8 +185,13 @@ function e2e_boot(): array
 	// The next free port rather than the one asked for: a killed run leaves its server behind, and
 	// every scenario would then wait on a port it is never going to get.
 	$port = e2e_free_port((int) $driver['appPort']);
+	// Behind the launcher's MCP gate, as the app runs (launcher/mcpgate): the handshake points
+	// there, and the session an agent borrows never reaches a file. Its own small binary, since CI
+	// has no WebKit to build the launcher against; go caches the build, so a rerun costs nothing.
+	$gate = $root . '/.cache/e2e-gate';
+	(new Process(['go', 'build', '-o', $gate, './tests/e2e/harness/gate'], $root))->mustRun();
 	$server = new Process(
-		[$root . '/bin/frankenphp', 'php-server', '--root', $app, '--listen', "127.0.0.1:$port", '--no-compress'],
+		[$gate, "http://127.0.0.1:$port", $root . '/bin/frankenphp', 'php-server', '--root', $app, '--listen', "127.0.0.1:$port", '--no-compress'],
 		null,
 		['ADMINER_DESKTOP_DATA' => $data],
 	);

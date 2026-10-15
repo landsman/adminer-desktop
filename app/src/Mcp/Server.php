@@ -12,10 +12,10 @@ use Desktop\I18n\Strings;
 * library here because there is nothing to a library: the transport is the HTTP request we are
 * already inside, and the framing is json_decode.
 *
-* The agent reaches this over stdio through mcp.php, which replays the window's cookies —
-* so by the time dispatch() runs, Adminer has connected as the logged-in user and Tools can
-* simply ask. If the cookies were missing or stale, this code never runs at all: Adminer answers
-* the login page instead, which is exactly the failure we want.
+* The agent reaches this over stdio through mcp.php and the launcher's gate, which adds the
+* window's session (launcher/mcpgate) — so by the time dispatch() runs, Adminer has connected as
+* the logged-in user and Tools can simply ask. If the session was missing or stale, this code
+* never runs at all: Adminer answers the login page instead, which is exactly the failure we want.
 */
 class Server {
 	/** The newest MCP revision we implement.

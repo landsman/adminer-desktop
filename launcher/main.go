@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/landsman/adminer-desktop/launcher/mcpgate"
 	webview "github.com/webview/webview_go"
 )
 
@@ -272,6 +273,18 @@ func main() {
 	// own right-click menu, Inspect Element and the rest are all there.
 	if *debug {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DEBUG=1")
+	}
+	// An agent's MCP calls borrow the window's session through the gate, which keeps it in this
+	// process's memory instead of a file the agent could read (launcher/mcpgate). Not on Windows:
+	// the MCP bridge does not cover Windows yet.
+	if runtime.GOOS != "windows" {
+		if gate, err := mcpgate.New("http://" + addr); err != nil {
+			log.Print("mcp gate: ", err)
+		} else {
+			defer gate.Close()
+			srv.Env = append(srv.Env, gate.Env()...)
+			go gate.Serve()
+		}
 	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr

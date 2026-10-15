@@ -6,21 +6,17 @@ namespace Desktop\Mcp;
 use Desktop\Env;
 use Desktop\Os;
 
-/** Where the MCP client learns how to reach this window, and as whom.
+/** Where the MCP client learns how to reach this window.
 *
-* The launcher binds a fresh random port every start (launcher/main.go, freePort), so no URL a
-* user could paste into an MCP config would survive a restart. And an agent talking to us over
-* stdio has no browser and no cookie jar, so it cannot be logged in on its own account.
+* The launcher binds fresh random ports every start (launcher/main.go, freePort), so no URL a
+* user could paste into an MCP config would survive a restart. While a connected request is
+* being served, the plugin drops the gate's URL for this window's connection here, with the
+* gate's token; mcp.php reads them back per message.
 *
-* Both problems are one file. While a connected request is being served, the plugin drops the
-* base URL and this session's cookies here; mcp.php reads them back and replays them, so
-* the agent queries exactly the database this window is logged into — for as long as that stays
-* true, and no longer.
-*
-* Deliberately no credentials and no bearer token of our own. Adminer already keeps the
-* connection behind its session, and a token stored beside the cookies in the same 0600 file
-* would guard nothing that reading the file does not already give away. The cookies are the
-* credential; the file's permissions are what protects them.
+* Never a cookie. The session's cookies decrypt the database passwords adminer keeps in it, and
+* this file is readable by the agent's own OS user — 0600 keeps out other accounts, not the
+* agent. The launcher's gate holds them in memory and adds them on the way through
+* (launcher/mcpgate); the token here opens the MCP endpoint and nothing else.
 */
 class Handshake {
 	/** Same 0700 directory as adminer.key and settings.json. */
@@ -52,18 +48,17 @@ class Handshake {
 		return $this->file;
 	}
 
-	/** Record how to reach this window as this session.
+	/** Record how to reach this window.
 	*
-	* Called on every connected request while the feature is on, because the cookies rotate and
-	* the port changes per launch — the cost is one small write against a file the OS has
-	* cached, and the alternative is a handshake that goes stale without anything noticing.
+	* Called on every connected request while the feature is on, because the window moves between
+	* connections and the ports change per launch — the cost is one small write against a file the
+	* OS has cached, and the alternative is a handshake that goes stale without anything noticing.
 	*
-	* @param array<string,string> $cookies
 	* @param string $target which connection this points at, for the settings panel to show —
 	*                       the agent follows wherever the window last was, and that is worth
 	*                       being able to see rather than infer
 	*/
-	function write(string $url, array $cookies, string $target = ''): void {
+	function write(string $url, string $token, string $target = ''): void {
 		if ($this->file === null) {
 			return;
 		}
@@ -71,7 +66,7 @@ class Handshake {
 		if (!is_dir($dir)) {
 			@mkdir($dir, 0700, true);
 		}
-		$payload = json_encode(['url' => $url, 'cookies' => $cookies, 'target' => $target], JSON_PRETTY_PRINT);
+		$payload = json_encode(['url' => $url, 'token' => $token, 'target' => $target], JSON_PRETTY_PRINT);
 		if ($payload === false) {
 			return;
 		}
@@ -79,14 +74,14 @@ class Handshake {
 		// half-written handshake reads as a corrupt one rather than an old one.
 		$tmp = $this->file . '.' . getmypid() . '.tmp';
 		if (@file_put_contents($tmp, $payload) !== false) {
-			@chmod($tmp, 0600); // session cookies: readable by this account only
+			@chmod($tmp, 0600); // the gate's token: no other account gets to use it
 			@rename($tmp, $this->file);
 		}
 	}
 
-	/** What mcp.php reads back.
-	* @return array{url:string,cookies:array<string,string>,target:string}|null null when absent
-	*         or unusable
+	/** What mcp.php reads back. A handshake from before the gate, still carrying cookies, has no
+	* token and reads as none: the next page the window loads writes the new one.
+	* @return array{url:string,token:string,target:string}|null null when absent or unusable
 	*/
 	function read(): ?array {
 		if ($this->file === null || !is_file($this->file)) {
@@ -97,13 +92,11 @@ class Handshake {
 			return null;
 		}
 		$data = json_decode($raw, true);
-		if (!is_array($data) || !isset($data['url']) || !is_string($data['url']) || !isset($data['cookies']) || !is_array($data['cookies'])) {
+		if (!is_array($data) || !is_string($data['url'] ?? null) || !is_string($data['token'] ?? null)) {
 			return null;
 		}
-		/** @var array<string,string> $cookies */
-		$cookies = array_filter($data['cookies'], 'is_string');
 		$target = isset($data['target']) && is_string($data['target']) ? $data['target'] : '';
-		return ['url' => $data['url'], 'cookies' => $cookies, 'target' => $target];
+		return ['url' => $data['url'], 'token' => $data['token'], 'target' => $target];
 	}
 
 	/** Drop the handshake — nothing may reach the database through it after this.
