@@ -42,7 +42,7 @@ test harness to iterate against. The three-platform build only runs on manual di
 mise trust         # once per clone: mise.toml carries a [settings] block
 gh auth login      # once per machine: make verify reads frankenphp's attestation over the API
 mise run install   # once: node deps, composer deps, and the e2e browser
-make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet, every e2e step defined
+make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet, every e2e step defined, the launcher's downloads
 make verify        # adminer build checksums + proof frankenphp is the binary upstream built
 make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)

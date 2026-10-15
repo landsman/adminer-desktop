@@ -53,6 +53,10 @@ that slot free, it only uses the UI delegate — that turns a download into a re
    ("casec.sql — 1.2 MB") as the real progress. When a `Content-Length` is present the bar fills
    and the label reads "written / total".
 
+`tests/launcher/downloads.sh`, in `make qa`, drives this code on a real WKWebView or
+WebKitGTK through every way adminer starts a download — the JS link, a saved and a gzipped
+server export, "open", a `mailto:` — with only the dialogs stubbed, and checks the saved file.
+
 `WKDownload` is macOS **11.3+**; the app's floor is 11.0, so the whole path is behind
 `@available` and does nothing on the few point-releases below — there the response displays as
 it did before.
@@ -66,5 +70,6 @@ response or an unrenderable type; `download-started` on the web context then wir
 portal on Wayland), the same sibling-`.part`-then-rename, and a small `GtkWindow` progress bar
 pulsing on `received-data`. `webkit_download_set_destination` takes a path here (not the URI
 older WebKitGTK wanted). A link with a `download` attribute (the SQL command's Export → CSV)
-needs no policy handler here: WebKitGTK starts the download itself. Off both, on **Windows**, the stub is empty: WebView2 downloads files
+needs no policy handler here: WebKitGTK starts the download itself. So does an `attachment`
+on WebKitGTK 2.52 (Ubuntu 24.04); the handler stays for the versions that render one. Off both, on **Windows**, the stub is empty: WebView2 downloads files
 itself.

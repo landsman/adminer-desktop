@@ -304,7 +304,7 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh tests/cli/kill-orphans-test.sh && echo "shellcheck ok"; } \
+		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
 		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
@@ -313,6 +313,8 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	./bin/frankenphp$(EXE) php-cli tests/version/AppVersionTest.php
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
 	@sh tests/cli/kill-orphans-test.sh
+	@# The launcher's own download code against the real webview, every way adminer starts one.
+	@sh tests/launcher/downloads.sh
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
