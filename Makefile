@@ -225,8 +225,11 @@ phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php app/vendor
 phpcs: app/vendor
 	./bin/frankenphp$(EXE) php-cli app/vendor/bin/phpcs --standard=phpcs.xml
 
+# A cache per checkout. The default one is per user and keeps absolute paths, so an agent's
+# worktree linted second got the first one's findings at that worktree's paths; once it was
+# deleted, the //nolint comments there could not be read and the lint failed on them.
 golangci:
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
+	GOLANGCI_LINT_CACHE=$(CURDIR)/.cache/golangci-lint go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
 # Format-check and lint CSS and JS with Biome. Run `mise run install` once to fetch it.
 # Prefer the installed binary directly (it needs only node on PATH); fall back to mise,
