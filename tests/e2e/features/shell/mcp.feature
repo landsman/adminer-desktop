@@ -15,7 +15,7 @@ Feature: An agent reaching the database this window is logged into
     Then a handshake is written, pointing at this window through the gate
     And it carries nothing that unlocks a password
     And it is readable only by its owner
-    And the gate refuses a call without the token, and anything but the MCP endpoint with it
+    And the gate refuses a call without the token, and with it opens nothing but the MCP endpoint
 
   Scenario: The protocol version is negotiated in both directions
     When an agent initializes

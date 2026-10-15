@@ -65,8 +65,7 @@ class Stdio {
 		if ($config === null) {
 			return $this->unavailable($id, $method, Strings::t('mcp.agent_not_running'));
 		}
-		$url = $config['url'] . (str_contains($config['url'], '?') ? '&' : '?') . 'mcp=1';
-		$body = ($this->send)($url, $line, $config['token']);
+		$body = ($this->send)(Endpoint::at($config['url']), $line, $config['token']);
 
 		if ($body === false) {
 			return $this->unavailable($id, $method, Strings::t('mcp.agent_window_closed'));

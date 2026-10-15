@@ -4,10 +4,10 @@
 // Adminer keeps the database passwords in the PHP session, encrypted with a key that lives in a
 // cookie (adminer_key). Whoever holds that cookie and the session id can read them back, so
 // neither may sit in a file the agent's own OS user can read — which once was mcp.json. Instead
-// the PHP side reports the two cookies to a unix socket only this process reads
-// (Desktop\Mcp\Endpoint::report()), and the bridge an agent spawns posts here with a token. The
-// gate adds the cookies on the way to frankenphp. The token opens the MCP endpoint and nothing
-// else; the cookies stay in this process's memory.
+// the PHP side reports the two cookies, and the MCP endpoint's URL, to a unix socket only this
+// process reads (Desktop\Mcp\Endpoint::report()), and the bridge an agent spawns posts here with a
+// token. The gate sends each call to that endpoint with the cookies added. The token opens the
+// MCP endpoint and nothing else; the cookies stay in this process's memory.
 //
 // A socket and not an inherited descriptor: frankenphp is a thread-safe PHP build, which resolves
 // symlinks in every path it opens, so on Linux /dev/fd/3 (a link into /proc) never opens, and
@@ -27,6 +27,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,8 +42,9 @@ type Gate struct {
 	reports  net.Listener // where PHP says which session to lend
 	dir      string       // the reports socket's private directory
 
-	mu     sync.Mutex
-	cookie string // the Cookie header to add, empty until the window logs in
+	mu       sync.Mutex
+	cookie   string // the Cookie header to add, empty until the window logs in
+	endpoint string // the MCP endpoint's path and query, the only thing the token opens
 }
 
 // New opens the listener the bridge posts to and the socket PHP reports the session on.
@@ -101,44 +103,52 @@ func (g *Gate) Close() {
 	os.RemoveAll(g.dir) //nolint:errcheck
 }
 
-// listen takes one JSON line per report, {"cookie": "..."}; an empty cookie is the feature being
-// switched off. A line that does not parse is dropped: the next page the window loads reports
-// again.
+// listen takes one JSON line per report, {"cookie": "...", "endpoint": "http://…?…&mcp=1"}; empty
+// is the feature being switched off. A line that does not parse is dropped: the next page the
+// window loads reports again.
 func (g *Gate) listen(c io.ReadCloser) {
 	defer c.Close() //nolint:errcheck // one report per connection
 	s := bufio.NewScanner(c)
 	for s.Scan() {
 		var report struct {
-			Cookie *string `json:"cookie"`
+			Cookie   *string `json:"cookie"`
+			Endpoint string  `json:"endpoint"`
 		}
-		if json.Unmarshal(s.Bytes(), &report) == nil && report.Cookie != nil {
-			g.mu.Lock()
-			g.cookie = *report.Cookie
-			g.mu.Unlock()
+		if json.Unmarshal(s.Bytes(), &report) != nil || report.Cookie == nil {
+			continue
 		}
+		// Only its path and query: the host PHP saw is ours, and frankenphp is g.upstream.
+		endpoint := ""
+		if u, err := url.Parse(report.Endpoint); err == nil && report.Endpoint != "" {
+			endpoint = u.RequestURI()
+		}
+		g.mu.Lock()
+		g.cookie, g.endpoint = *report.Cookie, endpoint
+		g.mu.Unlock()
 	}
 }
 
 func (g *Gate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	g.mu.Lock()
+	cookie, endpoint := g.cookie, g.endpoint
+	g.mu.Unlock()
 	// A web page in a browser can post to loopback too. It cannot read mcp.json, so it has no
-	// token; and it can only reach us under our own address, never a rebound hostname. Only the
-	// MCP endpoint: anything else would be a page of adminer with the window's session behind
-	// it, which is exactly what the token must not open.
+	// token; and it can only reach us under our own address, never a rebound hostname.
 	got := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-	if r.Method != http.MethodPost || r.Host != g.ln.Addr().String() || r.URL.Query().Get("mcp") != "1" ||
+	if r.Method != http.MethodPost || r.Host != g.ln.Addr().String() || endpoint == "" ||
 		subtle.ConstantTimeCompare([]byte(got), []byte(g.token)) != 1 {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
-	req, err := http.NewRequest(http.MethodPost, g.upstream+r.URL.RequestURI(), r.Body)
+	// The endpoint PHP reported, never the path the call asked for. Adminer answers some pages
+	// before the hook that answers ?mcp=1 runs (?download= streams a column and exits), so any
+	// other path would be adminer with the window's session behind it.
+	req, err := http.NewRequest(http.MethodPost, g.upstream+endpoint, r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	g.mu.Lock()
-	cookie := g.cookie
-	g.mu.Unlock()
 	if cookie != "" {
 		req.Header.Set("Cookie", cookie)
 	}
