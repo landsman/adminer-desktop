@@ -86,20 +86,19 @@ class Endpoint {
 		exit;
 	}
 
-	/** Tell the gate which session an agent's call may borrow, over the descriptor the launcher
-	* handed frankenphp: a pipe no other process can read (launcher/mcpgate). One short line, and
-	* a pipe write that size is atomic, so two requests reporting at once cannot interleave.
+	/** Tell the gate which session an agent's call may borrow, over its unix socket: only the
+	* launcher reads it, and nothing is ever sent back (launcher/mcpgate). One connection per
+	* report, so two requests reporting at once cannot interleave.
 	*/
 	private function report(string $cookie): void {
-		$fd = Env::SessionFd->get();
-		if ($fd === false || !ctype_digit($fd)) {
+		$socket = Env::McpReport->get();
+		if ($socket === false || $socket === '') {
 			return;
 		}
-		// /dev/fd, not php://fd: PHP opens that one only from the command line.
-		$pipe = @fopen("/dev/fd/$fd", 'w');
-		if ($pipe !== false) {
-			@fwrite($pipe, json_encode(['cookie' => $cookie]) . "\n");
-			fclose($pipe);
+		$gate = @stream_socket_client("unix://$socket", $errno, $error, 1);
+		if ($gate !== false) {
+			@fwrite($gate, json_encode(['cookie' => $cookie]) . "\n");
+			fclose($gate);
 		}
 	}
 

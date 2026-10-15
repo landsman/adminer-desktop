@@ -30,8 +30,8 @@ enum Env: string {
 	/** The token the gate asks the bridge for. Opens the MCP endpoint and nothing else, so it may
 	* sit in mcp.json; it keeps out a web page posting to loopback, which cannot read that file. */
 	case McpToken = 'ADMINER_DESKTOP_MCP_TOKEN';
-	/** The descriptor the gate hears the window's session on (Mcp\Endpoint::report()). */
-	case SessionFd = 'ADMINER_DESKTOP_SESSION_FD';
+	/** The unix socket the gate hears the window's session on (Mcp\Endpoint::report()). */
+	case McpReport = 'ADMINER_DESKTOP_MCP_REPORT';
 
 	/** The launcher's build version, `git describe --tags --always --dirty` from the Makefile:
 	* a tag, a tag with commits past it (beta-v0.7.2-15-gaa1715f), or "dev". Unset when app/ is
