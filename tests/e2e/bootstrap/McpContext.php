@@ -39,9 +39,6 @@ class McpContext implements Context
 	/** @var array<string, string> the session an agent borrows */
 	private array $cookies = [];
 
-	/** Where the handshake says to post, which is not the same as the login page. */
-	private string $mcpUrl = '';
-
 	/** @var array<string, mixed>|null the last JSON-RPC answer, decoded */
 	private ?array $answer = null;
 
@@ -52,7 +49,7 @@ class McpContext implements Context
 
 	private ?Handshake $handshake = null;
 
-	/** @var array{url:string, body:string, cookies:array<string, string>}|null what the bridge posted */
+	/** @var array{url:string, body:string, token:string}|null what the bridge posted */
 	private ?array $posted = null;
 
 	private ?string $raw = null;
@@ -110,7 +107,6 @@ class McpContext implements Context
 	{
 		$this->logIn((string) $this->fix['driver']['username'], E2E_DATABASE);
 		$this->get(e2e_url($this->fix, ['select' => 'users']));
-		$this->followHandshake();
 	}
 
 	/** The seed's SELECT-only login, into its own database: the login the docs tell you to give
@@ -119,29 +115,75 @@ class McpContext implements Context
 	public function windowIsReader(): void
 	{
 		$this->logIn(E2E_READER, E2E_SECOND_DATABASE);
-		$this->followHandshake();
 	}
 
-	#[Then('a handshake is written, pointing at this window')]
+	/** At the gate, not at the app: the app's own port would take the bridge's call with no
+	 * session behind it, and the gate is what adds one. */
+	#[Then('a handshake is written, pointing at this window through the gate')]
 	public function handshakeIsWritten(): void
 	{
-		$handshake = $this->readHandshake();
-		$url = (string) ($handshake['url'] ?? '');
-		$this->mcpUrl = $url !== '' ? $url : (string) $this->fix['base'];
-		if (!str_contains($url, (string) parse_url((string) $this->fix['base'], PHP_URL_PORT))) {
-			throw new RuntimeException('the handshake url does not point at the running app: ' . json_encode($url));
+		$url = (string) ($this->readHandshake()['url'] ?? '');
+		$app = (string) parse_url((string) $this->fix['base'], PHP_URL_PORT);
+		if (parse_url($url, PHP_URL_HOST) !== '127.0.0.1' || (string) parse_url($url, PHP_URL_PORT) === $app) {
+			throw new RuntimeException('the handshake url does not point at the gate: ' . json_encode($url));
 		}
 		if (!str_contains($url, 'db=' . E2E_DATABASE)) {
 			throw new RuntimeException("the handshake url lost the connection: $url");
 		}
 	}
 
-	#[Then('it carries the session to borrow')]
-	public function handshakeCarriesSession(): void
+	/** A web page can post to loopback too; it cannot read mcp.json, so it has no token. And the
+	 * token must not open a page of adminer with the window's session behind it. */
+	#[Then('the gate refuses a call without the token, and anything but the MCP endpoint with it')]
+	public function gateRefuses(): void
 	{
 		$handshake = $this->readHandshake();
-		if (!isset($handshake['cookies']['adminer_sid'])) {
-			throw new RuntimeException('the handshake carries no adminer_sid, so nothing could borrow the session');
+		$url = (string) $handshake['url'];
+		$token = (string) $handshake['token'];
+		$cases = [
+			'no token' => [$url . '&mcp=1', ''],
+			'a wrong token' => [$url . '&mcp=1', str_repeat('0', strlen($token))],
+			'a page, not the endpoint' => [$url . '&select=users', $token],
+		];
+		foreach ($cases as $what => [$to, $bearer]) {
+			$context = stream_context_create(['http' => [
+				'method' => 'POST',
+				'header' => ['Content-Type: application/json', "Authorization: Bearer $bearer"],
+				'content' => $this->request(),
+				'ignore_errors' => true,
+			]]);
+			@file_get_contents($to, false, $context);
+			$status = (string) (http_get_last_response_headers()[0] ?? '');
+			if (!str_contains($status, ' 403 ')) {
+				throw new RuntimeException("the gate let through $what: $status");
+			}
+		}
+	}
+
+	/** Adminer keeps the passwords in the session, encrypted with the adminer_key cookie, so the
+	 * session id and that key are exactly what must never be in this file: the agent runs as its
+	 * owner, and 0600 does not keep it out. Checked against the values this session really holds,
+	 * not field names — a renamed field would carry them just the same.
+	 */
+	#[Then('it carries nothing that unlocks a password')]
+	public function handshakeHoldsNoSecret(): void
+	{
+		$path = $this->fix['data'] . '/mcp.json';
+		clearstatcache(true, $path);
+		$raw = (string) @file_get_contents($path);
+		$keys = array_keys((array) json_decode($raw, true));
+		sort($keys);
+		if ($keys !== ['target', 'token', 'url']) {
+			throw new RuntimeException('the handshake holds more than url, token and target: ' . json_encode($keys));
+		}
+		foreach (['adminer_sid', 'adminer_key', 'adminer_permanent'] as $name) {
+			$value = rawurldecode($this->cookies[$name] ?? '');
+			if ($value === '' && $name !== 'adminer_permanent') {
+				throw new RuntimeException("this session has no $name, so the check proves nothing");
+			}
+			if ($value !== '' && str_contains($raw, $value)) {
+				throw new RuntimeException("the handshake carries $name, which unlocks the passwords in the session");
+			}
 		}
 	}
 
@@ -479,7 +521,7 @@ class McpContext implements Context
 	public function windowWasClosed(): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', ['adminer_sid' => 'abc']);
+		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
 		$this->bridge = new Stdio($this->handshake, fn (): bool => false);
 	}
 
@@ -487,7 +529,7 @@ class McpContext implements Context
 	public function appAnswersWith(string $what): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', ['adminer_sid' => 'abc']);
+		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
 		$answers = [
 			'nothing' => '',
 			'a login page' => '<!doctype html><title>Login</title>',
@@ -604,18 +646,18 @@ class McpContext implements Context
 	public function bridgeIsAskedForAnything(): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', ['adminer_sid' => 'abc']);
+		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
 		$seen = null;
-		$spy = new Stdio($this->handshake, function (string $url, string $body, array $cookies) use (&$seen): string {
-			$seen = ['url' => $url, 'body' => $body, 'cookies' => $cookies];
+		$spy = new Stdio($this->handshake, function (string $url, string $body, string $token) use (&$seen): string {
+			$seen = ['url' => $url, 'body' => $body, 'token' => $token];
 			return '{}';
 		});
 		$spy->exchange($this->request());
-		/** @var array{url:string, body:string, cookies:array<string, string>}|null $seen */
+		/** @var array{url:string, body:string, token:string}|null $seen */
 		$this->posted = $seen;
 	}
 
-	#[Then('it posts to the connected url with mcp=1, replaying the session cookie')]
+	#[Then('it posts to the connected url with mcp=1, showing the gate its token')]
 	public function postsToConnectedUrl(): void
 	{
 		$posted = (array) $this->posted;
@@ -627,8 +669,8 @@ class McpContext implements Context
 		if (($posted['body'] ?? null) !== $this->request()) {
 			throw new RuntimeException('the bridge changed the message on the way through');
 		}
-		if ((((array) ($posted['cookies'] ?? []))['adminer_sid'] ?? null) !== 'abc') {
-			throw new RuntimeException('the bridge did not replay the session cookie');
+		if (($posted['token'] ?? null) !== 'tok') {
+			throw new RuntimeException('the bridge did not show the gate its token');
 		}
 	}
 
@@ -640,7 +682,7 @@ class McpContext implements Context
 	public function bridgePumpsTheStream(): void
 	{
 		$handshake = new Handshake($this->scratch());
-		$handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', ['adminer_sid' => 'abc']);
+		$handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
 		$answer = '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}';
 		$in = fopen('php://memory', 'r+');
 		fwrite($in, $this->request() . "\n\n"
@@ -839,15 +881,6 @@ class McpContext implements Context
 		}
 	}
 
-	/** Post where the handshake says, if there is one: a bare adminer.php would reach an adminer
-	 * with no driver, and every tool call would die on a null. */
-	private function followHandshake(): void
-	{
-		$path = $this->fix['data'] . '/mcp.json';
-		clearstatcache(true, $path);
-		$handshake = is_file($path) ? (array) json_decode((string) file_get_contents($path), true) : [];
-		$this->mcpUrl = is_string($handshake['url'] ?? null) ? $handshake['url'] : (string) $this->fix['base'];
-	}
 
 	/** @param array<string, mixed> $settings */
 	private function writeSettings(array $settings): void
@@ -875,14 +908,15 @@ class McpContext implements Context
 		}
 	}
 
-	/** One JSON-RPC message straight at the app, with the session's cookies.
+	/** One JSON-RPC message the way an agent sends it: through the bridge and the gate, with the
+	 * token and none of the session's cookies, which only the gate holds.
 	 * @param array<string, mixed> $message
 	 * @return array<string, mixed>
 	 */
 	private function rpc(array $message): array
 	{
-		$url = $this->mcpUrl . (str_contains($this->mcpUrl, '?') ? '&' : '?') . 'mcp=1';
-		return (array) json_decode($this->post($url, (string) json_encode(['jsonrpc' => '2.0'] + $message), json: true), true);
+		$bridge = new Stdio(new Handshake((string) $this->fix['data']));
+		return (array) json_decode((string) $bridge->exchange((string) json_encode(['jsonrpc' => '2.0'] + $message)), true);
 	}
 
 	private function request(): string

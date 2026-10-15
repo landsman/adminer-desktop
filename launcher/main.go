@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/landsman/adminer-desktop/launcher/mcpgate"
 	webview "github.com/webview/webview_go"
 )
 
@@ -273,12 +274,29 @@ func main() {
 	if *debug {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DEBUG=1")
 	}
+	// An agent's MCP calls borrow the window's session through the gate, which keeps it in this
+	// process's memory instead of a file the agent could read (launcher/mcpgate). Not on Windows:
+	// there is no descriptor to hand down, and the MCP bridge does not cover Windows yet.
+	var gateEnd *os.File
+	if runtime.GOOS != "windows" {
+		if gate, w, err := mcpgate.New("http://" + addr); err != nil {
+			log.Print("mcp gate: ", err)
+		} else {
+			gateEnd = w
+			srv.ExtraFiles = []*os.File{w}
+			srv.Env = append(srv.Env, gate.Env()...)
+			go gate.Serve()
+		}
+	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr
 	setProcessGroup(srv)
 	bootStart := time.Now()
 	if err := srv.Start(); err != nil {
 		log.Fatal(err)
+	}
+	if gateEnd != nil {
+		gateEnd.Close() //nolint:errcheck // frankenphp holds its own copy now
 	}
 	stop := func() { stopProcessGroup(srv.Process) }
 	defer stop()

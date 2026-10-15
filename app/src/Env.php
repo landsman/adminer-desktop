@@ -24,6 +24,15 @@ enum Env: string {
 	* already opens it; unset when app/ is served without the launcher. */
 	case Logs = 'ADMINER_DESKTOP_LOGS';
 
+	/** host:port of the launcher's MCP gate (launcher/mcpgate), where the handshake sends an agent.
+	* Unset without the launcher, and then there is no MCP: nothing holds the session to lend. */
+	case McpGate = 'ADMINER_DESKTOP_MCP_GATE';
+	/** The token the gate asks the bridge for. Opens the MCP endpoint and nothing else, so it may
+	* sit in mcp.json; it keeps out a web page posting to loopback, which cannot read that file. */
+	case McpToken = 'ADMINER_DESKTOP_MCP_TOKEN';
+	/** The descriptor the gate hears the window's session on (Mcp\Endpoint::report()). */
+	case SessionFd = 'ADMINER_DESKTOP_SESSION_FD';
+
 	/** The launcher's build version, `git describe --tags --always --dirty` from the Makefile:
 	* a tag, a tag with commits past it (beta-v0.7.2-15-gaa1715f), or "dev". Unset when app/ is
 	* served without the launcher. See Desktop\AppVersion. */

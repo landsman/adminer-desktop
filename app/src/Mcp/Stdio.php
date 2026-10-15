@@ -10,7 +10,8 @@ use Desktop\I18n\Strings;
 * MCP's stdio transport expects to *start* its server as a child process. This app is already
 * running, on a port the launcher picks fresh every start, so nothing an agent spawns could know
 * where to reach it. This class is the piece in between: per message it reads the handshake for
-* the current URL and session cookies, forwards the message there, and writes the answer back.
+* the gate's current URL and token, forwards the message there, and writes the answer back. It
+* never holds the window's session; the gate adds that (launcher/mcpgate).
 *
 * Per message, not once at startup, because the agent may have spawned us before the app was
 * running and will certainly outlive a restart of it.
@@ -22,10 +23,10 @@ use Desktop\I18n\Strings;
 class Stdio {
 	private Handshake $handshake;
 
-	/** @var callable(string,string,array<string,string>):(string|false) */
+	/** @var callable(string,string,string):(string|false) */
 	private $send;
 
-	/** @param (callable(string,string,array<string,string>):(string|false))|null $send url, body, cookies */
+	/** @param (callable(string,string,string):(string|false))|null $send url, body, token */
 	function __construct(?Handshake $handshake = null, ?callable $send = null) {
 		$this->handshake = $handshake ?? new Handshake();
 		$this->send = $send ?? [$this, 'post'];
@@ -65,7 +66,7 @@ class Stdio {
 			return $this->unavailable($id, $method, Strings::t('mcp.agent_not_running'));
 		}
 		$url = $config['url'] . (str_contains($config['url'], '?') ? '&' : '?') . 'mcp=1';
-		$body = ($this->send)($url, $line, $config['cookies']);
+		$body = ($this->send)($url, $line, $config['token']);
 
 		if ($body === false) {
 			return $this->unavailable($id, $method, Strings::t('mcp.agent_window_closed'));
@@ -81,19 +82,14 @@ class Stdio {
 		return $body;
 	}
 
-	/** POST one message to the window, with the session's cookies.
+	/** POST one message to the launcher's gate, with its token. The gate adds the session.
 	*
-	* @param array<string,string> $cookies
 	* @return string|false
 	*/
-	private function post(string $url, string $body, array $cookies) {
-		$pairs = [];
-		foreach ($cookies as $name => $value) {
-			$pairs[] = rawurlencode((string) $name) . '=' . rawurlencode($value);
-		}
+	private function post(string $url, string $body, string $token) {
 		$context = stream_context_create(['http' => [
 			'method' => 'POST',
-			'header' => ['Content-Type: application/json', 'Cookie: ' . implode('; ', $pairs)],
+			'header' => ['Content-Type: application/json', "Authorization: Bearer $token"],
 			'content' => $body,
 			'timeout' => 60,
 			'ignore_errors' => true, // read the body of a 4xx/5xx rather than turning it into false

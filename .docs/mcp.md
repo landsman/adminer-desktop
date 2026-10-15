@@ -118,8 +118,14 @@ pointer rather than just declining to honour it.
 ## What is stored, and where
 
 While the feature is on and you are logged in, the app keeps a small `mcp.json` beside your
-settings holding the address of the running window and its session cookies, readable only by
-your account (mode 600). That file is how the agent finds the window and borrows its login.
+settings (mode 600) holding the address of the app's MCP gate, a token for it, and which
+connection the window is on. That file is how the agent finds the window.
 
-**No database password is ever written to it.** The agent gets the session you already have, for
-as long as you have it: close the window or log out and the access goes with it.
+**Nothing in it unlocks a password, and the session never leaves the app.** Adminer keeps your
+database passwords in its session, encrypted with a key in a cookie — so that cookie and the
+session id are exactly what an agent must not have, and the agent runs as you: file permissions
+keep out other accounts, not it. The launcher holds the session in memory and adds it to each
+call that comes through the gate; the token opens the MCP endpoint and no other page. Close the
+window or log out and the access goes with it.
+
+The gate is the launcher's, so served without it (`make serve`) there is no MCP at all.
