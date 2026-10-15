@@ -290,6 +290,9 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 		&& ! echo "$$out" | grep -q undefined && echo "e2e steps ok" || { echo "$$out"; exit 1; }
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
+	@# The MCP gate decides what reaches the window's session, so its refusals are tested here,
+	@# with no server. The only Go package with tests; ./... would only rebuild the cgo launcher.
+	go test ./launcher/mcpgate/
 	@# Every darwin-only function needs a non-darwin definition, or the build breaks on
 	@# linux and windows only -- a CI round trip away rather than a compile away. That is
 	@# either a shared stub in menu_other.go, or a platform split (a real *_linux.go and a
