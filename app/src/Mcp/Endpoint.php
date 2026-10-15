@@ -51,7 +51,7 @@ class Endpoint {
 			// Off, or turned off since the last run: a handshake left on disk, or a session left
 			// with the gate, would still let an agent in, so retract both rather than ignore them.
 			$this->handshake->clear();
-			$this->report('');
+			$this->report('', '');
 			return null;
 		}
 		$connected = \Adminer\driver() !== null;
@@ -62,7 +62,7 @@ class Endpoint {
 		$token = Env::McpToken->get();
 		$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
 		if ($url !== null && $token !== false && $token !== '') {
-			$this->report($this->cookie());
+			$this->report($this->cookie(), self::at($url));
 			$this->handshake->write($url, $token, $this->target());
 		}
 		if (!isset($_GET["mcp"])) {
@@ -86,18 +86,26 @@ class Endpoint {
 		exit;
 	}
 
-	/** Tell the gate which session an agent's call may borrow, over its unix socket: only the
-	* launcher reads it, and nothing is ever sent back (launcher/mcpgate). One connection per
-	* report, so two requests reporting at once cannot interleave.
+	/** Where the MCP endpoint is for a connection's URL: the bridge posts there, and the gate sends
+	* every call there whatever path it came in on.
 	*/
-	private function report(string $cookie): void {
+	static function at(string $url): string {
+		return $url . (str_contains($url, '?') ? '&' : '?') . 'mcp=1';
+	}
+
+	/** Tell the gate which session an agent's call may borrow, and the one endpoint it may borrow
+	* it for, over its unix socket: only the launcher reads it, and nothing is ever sent back
+	* (launcher/mcpgate). One connection per report, so two requests reporting at once cannot
+	* interleave.
+	*/
+	private function report(string $cookie, string $endpoint): void {
 		$socket = Env::McpReport->get();
 		if ($socket === false || $socket === '') {
 			return;
 		}
 		$gate = @stream_socket_client("unix://$socket", $errno, $error, 1);
 		if ($gate !== false) {
-			@fwrite($gate, json_encode(['cookie' => $cookie]) . "\n");
+			@fwrite($gate, json_encode(['cookie' => $cookie, 'endpoint' => $endpoint]) . "\n");
 			fclose($gate);
 		}
 	}

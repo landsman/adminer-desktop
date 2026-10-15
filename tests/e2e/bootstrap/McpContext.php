@@ -133,8 +133,9 @@ class McpContext implements Context
 	}
 
 	/** A web page can post to loopback too; it cannot read mcp.json, so it has no token. And the
-	 * token must not open a page of adminer with the window's session behind it. */
-	#[Then('the gate refuses a call without the token, and anything but the MCP endpoint with it')]
+	 * token must not open a page of adminer with the window's session behind it: ?download=
+	 * answers before the hook that answers ?mcp=1, so mcp=1 in the query proves nothing. */
+	#[Then('the gate refuses a call without the token, and with it opens nothing but the MCP endpoint')]
 	public function gateRefuses(): void
 	{
 		$handshake = $this->readHandshake();
@@ -143,21 +144,37 @@ class McpContext implements Context
 		$cases = [
 			'no token' => [$url . '&mcp=1', ''],
 			'a wrong token' => [$url . '&mcp=1', str_repeat('0', strlen($token))],
-			'a page, not the endpoint' => [$url . '&select=users', $token],
 		];
 		foreach ($cases as $what => [$to, $bearer]) {
-			$context = stream_context_create(['http' => [
-				'method' => 'POST',
-				'header' => ['Content-Type: application/json', "Authorization: Bearer $bearer"],
-				'content' => $this->request(),
-				'ignore_errors' => true,
-			]]);
-			@file_get_contents($to, false, $context);
+			$this->postToGate($to, $bearer);
 			$status = (string) (http_get_last_response_headers()[0] ?? '');
 			if (!str_contains($status, ' 403 ')) {
 				throw new RuntimeException("the gate let through $what: $status");
 			}
 		}
+		// The same download straight at the app, with the session, is what proves the request
+		// would hand out a column if the gate passed its path on.
+		$download = e2e_url($this->fix, ['download' => 'users', 'field' => 'email', 'where' => ['id' => 1]]);
+		if (!str_contains($this->get($download), 'anna@example.com')) {
+			throw new RuntimeException('the download reads no column even with the session, so this proves nothing');
+		}
+		$app = '127.0.0.1:' . parse_url((string) $this->fix['base'], PHP_URL_PORT);
+		$gate = '127.0.0.1:' . parse_url($url, PHP_URL_PORT);
+		$answer = $this->postToGate(str_replace($app, $gate, $download) . '&mcp=1', $token);
+		if (str_contains($answer, 'anna@example.com') || !str_starts_with($answer, '{')) {
+			throw new RuntimeException('the gate opened a page of adminer with the token: ' . substr($answer, 0, 200));
+		}
+	}
+
+	private function postToGate(string $url, string $token): string
+	{
+		$context = stream_context_create(['http' => [
+			'method' => 'POST',
+			'header' => ['Content-Type: application/json', "Authorization: Bearer $token"],
+			'content' => $this->request(),
+			'ignore_errors' => true,
+		]]);
+		return (string) @file_get_contents($url, false, $context);
 	}
 
 	/** Adminer keeps the passwords in the session, encrypted with the adminer_key cookie, so the

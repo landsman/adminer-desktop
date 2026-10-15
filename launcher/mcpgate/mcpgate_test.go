@@ -10,12 +10,18 @@ import (
 	"time"
 )
 
-// gate in front of a fake frankenphp that records the Cookie header of every call it gets.
+// What PHP reports for a window logged in to demo, and where that sends a call.
+const (
+	endpoint = "/adminer.php?pgsql=x&username=u&db=demo&mcp=1"
+	session  = `{"cookie":"adminer_sid=s; adminer_key=k","endpoint":"http://127.0.0.1:1` + endpoint + `"}`
+)
+
+// gate in front of a fake frankenphp that records what every call it gets asks for, and as whom.
 func gate(t *testing.T) (*Gate, *[]string) {
 	t.Helper()
 	seen := &[]string{}
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		*seen = append(*seen, r.Header.Get("Cookie"))
+		*seen = append(*seen, r.URL.RequestURI()+" "+r.Header.Get("Cookie"))
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"ok":true}`) //nolint:errcheck
 	}))
@@ -46,15 +52,18 @@ func report(g *Gate, line string) {
 // Everything the token is not for is refused before frankenphp sees it: no session goes out.
 func TestRefuses(t *testing.T) {
 	g, seen := gate(t)
-	report(g, `{"cookie":"adminer_sid=s; adminer_key=k"}`)
+	unreported, _ := gate(t)
+	report(g, session)
 	cases := map[string]func() *httptest.ResponseRecorder{
+		"nothing reported yet": func() *httptest.ResponseRecorder {
+			return call(unreported, "POST", "/adminer.php?mcp=1", unreported.token)
+		},
 		"no token": func() *httptest.ResponseRecorder { return call(g, "POST", "/adminer.php?mcp=1", "") },
 		"wrong token": func() *httptest.ResponseRecorder {
 			return call(g, "POST", "/adminer.php?mcp=1", strings.Repeat("0", 64))
 		},
-		"token prefix":     func() *httptest.ResponseRecorder { return call(g, "POST", "/adminer.php?mcp=1", g.token[:10]) },
-		"not the endpoint": func() *httptest.ResponseRecorder { return call(g, "POST", "/adminer.php?select=users", g.token) },
-		"a GET":            func() *httptest.ResponseRecorder { return call(g, "GET", "/adminer.php?mcp=1", g.token) },
+		"token prefix": func() *httptest.ResponseRecorder { return call(g, "POST", "/adminer.php?mcp=1", g.token[:10]) },
+		"a GET":        func() *httptest.ResponseRecorder { return call(g, "GET", "/adminer.php?mcp=1", g.token) },
 		"a rebound host": func() *httptest.ResponseRecorder {
 			r := httptest.NewRequest("POST", "/adminer.php?mcp=1", nil)
 			r.Host = "evil.example:80"
@@ -74,20 +83,45 @@ func TestRefuses(t *testing.T) {
 	}
 }
 
-// With the token, the call reaches frankenphp carrying the reported session, and only then.
+// With the token, the call reaches frankenphp carrying the reported session, and only while one
+// is reported.
 func TestLendsTheReportedSession(t *testing.T) {
 	g, seen := gate(t)
+	report(g, session)
+	report(g, `not json`) // dropped, the session stays
 	if w := call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token); w.Code != 200 || w.Body.String() != `{"ok":true}` {
 		t.Fatalf("got %d %q", w.Code, w.Body.String())
 	}
-	report(g, `{"cookie":"adminer_sid=s; adminer_key=k"}`)
-	report(g, `not json`) // dropped, the session stays
-	call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token)
-	report(g, `{"cookie":""}`) // switched off
-	call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token)
-	want := []string{"", "adminer_sid=s; adminer_key=k", ""}
+	report(g, `{"cookie":"","endpoint":""}`) // switched off
+	if w := call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token); w.Code != http.StatusForbidden {
+		t.Errorf("switched off: got %d, want 403", w.Code)
+	}
+	want := []string{endpoint + " adminer_sid=s; adminer_key=k"}
 	if strings.Join(*seen, "|") != strings.Join(want, "|") {
-		t.Errorf("frankenphp saw cookies %q, want %q", *seen, want)
+		t.Errorf("frankenphp saw %q, want %q", *seen, want)
+	}
+}
+
+// Whatever the call asks for, frankenphp is asked for the endpoint PHP reported. Adminer answers
+// ?download= before the hook that answers ?mcp=1 runs, so passing the path on handed any column,
+// with the window's session, to a token meant to open the MCP endpoint only.
+func TestOpensOnlyTheReportedEndpoint(t *testing.T) {
+	g, seen := gate(t)
+	report(g, session)
+	for _, target := range []string{
+		"/adminer.php?pgsql=x&username=u&db=demo&download=users&field=email&where%5Bid%5D=1&mcp=1",
+		"/adminer.php?select=users",
+		"/api.php?action=resize",
+	} {
+		call(g, "POST", target, g.token)
+	}
+	if len(*seen) != 3 {
+		t.Fatalf("frankenphp was called %d times, want 3", len(*seen))
+	}
+	for _, s := range *seen {
+		if !strings.HasPrefix(s, endpoint+" ") {
+			t.Errorf("frankenphp was asked for %q, want only %q", s, endpoint)
+		}
 	}
 }
 
@@ -99,13 +133,13 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	io.WriteString(c, `{"cookie":"adminer_sid=s"}`+"\n") //nolint:errcheck
-	c.Close()                                            //nolint:errcheck
+	io.WriteString(c, session+"\n") //nolint:errcheck
+	c.Close()                       //nolint:errcheck
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
 		g.mu.Lock()
 		got := g.cookie
 		g.mu.Unlock()
-		if got == "adminer_sid=s" {
+		if got == "adminer_sid=s; adminer_key=k" {
 			return
 		}
 	}
