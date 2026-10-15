@@ -13,14 +13,15 @@ use Desktop\I18n\Strings;
 *
 * Two limits are the point of the class rather than details of it:
 *
-* Reads are wrapped in a transaction that is always rolled back, so a statement that turns out
-* to write leaves nothing behind. That is the database refusing, not us guessing: the
-* alternative — scanning the SQL for INSERT and friends — is a blocklist, and a blocklist that
-* has to be right about CTEs, stored procedures and five dialects is one that is wrong.
-* ponytail: rollback, not a read-only transaction. `BEGIN READ ONLY` says so up front but is
-* spelled differently per driver, and DDL still auto-commits on MySQL either way. If writes
-* ever need to be genuinely impossible rather than merely undone, the honest fix is connecting
-* as a read-only role, not more SQL.
+* Reads go through adminer's own guard for untrusted SQL where the driver has one — postgres:
+* one statement, inside BEGIN READ ONLY — and are otherwise wrapped in a transaction that is
+* always rolled back. Either way it is the database refusing, not us guessing: the alternative —
+* scanning the SQL for INSERT and friends — is a blocklist, and a blocklist that has to be right
+* about CTEs, stored procedures and five dialects is one that is wrong.
+* Neither is the boundary. A superuser runs a program on the server inside BEGIN READ ONLY
+* (COPY … TO PROGRAM), and DDL auto-commits on MySQL. What makes a write or a takeover
+* impossible is the login: a role with SELECT and nothing else (features/shell/mcp.feature
+* asserts that one refuses).
 *
 * And every result is capped. An agent that asks for a million rows should get a page and a
 * note saying so, because the row it needed is nearly always in the first few and the rest is
@@ -40,6 +41,9 @@ class Tools {
 
 	/** Rows returned before we stop and say there were more. */
 	private const int MAX_ROWS = 200;
+
+	/** The drivers whose query() honours SqlDb::$untrusted (drivers/pgsql.inc.php). */
+	private const array UNTRUSTED_DRIVERS = ['pgsql'];
 
 	/** Cells are truncated at this many characters unless the caller asks for whole_values — a
 	* BLOB column should not be able to push the useful columns out of the answer. */
@@ -124,7 +128,15 @@ class Tools {
 		// begin()/rollback() are Driver methods, not free functions like most of adminer's API —
 		// each driver spells the statement itself (BEGIN, START TRANSACTION, …).
 		$driver = \Adminer\driver();
-		$began = (bool) $driver->begin();
+		// Adminer's guard for SQL it did not write, where the driver has one: on postgres a single
+		// statement over the extended protocol inside BEGIN READ ONLY, so a smuggled `COMMIT; …`
+		// is refused instead of run after our rollback stopped covering it. It opens and closes
+		// that transaction itself, and ours must stay out of the way: nested, its READ ONLY is
+		// only a warning and its COMMIT commits ours. Elsewhere it changes nothing and ours stays —
+		// mysqli runs one statement per query() regardless.
+		$guarded = !$this->write && in_array(\Adminer\DRIVER, self::UNTRUSTED_DRIVERS, true);
+		\Adminer\SqlDb::$untrusted = $guarded;
+		$began = !$guarded && (bool) $driver->begin();
 		try {
 			$result = $connection->query($sql);
 			if ($result === false || $result === true) {
@@ -158,7 +170,8 @@ class Tools {
 					+ ($cut === [] ? [] : ['truncated_note' => Strings::t('mcp.agent_note_cut')]);
 		} finally {
 			// finally, not after the return: a query that throws must still not leave a
-			// transaction open on the connection the user is browsing in.
+			// transaction open on the connection the user is browsing in, nor the guard on.
+			\Adminer\SqlDb::$untrusted = false;
 			if ($began) {
 				// commit() only when the user asked for it. Note the transaction wraps the
 				// statement either way: with writes on this is an ordinary commit, with them

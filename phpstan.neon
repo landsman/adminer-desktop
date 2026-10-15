@@ -38,6 +38,12 @@ parameters:
     # treats the superglobal as open-keyed, so an access is never "possibly undefined".
     level: 6
 
+    # Defined once per request by whichever driver the URL names; phpstan otherwise takes the
+    # first define() in adminer.php ("pgsql") for the only value and calls every check of it
+    # always true.
+    dynamicConstantNames:
+        - Adminer\DRIVER
+
     # phpstan's workers shell out to a `php` binary, and there is deliberately no PHP
     # installed here — we run it through the frankenphp we already download. One process
     # keeps it in-process, and there are too few files for parallelism to buy anything.

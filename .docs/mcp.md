@@ -52,14 +52,35 @@ shared prompt can refer to.
 | `preview_table_data` | the first rows of a table |
 | `execute_query` | run a read-only query |
 
-`execute_query` runs inside a transaction that is **always rolled back**, so a statement that
-turns out to write leaves nothing behind — that is the database refusing, not us reading the SQL
-and guessing. Results are capped at 200 rows and long values are truncated, so one wide column
-cannot crowd out the answer.
+`execute_query` goes through Adminer's own guard for SQL it did not write. On PostgreSQL that is
+**one statement, inside a read-only transaction**: a write is refused, and so is a second
+statement smuggled in after a `COMMIT;`. On the other databases the statement runs inside a
+transaction that is **always rolled back** (MySQL runs one statement per call anyway). Either way
+it is the database refusing, not us reading the SQL and guessing. Results are capped at 200 rows
+and long values are truncated, so one wide column cannot crowd out the answer.
 
-One caveat worth knowing: rollback undoes data changes, but some databases commit a schema
-change (`CREATE TABLE`, `ALTER TABLE`) immediately, so on those it cannot be undone. If you want
-writes to be *impossible* rather than undone, log the window in as a read-only database user.
+**None of that is the boundary — the login is.** A superuser still runs a program on the
+database server inside a read-only transaction (`COPY … TO PROGRAM`), reads its files
+(`pg_read_file`) and the password hashes (`pg_authid`), and MySQL commits a schema change
+(`CREATE TABLE`, `ALTER TABLE`) immediately. Log the window in as a role that can only read:
+
+```sql
+-- PostgreSQL
+CREATE ROLE agent LOGIN PASSWORD '…';
+GRANT CONNECT ON DATABASE app TO agent;
+GRANT USAGE ON SCHEMA public TO agent;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO agent;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO agent;
+
+-- MySQL / MariaDB: no FILE, no SUPER, nothing on mysql.*
+CREATE USER 'agent'@'%' IDENTIFIED BY '…';
+GRANT SELECT ON app.* TO 'agent'@'%';
+```
+
+Check it by having the agent try a `DELETE` and a `DROP`: both must fail with a permission
+error. Leave out of the grants any table or column holding secrets of your own users (password
+hashes, tokens, API keys) — a role that can read a table can read all of it. Refusing a superuser
+login outright is [#145](https://github.com/landsman/adminer-desktop/issues/145).
 
 ## Answers you might get instead
 

@@ -23,6 +23,11 @@ use Symfony\Component\Process\Process;
 
 const E2E_DATABASE = 'demo';
 
+/** A second login and a second database on the postgres server (seed/pgsql.sql): a SELECT-only
+ * role, so a scenario has a saved connection besides the window's and a least-privilege one. */
+const E2E_READER = 'reader';
+const E2E_SECOND_DATABASE = 'inventory';
+
 /** What each driver is called, how to start it and how to log into it.
  *
  * `key` is what Adminer calls the driver in the URL and in the login form, which is not always
