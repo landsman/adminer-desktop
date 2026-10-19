@@ -112,6 +112,7 @@ return [
 	'mcp.agent_note_cut' => 'Wartości wymienione w truncated_cells zostały obcięte, aby jedna duża kolumna nie zapełniła kontekstu. Jeśli potrzebujesz ich w całości, wywołaj ponownie z whole_values: true.',
 	'mcp.agent_note_no_database' => 'W oknie nie jest otwarta żadna baza danych, więc narzędzia działają w domyślnej bazie serwera, jeśli taką ma. Aby odpytać konkretną bazę, przekaż ją jako database: wymienia je list_databases.',
 	'mcp.agent_unknown_connection' => 'To nie jest zalogowane zapisane połączenie. Wymienia je list_connections; niezalogowane trzeba najpierw otworzyć w oknie Adminer Desktop',
+	'mcp.agent_forward_failed' => 'Adminer Desktop nie obsłużył wywołania na tym połączeniu. Problem nie leży w połączeniu: przyczyna jest w logu aplikacji',
 	'mcp.agent_no_database' => 'Nie udało się otworzyć bazy danych przy tym logowaniu',
 	'mcp.agent_no_result' => 'instrukcja nie zwróciła zbioru wyników',
 	'mcp.agent_parse_error' => 'błąd parsowania',

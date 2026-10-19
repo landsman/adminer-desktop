@@ -112,6 +112,7 @@ return [
 	'mcp.agent_note_cut' => 'Valorile enumerate în truncated_cells au fost trunchiate pentru ca o singură coloană mare să nu îți umple contextul. Apelează din nou cu whole_values: true dacă ai nevoie de ele întregi.',
 	'mcp.agent_note_no_database' => 'Fereastra nu are nicio bază de date deschisă, așa că instrumentele rulează în baza de date implicită a serverului, dacă are una. Pentru a interoga o anumită bază de date, transmiteți-o ca database: list_databases le enumeră.',
 	'mcp.agent_unknown_connection' => 'Nu este o conexiune salvată autentificată. list_connections le enumeră; una neautentificată trebuie mai întâi deschisă în fereastra Adminer Desktop',
+	'mcp.agent_forward_failed' => 'Adminer Desktop nu a putut răspunde la apel pe această conexiune. Nu conexiunea este problema: cauza se află în jurnalul aplicației',
 	'mcp.agent_no_database' => 'Baza de date nu a putut fi deschisă cu această autentificare',
 	'mcp.agent_no_result' => 'instrucțiunea nu a returnat niciun set de rezultate',
 	'mcp.agent_parse_error' => 'eroare de analiză',

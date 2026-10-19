@@ -41,7 +41,9 @@ class Endpoint {
 	private RequestLog $log;
 	private ?Connections $connections;
 
-	/** The ?mcp= value of a call passed on from another request, which has logged it already. */
+	/** The ?mcp= value of a call passed on from another request, which has logged it already.
+	* Anyone may set it, and that is fine: the gate sends an agent only to ?mcp=1, and a caller
+	* reaching this server directly with the window's cookies holds the whole session anyway. */
 	private const string FORWARDED = 'forwarded';
 
 	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null, ?Connections $connections = null) {
@@ -50,8 +52,12 @@ class Endpoint {
 		$this->connections = $connections;
 		// Never on a connection marked Prod, whatever the setting says: the agent picks its own
 		// connection now, and one switch should not reach every database the user is signed in to.
-		$write = (bool) $settings->get(SettingKey::McpWrite, false) && $connections?->current()?->environment !== Environment::Prod;
-		$this->server = $server ?? new Server(new Tools($write, (bool) $settings->get(SettingKey::McpWholeValues, false), $connections), (bool) $settings->get(SettingKey::McpWrite, false), (bool) $settings->get(SettingKey::McpWholeValues, false));
+		$allowed = (bool) $settings->get(SettingKey::McpWrite, false);
+		$write = $allowed && $connections?->current()?->environment !== Environment::Prod;
+		$whole = (bool) $settings->get(SettingKey::McpWholeValues, false);
+		// The description takes the setting itself, not $write: it covers every connection the agent
+		// may name, and states the Prod exception in words.
+		$this->server = $server ?? new Server(new Tools($write, $whole, $connections), $allowed, $whole);
 		$this->activity = $activity ?? new Activity();
 		$this->log = $log ?? new RequestLog();
 	}
@@ -259,7 +265,7 @@ class Endpoint {
 	* any name — adminer opens it with the same login, or the check in answer() says it could not.
 	*
 	* @param array<mixed> $request
-	* @return array{string,string}|null url, body
+	* @return array{string,string,string}|null url, body, the connection's id
 	* @throws McpError
 	*/
 	private function elsewhere(array $request): ?array {
@@ -287,7 +293,7 @@ class Endpoint {
 		unset($args['connection'], $args['database']);
 		$request['params']['arguments'] = $args === [] ? new \stdClass() : $args;
 		$script = str_replace("\\", "/", (string) ($_SERVER["SCRIPT_NAME"] ?? "/adminer.php"));
-		return ['http://' . $_SERVER["HTTP_HOST"] . $script . '?' . http_build_query($query), (string) json_encode($request)];
+		return ['http://' . $_SERVER["HTTP_HOST"] . $script . '?' . http_build_query($query), (string) json_encode($request), $key];
 	}
 
 	/** Send the call on to the request that can answer it, with this window's session.
@@ -295,23 +301,29 @@ class Endpoint {
 	* Straight to this server rather than back through the gate: the gate opens one endpoint, the
 	* window's, and the session is right here in this request's cookies. Adminer released the
 	* session's lock before any hook ran (auth.inc.php, stop_session()), so the second request does
-	* not wait on this one.
+	* not wait on this one. It does need a free PHP thread, so the timeout stays under the bridge's
+	* 60 s (Stdio::post()): a call stuck behind busy threads reaches the agent as this error.
 	*
 	* @throws McpError
 	*/
-	private function forward(string $url, string $body): string {
+	private function forward(string $url, string $body, string $key): string {
 		$context = stream_context_create(['http' => [
 			'method' => 'POST',
 			'header' => ['Content-Type: application/json', 'Cookie: ' . $this->cookie()],
 			'content' => $body,
-			'timeout' => 60,
+			'timeout' => 50,
 			'follow_location' => 0,
 			'ignore_errors' => true,
 		]]);
 		$answer = @file_get_contents($url, false, $context);
-		if (!is_string($answer) || ($answer !== '' && $answer[0] !== '{')) {
+		$status = (string) (http_get_last_response_headers()[0] ?? '');
+		// No answer, or PHP failing: the connection is fine, so do not send the user to sign in.
+		if (!is_string($answer) || preg_match('~^HTTP/\S+ 5~', $status)) {
+			throw new McpError(Strings::t('mcp.agent_forward_failed') . ": $key" . ($status !== '' ? " ($status)" : ''));
+		}
+		if ($answer !== '' && $answer[0] !== '{') {
 			// Adminer's login page: the password the list said it held did not open it.
-			throw new McpError(Strings::t('mcp.agent_unknown_connection') . ': ' . (string) parse_url($url, PHP_URL_QUERY));
+			throw new McpError(Strings::t('mcp.agent_unknown_connection') . ": $key");
 		}
 		return $answer;
 	}

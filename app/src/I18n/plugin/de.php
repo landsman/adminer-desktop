@@ -112,6 +112,7 @@ return [
 	'mcp.agent_note_cut' => 'Die in truncated_cells aufgeführten Werte wurden gekürzt, damit eine große Spalte nicht Ihren Kontext füllt. Rufen Sie erneut mit whole_values: true auf, wenn Sie sie vollständig brauchen.',
 	'mcp.agent_note_no_database' => 'Im Fenster ist keine Datenbank geöffnet, daher laufen die Werkzeuge in der Standarddatenbank des Servers, sofern er eine hat. Um eine bestimmte Datenbank abzufragen, übergeben Sie sie als database: list_databases nennt sie.',
 	'mcp.agent_unknown_connection' => 'Keine angemeldete gespeicherte Verbindung. list_connections nennt sie; eine nicht angemeldete muss zuerst im Fenster von Adminer Desktop geöffnet werden',
+	'mcp.agent_forward_failed' => 'Adminer Desktop konnte den Aufruf auf dieser Verbindung nicht beantworten. An der Verbindung liegt es nicht: Die Ursache steht im Log der App',
 	'mcp.agent_no_database' => 'Die Datenbank konnte mit dieser Anmeldung nicht geöffnet werden',
 	'mcp.agent_no_result' => 'die Anweisung lieferte keine Ergebnismenge',
 	'mcp.agent_parse_error' => 'Parse-Fehler',

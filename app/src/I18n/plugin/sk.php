@@ -112,6 +112,7 @@ return [
 	'mcp.agent_note_cut' => 'Hodnoty uvedené v truncated_cells boli skrátené, aby jeden veľký stĺpec nezaplnil váš kontext. Ak ich potrebujete celé, zavolajte znova s whole_values: true.',
 	'mcp.agent_note_no_database' => 'Okno nemá otvorenú žiadnu databázu, takže nástroje bežia vo východiskovej databáze servera, ak nejakú má. Ak sa chcete dotazovať konkrétnej databázy, odovzdajte ju ako database: vypisuje ich list_databases.',
 	'mcp.agent_unknown_connection' => 'Nie je to prihlásené uložené pripojenie. Vypisuje ich list_connections; neprihlásené treba najprv otvoriť v okne Adminer Desktopu',
+	'mcp.agent_forward_failed' => 'Adminer Desktop na tomto pripojení volanie nevybavil. Pripojenie za to nemôže, príčinu nájdete v logu aplikácie',
 	'mcp.agent_no_database' => 'Databázu sa s týmto prihlásením nepodarilo otvoriť',
 	'mcp.agent_no_result' => 'príkaz nevrátil žiadnu výsledkovú množinu',
 	'mcp.agent_parse_error' => 'chyba pri parsovaní',
