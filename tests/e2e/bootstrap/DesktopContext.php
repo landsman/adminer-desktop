@@ -1333,17 +1333,14 @@ class DesktopContext implements Context
 		$this->submitLogin(e2e_slow_server(), 'any');
 	}
 
-	/** Shown, past its fade-in, and turning, while the page still waits on the login. */
+	/** Shown, past its fade-in, and turning, while the page still waits on the login: as the
+	 * page it left saw it (submitLogin()), so it holds whether this reads that page or the answer. */
 	#[Then('the activity indicator turns while it waits')]
 	public function indicatorTurns(): void
 	{
 		$this->page->waitForFunction(
 			// language=JavaScript
-			'() => {
-				const busy = document.querySelector("#ad-busy:popover-open");
-				return window.e2eSubmitted && busy && getComputedStyle(busy).opacity === "1"
-					&& busy.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running");
-			}',
+			'() => sessionStorage.getItem("e2e-busy-turned") === "1"',
 		);
 	}
 
@@ -2186,6 +2183,10 @@ class DesktopContext implements Context
 
 	/** Fill the new connection as this driver's user and send it, marking the page it leaves
 	 * (window.e2eSubmitted) so a step can tell the answer from the form.
+	 *
+	 * The page it leaves also watches its own indicator, on a timer, and notes in sessionStorage
+	 * once it turns: polled from the test instead, a page already navigating away was missed on a
+	 * CI runner now and then, the wait then ran into the answer, and the step timed out.
 	 */
 	private function submitLogin(string $server, string $password): void
 	{
@@ -2208,7 +2209,19 @@ class DesktopContext implements Context
 		}
 		$this->page->evaluate(
 			// language=JavaScript
-			'() => { window.e2eSubmitted = true; document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit(); }',
+			'() => {
+				sessionStorage.removeItem("e2e-busy-turned");
+				const watch = setInterval(() => {
+					const busy = document.querySelector("#ad-busy:popover-open");
+					if (busy && getComputedStyle(busy).opacity === "1"
+						&& busy.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running")) {
+						sessionStorage.setItem("e2e-busy-turned", "1");
+						clearInterval(watch);
+					}
+				}, 50);
+				window.e2eSubmitted = true;
+				document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit();
+			}',
 		);
 	}
 
