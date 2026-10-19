@@ -335,7 +335,7 @@ dialog#desktop-settings p.message {
 	box-sizing: border-box;
 	font-family: var(--ad-mono, ui-monospace, monospace);
 	font-size: 0.9em;
-	resize: vertical;
+	margin: 0;
 	white-space: pre-wrap;
 	word-break: break-all;
 	background: var(--bg);
@@ -348,6 +348,22 @@ dialog#desktop-settings p.message {
 	   longer grows with a translated label. */
 	padding: 0.7em 3.4em 0.7em 0.8em;
 	line-height: 1.5;
+}
+
+/* The command's parts, in JUSH's colours: .jush on the field defines them, and adminer's
+   dark.css redefines them for the dark scheme, so the field follows the design with no colour
+   of its own. */
+.ad-sh-cmd {
+	color: var(--keyword-color);
+	font-weight: 600;
+}
+
+.ad-sh-flag {
+	color: var(--attribute-color);
+}
+
+.ad-sh-str {
+	color: var(--string-plain-color);
 }
 
 /* Icon only: square, and large enough to be an easy target on a touchpad. The label is the

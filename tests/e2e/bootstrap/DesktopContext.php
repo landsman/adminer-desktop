@@ -2494,8 +2494,8 @@ class DesktopContext implements Context
 	{
 		$shown = (string) $this->page->evaluate(
 			// language=JavaScript
-			"() => [...document.querySelectorAll('.ad-mcp-register textarea')]
-				.filter((t) => t.checkVisibility()).map((t) => t.value).join('\\n')",
+			"() => [...document.querySelectorAll('.ad-mcp-register [data-copy-value]')]
+				.filter((t) => t.checkVisibility()).map((t) => t.textContent).join('\\n')",
 		);
 		if (!str_contains($shown, $command)) {
 			throw new RuntimeException("the register box shows:\n$shown");
