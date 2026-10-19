@@ -198,8 +198,10 @@ rm -f "$PLUGINS"
 PANEL=/tmp/adminer-desktop-panel.html
 curl -s "$BASE/adminer.php" > "$PANEL"
 for AGENT in claude codex gemini; do
-	grep -q "$AGENT mcp add adminer-desktop" "$PANEL" || {
+	grep -Eq "$AGENT mcp add (-s user )?adminer-desktop" "$PANEL" || {
 		echo "FAIL: no register command for $AGENT in the AI-access panel"; exit 1; }
+	grep -Eq "$AGENT mcp remove (-s user )?adminer-desktop" "$PANEL" || {
+		echo "FAIL: no remove command for $AGENT in the AI-access panel"; exit 1; }
 done
 grep -q '@import "toast.css"' app/src/Assets/css/desktop.css || {
 	echo "FAIL: toast.css is not imported, so toasts render unstyled"; exit 1; }

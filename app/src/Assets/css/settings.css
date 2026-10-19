@@ -57,7 +57,8 @@ dialog#desktop-settings p.message {
 /* No JS: hidden radios drive the panels through :has(). A checked radio is also the
    state, so nothing has to be re-applied when the dialog is reopened. */
 
-#desktop-tabs input {
+#desktop-tabs input,
+.ad-subtabs input {
 	position: absolute;
 	opacity: 0;
 	pointer-events: none;
@@ -85,7 +86,8 @@ dialog#desktop-settings p.message {
 	margin-left: calc(-1 * var(--ad-gap-lg));
 }
 
-#desktop-tabs label {
+#desktop-tabs label,
+.ad-subtabs label {
 	display: inline-block;
 	padding: 0.4em var(--ad-gap-lg);
 	cursor: pointer;
@@ -95,28 +97,32 @@ dialog#desktop-settings p.message {
 /* Hover: the tabs are labels, so nothing about them said they were clickable until one was
    already chosen. A quiet underline and the full text colour — enough to answer "is this a
    control", not enough to be mistaken for the active tab, which also carries the weight. */
-#desktop-tabs label:hover {
+#desktop-tabs label:hover,
+.ad-subtabs label:hover {
 	color: var(--fg);
 	border-bottom-color: var(--ad-border);
 	background: color-mix(in srgb, var(--fg) 5%, transparent);
 	border-radius: var(--ad-radius-sm) var(--ad-radius-sm) 0 0;
 }
 
-#desktop-tabs input:checked + label {
+#desktop-tabs input:checked + label,
+.ad-subtabs input:checked + label {
 	border-bottom-color: currentColor;
 	font-weight: bold;
 }
 
 /* ...and the checked tab keeps its own underline while hovered, or pointing at the tab you are
    on makes it look like the tab you are not. */
-#desktop-tabs input:checked + label:hover {
+#desktop-tabs input:checked + label:hover,
+.ad-subtabs input:checked + label:hover {
 	border-bottom-color: currentColor;
 }
 
 /* The ring the hidden radio cannot show, on its label: the underline says which tab is chosen,
    this says where the keyboard is (WCAG 2.4.7). The dialog takes the focus when it opens, not the
    checked tab, so it does not flash on every open. Same ring as the footer buttons. */
-#desktop-tabs input:focus-visible + label {
+#desktop-tabs input:focus-visible + label,
+.ad-subtabs input:focus-visible + label {
 	outline: none;
 	box-shadow: 0 0 0 2px AccentColor;
 	border-radius: var(--ad-radius-sm) var(--ad-radius-sm) 0 0;
@@ -297,9 +303,21 @@ dialog#desktop-settings p.message {
 
 /* The note introducing the commands sits above the first agent, so it is prose in its own
    right rather than a footnote to a control — no indent, and the gap belongs below it. */
-#desktop-panel-mcp .ad-mcp-register > .ad-mcp-note {
+#desktop-panel-mcp .ad-mcp-register .ad-mcp-note {
 	padding-left: 0;
 	margin: 0.2em 0 0;
+}
+
+/* The register box's Add / Remove: the tabs above, smaller, sitting on a rule of their own and
+   pulled left by a label's padding so the first word lines up with the note below. */
+.ad-subtabs {
+	margin: 0.2em 0 0.6em calc(-1 * var(--ad-gap-lg));
+	border-bottom: 1px solid var(--ad-border);
+}
+
+.ad-mcp-register:has(#desktop-mcp-add:checked) .ad-mcp-remove,
+.ad-mcp-register:has(#desktop-mcp-remove:checked) .ad-mcp-add {
+	display: none;
 }
 
 /* --- Copy field (src/Assets/copy-field.latte) ---------------------------------- */
