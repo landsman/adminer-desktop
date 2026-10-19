@@ -17,6 +17,10 @@ int installReloadShortcut(void *nsWindow); // 1 when the monitor was attached
 // of rendering the file into the window. macOS 11.3+.
 int installDownloads(void *nsWindow); // 1 when the download handler was attached
 
+// Let the window's appearance-following background show where WebKit has not painted yet.
+int clearWebViewBackground(void *nsWindow); // 1 when the webview was found
+void setWindowBackground(void *nsWindow, int r, int g, int b); // sRGB, 0-255
+
 const char *describeUIDelegate(void *nsWindow);
 int enableInspector(void *nsWindow); // 1 if the web inspector was turned on
 

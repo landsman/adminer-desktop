@@ -181,6 +181,25 @@ int installReloadShortcut(void *nsWindow) {
 	return 1;
 }
 
+/* A live resize outruns WebKit's relayout, and the strip it has not painted yet shows the
+ * webview's own background: white, even on a dark page. With that background off the window's
+ * shows through instead, and the page hands its colour over (setWindowBackground). Not the
+ * system appearance, which the app can override, nor underPageBackgroundColor, which stays
+ * white here whatever the page paints. */
+int clearWebViewBackground(void *nsWindow) {
+	WKWebView *webView = findWebView([(NSWindow *) nsWindow contentView]);
+	if (!webView) {
+		return 0;
+	}
+	[webView setValue:@NO forKey:@"drawsBackground"];
+	return 1;
+}
+
+void setWindowBackground(void *nsWindow, int r, int g, int b) {
+	[(NSWindow *) nsWindow setBackgroundColor:[NSColor colorWithSRGBRed:r / 255.0
+		green:g / 255.0 blue:b / 255.0 alpha:1]];
+}
+
 /* Safari's Web Inspector against the app's page: Develop > <machine> > Adminer Desktop.
  * Without it there is no console and no way to see a JavaScript error, which is how a
  * confirm() that never fired stayed invisible for as long as it did.

@@ -104,6 +104,16 @@ func installReloadShortcut(window unsafe.Pointer) {
 	C.installReloadShortcut(window)
 }
 
+// clearWebViewBackground stops the white strip a fast resize shows in dark mode.
+func clearWebViewBackground(window unsafe.Pointer) {
+	C.clearWebViewBackground(window)
+}
+
+// setWindowBackground paints the window in the page's colour, which is what shows in that strip.
+func setWindowBackground(window unsafe.Pointer, r, g, b int) {
+	C.setWindowBackground(window, C.int(r), C.int(g), C.int(b))
+}
+
 // installDownloads makes the webview save an attachment response (Adminer's Export > save)
 // through a native Save panel instead of rendering the file into the window. macOS 11.3+;
 // below that it is a no-op and the old behaviour stands.
