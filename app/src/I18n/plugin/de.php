@@ -113,7 +113,7 @@ return [
 	'mcp.agent_note_no_database' => 'Im Fenster ist keine Datenbank geöffnet, daher laufen die Werkzeuge in der Standarddatenbank des Servers, sofern er eine hat. Um eine bestimmte Datenbank abzufragen, übergeben Sie sie als database: list_databases nennt sie.',
 	'mcp.agent_unknown_connection' => 'Keine angemeldete gespeicherte Verbindung. list_connections nennt sie; eine nicht angemeldete muss zuerst im Fenster von Adminer Desktop geöffnet werden',
 	'mcp.agent_forward_failed' => 'Adminer Desktop konnte den Aufruf auf dieser Verbindung nicht beantworten. An der Verbindung liegt es nicht: Die Ursache steht im Log der App',
-	'mcp.agent_connect_failed' => 'Adminer Desktop konnte sich mit dieser gespeicherten Anmeldung nicht verbinden: Ihr Server läuft nicht, oder das Passwort gilt nicht mehr. Adminer meldet sie dann ab, also bitten Sie den Nutzer, sich im Fenster erneut anzumelden, sobald der Server läuft',
+	'mcp.agent_connect_failed' => 'Adminer Desktop konnte sich mit dieser gespeicherten Anmeldung nicht verbinden: deren Server läuft nicht, oder das Passwort gilt nicht mehr. Adminer meldet sie dann ab, also bitten Sie den Nutzer, sich im Fenster erneut anzumelden, sobald der Server läuft',
 	'mcp.agent_no_database' => 'Die Datenbank konnte mit dieser Anmeldung nicht geöffnet werden',
 	'mcp.agent_no_result' => 'die Anweisung lieferte keine Ergebnismenge',
 	'mcp.agent_parse_error' => 'Parse-Fehler',
