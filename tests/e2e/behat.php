@@ -13,8 +13,9 @@ declare(strict_types=1);
 //                    second suite would spend a second browser proving the same CSS. pgsql only.
 //
 //   features/pgsql/  what only one driver can answer: the plugins on a form, whose effect a real
-//   features/mysql/  jsonb column would hide on another driver, or the raw bytes only mysqli hands
-//                    the MCP tools. Same rule, one step further.
+//                    jsonb column would hide on another driver. Same rule, one step further.
+//   features/mysql/  the same for mysql: the raw bytes mysqli hands the MCP tools, where postgres
+//                    sends bytea as hex text.
 //
 // The driver is handed to the contexts; each suite serves the app on a port of its own, because
 // the suites share a process (harness/fixture.php picks the next free one from there).

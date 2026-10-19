@@ -137,7 +137,7 @@ class Server {
 		$cells = $whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
 			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells (row is 0-based) with their full length;'
 			. ' pass whole_values: true when you need them whole.';
-		$cells .= ' A value that is not text (a BLOB, a BINARY column) is returned as hex and listed in binary_cells with its length in bytes.';
+		$cells .= ' A value that is not text (a BLOB, a BINARY column, text holding control characters) is returned as hex, two characters a byte, and listed in binary_cells with its length in bytes.';
 		return [
 			[
 				'name' => 'list_connections',
