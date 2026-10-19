@@ -86,6 +86,7 @@ func serveMCP(php, root string) error {
 	}()
 	err := cmd.Wait()
 	signal.Stop(got)
+	close(got)
 	// Without a signal, PHP returned because stdin closed: the client let go.
 	why := "the client closed stdin"
 	select {
