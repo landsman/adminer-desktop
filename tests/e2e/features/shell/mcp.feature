@@ -30,6 +30,7 @@ Feature: An agent reaching the database this window is logged into
     Then the tools offered include "current_connection, list_tables, describe_table, preview_table_data, execute_query"
     And the description of "execute_query" mentions "longer than 2000 characters are cut"
     And the description of "preview_table_data" mentions "whole_values: true"
+    And the endpoint answers 200, not adminer's 413
     When an agent calls "list_tables"
     Then the answer mentions "users"
 

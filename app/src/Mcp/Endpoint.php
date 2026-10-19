@@ -77,12 +77,11 @@ class Endpoint {
 		$this->activity->record($method, $now);
 		$this->log->append($method, $tool, $detail, $now);
 		$answer = $this->answer($input, $connected);
-		if ($answer === null) {
-			// A JSON-RPC notification is answered with silence, not an empty body with a 200.
-			http_response_code(204);
-		} else {
-			echo $answer;
-		}
+		// header(), not http_response_code(): a POST with no form fields — a JSON body — is what
+		// adminer takes for one over post_max_size, so it has already sent header("HTTP/1.1 413"),
+		// and PHP ignores http_response_code() after that. A notification is answered with silence.
+		header($answer === null ? "HTTP/1.1 204 No Content" : "HTTP/1.1 200 OK");
+		echo $answer ?? '';
 		exit;
 	}
 

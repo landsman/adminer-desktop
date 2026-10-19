@@ -311,6 +311,19 @@ class McpContext implements Context
 		$this->answer = $this->rpc(['id' => 3, 'method' => 'tools/call', 'params' => ['name' => $tool, 'arguments' => []]]);
 	}
 
+	/** Straight at the gate, to read the status the bridge never shows: adminer answers a JSON
+	 * body with 413, taking it for one over post_max_size. */
+	#[Then('the endpoint answers 200, not adminer\'s 413')]
+	public function endpointAnswers200(): void
+	{
+		$handshake = $this->readHandshake();
+		$this->postToGate((string) $handshake['url'], (string) $handshake['token']);
+		$status = (string) (http_get_last_response_headers()[0] ?? '');
+		if (!str_contains($status, ' 200 ')) {
+			throw new RuntimeException("the MCP endpoint answered $status");
+		}
+	}
+
 	#[When('an agent runs the query :sql')]
 	public function agentRunsQuery(string $sql, bool $whole = false): void
 	{
