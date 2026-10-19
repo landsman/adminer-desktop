@@ -85,7 +85,7 @@ class Tools {
 	}
 
 	/** The first rows of a table, without the caller having to write SQL for the common case.
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>}
 	*/
 	function previewTable(string $table, int $limit = 20, bool $whole = false): array {
 		$limit = max(1, min($limit, self::MAX_ROWS));
@@ -102,7 +102,7 @@ class Tools {
 	* postgres does not roll back, and the row went with the transaction. An agent that reports
 	* that as a successful write is worse than one that cannot write at all.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,rolled_back:bool,note:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>,rolled_back:bool,note:string}
 	*/
 	function query(string $sql, int $limit = self::MAX_ROWS, bool $whole = false): array {
 		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)), $whole);
@@ -164,9 +164,11 @@ class Tools {
 	/** Run one statement inside a transaction and roll it back.
 	*
 	* `truncated` is about rows; `truncated_cells` names every value that was cut, because a cut
-	* text column fails nowhere at all — the data is just gone.
+	* text column fails nowhere at all — the data is just gone. `binary_cells` names every value
+	* sent as hex, with its length in bytes: one raw BLOB byte would fail json_encode() for the
+	* whole answer.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>}
 	*/
 	private function select(string $sql, int $limit, bool $whole): array {
 		$connection = \Adminer\connection();
@@ -193,12 +195,19 @@ class Tools {
 			$rows = [];
 			$truncated = false;
 			$cut = [];
+			$binary = [];
 			while ($row = $result->fetch_assoc()) {
 				if (count($rows) >= $limit) {
 					$truncated = true;
 					break;
 				}
 				foreach ($row as $column => $value) {
+					// Adminer's own test for "show this as text" (select_value()), so a BINARY(16)
+					// that happens to be valid UTF-8 goes out as hex too, not as control characters.
+					if (is_string($value) && !\Adminer\is_utf8($value)) {
+						$binary[] = ['row' => count($rows), 'column' => (string) $column, 'length' => strlen($value)];
+						$row[$column] = $value = bin2hex($value);
+					}
 					$length = is_string($value) ? mb_strlen($value, 'UTF-8') : 0;
 					if (!$whole && !$this->whole && $length > self::MAX_CELL) {
 						// Characters, not bytes: substr() could cut a UTF-8 sequence in half.
@@ -212,7 +221,8 @@ class Tools {
 			return ['columns' => $columns, 'rows' => $rows, 'truncated' => $truncated, 'truncated_cells' => $cut]
 					// Said in the answer, not only in the tool description: this is the moment the
 					// agent needs to know the whole value is one argument away.
-					+ ($cut === [] ? [] : ['truncated_note' => Strings::t('mcp.agent_note_cut')]);
+					+ ($cut === [] ? [] : ['truncated_note' => Strings::t('mcp.agent_note_cut')])
+					+ ['binary_cells' => $binary];
 		} finally {
 			// finally, not after the return: a query that throws must still not leave a
 			// transaction open on the connection the user is browsing in, nor the guard on.

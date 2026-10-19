@@ -14,6 +14,8 @@ declare(strict_types=1);
 //
 //   features/pgsql/  what only one driver can answer: the plugins on a form, whose effect a real
 //                    jsonb column would hide on another driver. Same rule, one step further.
+//   features/mysql/  the same for mysql: the raw bytes mysqli hands the MCP tools, where postgres
+//                    sends bytea as hex text.
 //
 // The driver is handed to the contexts; each suite serves the app on a port of its own, because
 // the suites share a process (harness/fixture.php picks the next free one from there).
@@ -39,8 +41,9 @@ return (new Config())->withProfile(
 		)
 		->withSuite(
 			(new Suite('mysql'))
-				->withPaths(__DIR__ . '/features/data')
-				->addContext(DesktopContext::class, ['driver' => 'mysql']),
+				->withPaths(__DIR__ . '/features/data', __DIR__ . '/features/mysql')
+				->addContext(DesktopContext::class, ['driver' => 'mysql'])
+				->addContext(McpContext::class, ['driver' => 'mysql']),
 		)
 		// The steps all live in three files, so naming them after each step says nothing.
 		->withFormatter(new PrettyFormatter(paths: false)),

@@ -191,7 +191,8 @@ has no JavaScript in strings to mark: it lives in files under `src/Assets/javasc
 
 `tests/e2e/behat.php` has one suite per driver, and the folder decides which run a feature:
 `features/data/` (what Adminer reads through a driver) runs on both, `features/shell/` (our own
-chrome — theme, settings, sidebar, import, MCP) and `features/pgsql/` on postgres only. A new
+chrome — theme, settings, sidebar, import, MCP) and `features/pgsql/` on postgres only,
+`features/mysql/` (the raw bytes mysqli hands the MCP tools) on mysql only. A new
 `.feature` in a folder runs with no list to update. `features/pgsql/plugins.feature` is where
 plugins are asserted: `check.sh` only proves a plugin boots on the login page, so anything a
 plugin does to a form is only ever asserted there. `seed/<driver>.sql` is reapplied on every
