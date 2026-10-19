@@ -31,9 +31,11 @@ body {
 
 /* The panels' corners are concentric with the window's: its radius less the gutter between
    them, so the gutter keeps its width round the corner instead of widening into it. Never
-   tighter than the rest of the UI's corners, which is what a square-cornered window gets. */
+   tighter than the rest of the UI's corners, which is what a square-cornered window gets.
+   A dialog takes the same radius: at 7px it looked pinched next to the panels behind it. */
 #foot,
-#content {
+#content,
+.ad-modal {
 	border-radius: max(
 		var(--ad-radius),
 		calc(var(--ad-window-radius) - var(--ad-gutter))
