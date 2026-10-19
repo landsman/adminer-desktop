@@ -367,16 +367,18 @@ dialog#desktop-settings p.message {
 }
 
 /* Icon only: square, and large enough to be an easy target on a touchpad. The label is the
-   title and the accessible name — see copy-field.latte. */
+   title and the accessible name — see copy-field.latte. Sized to fit a one-line field, which is
+   0.9 × (1.5 line + 1.4 padding) ≈ 2.6em tall: at 2.4em with a 0.5em offset it hung out of the
+   bottom of it. 2em with 0.3em around it sits centred there, and still above 24px (WCAG 2.5.8). */
 .ad-copy-button {
 	position: absolute;
-	top: 0.5em;
-	right: 0.5em;
+	top: 0.3em;
+	right: 0.3em;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.4em;
-	height: 2.4em;
+	width: 2em;
+	height: 2em;
 	padding: 0;
 	font: inherit;
 	border: 1px solid var(--ad-border);
