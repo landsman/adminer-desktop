@@ -111,10 +111,10 @@ func logBridgeExit(why string) {
 	}
 	// The format Desktop\Mcp\RequestLog writes: time, method, tool, detail, a tab between.
 	now := time.Now().UTC()
-	path := filepath.Join(dir, "mcp-"+now.Format("2006-01-02")+".log")
+	path := filepath.Join(dir, "mcp-"+now.Format(time.DateOnly)+".log")
 	if f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600); err == nil {
-		fmt.Fprintf(f, "%s\tbridge-exit\t\t%s\n", now.Format("2006-01-02T15:04:05Z"), why) //nolint:errcheck // best effort on the way out
-		f.Close()                                                                          //nolint:errcheck
+		fmt.Fprintf(f, "%s\tbridge-exit\t\t%s\n", now.Format(time.RFC3339), why) //nolint:errcheck // best effort on the way out
+		f.Close()                                                                //nolint:errcheck
 	}
 }
 
