@@ -520,6 +520,16 @@ class McpContext implements Context
 		json_decode($value, flags: JSON_THROW_ON_ERROR);
 	}
 
+	#[Then('the value in :column comes back as hex :hex, :bytes bytes long')]
+	public function valueAsHex(string $column, string $hex, int $bytes): void
+	{
+		$value = $this->payload['rows'][0][$column] ?? null;
+		$listed = $this->payload['binary_cells'] ?? null;
+		if ($value !== $hex || $listed !== [['row' => 0, 'column' => $column, 'length' => $bytes]]) {
+			throw new RuntimeException("$column came back as " . json_encode($value) . ', listed: ' . json_encode($listed) . ', answer: ' . json_encode($this->answer));
+		}
+	}
+
 	/** @return array<string,mixed>|null the truncated_cells entry for this column */
 	private function cut(string $column): ?array
 	{

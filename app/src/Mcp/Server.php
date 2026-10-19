@@ -137,6 +137,7 @@ class Server {
 		$cells = $whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
 			. ' characters are cut to ' . Tools::MAX_CELL . ' and listed in truncated_cells (row is 0-based) with their full length;'
 			. ' pass whole_values: true when you need them whole.';
+		$cells .= ' A value that is not text (a BLOB, a BINARY column) is returned as hex and listed in binary_cells with its length in bytes.';
 		return [
 			[
 				'name' => 'list_connections',
@@ -211,10 +212,11 @@ class Server {
 		};
 
 		// JSON in a text block: every MCP client renders it, and the model reads structured data
-		// better than a table drawn in spaces.
+		// better than a table drawn in spaces. Throwing, because json_encode()'s false cast to
+		// a string is an empty answer the agent cannot tell from no rows.
 		return ['content' => [[
 			'type' => 'text',
-			'text' => (string) json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+			'text' => json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
 		]]];
 	}
 
