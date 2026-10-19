@@ -439,6 +439,7 @@ func main() {
 	installMouseNav(w.Window())
 	installReloadShortcut(w.Window())
 	installDownloads(w.Window())
+	clearWebViewBackground(w.Window())
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
 		if enableInspector(w.Window()) {
@@ -460,6 +461,17 @@ func main() {
 		showWindow(w.Window())
 	}); err != nil {
 		log.Print("startup: loader timing bind failed: ", err)
+	}
+
+	// The page's background, from window-background.js, for the strip a fast resize uncovers.
+	// A computed colour is rgb() when opaque; anything else (transparent, rgba) is left alone.
+	if err := w.Bind("adSetBackground", func(css string) {
+		var r, g, b int
+		if _, err := fmt.Sscanf(css, "rgb(%d, %d, %d)", &r, &g, &b); err == nil {
+			setWindowBackground(w.Window(), r, g, b)
+		}
+	}); err != nil {
+		log.Print("window background bind failed: ", err)
 	}
 
 	// Show the loader now rather than blocking on the server first: a background probe swaps
