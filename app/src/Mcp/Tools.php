@@ -83,9 +83,9 @@ class Tools {
 	*/
 	function previewTable(string $table, int $limit = 20, bool $whole = false): array {
 		$limit = max(1, min($limit, self::MAX_ROWS));
-		// idf_escape is the driver's own identifier quoting — never string-concatenate a name
-		// that came from outside.
-		return $this->select('SELECT * FROM ' . \Adminer\idf_escape($table) . ' LIMIT ' . ($limit + 1), $limit, $whole);
+		// table() and limit() are the driver's own quoting and row cap (TOP on MSSQL, rownum on
+		// Oracle) — never string-concatenate a name that came from outside, nor a LIMIT.
+		return $this->select('SELECT' . \Adminer\limit("*\nFROM " . \Adminer\table($table), '', $limit + 1, 0, "\n"), $limit, $whole);
 	}
 
 	/** Run a caller's SQL and return its rows. Rolled back, always.
