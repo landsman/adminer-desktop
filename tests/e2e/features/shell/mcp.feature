@@ -94,6 +94,15 @@ Feature: An agent reaching the databases this window is signed in to
     When an agent runs the query "SELECT name FROM products"
     Then the answer mentions "Konvice"
 
+  Scenario: A login that can step out of a read-only query is refused before any tool runs
+    The reader above is the other side: a login with none of these gets its queries answered.
+    Given the window is logged in as the superuser instead
+    When an agent calls "list_tables"
+    Then the answer is an error mentioning "SUPERUSER postgres"
+    And the answer is an error mentioning "pg_execute_server_program"
+    When an agent calls "list_connections"
+    Then the answer mentions "signed_in"
+
   Scenario: A long value is cut on a character and reported, and comes back whole on request
     When an agent runs the query "SELECT body, payload FROM long_values"
     Then the value in "body" is cut to 2000 characters of 5000, and the answer says so

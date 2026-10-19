@@ -195,6 +195,11 @@ class Server {
 		$table = is_string($args['table'] ?? null) ? $args['table'] : '';
 		$limit = is_int($args['limit'] ?? null) ? $args['limit'] : null;
 		$whole = ($args['whole_values'] ?? false) === true;
+		// list_connections reads the saved list, not the database, and is how the agent finds a
+		// connection it is allowed on.
+		if ($name !== 'list_connections') {
+			$this->tools->refuseOverprivileged();
+		}
 
 		$payload = match ($name) {
 			'list_connections' => $this->tools->listConnections(),

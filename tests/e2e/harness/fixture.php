@@ -28,6 +28,10 @@ const E2E_DATABASE = 'demo';
 const E2E_READER = 'reader';
 const E2E_SECOND_DATABASE = 'inventory';
 
+/** The postgres login the MCP scenarios log the window in as: it may write the demo data, and is
+ * no superuser, which the agent tools refuse. */
+const E2E_AGENT = 'agent';
+
 /** What each driver is called, how to start it and how to log into it.
  *
  * `key` is what Adminer calls the driver in the URL and in the login form, which is not always

@@ -115,6 +115,7 @@ return [
 	'mcp.agent_forward_failed' => 'Adminer Desktop konnte den Aufruf auf dieser Verbindung nicht beantworten. An der Verbindung liegt es nicht: Die Ursache steht im Log der App',
 	'mcp.agent_connect_failed' => 'Adminer Desktop konnte sich mit dieser gespeicherten Anmeldung nicht verbinden: deren Server läuft nicht, oder das Passwort gilt nicht mehr. Adminer meldet sie dann ab, also bitten Sie den Nutzer, sich im Fenster erneut anzumelden, sobald der Server läuft',
 	'mcp.agent_no_database' => 'Die Datenbank konnte mit dieser Anmeldung nicht geöffnet werden',
+	'mcp.agent_overprivileged' => 'Diese Anmeldung reicht über eine schreibgeschützte Abfrage hinaus — sie startet ein Programm auf dem Datenbankserver, liest seine Dateien oder die Passwort-Hashes —, daher überlässt Adminer Desktop sie keinem Agenten. Melden Sie das Fenster mit einer Rolle ohne diese Rechte an oder entziehen Sie sie dieser',
 	'mcp.agent_no_result' => 'die Anweisung lieferte keine Ergebnismenge',
 	'mcp.agent_parse_error' => 'Parse-Fehler',
 	'mcp.agent_unknown_method' => 'unbekannte Methode',

@@ -100,8 +100,14 @@ GRANT SELECT ON app.* TO 'agent'@'%';
 
 Check it by having the agent try a `DELETE` and a `DROP`: both must fail with a permission
 error. Leave out of the grants any table or column holding secrets of your own users (password
-hashes, tokens, API keys) — a role that can read a table can read all of it. Refusing a superuser
-login outright is [#145](https://github.com/landsman/adminer-desktop/issues/145).
+hashes, tokens, API keys) — a role that can read a table can read all of it.
+
+**A login that can step out of the query is refused**, before any tool but `list_connections`
+runs, with the privilege to take away named in the answer: on PostgreSQL a superuser or a member
+of `pg_read_server_files`, `pg_write_server_files` or `pg_execute_server_program`; on MySQL and
+MariaDB `ALL PRIVILEGES` on `*.*`, `SUPER`, `FILE` or anything on `mysql.*`. There is no switch to
+allow it anyway, and allowing writes does not change it: it is about the server, not the data.
+The other databases are not checked.
 
 ## Answers you might get instead
 

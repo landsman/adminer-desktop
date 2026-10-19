@@ -23,7 +23,8 @@ use Desktop\I18n\Strings;
 * Neither is the boundary. A superuser runs a program on the server inside BEGIN READ ONLY
 * (COPY … TO PROGRAM), and DDL auto-commits on MySQL. What makes a write or a takeover
 * impossible is the login: a role with SELECT and nothing else (features/shell/mcp.feature
-* asserts that one refuses).
+* asserts that one refuses). So a login that can step out of the query is refused outright
+* (refuseOverprivileged()), with no switch to allow it: the switch would be the docs again.
 *
 * And every result is capped. An agent that asks for a million rows should get a page and a
 * note saying so, because the row it needed is nearly always in the first few and the rest is
@@ -152,6 +153,63 @@ class Tools {
 			'databases' => $c->databases,
 			'signed_in' => $c->signedIn,
 		], $this->connections?->saved() ?? []);
+	}
+
+	/** PostgreSQL: a superuser, or a member of one of the roles that reach the server's files and
+	* programs. pg_has_role() and not rolname = current_user, so a role that can SET ROLE to one
+	* counts too; a superuser is a member of everything and so lists all of them. */
+	private const string PGSQL_OVERPRIVILEGED = "SELECT CASE WHEN rolsuper THEN 'SUPERUSER ' || rolname ELSE rolname END FROM pg_roles"
+		. " WHERE (rolsuper OR rolname IN ('pg_read_server_files', 'pg_write_server_files', 'pg_execute_server_program'))"
+		. " AND pg_has_role(current_user, oid, 'MEMBER') ORDER BY rolsuper DESC, rolname";
+
+	/** Refuse a login whose privileges reach past a read-only query — what the transaction cannot
+	* contain, a superuser running a program on the server inside BEGIN READ ONLY.
+	*
+	* About the server, not the data, so the writes setting changes nothing here. PostgreSQL and
+	* MySQL/MariaDB only; the other drivers are not checked.
+	*
+	* @throws McpError
+	*/
+	function refuseOverprivileged(): void {
+		$found = match (\Adminer\DRIVER) {
+			'pgsql' => \Adminer\get_vals(self::PGSQL_OVERPRIVILEGED),
+			// ponytail: MySQL 8 leaves a granted role's privileges out of a bare SHOW GRANTS; add USING
+			// the active roles if logins that hold FILE through a role turn up.
+			'server' => self::overprivilegedGrants(\Adminer\get_vals('SHOW GRANTS')),
+			default => [],
+		};
+		if ($found !== []) {
+			throw new McpError(Strings::t('mcp.agent_overprivileged') . ': ' . implode(', ', array_map('strval', $found)));
+		}
+	}
+
+	/** Which lines of MySQL's SHOW GRANTS reach the server rather than the data: ALL PRIVILEGES on
+	* *.*, SUPER, FILE, or anything on the mysql schema, where the password hashes and the grants
+	* themselves live. ALL on one database is about that database's data, and is left to the
+	* writes setting.
+	*
+	* @param list<string> $grants
+	* @return list<string>
+	*/
+	static function overprivilegedGrants(array $grants): array {
+		$found = [];
+		foreach ($grants as $grant) {
+			// A granted role reads GRANT `role`@`%` TO …, with no ON: not a privilege in itself.
+			if (!preg_match('~^GRANT (.+?) ON (\S+) TO ~i', $grant, $match)) {
+				continue;
+			}
+			$privileges = array_map('trim', explode(',', strtoupper($match[1])));
+			if (preg_match('~^`?mysql`?\.~i', $match[2])) {
+				$found[] = "$match[1] ON $match[2]";
+				continue;
+			}
+			foreach ($privileges as $privilege) {
+				if (in_array($privilege, ['SUPER', 'FILE'], true) || ($match[2] === '*.*' && in_array($privilege, ['ALL', 'ALL PRIVILEGES'], true))) {
+					$found[] = $privilege;
+				}
+			}
+		}
+		return array_values(array_unique($found));
 	}
 
 	/** The databases on this connection's server that the login may open.

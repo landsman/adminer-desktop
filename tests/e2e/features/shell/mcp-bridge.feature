@@ -52,3 +52,6 @@ Feature: The stdio bridge when there is no app behind it
 
   Scenario: It pumps a stream, blank lines and all
     Then the bridge answers each request once and every notification never
+
+  Scenario: MySQL grants that reach the server are told from grants on the data
+    Then of MySQL's grants only ALL on *.*, SUPER, FILE and the mysql schema are refused

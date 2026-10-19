@@ -14,6 +14,7 @@ use Behat\Step\When;
 use Desktop\Mcp\Handshake;
 use Desktop\Mcp\RequestLog;
 use Desktop\Mcp\Stdio;
+use Desktop\Mcp\Tools;
 use Desktop\UserSettings;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -93,7 +94,7 @@ class McpContext implements Context
 	#[Given('AI access is on and allowed to write, but the connection is marked prod')]
 	public function accessIsOnWithWritesOnProd(): void
 	{
-		$key = implode('|', ['pgsql', (string) $this->fix['database'], (string) $this->fix['driver']['username']]);
+		$key = implode('|', ['pgsql', (string) $this->fix['database'], E2E_AGENT]);
 		$this->writeSettings(['mcp' => true, 'mcp_write' => true, 'connections' => [$key => ['env' => 'prod']]]);
 	}
 
@@ -117,8 +118,8 @@ class McpContext implements Context
 	#[Given('a window is logged in to the demo database')]
 	public function windowIsLoggedIn(): void
 	{
-		$this->logIn((string) $this->fix['driver']['username'], E2E_DATABASE);
-		$this->get(e2e_url($this->fix, ['select' => 'users']));
+		$this->logIn(E2E_AGENT, E2E_DATABASE);
+		$this->get(e2e_url($this->fix, ['username' => E2E_AGENT, 'select' => 'users']));
 	}
 
 	/** Logged in to the server but into no database: the window an agent once found itself
@@ -126,8 +127,8 @@ class McpContext implements Context
 	#[Given('the window is logged in with no database open')]
 	public function windowHasNoDatabase(): void
 	{
-		$this->logIn((string) $this->fix['driver']['username'], '');
-		$this->get(e2e_url($this->fix, ['db' => null, 'ns' => null]));
+		$this->logIn(E2E_AGENT, '');
+		$this->get(e2e_url($this->fix, ['username' => E2E_AGENT, 'db' => null, 'ns' => null]));
 	}
 
 	/** The seed's SELECT-only login, into its own database: the login the docs tell you to give
@@ -157,6 +158,13 @@ class McpContext implements Context
 			$this->readerBroken = false;
 			e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_READER . " PASSWORD '" . $this->fix['driver']['password'] . "'");
 		}
+	}
+
+	/** The fixture's own login, postgres: a superuser, the login the agent tools refuse. */
+	#[Given('the window is logged in as the superuser instead')]
+	public function windowIsSuperuser(): void
+	{
+		$this->logIn((string) $this->fix['driver']['username'], E2E_DATABASE);
 	}
 
 	/** At the gate, not at the app: the app's own port would take the bridge's call with no
@@ -196,7 +204,7 @@ class McpContext implements Context
 		}
 		// The same download straight at the app, with the session, is what proves the request
 		// would hand out a column if the gate passed its path on.
-		$download = e2e_url($this->fix, ['download' => 'users', 'field' => 'email', 'where' => ['id' => 1]]);
+		$download = e2e_url($this->fix, ['username' => E2E_AGENT, 'download' => 'users', 'field' => 'email', 'where' => ['id' => 1]]);
 		if (!str_contains($this->get($download), 'anna@example.com')) {
 			throw new RuntimeException('the download reads no column even with the session, so this proves nothing');
 		}
@@ -387,7 +395,7 @@ class McpContext implements Context
 	#[Then('the window\'s connection is listed, signed in')]
 	public function windowConnectionListed(): void
 	{
-		$key = implode('|', ['pgsql', (string) $this->fix['database'], (string) $this->fix['driver']['username']]);
+		$key = implode('|', ['pgsql', (string) $this->fix['database'], E2E_AGENT]);
 		foreach ((array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true) as $connection) {
 			if (($connection['id'] ?? null) === $key && ($connection['signed_in'] ?? null) === true) {
 				return;
@@ -1030,6 +1038,26 @@ class McpContext implements Context
 			throw new RuntimeException('a log with no directory offered a path anyway');
 		}
 		$none->append('ping', '', '', $this->day('1')); // must not throw
+	}
+
+	/** The parse behind the MySQL refusal, with no MySQL: the e2e MCP scenarios run on postgres. */
+	#[Then('of MySQL\'s grants only ALL on *.*, SUPER, FILE and the mysql schema are refused')]
+	public function mysqlGrantsJudged(): void
+	{
+		$cases = [
+			'GRANT ALL PRIVILEGES ON *.* TO `root`@`localhost` WITH GRANT OPTION' => ['ALL PRIVILEGES'],
+			'GRANT SELECT, INSERT, FILE, SUPER ON *.* TO `u`@`%`' => ['FILE', 'SUPER'],
+			'GRANT SELECT ON `mysql`.`user` TO `u`@`%`' => ['SELECT ON `mysql`.`user`'],
+			'GRANT USAGE ON *.* TO `agent`@`%`' => [],
+			'GRANT ALL PRIVILEGES ON `app`.* TO `agent`@`%`' => [],
+			'GRANT `dba`@`%` TO `agent`@`%`' => [],
+		];
+		foreach ($cases as $grant => $expected) {
+			$found = Tools::overprivilegedGrants([$grant]);
+			if ($found !== $expected) {
+				throw new RuntimeException("$grant: expected " . json_encode($expected) . ', got ' . json_encode($found));
+			}
+		}
 	}
 
 	// ── the plumbing ─────────────────────────────────────────────────────────────────────────
