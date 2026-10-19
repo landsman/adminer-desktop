@@ -124,6 +124,7 @@ return [
 	'mcp.agent_note_no_database' => 'The window has no database open, so the tools run in the server\'s default one, if it has any. To query a particular database, pass it as database: list_databases names them.',
 	'mcp.agent_unknown_connection' => 'Not a signed-in saved connection. list_connections names them; one that is not signed in has to be opened in the Adminer Desktop window first',
 	'mcp.agent_forward_failed' => 'Adminer Desktop could not answer the call on that connection. The connection is not the problem: the app\'s log has the cause',
+	'mcp.agent_connect_failed' => 'Adminer Desktop could not connect with this saved login: its server is down, or the password no longer works. Adminer signs a login out when that happens, so ask the user to sign in to it again in the window once the server is up',
 	'mcp.agent_no_database' => 'The database could not be opened with this login',
 	'mcp.agent_no_result' => 'the statement returned no result set',
 	'mcp.agent_parse_error' => 'parse error',

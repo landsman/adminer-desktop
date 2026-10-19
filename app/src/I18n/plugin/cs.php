@@ -113,6 +113,7 @@ return [
 	'mcp.agent_note_no_database' => 'Okno nemá otevřenou žádnou databázi, takže nástroje běží ve výchozí databázi serveru, pokud nějakou má. Chcete-li se dotazovat konkrétní databáze, předejte ji jako database: vypisuje je list_databases.',
 	'mcp.agent_unknown_connection' => 'Není to přihlášené uložené připojení. Vypisuje je list_connections; nepřihlášené je nejdřív potřeba otevřít v okně Adminer Desktopu',
 	'mcp.agent_forward_failed' => 'Adminer Desktop na tomto připojení volání nevyřídil. Připojení za to nemůže, příčinu najdete v logu aplikace',
+	'mcp.agent_connect_failed' => 'Adminer Desktop se s tímto uloženým přihlášením nepřipojil: jeho server neběží, nebo heslo už neplatí. Adminer takové přihlášení odhlásí, proto požádejte uživatele, ať se k němu v okně znovu přihlásí, až server poběží',
 	'mcp.agent_no_database' => 'Databázi se s tímto přihlášením nepodařilo otevřít',
 	'mcp.agent_no_result' => 'příkaz nevrátil žádnou výsledkovou sadu',
 	'mcp.agent_parse_error' => 'chyba při parsování',

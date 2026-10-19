@@ -60,6 +60,8 @@ and `database`. Without them a call goes to the connection and database the wind
 agent no longer needs you to click over to the one it wants. Only a connection you are signed in
 to can be queried; one you logged out of is listed, so the agent can ask you to sign in to it, and
 nothing more. A call that named one does not move the window, nor where later calls go by default.
+A signed-in login that no longer opens, because its server is down or its password changed, answers
+with an error naming it, and Adminer signs it out, as it does with a login that fails in the window.
 
 With no database open in the window, PostgreSQL connects to `postgres` and MS SQL to the login's
 default; `current_connection` names that database and says none is open, rather than answering

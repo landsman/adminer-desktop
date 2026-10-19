@@ -6,6 +6,7 @@ namespace Desktop\Tests;
 require_once dirname(__DIR__) . '/harness/fixture.php';
 
 use Behat\Behat\Context\Context;
+use Behat\Hook\AfterScenario;
 use Behat\Hook\BeforeScenario;
 use Behat\Step\Given;
 use Behat\Step\Then;
@@ -57,6 +58,9 @@ class McpContext implements Context
 	private ?RequestLog $log = null;
 
 	private string $logDir = '';
+
+	/** Whether the scenario changed the reader's password, so it is put back for the next one. */
+	private bool $readerBroken = false;
 
 	public function __construct(string $driver)
 	{
@@ -132,6 +136,27 @@ class McpContext implements Context
 	public function windowIsReader(): void
 	{
 		$this->logIn(E2E_READER, E2E_SECOND_DATABASE);
+	}
+
+	/** A second saved login in the window's session, then broken behind its back: with the
+	 * reader's password changed, the saved one fails to connect as it would on a server that went
+	 * down. The window goes back to the demo database, so a call naming the reader is forwarded. */
+	#[Given('the window is also signed in as the reader, whose password then changes')]
+	public function readerSignedInThenBroken(): void
+	{
+		$this->logIn(E2E_READER, E2E_SECOND_DATABASE);
+		$this->windowIsLoggedIn();
+		$this->readerBroken = true;
+		e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_READER . " PASSWORD 'changed'");
+	}
+
+	#[AfterScenario]
+	public function restoreReader(): void
+	{
+		if ($this->readerBroken) {
+			$this->readerBroken = false;
+			e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_READER . " PASSWORD '" . $this->fix['driver']['password'] . "'");
+		}
 	}
 
 	/** At the gate, not at the app: the app's own port would take the bridge's call with no
@@ -340,6 +365,17 @@ class McpContext implements Context
 		$this->callWith($tool, ['connection' => $connection]);
 	}
 
+	#[When('an agent calls :tool on the reader\'s connection')]
+	public function agentCallsToolOnReader(string $tool): void
+	{
+		$this->callWith($tool, ['connection' => $this->readerKey()]);
+	}
+
+	private function readerKey(): string
+	{
+		return implode('|', ['pgsql', (string) $this->fix['database'], E2E_READER]);
+	}
+
 	/** @param array<string, string> $arguments */
 	private function callWith(string $tool, array $arguments): void
 	{
@@ -358,6 +394,31 @@ class McpContext implements Context
 			}
 		}
 		throw new RuntimeException("list_connections does not offer $key signed in: " . substr((string) ($this->answer['result']['content'][0]['text'] ?? ''), 0, 300));
+	}
+
+	/** An answer with any other id, null included, matches no call: the client waits on the call
+	 * until it gives up on the whole server. */
+	#[Then('the answer carries the call\'s id')]
+	public function answerCarriesId(): void
+	{
+		if (($this->answer['id'] ?? null) !== 3) {
+			throw new RuntimeException('the answer is for id ' . json_encode($this->answer['id'] ?? null) . ', not the call\'s 3');
+		}
+	}
+
+	/** Adminer signs out a login that failed, and the message says so: this keeps it honest. */
+	#[Then('the reader\'s connection is listed, signed out')]
+	public function readerSignedOut(): void
+	{
+		foreach ((array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true) as $connection) {
+			if (($connection['id'] ?? null) === $this->readerKey()) {
+				if (($connection['signed_in'] ?? null) !== false) {
+					throw new RuntimeException('the reader is still signed in after its login failed');
+				}
+				return;
+			}
+		}
+		throw new RuntimeException('list_connections no longer offers the reader: ' . substr((string) ($this->answer['result']['content'][0]['text'] ?? ''), 0, 300));
 	}
 
 	#[Then('the database named is :database')]
