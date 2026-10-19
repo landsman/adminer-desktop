@@ -85,19 +85,30 @@
 	— see .ad-mcp-register. *}
 <fieldset class="ad-mcp-register">
 	<legend>{$desktop->t('mcp.register_on')} {$os}</legend>
-	{* What to do with the commands, before the commands rather than after them: three copy
-		fields is a long way to scroll to find out they are meant for a terminal. *}
-	<p class="ad-mcp-note">{$desktop->t('mcp.register_hint')}</p>
-	{* One per agent: the command is the same but each CLI registers it under its own name, and
-		guessing which one the reader uses is how the panel ended up looking Claude-specific. *}
-	<div n:foreach="$commands as $agent => $command" class="ad-mcp-agent">
-		<p class="ad-mcp-agent-name">{$agent}</p>
-		{include '../Assets/copy-field.latte',
-			value: $command,
-			label: $agent,
-			copy: $desktop->t('mcp.copy'),
-			copied: $desktop->t('mcp.copied'),
-			rows: 3}
+	{* Add and Remove as sub-tabs, the same hidden radios plus :has() as the dialog's own tabs (see
+		settings-dialog.latte). Without a value every one posts mcp_register=on, so switching is not
+		an unsaved change to the guard. Remove is here because a registration outlives the path it
+		names, and the agent then only says "disconnected". *}
+	<div class="ad-subtabs">
+		<input type="radio" name="mcp_register" id="desktop-mcp-add" checked>
+		<label for="desktop-mcp-add">{$desktop->t('mcp.register_add')}</label>
+		<input type="radio" name="mcp_register" id="desktop-mcp-remove">
+		<label for="desktop-mcp-remove">{$desktop->t('mcp.register_remove')}</label>
+	</div>
+	<div n:foreach="['add', 'remove'] as $action" class="ad-mcp-{$action}">
+		{* What to do with the commands, before the commands rather than after them: three copy
+			fields is a long way to scroll to find out they are meant for a terminal. *}
+		<p class="ad-mcp-note">{$desktop->t($action === 'add' ? 'mcp.register_hint' : 'mcp.remove_hint')}</p>
+		{* One per agent: the command is the same but each CLI registers it under its own name, and
+			guessing which one the reader uses is how the panel ended up looking Claude-specific. *}
+		<div n:foreach="$commands as $agent => $command" class="ad-mcp-agent">
+			<p class="ad-mcp-agent-name">{$agent}</p>
+			{include '../Assets/copy-field.latte',
+				value: $command[$action],
+				label: $agent,
+				copy: $desktop->t('mcp.copy'),
+				copied: $desktop->t('mcp.copied')}
+		</div>
 	</div>
 	{* This one stays at the bottom: it is for the reader who did not find their agent in the
 		list above, so it only makes sense once the list has been read. *}

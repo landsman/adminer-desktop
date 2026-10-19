@@ -197,13 +197,20 @@ rm -f "$PLUGINS"
 # shipped unstyled: desktop.css only @imports it, so nothing else would notice it missing.
 PANEL=/tmp/adminer-desktop-panel.html
 curl -s "$BASE/adminer.php" > "$PANEL"
+# The commands are highlighted, one <span> per word, so they are matched with the tags removed.
+TEXTFILE=/tmp/adminer-desktop-panel.txt
+sed 's/<[^>]*>//g' "$PANEL" > "$TEXTFILE"
 for AGENT in claude codex gemini; do
-	grep -q "$AGENT mcp add adminer-desktop" "$PANEL" || {
+	grep -Eq "$AGENT mcp add (-s user )?adminer-desktop" "$TEXTFILE" || {
 		echo "FAIL: no register command for $AGENT in the AI-access panel"; exit 1; }
+	grep -Eq "$AGENT mcp remove (-s user )?adminer-desktop" "$TEXTFILE" || {
+		echo "FAIL: no remove command for $AGENT in the AI-access panel"; exit 1; }
 done
+grep -q '<span class="ad-sh-cmd">claude</span>' "$PANEL" || {
+	echo "FAIL: the register commands are not highlighted"; exit 1; }
 grep -q '@import "toast.css"' app/src/Assets/css/desktop.css || {
 	echo "FAIL: toast.css is not imported, so toasts render unstyled"; exit 1; }
-rm -f "$PANEL"
+rm -f "$PANEL" "$TEXTFILE"
 echo "ok: every agent's register command is offered, and the toast styles are loaded"
 
 echo "PASS"

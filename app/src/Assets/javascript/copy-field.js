@@ -15,7 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// Selecting on focus means keyboard and mouse both get the whole thing in one go, which
 		// is the fallback when the clipboard write is refused.
-		value.addEventListener("focus", () => value.select());
+		// A <pre>, not a field, so select() is the document's: a range over its contents.
+		const select = () => getSelection().selectAllChildren(value);
+		value.addEventListener("focus", select);
 
 		// The button is icon-only, so its label is the title and the accessible name rather than
 		// any text to rewrite.
@@ -26,10 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		};
 		let restore = 0;
 		button.addEventListener("click", async () => {
-			value.select();
+			select();
 			try {
 				// Available on http://127.0.0.1 too: loopback counts as a secure context.
-				await navigator.clipboard.writeText(value.value);
+				await navigator.clipboard.writeText(value.textContent);
 			} catch {
 				// Refused (no permission, or an older webview). The text is selected either
 				// way, so the user can still take it — say nothing rather than claim success.

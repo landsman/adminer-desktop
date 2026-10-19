@@ -10,7 +10,8 @@
 /* The gear is styled by layout.css, which parks it in the sidebar header as a quiet icon. */
 
 /* Accent the active tab (base handles the focus ring). */
-#desktop-tabs input:checked + label {
+#desktop-tabs input:checked + label,
+.ad-subtabs input:checked + label {
 	border-bottom-color: var(--ad-accent);
 	color: var(--ad-accent);
 }
@@ -23,7 +24,8 @@
 /* The theme's indigo for the base sheet's AccentColor, at the same full strength: a 45% wash of it
    was under 3:1 against the band (WCAG 1.4.11). */
 .ad-modal-footer button:focus-visible,
-#desktop-tabs input:focus-visible + label {
+#desktop-tabs input:focus-visible + label,
+.ad-subtabs input:focus-visible + label {
 	box-shadow: 0 0 0 2px var(--ad-accent);
 }
 

@@ -57,25 +57,41 @@ class Panel {
 		$this->settings->set(SettingKey::McpWholeValues, isset($_POST["mcp_whole_values"]));
 	}
 
-	/** The registration command per agent, ready to paste.
+	/** The registration commands per agent, ready to paste: one to add the server, one to remove it.
 	*
-	* More than one because the server is not Claude Code's: MCP is the point of the protocol,
+	* More than one agent because the server is not Claude Code's: MCP is the point of the protocol,
 	* and every agent that speaks it registers a stdio server the same way — a name and a command
 	* to run — only with its own CLI in front. So the difference between them is one word, and
 	* printing only `claude` made a general server look like a Claude one.
+	*
+	* User scope where the CLI has one: Claude Code and Gemini CLI default to the project the
+	* command ran in, so the app looked disconnected in every other one. Codex has no scopes.
+	*
+	* Remove is printed too because a registration outlives the path it names — an app moved or a
+	* dev build renamed leaves the agent spawning a file that is gone, which it reports only as
+	* "disconnected", and adding again fails while the old name is taken.
 	*
 	* Anything not listed still works: its config wants the same command line, written as JSON.
 	* That is what mcp.register_manual says, rather than this trying to emit a config file per
 	* agent in a format each of them changes on its own schedule.
 	*
-	* @return array<string,string> agent label => command
+	* @return array<string,array{add:string,remove:string}> agent label => commands
 	*/
 	function commands(): array {
 		$command = $this->serverCommand();
 		return [
-			'Claude Code' => 'claude mcp add adminer-desktop -- ' . $command,
-			'Codex' => 'codex mcp add adminer-desktop -- ' . $command,
-			'Gemini CLI' => 'gemini mcp add adminer-desktop -- ' . $command,
+			'Claude Code' => [
+				'add' => 'claude mcp add -s user adminer-desktop -- ' . $command,
+				'remove' => 'claude mcp remove -s user adminer-desktop',
+			],
+			'Codex' => [
+				'add' => 'codex mcp add adminer-desktop -- ' . $command,
+				'remove' => 'codex mcp remove adminer-desktop',
+			],
+			'Gemini CLI' => [
+				'add' => 'gemini mcp add -s user adminer-desktop -- ' . $command,
+				'remove' => 'gemini mcp remove -s user adminer-desktop',
+			],
 		];
 	}
 

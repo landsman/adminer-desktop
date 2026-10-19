@@ -2461,6 +2461,47 @@ class DesktopContext implements Context
 		)->click();
 	}
 
+	#[When('I open the AI access tab')]
+	public function openMcpTab(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'label[for="desktop-tab-mcp"]',
+		)->click();
+	}
+
+	#[When('I tick the agent access switch')]
+	public function tickMcp(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'label[for="desktop-mcp"]',
+		)->click();
+	}
+
+	#[When('I pick :label in the register box')]
+	public function pickRegisterTab(string $label): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'.ad-mcp-register .ad-subtabs label',
+		)->getByText($label, ['exact' => true])->click();
+	}
+
+	/** Visible ones only: the other sub-tab's commands are in the DOM too, hidden by CSS. */
+	#[Then('the register box shows :command')]
+	public function registerShows(string $command): void
+	{
+		$shown = (string) $this->page->evaluate(
+			// language=JavaScript
+			"() => [...document.querySelectorAll('.ad-mcp-register [data-copy-value]')]
+				.filter((t) => t.checkVisibility()).map((t) => t.textContent).join('\\n')",
+		);
+		if (!str_contains($shown, $command)) {
+			throw new RuntimeException("the register box shows:\n$shown");
+		}
+	}
+
 	#[Then('the settings dialog is open on the shortcuts tab')]
 	public function settingsOnShortcuts(): void
 	{

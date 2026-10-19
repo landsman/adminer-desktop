@@ -53,6 +53,13 @@ Feature: The settings dialog
     Then the settings dialog is named by its "Settings" title
     And the focus is on the settings dialog
 
+  Scenario: The agent tab tells how to remove the registration, not only how to add it
+    When I open the AI access tab
+    And I tick the agent access switch
+    Then the register box shows "claude mcp add -s user adminer-desktop"
+    When I pick "Remove" in the register box
+    Then the register box shows "claude mcp remove -s user adminer-desktop"
+
   Scenario: The keyboard sees which tab it is on
     When I tab into the settings dialog
     Then the focused tab shows a focus ring
