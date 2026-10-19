@@ -75,7 +75,7 @@ return [
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Prístup pre AI',
 	'mcp.enable' => 'Povoliť AI agentovi dopytovať sa tejto databázy',
-	'mcp.description' => 'Agent, ktorého nižšie zaregistrujete, môže čítať databázu, do ktorej je toto okno prihlásené — štruktúru aj dopyty, o ktoré ho požiadate. Zapisovať nemôže: každý dopyt beží v transakcii, ktorá sa vráti späť. Prístup trvá len počas toho, kým je okno otvorené a prihlásené.',
+	'mcp.description' => 'Agent, ktorého nižšie zaregistrujete, môže čítať uložené pripojenia, ku ktorým ste prihlásení — to, na ktorom je toto okno, alebo iné, ktoré si sám zvolí — štruktúru aj dopyty, o ktoré ho požiadate. Zapisovať nemôže: každý dopyt beží v transakcii, ktorá sa vráti späť. Prístup trvá len počas toho, kým je okno otvorené a prihlásené.',
 	'mcp.status_off' => 'Vypnuté. K databáze sa nič nedostane.',
 	'mcp.status_waiting' => 'Zapnuté, ale zatiaľ nedostupné — prihláste sa k databáze a agent sa môže pýtať.',
 	'mcp.status_ready' => 'Pripravené. Zaregistrovaný agent sa môže pýtať databázy, do ktorej ste prihlásení.',
@@ -95,7 +95,7 @@ return [
 	'mcp.copied' => 'Skopírované',
 	'mcp.target' => 'Agent by sa pýtal:',
 	'mcp.write_enable' => 'Povoliť trvalé zmeny a mazanie dát (INSERT, UPDATE, DELETE)',
-	'mcp.write_on' => 'Zápisy sa potvrdzujú. Agent si príkazy volí sám a chybný DELETE sa odtiaľto vrátiť nedá.',
+	'mcp.write_on' => 'Zápisy sa potvrdzujú, okrem pripojenia označeného ako Prod, ktoré zostáva len na čítanie. Agent si príkazy volí sám a chybný DELETE sa odtiaľto vrátiť nedá.',
 	'mcp.write_off' => 'Len na čítanie. Príkazy, ktoré by zapisovali, sa vykonajú a vrátia späť, takže nemajú žiadny účinok.',
 
 	'mcp.register_manual' => 'Funguje aj ktorýkoľvek iný agent: zadajte mu rovnaký príkaz ako stdio MCP server v jeho vlastnom konfiguračnom súbore.',
@@ -110,6 +110,10 @@ return [
 	'mcp.agent_note_committed' => 'Zápisy sú povolené: všetko, čo tento príkaz zmenil, bolo potvrdené.',
 	'mcp.agent_note_rolled_back' => 'Toto prebehlo v transakcii, ktorá bola vrátená späť. Nič sa nezapísalo. Akékoľvek id vrátené klauzulou RETURNING pochádza zo sekvencie a neoznačuje uložený riadok.',
 	'mcp.agent_note_cut' => 'Hodnoty uvedené v truncated_cells boli skrátené, aby jeden veľký stĺpec nezaplnil váš kontext. Ak ich potrebujete celé, zavolajte znova s whole_values: true.',
+	'mcp.agent_note_no_database' => 'Okno nemá otvorenú žiadnu databázu, takže nástroje bežia vo východiskovej databáze servera, ak nejakú má. Ak sa chcete dotazovať konkrétnej databázy, odovzdajte ju ako database: vypisuje ich list_databases.',
+	'mcp.agent_unknown_connection' => 'Nie je to prihlásené uložené pripojenie. Vypisuje ich list_connections; neprihlásené treba najprv otvoriť v okne Adminer Desktopu',
+	'mcp.agent_forward_failed' => 'Adminer Desktop na tomto pripojení volanie nevybavil. Pripojenie za to nemôže, príčinu nájdete v logu aplikácie',
+	'mcp.agent_no_database' => 'Databázu sa s týmto prihlásením nepodarilo otvoriť',
 	'mcp.agent_no_result' => 'príkaz nevrátil žiadnu výsledkovú množinu',
 	'mcp.agent_parse_error' => 'chyba pri parsovaní',
 	'mcp.agent_unknown_method' => 'neznáma metóda',

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Desktop\Mcp;
 
 use Desktop\I18n\Strings;
+use Desktop\SettingKey;
+use Desktop\UserSettings;
 
 /** The bridge an agent talks to: newline-delimited JSON-RPC on stdio, the running window on HTTP.
 *
@@ -123,7 +125,7 @@ class Stdio {
 				'serverInfo' => ['name' => 'adminer-desktop', 'version' => 'offline'],
 				'instructions' => Server::INSTRUCTIONS,
 			]),
-			'tools/list' => $this->result($id, ['tools' => Server::catalogue()]),
+			'tools/list' => $this->result($id, ['tools' => $this->catalogue()]),
 			'ping' => $this->result($id, new \stdClass()),
 			// tools/call and anything else: an error the model can read and repeat to the user.
 			default => $this->result($id, [
@@ -131,6 +133,20 @@ class Stdio {
 				'isError' => true,
 			]),
 		};
+	}
+
+	/** The tools as the app would describe them, from settings.json beside the handshake.
+	*
+	* Not the defaults: a client keeps the list it got at connect, so the descriptions given while
+	* the app was closed are the ones it still trusts once the app is up — with writes on, a promise
+	* that everything is rolled back.
+	*
+	* @return list<array<string,mixed>>
+	*/
+	private function catalogue(): array {
+		$path = $this->handshake->path();
+		$settings = new UserSettings($path !== null ? dirname($path) : null);
+		return Server::catalogue((bool) $settings->get(SettingKey::McpWholeValues, false), (bool) $settings->get(SettingKey::McpWrite, false));
 	}
 
 	/** @param array<string,mixed>|\stdClass $result */

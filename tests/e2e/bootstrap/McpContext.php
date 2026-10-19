@@ -85,6 +85,14 @@ class McpContext implements Context
 		$this->writeSettings(['mcp' => true, 'mcp_write' => true]);
 	}
 
+	/** Labelled the way the start screen's edit dialog stores it, under the login's key. */
+	#[Given('AI access is on and allowed to write, but the connection is marked prod')]
+	public function accessIsOnWithWritesOnProd(): void
+	{
+		$key = implode('|', ['pgsql', (string) $this->fix['database'], (string) $this->fix['driver']['username']]);
+		$this->writeSettings(['mcp' => true, 'mcp_write' => true, 'connections' => [$key => ['env' => 'prod']]]);
+	}
+
 	#[Given('AI access is on and set to return whole values')]
 	public function accessIsOnWithWholeValues(): void
 	{
@@ -107,6 +115,15 @@ class McpContext implements Context
 	{
 		$this->logIn((string) $this->fix['driver']['username'], E2E_DATABASE);
 		$this->get(e2e_url($this->fix, ['select' => 'users']));
+	}
+
+	/** Logged in to the server but into no database: the window an agent once found itself
+	 * querying `postgres` through, with current_connection answering an empty name. */
+	#[Given('the window is logged in with no database open')]
+	public function windowHasNoDatabase(): void
+	{
+		$this->logIn((string) $this->fix['driver']['username'], '');
+		$this->get(e2e_url($this->fix, ['db' => null, 'ns' => null]));
 	}
 
 	/** The seed's SELECT-only login, into its own database: the login the docs tell you to give
@@ -309,6 +326,71 @@ class McpContext implements Context
 	public function agentCallsTool(string $tool): void
 	{
 		$this->answer = $this->rpc(['id' => 3, 'method' => 'tools/call', 'params' => ['name' => $tool, 'arguments' => []]]);
+	}
+
+	#[When('an agent calls :tool on database :database')]
+	public function agentCallsToolOnDatabase(string $tool, string $database): void
+	{
+		$this->callWith($tool, ['database' => $database]);
+	}
+
+	#[When('an agent calls :tool on connection :connection')]
+	public function agentCallsToolOnConnection(string $tool, string $connection): void
+	{
+		$this->callWith($tool, ['connection' => $connection]);
+	}
+
+	/** @param array<string, string> $arguments */
+	private function callWith(string $tool, array $arguments): void
+	{
+		$this->answer = $this->rpc(['id' => 3, 'method' => 'tools/call', 'params' => ['name' => $tool, 'arguments' => $arguments]]);
+	}
+
+	/** The key list_connections hands out is the one the other tools take, so it has to be the
+	 * login's own, signed in. */
+	#[Then('the window\'s connection is listed, signed in')]
+	public function windowConnectionListed(): void
+	{
+		$key = implode('|', ['pgsql', (string) $this->fix['database'], (string) $this->fix['driver']['username']]);
+		foreach ((array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true) as $connection) {
+			if (($connection['id'] ?? null) === $key && ($connection['signed_in'] ?? null) === true) {
+				return;
+			}
+		}
+		throw new RuntimeException("list_connections does not offer $key signed in: " . substr((string) ($this->answer['result']['content'][0]['text'] ?? ''), 0, 300));
+	}
+
+	#[Then('the database named is :database')]
+	public function databaseNamed(string $database): void
+	{
+		$said = (array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true);
+		if (($said['database'] ?? null) !== $database) {
+			throw new RuntimeException("current_connection names the database " . json_encode($said['database'] ?? null) . ", not $database");
+		}
+	}
+
+	/** A call that went somewhere else must not have taken the window, or the next call without
+	 * arguments, along with it. */
+	#[Then('the handshake still points at the window\'s database')]
+	public function handshakeStillOnWindow(): void
+	{
+		$url = (string) ($this->readHandshake()['url'] ?? '');
+		if (!str_contains($url, 'db=' . E2E_DATABASE)) {
+			throw new RuntimeException("a call on another database moved the window's handshake: $url");
+		}
+	}
+
+	/** Straight at the gate, to read the status the bridge never shows: adminer answers a JSON
+	 * body with 413, taking it for one over post_max_size. */
+	#[Then('the endpoint answers 200, not adminer\'s 413')]
+	public function endpointAnswers200(): void
+	{
+		$handshake = $this->readHandshake();
+		$this->postToGate((string) $handshake['url'], (string) $handshake['token']);
+		$status = (string) (http_get_last_response_headers()[0] ?? '');
+		if (!str_contains($status, ' 200 ')) {
+			throw new RuntimeException("the MCP endpoint answered $status");
+		}
 	}
 
 	#[When('an agent runs the query :sql')]
@@ -532,6 +614,14 @@ class McpContext implements Context
 		$this->handshake = new Handshake($this->scratch());
 		$this->handshake->clear();
 		$this->bridge = new Stdio($this->handshake, fn (): bool => false);
+	}
+
+	/** The bridge reads the settings beside the handshake, as it does from the app's data dir. */
+	#[Given('the app is not running, with writes allowed in its settings')]
+	public function appIsNotRunningWithWrites(): void
+	{
+		$this->appIsNotRunning();
+		file_put_contents(dirname((string) $this->handshake?->path()) . '/settings.json', (string) json_encode(['mcp' => true, 'mcp_write' => true]));
 	}
 
 	#[Given('the window was closed')]

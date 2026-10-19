@@ -74,7 +74,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @return null always: this hook has no opinion for other plugins, and the MCP path exits
 	*/
 	function headers(): ?string {
-		return (new Mcp\Endpoint($this->userSettings))->serve();
+		return (new Mcp\Endpoint($this->userSettings, connections: $this->connections))->serve();
 	}
 
 	/** The catalogue, so adminer-plugins.php can hand adminer the enabled plugins.

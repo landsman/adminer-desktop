@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/landsman/adminer-desktop/launcher/mcpgate"
@@ -64,7 +65,58 @@ func serveMCP(php, root string) error {
 	if dir, err := dataDir(); err == nil {
 		cmd.Env = append(cmd.Env, "ADMINER_DESKTOP_DATA="+dir)
 	}
-	return cmd.Run()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	// Caught rather than left to kill us, so the reason gets written down and PHP is stopped too
+	// instead of left reading a stdin nobody writes to. Stopped with SIGTERM whatever arrived:
+	// frankenphp's php-cli ignores SIGINT, which is what a client sends first, and waiting on it
+	// would hold us until the client's SIGKILL.
+	got := make(chan os.Signal, 1)
+	signal.Notify(got, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	first := make(chan os.Signal, 1)
+	go func() {
+		for s := range got {
+			select {
+			case first <- s:
+			default:
+			}
+			_ = cmd.Process.Signal(syscall.SIGTERM)
+		}
+	}()
+	err := cmd.Wait()
+	signal.Stop(got)
+	close(got)
+	// Without a signal, PHP returned because stdin closed: the client let go.
+	why := "the client closed stdin"
+	select {
+	case s := <-first:
+		why = "the client sent " + s.String()
+	default:
+		if err != nil {
+			why = "php " + err.Error()
+		}
+	}
+	logBridgeExit(why)
+	return err
+}
+
+// logBridgeExit says why the bridge stopped, on stderr and in the day's MCP log. Clients log
+// nothing when a server goes away, so without it a closed stdin, a kill and a crash all look like
+// a server that is simply gone.
+func logBridgeExit(why string) {
+	fmt.Fprintln(os.Stderr, "adminer-desktop -mcp stopped: "+why)
+	dir, err := logDir()
+	if err != nil {
+		return
+	}
+	// The format Desktop\Mcp\RequestLog writes: time, method, tool, detail, a tab between.
+	now := time.Now().UTC()
+	path := filepath.Join(dir, "mcp-"+now.Format(time.DateOnly)+".log")
+	if f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600); err == nil {
+		fmt.Fprintf(f, "%s\tbridge-exit\t\t%s\n", now.Format(time.RFC3339), why) //nolint:errcheck // best effort on the way out
+		f.Close()                                                                //nolint:errcheck
+	}
 }
 
 // iconPath finds the window icon: beside the binary in the shipped layout (dist and the
