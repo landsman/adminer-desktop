@@ -25,6 +25,11 @@ func installMouseNav(window unsafe.Pointer) {}
 // deliver the keystroke to it, so nothing native is needed.
 func installReloadShortcut(window unsafe.Pointer) {}
 
+// The resize flash is WKWebView's; nothing to clear elsewhere yet.
+func clearWebViewBackground(window unsafe.Pointer) {}
+
+func setWindowBackground(window unsafe.Pointer, r, g, b int) {}
+
 // installDownloads is per-platform: real on Linux (download_linux.c), a no-op on Windows
 // (download_other.go), and the macOS build has its own in menu_darwin.go.
 
