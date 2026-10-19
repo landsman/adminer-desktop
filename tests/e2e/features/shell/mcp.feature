@@ -52,6 +52,14 @@ Feature: An agent reaching the databases this window is signed in to
     When an agent calls "list_tables" on connection "pgsql|nowhere.invalid|nobody"
     Then the answer is an error mentioning "list_connections"
 
+  Scenario: A saved login that no longer opens is reported on the call that asked, and signed out
+    Given the window is also signed in as the reader, whose password then changes
+    When an agent calls "list_tables" on the reader's connection
+    Then the answer is an error mentioning "could not connect"
+    And the answer carries the call's id
+    When an agent calls "list_connections"
+    Then the reader's connection is listed, signed out
+
   Scenario: A database that does not exist is refused, not answered from the one postgres falls back to
     When an agent calls "list_tables" on database "no_such_database"
     Then the answer is an error mentioning "could not be opened"

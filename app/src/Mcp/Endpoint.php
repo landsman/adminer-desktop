@@ -46,6 +46,9 @@ class Endpoint {
 	* reaching this server directly with the window's cookies holds the whole session anyway. */
 	private const string FORWARDED = 'forwarded';
 
+	/** The JSON-RPC code of an answer from a request adminer could not connect. */
+	private const int NOT_CONNECTED = -32000;
+
 	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null, ?Connections $connections = null) {
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
@@ -224,17 +227,18 @@ class Endpoint {
 	* @param string $input the raw JSON-RPC request
 	*/
 	function answer(string $input, bool $connected): ?string {
+		$request = json_decode($input, true);
+		$id = is_array($request) ? ($request['id'] ?? null) : null;
 		if (!$connected) {
 			// Cookies good enough to reach us, but no connection — a handshake outliving the
 			// login it was written for. Say so in JSON: the agent is not reading HTML, and
-			// falling through would crash on a null driver instead.
-			return (string) json_encode(["jsonrpc" => "2.0", "id" => null, "error" => [
-				"code" => -32000,
+			// falling through would crash on a null driver instead. With the call's id: an answer
+			// without one matches no call, and the client waits on it until it drops the server.
+			return (string) json_encode(["jsonrpc" => "2.0", "id" => $id, "error" => [
+				"code" => self::NOT_CONNECTED,
 				"message" => Strings::t('mcp.agent_not_connected'),
 			]]);
 		}
-		$request = json_decode($input, true);
-		$id = is_array($request) ? ($request['id'] ?? null) : null;
 		try {
 			// A database adminer could not open still renders a page, and this hook with it, on
 			// whatever it fell back to: postgres connects to `postgres` instead. Answering there
@@ -242,7 +246,8 @@ class Endpoint {
 			// only: there select_db() just says how the connect went, elsewhere it runs USE or
 			// ATTACH again.
 			if (\Adminer\DRIVER === 'pgsql' && \Adminer\DB !== '' && !\Adminer\connection()->select_db(\Adminer\DB)) {
-				throw new McpError(Strings::t('mcp.agent_no_database') . ': ' . \Adminer\DB . ' (' . \Adminer\connection()->error . ')');
+				$error = (string) \Adminer\connection()->error;
+				throw new McpError(Strings::t('mcp.agent_no_database') . ': ' . \Adminer\DB . ($error !== '' ? " ($error)" : ''));
 			}
 			$elsewhere = is_array($request) ? $this->elsewhere($request) : null;
 			if ($elsewhere !== null) {
@@ -324,6 +329,12 @@ class Endpoint {
 		if ($answer !== '' && $answer[0] !== '{') {
 			// Adminer's login page: the password the list said it held did not open it.
 			throw new McpError(Strings::t('mcp.agent_unknown_connection') . ": $key");
+		}
+		// The saved login did not open: its server is down, or the password changed. Adminer has
+		// signed it out by now (auth_error()), as it does for a login typed into the window.
+		$decoded = json_decode($answer, true);
+		if (is_array($decoded) && ($decoded['error']['code'] ?? null) === self::NOT_CONNECTED) {
+			throw new McpError(Strings::t('mcp.agent_connect_failed') . ": $key");
 		}
 		return $answer;
 	}
