@@ -547,6 +547,14 @@ class McpContext implements Context
 		$this->bridge = new Stdio($this->handshake, fn (): bool => false);
 	}
 
+	/** The bridge reads the settings beside the handshake, as it does from the app's data dir. */
+	#[Given('the app is not running, with writes allowed in its settings')]
+	public function appIsNotRunningWithWrites(): void
+	{
+		$this->appIsNotRunning();
+		file_put_contents(dirname((string) $this->handshake?->path()) . '/settings.json', (string) json_encode(['mcp' => true, 'mcp_write' => true]));
+	}
+
 	#[Given('the window was closed')]
 	public function windowWasClosed(): void
 	{

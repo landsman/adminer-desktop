@@ -35,7 +35,7 @@ class Server {
 	* first call, so an unavailable app reads as "ask the user" rather than as a missing server
 	* the model then builds its own way around.
 	*/
-	public const string INSTRUCTIONS = 'The database the Adminer Desktop window is logged into, read-only. These tools are the only'
+	public const string INSTRUCTIONS = 'The database the Adminer Desktop window is logged into. These tools are the only'
 		. ' sanctioned way to reach it. When a tool answers that the app is unavailable, tell the user what it said and wait:'
 		. ' do not connect to the database another way, read its credentials, or write a bridge of your own.';
 
@@ -44,9 +44,13 @@ class Server {
 	/** Whether the user turned the cut off for good, so the descriptions do not promise one. */
 	private bool $whole;
 
+	/** Whether writes are kept, so execute_query's description does not promise a rollback. */
+	private bool $write;
+
 	function __construct(?Tools $tools = null, bool $write = false, bool $whole = false) {
 		$this->tools = $tools ?? new Tools($write, $whole);
 		$this->whole = $whole;
+		$this->write = $write;
 	}
 
 	/** Handle one JSON-RPC message.
@@ -78,7 +82,7 @@ class Server {
 					'serverInfo' => ['name' => 'adminer-desktop', 'version' => \Adminer\VERSION],
 					'instructions' => self::INSTRUCTIONS,
 				]),
-				'tools/list' => $this->result($id, ['tools' => self::catalogue($this->whole)]),
+				'tools/list' => $this->result($id, ['tools' => self::catalogue($this->whole, $this->write)]),
 				'tools/call' => $this->result($id, $this->call($params)),
 				'ping' => $this->result($id, new \stdClass()),
 				default => $this->error($id, -32601, Strings::t('mcp.agent_unknown_method') . ": $method"),
@@ -115,7 +119,7 @@ class Server {
 	* Static so the bridge can advertise it with no app behind it: see Stdio::unavailable().
 	* @return list<array<string,mixed>>
 	*/
-	static function catalogue(bool $whole = false): array {
+	static function catalogue(bool $whole = false, bool $write = false): array {
 		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
 		// Said in the description, so the agent can choose whole_values before its first call
 		// rather than learning about the cut from a result it then has to ask for again.
@@ -153,7 +157,12 @@ class Server {
 			],
 			[
 				'name' => 'execute_query',
-				'description' => 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data. Results are capped at 200 rows. ' . $cells,
+				// Follows the setting: an agent trusts this sentence, and with writes on a promise of a
+				// rollback is the one that leads it to run something it believes will be undone.
+				'description' => ($write
+					? 'Run a SQL statement and return its rows. Writes are allowed in Adminer Desktop\'s settings, so whatever the statement changes is committed.'
+					: 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data.')
+					. ' Results are capped at 200 rows. ' . $cells,
 				'inputSchema' => [
 					'type' => 'object',
 					'properties' => [

@@ -17,6 +17,11 @@ Feature: The stdio bridge when there is no app behind it
     When a client calls a tool through the bridge
     Then the call is a tool error saying "AI access"
 
+  Scenario: Described offline as the settings say, since a client keeps the list it got at connect
+    Given the app is not running, with writes allowed in its settings
+    When a client lists the tools through the bridge
+    Then the description of "execute_query" mentions "is committed"
+
   Scenario: A notification with no handshake is answered with silence
     Given the app is not running
     When a notification arrives through the bridge

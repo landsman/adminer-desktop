@@ -29,6 +29,7 @@ Feature: An agent reaching the database this window is logged into
     When an agent lists the tools
     Then the tools offered include "current_connection, list_tables, describe_table, preview_table_data, execute_query"
     And the description of "execute_query" mentions "longer than 2000 characters are cut"
+    And the description of "execute_query" mentions "always rolled back"
     And the description of "preview_table_data" mentions "whole_values: true"
     And the endpoint answers 200, not adminer's 413
     When an agent calls "list_tables"
@@ -75,6 +76,8 @@ Feature: An agent reaching the database this window is logged into
 
   Scenario: With writes allowed the same statement persists, and says so
     Given AI access is on and allowed to write
+    When an agent lists the tools
+    Then the description of "execute_query" mentions "is committed"
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-committed') RETURNING id"
     Then the answer no longer claims a rollback
     And the row named "mcp-committed" is in the database
