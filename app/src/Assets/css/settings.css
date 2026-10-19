@@ -179,6 +179,12 @@ dialog#desktop-settings p.message {
 }
 
 /* ...except the first, which sits directly under the tab strip and needs no gap above it. */
+/* The register box is the last thing in the panel and has a border of its own, so the panel's
+   usual bottom gap left it looking parked on the dialog's footer. */
+#desktop-panels > #desktop-panel-mcp {
+	padding-bottom: calc(2 * var(--ad-panel-gap));
+}
+
 #desktop-panel-mcp > p:first-child {
 	margin-top: 0;
 }
@@ -338,7 +344,6 @@ dialog#desktop-settings p.message {
 	margin: 0;
 	white-space: pre-wrap;
 	word-break: break-all;
-	background: var(--bg);
 	color: var(--fg);
 	border: 1px solid var(--ad-border);
 	border-radius: var(--ad-radius-sm);
@@ -348,6 +353,13 @@ dialog#desktop-settings p.message {
 	   longer grows with a translated label. */
 	padding: 0.7em 3.4em 0.7em 0.8em;
 	line-height: 1.5;
+}
+
+/* Adminer's --lit, so the command reads as code set apart from the prose: every design defines
+   it for both schemes, and ours makes it the accent's tint, where a grey looked dull. Two
+   classes, because adminer's `pre.jush { background: var(--bg) }` outranks one. */
+.ad-copy .ad-copy-value {
+	background: var(--lit);
 }
 
 /* The command's parts, in JUSH's colours: .jush on the field defines them, and adminer's
@@ -367,13 +379,15 @@ dialog#desktop-settings p.message {
 }
 
 /* Icon only: square, and large enough to be an easy target on a touchpad. The label is the
-   title and the accessible name — see copy-field.latte. Sized to fit a one-line field, which is
-   0.9 × (1.5 line + 1.4 padding) ≈ 2.6em tall: at 2.4em with a 0.5em offset it hung out of the
-   bottom of it. 2em with 0.3em around it sits centred there, and still above 24px (WCAG 2.5.8). */
+   title and the accessible name — see copy-field.latte. Centred on the field rather than offset
+   from its top: an offset worked out from the field's line height was off by a few pixels in
+   WebKit, where the monospace line box is not quite what the arithmetic says. 2em fits a
+   one-line field and stays above 24px (WCAG 2.5.8). */
 .ad-copy-button {
 	position: absolute;
-	top: 0.3em;
+	top: 50%;
 	right: 0.3em;
+	transform: translateY(-50%);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
