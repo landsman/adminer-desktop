@@ -35,6 +35,12 @@ Feature: An agent reaching the database this window is logged into
     When an agent calls "list_tables"
     Then the answer mentions "users"
 
+  Scenario: With no database open, current_connection names the one the queries run in
+    Given the window is logged in with no database open
+    When an agent calls "current_connection"
+    Then the database named is "postgres"
+    And the answer mentions "no database open"
+
   Scenario: A write through the tool is refused as read-only and leaves nothing behind
     Given the same statement lands when it is run straight at the database
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-rollback-probe') RETURNING id"

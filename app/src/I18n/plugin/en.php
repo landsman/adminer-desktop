@@ -121,6 +121,7 @@ return [
 	'mcp.agent_note_committed' => 'Writes are enabled: anything this statement changed has been committed.',
 	'mcp.agent_note_rolled_back' => 'This ran inside a transaction that was rolled back. Nothing was written. Any id returned by RETURNING came from a sequence and does not identify a stored row.',
 	'mcp.agent_note_cut' => 'Values listed in truncated_cells were cut so that one large column does not fill your context. Call again with whole_values: true if you need them whole.',
+	'mcp.agent_note_no_database' => 'The window has no database open, so the tools run in the server\'s default one, if it has any. To query a particular database, ask the user to open it in the window: the tools follow it.',
 	'mcp.agent_no_result' => 'the statement returned no result set',
 	'mcp.agent_parse_error' => 'parse error',
 	'mcp.agent_unknown_method' => 'unknown method',

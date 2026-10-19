@@ -105,15 +105,27 @@ class Tools {
 			: ['rolled_back' => true, 'note' => Strings::t('mcp.agent_note_rolled_back')]);
 	}
 
+	/** How a driver that connects with no database chosen says which one it landed in. */
+	private const array CURRENT_DATABASE = ['pgsql' => 'SELECT current_database()', 'mssql' => 'SELECT DB_NAME()'];
+
 	/** What this window is connected to — the answer to "which database am I even looking at".
+	*
+	* The database the queries run in, not the one in the window's URL: with none chosen there,
+	* postgres connects to `postgres` and MS SQL to the login's default, and an empty answer hid
+	* that the agent was querying the wrong one.
+	*
 	* @return array<string,string>
 	*/
 	function connection(): array {
+		$database = \Adminer\DB;
+		if ($database === '' && isset(self::CURRENT_DATABASE[\Adminer\DRIVER])) {
+			$database = (string) \Adminer\get_val(self::CURRENT_DATABASE[\Adminer\DRIVER]);
+		}
 		return [
 			'driver' => \Adminer\DRIVER,
 			'server' => \Adminer\SERVER,
-			'database' => \Adminer\DB,
-		];
+			'database' => $database,
+		] + (\Adminer\DB === '' ? ['note' => Strings::t('mcp.agent_note_no_database')] : []);
 	}
 
 	/** Run one statement inside a transaction and roll it back.

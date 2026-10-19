@@ -129,7 +129,7 @@ class Server {
 		return [
 			[
 				'name' => 'current_connection',
-				'description' => 'Which database this Adminer Desktop window is connected to (driver, server, database). Call this first when you do not know what you are querying.',
+				'description' => 'Which database this Adminer Desktop window is connected to (driver, server, database). Call this first when you do not know what you are querying: every tool runs in the database the window has open, and with none open, in the server\'s default one.',
 				'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()],
 			],
 			[

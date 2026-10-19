@@ -110,6 +110,7 @@ return [
 	'mcp.agent_note_committed' => 'Zapisy są włączone: wszystko, co zmieniła ta instrukcja, zostało zatwierdzone.',
 	'mcp.agent_note_rolled_back' => 'To wykonało się w transakcji, która została wycofana. Nic nie zostało zapisane. Identyfikator zwrócony przez RETURNING pochodzi z sekwencji i nie wskazuje zapisanego wiersza.',
 	'mcp.agent_note_cut' => 'Wartości wymienione w truncated_cells zostały obcięte, aby jedna duża kolumna nie zapełniła kontekstu. Jeśli potrzebujesz ich w całości, wywołaj ponownie z whole_values: true.',
+	'mcp.agent_note_no_database' => 'W oknie nie jest otwarta żadna baza danych, więc narzędzia działają w domyślnej bazie serwera, jeśli taką ma. Aby odpytać konkretną bazę, poproś użytkownika, żeby otworzył ją w oknie: narzędzia podążają za nim.',
 	'mcp.agent_no_result' => 'instrukcja nie zwróciła zbioru wyników',
 	'mcp.agent_parse_error' => 'błąd parsowania',
 	'mcp.agent_unknown_method' => 'nieznana metoda',

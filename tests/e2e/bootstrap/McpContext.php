@@ -109,6 +109,15 @@ class McpContext implements Context
 		$this->get(e2e_url($this->fix, ['select' => 'users']));
 	}
 
+	/** Logged in to the server but into no database: the window an agent once found itself
+	 * querying `postgres` through, with current_connection answering an empty name. */
+	#[Given('the window is logged in with no database open')]
+	public function windowHasNoDatabase(): void
+	{
+		$this->logIn((string) $this->fix['driver']['username'], '');
+		$this->get(e2e_url($this->fix, ['db' => null, 'ns' => null]));
+	}
+
 	/** The seed's SELECT-only login, into its own database: the login the docs tell you to give
 	 * an agent, and the one to prove least privilege against. */
 	#[Given('the window is logged in as the SELECT-only reader instead')]
@@ -321,6 +330,15 @@ class McpContext implements Context
 		$status = (string) (http_get_last_response_headers()[0] ?? '');
 		if (!str_contains($status, ' 200 ')) {
 			throw new RuntimeException("the MCP endpoint answered $status");
+		}
+	}
+
+	#[Then('the database named is :database')]
+	public function databaseNamed(string $database): void
+	{
+		$said = (array) json_decode((string) ($this->answer['result']['content'][0]['text'] ?? ''), true);
+		if (($said['database'] ?? null) !== $database) {
+			throw new RuntimeException("current_connection names the database " . json_encode($said['database'] ?? null) . ", not $database");
 		}
 	}
 

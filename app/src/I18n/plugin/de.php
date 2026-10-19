@@ -110,6 +110,7 @@ return [
 	'mcp.agent_note_committed' => 'Schreibzugriffe sind erlaubt: Was diese Anweisung geändert hat, wurde festgeschrieben.',
 	'mcp.agent_note_rolled_back' => 'Dies lief in einer Transaktion, die zurückgerollt wurde. Es wurde nichts geschrieben. Eine von RETURNING gelieferte id stammt aus einer Sequenz und bezeichnet keine gespeicherte Zeile.',
 	'mcp.agent_note_cut' => 'Die in truncated_cells aufgeführten Werte wurden gekürzt, damit eine große Spalte nicht Ihren Kontext füllt. Rufen Sie erneut mit whole_values: true auf, wenn Sie sie vollständig brauchen.',
+	'mcp.agent_note_no_database' => 'Im Fenster ist keine Datenbank geöffnet, daher laufen die Werkzeuge in der Standarddatenbank des Servers, sofern er eine hat. Um eine bestimmte Datenbank abzufragen, bitten Sie den Benutzer, sie im Fenster zu öffnen: Die Werkzeuge folgen ihm.',
 	'mcp.agent_no_result' => 'die Anweisung lieferte keine Ergebnismenge',
 	'mcp.agent_parse_error' => 'Parse-Fehler',
 	'mcp.agent_unknown_method' => 'unbekannte Methode',

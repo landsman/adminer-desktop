@@ -110,6 +110,7 @@ return [
 	'mcp.agent_note_committed' => 'Zápisy sú povolené: všetko, čo tento príkaz zmenil, bolo potvrdené.',
 	'mcp.agent_note_rolled_back' => 'Toto prebehlo v transakcii, ktorá bola vrátená späť. Nič sa nezapísalo. Akékoľvek id vrátené klauzulou RETURNING pochádza zo sekvencie a neoznačuje uložený riadok.',
 	'mcp.agent_note_cut' => 'Hodnoty uvedené v truncated_cells boli skrátené, aby jeden veľký stĺpec nezaplnil váš kontext. Ak ich potrebujete celé, zavolajte znova s whole_values: true.',
+	'mcp.agent_note_no_database' => 'Okno nemá otvorenú žiadnu databázu, takže nástroje bežia vo východiskovej databáze servera, ak nejakú má. Ak sa chcete dotazovať konkrétnej databázy, požiadajte používateľa, aby ju v okne otvoril: nástroje pracujú s tým, čo je otvorené v okne.',
 	'mcp.agent_no_result' => 'príkaz nevrátil žiadnu výsledkovú množinu',
 	'mcp.agent_parse_error' => 'chyba pri parsovaní',
 	'mcp.agent_unknown_method' => 'neznáma metóda',

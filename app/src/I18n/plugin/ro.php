@@ -110,6 +110,7 @@ return [
 	'mcp.agent_note_committed' => 'Scrierile sunt permise: tot ce a modificat această instrucțiune a fost confirmat.',
 	'mcp.agent_note_rolled_back' => 'Aceasta a rulat într-o tranzacție anulată. Nu s-a scris nimic. Orice id returnat de RETURNING provine dintr-o secvență și nu identifică un rând stocat.',
 	'mcp.agent_note_cut' => 'Valorile enumerate în truncated_cells au fost trunchiate pentru ca o singură coloană mare să nu îți umple contextul. Apelează din nou cu whole_values: true dacă ai nevoie de ele întregi.',
+	'mcp.agent_note_no_database' => 'Fereastra nu are nicio bază de date deschisă, așa că instrumentele rulează în baza de date implicită a serverului, dacă are una. Pentru a interoga o anumită bază de date, cereți utilizatorului să o deschidă în fereastră: instrumentele o urmează.',
 	'mcp.agent_no_result' => 'instrucțiunea nu a returnat niciun set de rezultate',
 	'mcp.agent_parse_error' => 'eroare de analiză',
 	'mcp.agent_unknown_method' => 'metodă necunoscută',
