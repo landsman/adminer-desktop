@@ -245,7 +245,9 @@ function e2e_slow_server(): string
 	static $server = null, $address = '';
 	if (!$server) {
 		$port = e2e_free_port(55999);
-		$server = new Process([dirname(__DIR__, 3) . '/bin/frankenphp', 'php-cli', __DIR__ . '/slow-server.php', (string) $port, '1']);
+		// 3 s a connect, so a login waits ~6 s (postgres asks twice): at 1 s the 2 s wait ended
+		// before a CI runner saw the indicator past its 0.45 s fade-in, and the step timed out.
+		$server = new Process([dirname(__DIR__, 3) . '/bin/frankenphp', 'php-cli', __DIR__ . '/slow-server.php', (string) $port, '3']);
 		$server->start();
 		// Listening, not merely started: a login sent before would be refused, not kept waiting.
 		$server->waitUntil(fn (string $type, string $output): bool => str_contains($output, 'listening'));
