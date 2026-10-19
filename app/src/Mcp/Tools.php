@@ -36,7 +36,7 @@ class Tools {
 	/** Whether every value comes back whole, as if each call asked for whole_values. */
 	private bool $whole;
 
-	/** The saved ones, for list_connections; none without it. */
+	/** The saved ones, for list_connections and the window's id; none without it. */
 	private ?Connections $connections;
 
 	function __construct(bool $write = false, bool $whole = false, ?Connections $connections = null) {
@@ -128,7 +128,7 @@ class Tools {
 			$database = (string) \Adminer\get_val(self::CURRENT_DATABASE[\Adminer\DRIVER]);
 		}
 		return [
-			'id' => \Adminer\DRIVER . '|' . \Adminer\SERVER . '|' . (string) $_GET["username"],
+			'id' => $this->connections?->current()?->key() ?? '',
 			'driver' => \Adminer\DRIVER,
 			'server' => \Adminer\SERVER,
 			'database' => $database,
