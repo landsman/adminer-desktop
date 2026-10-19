@@ -1,4 +1,4 @@
-name: claude mentions
+name: claude bot
 
 # This repo's own caller, and the worked example of the stub every other repo
 # copies. The one difference is the `./` path: local, so a change to the
@@ -16,7 +16,7 @@ on:
     types: [created]
 
 jobs:
-  claude:
+  anthropic:
     # Two gates, and neither is the security boundary — the action itself
     # refuses anyone without write access to this repo, which is what keeps a
     # public repo's passers-by out. These are narrower than that on purpose:
