@@ -1041,15 +1041,26 @@ class McpContext implements Context
 	}
 
 	/** The parse behind the MySQL refusal, with no MySQL: the e2e MCP scenarios run on postgres. */
-	#[Then('of MySQL\'s grants only ALL on *.*, SUPER, FILE and the mysql schema are refused')]
+	#[Then('of MySQL\'s grants only those beyond one database\'s data are refused')]
 	public function mysqlGrantsJudged(): void
 	{
 		$cases = [
 			'GRANT ALL PRIVILEGES ON *.* TO `root`@`localhost` WITH GRANT OPTION' => ['ALL PRIVILEGES'],
-			'GRANT SELECT, INSERT, FILE, SUPER ON *.* TO `u`@`%`' => ['FILE', 'SUPER'],
+			'GRANT SELECT, FILE, SUPER ON *.* TO `u`@`%`' => ['SELECT', 'FILE', 'SUPER'],
+			'GRANT BACKUP_ADMIN,BINLOG_ADMIN ON *.* TO `root`@`localhost`' => ['BACKUP_ADMIN', 'BINLOG_ADMIN'],
+			'GRANT SELECT ON *.* TO `u`@`%`' => ['SELECT'],
 			'GRANT SELECT ON `mysql`.`user` TO `u`@`%`' => ['SELECT ON `mysql`.`user`'],
+			'GRANT SELECT ON MYSQL.* TO `u`@`%`' => ['SELECT ON MYSQL.*'],
+			'GRANT SELECT ON `my%`.* TO `u`@`%`' => ['SELECT ON `my%`.*'],
+			'GRANT SELECT ON `m_sql`.* TO `u`@`%`' => ['SELECT ON `m_sql`.*'],
+			'GRANT SELECT ON `m\_sql`.* TO `u`@`%`' => [],
+			"GRANT PROXY ON ''@'' TO 'root'@'localhost' WITH GRANT OPTION" => ["PROXY ON ''@''"],
+			'GRANT SELECT ON `broken TO `u`@`%`' => ['GRANT SELECT ON `broken TO `u`@`%`'],
 			'GRANT USAGE ON *.* TO `agent`@`%`' => [],
+			"GRANT USAGE ON *.* TO `agent`@`%` IDENTIFIED BY PASSWORD '*0123ABCD'" => [],
 			'GRANT ALL PRIVILEGES ON `app`.* TO `agent`@`%`' => [],
+			'GRANT SELECT ON `my app`.* TO `agent`@`%`' => [],
+			'GRANT SELECT (`id`, `name`) ON `app`.`users` TO `agent`@`%`' => [],
 			'GRANT `dba`@`%` TO `agent`@`%`' => [],
 		];
 		foreach ($cases as $grant => $expected) {

@@ -99,7 +99,6 @@ Feature: An agent reaching the databases this window is signed in to
     Given the window is logged in as the superuser instead
     When an agent calls "list_tables"
     Then the answer is an error mentioning "SUPERUSER postgres"
-    And the answer is an error mentioning "pg_execute_server_program"
     When an agent calls "list_connections"
     Then the answer mentions "signed_in"
 

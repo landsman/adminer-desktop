@@ -116,6 +116,7 @@ return [
 	'mcp.agent_connect_failed' => 'Adminer Desktop nu s-a putut conecta cu această autentificare salvată: serverul ei nu rulează sau parola nu mai este valabilă. Adminer o deconectează atunci, așa că cereți utilizatorului să se autentifice din nou în fereastră după ce serverul pornește',
 	'mcp.agent_no_database' => 'Baza de date nu a putut fi deschisă cu această autentificare',
 	'mcp.agent_overprivileged' => 'Această autentificare depășește o interogare doar pentru citire — rulează un program pe serverul bazei de date, îi citește fișierele sau hash-urile parolelor — așa că Adminer Desktop nu o pune la dispoziția unui agent. Autentificați fereastra cu un rol fără aceste drepturi sau retrageți-le acestuia',
+	'mcp.agent_privileges_unknown' => 'Adminer Desktop nu a putut verifica ce are voie această autentificare pe server, așa că nu o pune la dispoziția unui agent',
 	'mcp.agent_no_result' => 'instrucțiunea nu a returnat niciun set de rezultate',
 	'mcp.agent_parse_error' => 'eroare de analiză',
 	'mcp.agent_unknown_method' => 'metodă necunoscută',

@@ -116,6 +116,7 @@ return [
 	'mcp.agent_connect_failed' => 'Adminer Desktop sa s týmto uloženým prihlásením nepripojil: jeho server nebeží, alebo heslo už neplatí. Adminer také prihlásenie odhlási, preto požiadajte používateľa, nech sa k nemu v okne znova prihlási, keď server pobeží',
 	'mcp.agent_no_database' => 'Databázu sa s týmto prihlásením nepodarilo otvoriť',
 	'mcp.agent_overprivileged' => 'Toto prihlásenie sa dostane mimo dotazu len na čítanie — spustí program na databázovom serveri, prečíta jeho súbory alebo hashe hesiel — preto ho Adminer Desktop agentovi nepožičia. Prihláste okno rolou, ktorá ich nemá, alebo ich tejto odoberte',
+	'mcp.agent_privileges_unknown' => 'Adminer Desktop nedokázal overiť, čo toto prihlásenie na serveri smie, preto ho agentovi nepožičia',
 	'mcp.agent_no_result' => 'príkaz nevrátil žiadnu výsledkovú množinu',
 	'mcp.agent_parse_error' => 'chyba pri parsovaní',
 	'mcp.agent_unknown_method' => 'neznáma metóda',

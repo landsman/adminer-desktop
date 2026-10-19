@@ -155,38 +155,73 @@ class Tools {
 		], $this->connections?->saved() ?? []);
 	}
 
-	/** PostgreSQL: a superuser, or a member of one of the roles that reach the server's files and
-	* programs. pg_has_role() and not rolname = current_user, so a role that can SET ROLE to one
-	* counts too; a superuser is a member of everything and so lists all of them. */
-	private const string PGSQL_OVERPRIVILEGED = "SELECT CASE WHEN rolsuper THEN 'SUPERUSER ' || rolname ELSE rolname END FROM pg_roles"
-		. " WHERE (rolsuper OR rolname IN ('pg_read_server_files', 'pg_write_server_files', 'pg_execute_server_program'))"
-		. " AND pg_has_role(current_user, oid, 'MEMBER') ORDER BY rolsuper DESC, rolname";
+	/** PostgreSQL, everything that reaches the server's files and programs, as one list:
+	* a superuser; a member of the roles that grant it, through pg_has_role() so a role the login
+	* can SET ROLE to counts too; EXECUTE on the file and large-object functions, which can be
+	* granted one by one without the roles; and CREATEROLE before 16, which could grant itself any
+	* of those roles (16 asks for ADMIN on them). A superuser has all of it, so it is named alone.
+	*/
+	private const string PGSQL_OVERPRIVILEGED = <<<'SQL'
+		WITH su AS (SELECT rolname FROM pg_roles WHERE rolsuper AND pg_has_role(current_user, oid, 'MEMBER'))
+		SELECT 'SUPERUSER ' || rolname FROM su
+		UNION ALL SELECT rolname FROM pg_roles
+			WHERE rolname IN ('pg_read_server_files', 'pg_write_server_files', 'pg_execute_server_program')
+			AND pg_has_role(current_user, oid, 'MEMBER') AND NOT EXISTS (SELECT FROM su)
+		UNION ALL SELECT 'EXECUTE ' || f FROM unnest(ARRAY['pg_read_file(text)', 'pg_read_binary_file(text)', 'pg_ls_dir(text)', 'lo_import(text)', 'lo_export(oid, text)']) f
+			WHERE has_function_privilege(current_user, f, 'EXECUTE') AND NOT EXISTS (SELECT FROM su)
+		UNION ALL SELECT 'CREATEROLE ' || rolname FROM pg_roles
+			WHERE rolcreaterole AND pg_has_role(current_user, oid, 'MEMBER') AND NOT EXISTS (SELECT FROM su)
+			AND current_setting('server_version_num')::int < 160000
+		SQL;
 
 	/** Refuse a login whose privileges reach past a read-only query — what the transaction cannot
 	* contain, a superuser running a program on the server inside BEGIN READ ONLY.
 	*
-	* About the server, not the data, so the writes setting changes nothing here. PostgreSQL and
-	* MySQL/MariaDB only; the other drivers are not checked.
+	* About the server, not the data, so the writes setting changes nothing here. A check that
+	* could not be read refuses too: an empty answer from a failed query reads exactly like a clean
+	* login. PostgreSQL and MySQL/MariaDB only; the other drivers are not checked.
 	*
 	* @throws McpError
 	*/
 	function refuseOverprivileged(): void {
 		$found = match (\Adminer\DRIVER) {
-			'pgsql' => \Adminer\get_vals(self::PGSQL_OVERPRIVILEGED),
+			'pgsql' => self::rows(self::PGSQL_OVERPRIVILEGED),
 			// ponytail: MySQL 8 leaves a granted role's privileges out of a bare SHOW GRANTS; add USING
 			// the active roles if logins that hold FILE through a role turn up.
-			'server' => self::overprivilegedGrants(\Adminer\get_vals('SHOW GRANTS')),
+			'server' => self::overprivilegedGrants(self::rows('SHOW GRANTS') ?: throw new McpError(Strings::t('mcp.agent_privileges_unknown'))),
 			default => [],
 		};
 		if ($found !== []) {
-			throw new McpError(Strings::t('mcp.agent_overprivileged') . ': ' . implode(', ', array_map('strval', $found)));
+			throw new McpError(Strings::t('mcp.agent_overprivileged') . ': ' . implode(', ', $found));
 		}
 	}
 
-	/** Which lines of MySQL's SHOW GRANTS reach the server rather than the data: ALL PRIVILEGES on
-	* *.*, SUPER, FILE, or anything on the mysql schema, where the password hashes and the grants
-	* themselves live. ALL on one database is about that database's data, and is left to the
-	* writes setting.
+	/** The first column of every row, or an McpError where adminer's get_vals() would answer an
+	* empty list for a query that failed.
+	* @return list<string>
+	* @throws McpError
+	*/
+	private static function rows(string $sql): array {
+		$result = \Adminer\connection()->query($sql);
+		if (!is_object($result)) {
+			throw new McpError(Strings::t('mcp.agent_privileges_unknown') . ': ' . \Adminer\connection()->error);
+		}
+		$rows = [];
+		while ($row = $result->fetch_row()) {
+			$rows[] = (string) $row[0];
+		}
+		return $rows;
+	}
+
+	/** One part of a grant's target: a backquoted name, a bare one, or *. */
+	private const string GRANT_PART = '(?:`(?:[^`]|``)*`|[^\s`.]+)';
+
+	/** Which lines of MySQL's SHOW GRANTS reach past one database's data: any privilege on *.*
+	* but USAGE — a global SELECT reads mysql.user and its password hashes as much as FILE reads
+	* the server's files — and anything on the mysql schema, a wildcard that matches it included.
+	* ALL on one database is about that database's data, and is left to the writes setting.
+	*
+	* A line that names a target this cannot read is reported whole rather than skipped.
 	*
 	* @param list<string> $grants
 	* @return list<string>
@@ -195,21 +230,39 @@ class Tools {
 		$found = [];
 		foreach ($grants as $grant) {
 			// A granted role reads GRANT `role`@`%` TO …, with no ON: not a privilege in itself.
-			if (!preg_match('~^GRANT (.+?) ON (\S+) TO ~i', $grant, $match)) {
+			if (!preg_match('~ ON ~i', $grant)) {
 				continue;
 			}
-			$privileges = array_map('trim', explode(',', strtoupper($match[1])));
-			if (preg_match('~^`?mysql`?\.~i', $match[2])) {
-				$found[] = "$match[1] ON $match[2]";
+			$part = self::GRANT_PART;
+			if (!preg_match("~^GRANT (.+?) ON (?:(?:TABLE|FUNCTION|PROCEDURE) )?($part)(?:\\.($part))? TO ~i", $grant, $match)) {
+				$found[] = $grant;
 				continue;
 			}
-			foreach ($privileges as $privilege) {
-				if (in_array($privilege, ['SUPER', 'FILE'], true) || ($match[2] === '*.*' && in_array($privilege, ['ALL', 'ALL PRIVILEGES'], true))) {
-					$found[] = $privilege;
-				}
+			$schema = str_starts_with($match[2], '`') ? str_replace('``', '`', substr($match[2], 1, -1)) : $match[2];
+			if (preg_match('~^PROXY\b~i', $match[1])) {
+				// Lets the login act as another account, whoever that is.
+				$found[] = "PROXY ON $match[2]";
+			} elseif ($match[2] === '*' && ($match[3] ?? '') === '*') {
+				// Column lists off, SELECT (a, b) is a SELECT; MySQL 8 lists dynamic privileges with no space.
+				$privileges = array_map(fn($p) => trim((string) preg_replace('~\s*\(.*~', '', $p)), explode(',', strtoupper($match[1])));
+				array_push($found, ...array_diff($privileges, ['USAGE']));
+			} elseif (preg_match(self::schemaPattern($schema), 'mysql')) {
+				$found[] = "$match[1] ON $match[2]" . (isset($match[3]) ? ".$match[3]" : '');
 			}
 		}
 		return array_values(array_unique($found));
+	}
+
+	/** A grant's schema name as a regex: MySQL reads _ and % in it as LIKE wildcards, \_ and \% as
+	* the characters. */
+	private static function schemaPattern(string $schema): string {
+		$pattern = preg_replace_callback('~\\\\[_%]|[_%]|[^_%\\\\]+|\\\\~', fn($m) => match ($m[0]) {
+			'_' => '.',
+			'%' => '.*',
+			'\_', '\%' => preg_quote($m[0][1], '~'),
+			default => preg_quote($m[0], '~'),
+		}, $schema);
+		return "~^$pattern$~i";
 	}
 
 	/** The databases on this connection's server that the login may open.

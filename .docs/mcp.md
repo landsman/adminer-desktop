@@ -103,11 +103,18 @@ error. Leave out of the grants any table or column holding secrets of your own u
 hashes, tokens, API keys) — a role that can read a table can read all of it.
 
 **A login that can step out of the query is refused**, before any tool but `list_connections`
-runs, with the privilege to take away named in the answer: on PostgreSQL a superuser or a member
-of `pg_read_server_files`, `pg_write_server_files` or `pg_execute_server_program`; on MySQL and
-MariaDB `ALL PRIVILEGES` on `*.*`, `SUPER`, `FILE` or anything on `mysql.*`. There is no switch to
-allow it anyway, and allowing writes does not change it: it is about the server, not the data.
-The other databases are not checked.
+runs, with the privilege to take away named in the answer:
+
+- PostgreSQL: a superuser; a member of `pg_read_server_files`, `pg_write_server_files` or
+  `pg_execute_server_program`; `EXECUTE` on `pg_read_file`, `pg_read_binary_file`, `pg_ls_dir`,
+  `lo_import` or `lo_export`; and before 16, `CREATEROLE`, which could grant itself those roles.
+- MySQL and MariaDB: any privilege on `*.*` but `USAGE` — a global `SELECT` reads `mysql.user`
+  and its password hashes — anything on `mysql.*` or a wildcard that matches it, and `PROXY`.
+
+A login whose privileges cannot be read is refused too. There is no switch to allow it anyway,
+and allowing writes does not change it: it is about the server, not the data. `ALL` on one
+database is that database's data, and is left to the writes switch. The other databases are not
+checked, and on MySQL 8 a privilege held only through a granted role is not seen.
 
 ## Answers you might get instead
 

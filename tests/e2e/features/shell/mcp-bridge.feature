@@ -54,4 +54,4 @@ Feature: The stdio bridge when there is no app behind it
     Then the bridge answers each request once and every notification never
 
   Scenario: MySQL grants that reach the server are told from grants on the data
-    Then of MySQL's grants only ALL on *.*, SUPER, FILE and the mysql schema are refused
+    Then of MySQL's grants only those beyond one database's data are refused

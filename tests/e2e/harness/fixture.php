@@ -28,8 +28,8 @@ const E2E_DATABASE = 'demo';
 const E2E_READER = 'reader';
 const E2E_SECOND_DATABASE = 'inventory';
 
-/** The postgres login the MCP scenarios log the window in as: it may write the demo data, and is
- * no superuser, which the agent tools refuse. */
+/** The login the MCP scenarios log the window in as, on either driver: it may write the demo data
+ * and nothing beyond it, since the agent tools refuse postgres and root. */
 const E2E_AGENT = 'agent';
 
 /** What each driver is called, how to start it and how to log into it.
