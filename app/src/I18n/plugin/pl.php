@@ -75,7 +75,7 @@ return [
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Dostęp AI',
 	'mcp.enable' => 'Pozwól agentowi AI odpytywać tę bazę danych',
-	'mcp.description' => 'Zarejestrowany poniżej agent może czytać bazę danych, do której zalogowane jest to okno — strukturę oraz zapytania, o które go poprosisz. Nie może zapisywać: każde zapytanie działa w transakcji, która jest wycofywana. Dostęp trwa tylko wtedy, gdy to okno jest otwarte i zalogowane.',
+	'mcp.description' => 'Zarejestrowany poniżej agent może czytać zapisane połączenia, do których jesteś zalogowany — to, na którym jest to okno, albo inne, które sam wybierze — strukturę oraz zapytania, o które go poprosisz. Nie może zapisywać: każde zapytanie działa w transakcji, która jest wycofywana. Dostęp trwa tylko wtedy, gdy to okno jest otwarte i zalogowane.',
 	'mcp.status_off' => 'Wyłączone. Nic nie dosięgnie bazy danych.',
 	'mcp.status_waiting' => 'Włączone, ale jeszcze niedostępne — zaloguj się do bazy danych, a agent będzie mógł ją odpytywać.',
 	'mcp.status_ready' => 'Gotowe. Zarejestrowany agent może odpytywać bazę danych, do której jesteś zalogowany.',
@@ -95,7 +95,7 @@ return [
 	'mcp.copied' => 'Skopiowano',
 	'mcp.target' => 'Agent odpytywałby:',
 	'mcp.write_enable' => 'Zezwól na trwałą zmianę i usuwanie danych (INSERT, UPDATE, DELETE)',
-	'mcp.write_on' => 'Zapisy są zatwierdzane. Agent sam dobiera polecenia, a błędnego DELETE nie da się stąd cofnąć.',
+	'mcp.write_on' => 'Zapisy są zatwierdzane, z wyjątkiem połączenia oznaczonego jako Prod, które pozostaje tylko do odczytu. Agent sam dobiera polecenia, a błędnego DELETE nie da się stąd cofnąć.',
 	'mcp.write_off' => 'Tylko odczyt. Polecenia, które zapisywałyby dane, są wykonywane i wycofywane, więc nie mają efektu.',
 
 	'mcp.register_manual' => 'Każdy inny agent też zadziała: podaj mu to samo polecenie jako serwer MCP na stdio w jego własnym pliku konfiguracyjnym.',
@@ -110,7 +110,9 @@ return [
 	'mcp.agent_note_committed' => 'Zapisy są włączone: wszystko, co zmieniła ta instrukcja, zostało zatwierdzone.',
 	'mcp.agent_note_rolled_back' => 'To wykonało się w transakcji, która została wycofana. Nic nie zostało zapisane. Identyfikator zwrócony przez RETURNING pochodzi z sekwencji i nie wskazuje zapisanego wiersza.',
 	'mcp.agent_note_cut' => 'Wartości wymienione w truncated_cells zostały obcięte, aby jedna duża kolumna nie zapełniła kontekstu. Jeśli potrzebujesz ich w całości, wywołaj ponownie z whole_values: true.',
-	'mcp.agent_note_no_database' => 'W oknie nie jest otwarta żadna baza danych, więc narzędzia działają w domyślnej bazie serwera, jeśli taką ma. Aby odpytać konkretną bazę, poproś użytkownika, żeby otworzył ją w oknie: narzędzia podążają za nim.',
+	'mcp.agent_note_no_database' => 'W oknie nie jest otwarta żadna baza danych, więc narzędzia działają w domyślnej bazie serwera, jeśli taką ma. Aby odpytać konkretną bazę, przekaż ją jako database: wymienia je list_databases.',
+	'mcp.agent_unknown_connection' => 'To nie jest zalogowane zapisane połączenie. Wymienia je list_connections; niezalogowane trzeba najpierw otworzyć w oknie Adminer Desktop',
+	'mcp.agent_no_database' => 'Nie udało się otworzyć bazy danych przy tym logowaniu',
 	'mcp.agent_no_result' => 'instrukcja nie zwróciła zbioru wyników',
 	'mcp.agent_parse_error' => 'błąd parsowania',
 	'mcp.agent_unknown_method' => 'nieznana metoda',

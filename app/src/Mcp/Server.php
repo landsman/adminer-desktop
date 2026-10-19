@@ -35,8 +35,8 @@ class Server {
 	* first call, so an unavailable app reads as "ask the user" rather than as a missing server
 	* the model then builds its own way around.
 	*/
-	public const string INSTRUCTIONS = 'The database the Adminer Desktop window is logged into. These tools are the only'
-		. ' sanctioned way to reach it. When a tool answers that the app is unavailable, tell the user what it said and wait:'
+	public const string INSTRUCTIONS = 'The databases of the connections saved in Adminer Desktop: the one its window is on, or any other signed-in one you name (list_connections). These tools are the only'
+		. ' sanctioned way to reach them. When a tool answers that the app is unavailable, tell the user what it said and wait:'
 		. ' do not connect to the database another way, read its credentials, or write a bridge of your own.';
 
 	private Tools $tools;
@@ -120,7 +120,18 @@ class Server {
 	* @return list<array<string,mixed>>
 	*/
 	static function catalogue(bool $whole = false, bool $write = false): array {
-		$table = ['type' => 'object', 'properties' => ['table' => ['type' => 'string', 'description' => 'Table name.']], 'required' => ['table']];
+		// Every tool but list_connections runs where these say, and on the window's connection and
+		// database without them — so an agent reaches what it needs without the user clicking there.
+		$where = [
+			'connection' => ['type' => 'string', 'description' => 'An id from list_connections. Default: the connection the Adminer Desktop window is on.'],
+			'database' => ['type' => 'string', 'description' => 'A database on that connection, as list_databases names it. Default: the one the window has open, on its own connection.'],
+		];
+		$schema = fn(array $properties = [], array $required = []): array => ['type' => 'object', 'properties' => $properties + $where] + ($required !== [] ? ['required' => $required] : []);
+		$table = ['table' => ['type' => 'string', 'description' => 'Table name.']];
+		$rows = [
+			'limit' => ['type' => 'integer', 'description' => 'Rows to return, default 20, capped at 200.'],
+			'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
+		];
 		// Said in the description, so the agent can choose whole_values before its first call
 		// rather than learning about the cut from a result it then has to ask for again.
 		$cells = $whole ? 'Every value is returned whole.' : 'To keep one large column from filling your context, values longer than ' . Tools::MAX_CELL
@@ -128,50 +139,47 @@ class Server {
 			. ' pass whole_values: true when you need them whole.';
 		return [
 			[
-				'name' => 'current_connection',
-				'description' => 'Which database this Adminer Desktop window is connected to (driver, server, database). Call this first when you do not know what you are querying: every tool runs in the database the window has open, and with none open, in the server\'s default one.',
+				'name' => 'list_connections',
+				'description' => 'Every connection saved in Adminer Desktop: its id (pass it as connection to the other tools), name, system, server, login, environment (local, dev, stage, prod), the databases opened on it before, and whether it is signed in. Only a signed-in one can be queried; for another, ask the user to sign in to it in the window.',
 				'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()],
 			],
 			[
+				'name' => 'current_connection',
+				'description' => 'Where a call lands (connection id, driver, server, database): the window\'s connection and database, or the ones you name. Call this first when you do not know what you are querying.',
+				'inputSchema' => $schema(),
+			],
+			[
+				'name' => 'list_databases',
+				'description' => 'The databases on a connection\'s server that its login may open.',
+				'inputSchema' => $schema(),
+			],
+			[
 				'name' => 'list_tables',
-				'description' => 'List every table and view in the connected database, with its type.',
-				'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()],
+				'description' => 'List every table and view in a database, with its type.',
+				'inputSchema' => $schema(),
 			],
 			[
 				'name' => 'describe_table',
 				'description' => 'Columns of one table: name, type, nullability, default and whether it is part of the primary key. Use before writing a query against a table you have not seen.',
-				'inputSchema' => $table,
+				'inputSchema' => $schema($table, ['table']),
 			],
 			[
 				'name' => 'preview_table_data',
 				'description' => 'First rows of a table, for seeing the shape of real data without writing SQL. ' . $cells,
-				'inputSchema' => [
-					'type' => 'object',
-					'properties' => [
-						'table' => ['type' => 'string', 'description' => 'Table name.'],
-						'limit' => ['type' => 'integer', 'description' => 'Rows to return, default 20, capped at 200.'],
-						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
-					],
-					'required' => ['table'],
-				],
+				'inputSchema' => $schema($table + $rows, ['table']),
 			],
 			[
 				'name' => 'execute_query',
 				// Follows the setting: an agent trusts this sentence, and with writes on a promise of a
 				// rollback is the one that leads it to run something it believes will be undone.
 				'description' => ($write
-					? 'Run a SQL statement and return its rows. Writes are allowed in Adminer Desktop\'s settings, so whatever the statement changes is committed.'
+					? 'Run a SQL statement and return its rows. Writes are allowed in Adminer Desktop\'s settings, so whatever the statement changes is committed — except on a connection whose environment is prod, where it is rolled back; rolled_back in the answer says which.'
 					: 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data.')
 					. ' Results are capped at 200 rows. ' . $cells,
-				'inputSchema' => [
-					'type' => 'object',
-					'properties' => [
-						'sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'],
-						'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.'],
-						'whole_values' => ['type' => 'boolean', 'description' => 'Return every value whole, with no cut.'],
-					],
-					'required' => ['sql'],
-				],
+				'inputSchema' => $schema(
+					['sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'], 'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.']] + array_diff_key($rows, ['limit' => 0]),
+					['sql'],
+				),
 			],
 		];
 	}
@@ -188,7 +196,9 @@ class Server {
 		$whole = ($args['whole_values'] ?? false) === true;
 
 		$payload = match ($name) {
+			'list_connections' => $this->tools->listConnections(),
 			'current_connection' => $this->tools->connection(),
+			'list_databases' => $this->tools->listDatabases(),
 			'list_tables' => $this->tools->listTables(),
 			'describe_table' => $this->tools->describeTable($this->required($table, 'table')),
 			'preview_table_data' => $this->tools->previewTable($this->required($table, 'table'), $limit ?? 20, $whole),

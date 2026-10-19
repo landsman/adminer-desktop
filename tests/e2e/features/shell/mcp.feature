@@ -1,4 +1,4 @@
-Feature: An agent reaching the database this window is logged into
+Feature: An agent reaching the databases this window is signed in to
   There is no browser in any of this: what is under test is an HTTP session being borrowed by a
   second process, so the scenarios log in with curl and drive the endpoint exactly as an agent
   would.
@@ -27,13 +27,34 @@ Feature: An agent reaching the database this window is logged into
 
   Scenario: The tools are offered, and they reach the seeded database
     When an agent lists the tools
-    Then the tools offered include "current_connection, list_tables, describe_table, preview_table_data, execute_query"
+    Then the tools offered include "list_connections, current_connection, list_databases, list_tables, describe_table, preview_table_data, execute_query"
     And the description of "execute_query" mentions "longer than 2000 characters are cut"
     And the description of "execute_query" mentions "always rolled back"
-    And the description of "preview_table_data" mentions "whole_values: true"
     And the endpoint answers 200, not adminer's 413
+    And the description of "preview_table_data" mentions "whole_values: true"
     When an agent calls "list_tables"
     Then the answer mentions "users"
+
+  Scenario: The agent picks the connection and the database, and the window stays where it is
+    When an agent calls "list_connections"
+    Then the window's connection is listed, signed in
+    When an agent calls "list_databases"
+    Then the answer mentions "inventory"
+    When an agent calls "list_tables" on database "inventory"
+    Then the answer mentions "products"
+    When an agent calls "current_connection" on database "inventory"
+    Then the database named is "inventory"
+    And the handshake still points at the window's database
+    When an agent calls "list_tables"
+    Then the answer mentions "users"
+
+  Scenario: A connection that is not a signed-in saved one is refused
+    When an agent calls "list_tables" on connection "pgsql|nowhere.invalid|nobody"
+    Then the answer is an error mentioning "list_connections"
+
+  Scenario: A database that does not exist is refused, not answered from the one postgres falls back to
+    When an agent calls "list_tables" on database "no_such_database"
+    Then the answer is an error mentioning "could not be opened"
 
   Scenario: With no database open, current_connection names the one the queries run in
     Given the window is logged in with no database open
@@ -87,6 +108,12 @@ Feature: An agent reaching the database this window is logged into
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-committed') RETURNING id"
     Then the answer no longer claims a rollback
     And the row named "mcp-committed" is in the database
+
+  Scenario: With writes allowed, a connection marked prod is still read-only
+    Given AI access is on and allowed to write, but the connection is marked prod
+    When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-prod-probe') RETURNING id"
+    Then the answer is an error mentioning "read-only transaction"
+    And no row named "mcp-prod-probe" survived
 
   Scenario: The bridge carries the same call over stdin and stdout
     When an agent runs "SELECT count(*) AS n FROM users" through the stdio bridge

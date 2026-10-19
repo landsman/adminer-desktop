@@ -1,11 +1,12 @@
 # Letting an agent query your database
 
-The app can expose the database **the open window is logged into** to an AI agent over MCP, so
-you can ask about a schema or have a query written without configuring a second connection or
-copying a password anywhere.
+The app can expose your **saved connections that are signed in** to an AI agent over MCP — the
+one the open window is on by default, any other when the agent names it — so you can ask about a
+schema or have a query written without configuring a second connection or copying a password
+anywhere.
 
 It is off until you turn it on, it works only while the window is open and logged in, and it
-cannot write.
+cannot write unless you allow it.
 
 ## Turn it on
 
@@ -46,11 +47,29 @@ shared prompt can refer to.
 
 | Tool | |
 | --- | --- |
-| `current_connection` | which driver, server and database the window is on |
+| `list_connections` | every saved connection: its id, name, system, environment, whether it is signed in |
+| `current_connection` | which connection and database a call lands on, and what the queries really run in |
+| `list_databases` | the databases a connection's login may open |
 | `list_tables` | every table and view |
 | `describe_table` | columns, types, nullability, defaults, primary key |
 | `preview_table_data` | the first rows of a table |
 | `execute_query` | run a read-only query |
+
+Every tool but `list_connections` takes an optional `connection` (an id from `list_connections`)
+and `database`. Without them a call goes to the connection and database the window is on, so the
+agent no longer needs you to click over to the one it wants. Only a connection you are signed in
+to can be queried; one you logged out of is listed, so the agent can ask you to sign in to it, and
+nothing more. A call that named one does not move the window, nor where later calls go by default.
+
+With no database open in the window, PostgreSQL connects to `postgres` and MS SQL to the login's
+default; `current_connection` names that database and says none is open, rather than answering
+an empty name. A database name that does not open is an error, never an answer from the one the
+driver fell back to.
+
+**Allowing writes** (the second switch on the tab) commits what `execute_query` changes — except
+on a connection whose environment is set to *Prod* on the start screen, which stays read-only
+whatever the switch says. The tool's description follows the switch, so the agent is never told a
+write will be rolled back when it will not.
 
 `execute_query` goes through Adminer's own guard for SQL it did not write. On PostgreSQL that is
 **one statement, inside a read-only transaction**: a write is refused, and so is a second
@@ -99,7 +118,14 @@ folder it sits in; the file is `mcp-YYYY-MM-DD.log`.
 ```
 2026-08-03T14:22:07Z	tools/call	list_tables
 2026-08-03T14:22:11Z	tools/call	execute_query	SELECT id, email FROM users LIMIT 20
+2026-08-03T14:22:19Z	tools/call	list_tables	[pgsql|db.example.com|app shop]
+2026-08-03T14:40:02Z	bridge-exit		the client sent interrupt
 ```
+
+A call on another connection or database carries it in brackets. `bridge-exit` is the process the
+agent started stopping, and why: *the client closed stdin* or *the client sent …* is the agent
+letting go, which it does not log itself — a server that is just gone otherwise looks like one
+that crashed.
 
 A file per day, so today's cannot grow without bound and yesterday's is left exactly as it was.
 Files older than two weeks are removed on the next write, so a machine left running does not

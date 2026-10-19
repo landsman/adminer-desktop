@@ -75,7 +75,7 @@ return [
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Acces AI',
 	'mcp.enable' => 'Permite unui agent AI să interogheze această bază de date',
-	'mcp.description' => 'Un agent înregistrat mai jos poate citi baza de date în care este autentificată această fereastră — structura și interogările pe care i le ceri. Nu poate scrie: fiecare interogare rulează într-o tranzacție care este anulată. Accesul durează doar cât timp fereastra este deschisă și autentificată.',
+	'mcp.description' => 'Un agent înregistrat mai jos poate citi conexiunile salvate în care ești autentificat — cea a acestei ferestre sau alta pe care o alege singur — structura și interogările pe care i le ceri. Nu poate scrie: fiecare interogare rulează într-o tranzacție care este anulată. Accesul durează doar cât timp fereastra este deschisă și autentificată.',
 	'mcp.status_off' => 'Oprit. Nimic nu ajunge la baza de date.',
 	'mcp.status_waiting' => 'Pornit, dar încă inaccesibil — autentifică-te la o bază de date și agentul o va putea interoga.',
 	'mcp.status_ready' => 'Gata. Un agent înregistrat poate interoga baza de date în care ești autentificat.',
@@ -95,7 +95,7 @@ return [
 	'mcp.copied' => 'Copiat',
 	'mcp.target' => 'Agentul ar interoga:',
 	'mcp.write_enable' => 'Permite modificarea și ștergerea definitivă a datelor (INSERT, UPDATE, DELETE)',
-	'mcp.write_on' => 'Scrierile sunt confirmate. Agentul își alege singur instrucțiunile, iar un DELETE greșit nu poate fi recuperat de aici.',
+	'mcp.write_on' => 'Scrierile sunt confirmate, cu excepția unei conexiuni marcate Prod, care rămâne doar pentru citire. Agentul își alege singur instrucțiunile, iar un DELETE greșit nu poate fi recuperat de aici.',
 	'mcp.write_off' => 'Doar citire. Instrucțiunile care ar scrie sunt rulate și apoi anulate, deci nu au niciun efect.',
 
 	'mcp.register_manual' => 'Funcționează și orice alt agent: dați-i aceeași comandă drept server MCP pe stdio, în propriul lui fișier de configurare.',
@@ -110,7 +110,9 @@ return [
 	'mcp.agent_note_committed' => 'Scrierile sunt permise: tot ce a modificat această instrucțiune a fost confirmat.',
 	'mcp.agent_note_rolled_back' => 'Aceasta a rulat într-o tranzacție anulată. Nu s-a scris nimic. Orice id returnat de RETURNING provine dintr-o secvență și nu identifică un rând stocat.',
 	'mcp.agent_note_cut' => 'Valorile enumerate în truncated_cells au fost trunchiate pentru ca o singură coloană mare să nu îți umple contextul. Apelează din nou cu whole_values: true dacă ai nevoie de ele întregi.',
-	'mcp.agent_note_no_database' => 'Fereastra nu are nicio bază de date deschisă, așa că instrumentele rulează în baza de date implicită a serverului, dacă are una. Pentru a interoga o anumită bază de date, cereți utilizatorului să o deschidă în fereastră: instrumentele o urmează.',
+	'mcp.agent_note_no_database' => 'Fereastra nu are nicio bază de date deschisă, așa că instrumentele rulează în baza de date implicită a serverului, dacă are una. Pentru a interoga o anumită bază de date, transmiteți-o ca database: list_databases le enumeră.',
+	'mcp.agent_unknown_connection' => 'Nu este o conexiune salvată autentificată. list_connections le enumeră; una neautentificată trebuie mai întâi deschisă în fereastra Adminer Desktop',
+	'mcp.agent_no_database' => 'Baza de date nu a putut fi deschisă cu această autentificare',
 	'mcp.agent_no_result' => 'instrucțiunea nu a returnat niciun set de rezultate',
 	'mcp.agent_parse_error' => 'eroare de analiză',
 	'mcp.agent_unknown_method' => 'metodă necunoscută',

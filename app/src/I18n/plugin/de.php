@@ -75,7 +75,7 @@ return [
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'KI-Zugriff',
 	'mcp.enable' => 'Einem KI-Agenten erlauben, diese Datenbank abzufragen',
-	'mcp.description' => 'Ein unten registrierter Agent kann die Datenbank lesen, in der dieses Fenster angemeldet ist — die Struktur und Abfragen, um die Sie ihn bitten. Schreiben kann er nicht: Jede Abfrage läuft in einer Transaktion, die zurückgerollt wird. Der Zugriff besteht nur, solange dieses Fenster geöffnet und angemeldet ist.',
+	'mcp.description' => 'Ein unten registrierter Agent kann die gespeicherten Verbindungen lesen, bei denen Sie angemeldet sind — die dieses Fensters oder eine andere, die er selbst wählt — die Struktur und Abfragen, um die Sie ihn bitten. Schreiben kann er nicht: Jede Abfrage läuft in einer Transaktion, die zurückgerollt wird. Der Zugriff besteht nur, solange dieses Fenster geöffnet und angemeldet ist.',
 	'mcp.status_off' => 'Aus. Nichts erreicht die Datenbank.',
 	'mcp.status_waiting' => 'An, aber noch nicht erreichbar — melden Sie sich an einer Datenbank an, dann kann der Agent sie abfragen.',
 	'mcp.status_ready' => 'Bereit. Ein registrierter Agent kann die Datenbank abfragen, in der Sie angemeldet sind.',
@@ -95,7 +95,7 @@ return [
 	'mcp.copied' => 'Kopiert',
 	'mcp.target' => 'Der Agent würde abfragen:',
 	'mcp.write_enable' => 'Daten dauerhaft ändern und löschen lassen (INSERT, UPDATE, DELETE)',
-	'mcp.write_on' => 'Schreibvorgänge werden bestätigt. Der Agent wählt seine Anweisungen selbst, und ein falsches DELETE ist von hier aus nicht wiederherstellbar.',
+	'mcp.write_on' => 'Schreibvorgänge werden bestätigt, außer bei einer als Prod markierten Verbindung, die nur lesbar bleibt. Der Agent wählt seine Anweisungen selbst, und ein falsches DELETE ist von hier aus nicht wiederherstellbar.',
 	'mcp.write_off' => 'Nur Lesen. Anweisungen, die schreiben würden, werden ausgeführt und dann zurückgerollt, haben also keine Wirkung.',
 
 	'mcp.register_manual' => 'Jeder andere Agent funktioniert ebenfalls: Tragen Sie denselben Befehl als stdio-MCP-Server in seine eigene Konfigurationsdatei ein.',
@@ -110,7 +110,9 @@ return [
 	'mcp.agent_note_committed' => 'Schreibzugriffe sind erlaubt: Was diese Anweisung geändert hat, wurde festgeschrieben.',
 	'mcp.agent_note_rolled_back' => 'Dies lief in einer Transaktion, die zurückgerollt wurde. Es wurde nichts geschrieben. Eine von RETURNING gelieferte id stammt aus einer Sequenz und bezeichnet keine gespeicherte Zeile.',
 	'mcp.agent_note_cut' => 'Die in truncated_cells aufgeführten Werte wurden gekürzt, damit eine große Spalte nicht Ihren Kontext füllt. Rufen Sie erneut mit whole_values: true auf, wenn Sie sie vollständig brauchen.',
-	'mcp.agent_note_no_database' => 'Im Fenster ist keine Datenbank geöffnet, daher laufen die Werkzeuge in der Standarddatenbank des Servers, sofern er eine hat. Um eine bestimmte Datenbank abzufragen, bitten Sie den Benutzer, sie im Fenster zu öffnen: Die Werkzeuge folgen ihm.',
+	'mcp.agent_note_no_database' => 'Im Fenster ist keine Datenbank geöffnet, daher laufen die Werkzeuge in der Standarddatenbank des Servers, sofern er eine hat. Um eine bestimmte Datenbank abzufragen, übergeben Sie sie als database: list_databases nennt sie.',
+	'mcp.agent_unknown_connection' => 'Keine angemeldete gespeicherte Verbindung. list_connections nennt sie; eine nicht angemeldete muss zuerst im Fenster von Adminer Desktop geöffnet werden',
+	'mcp.agent_no_database' => 'Die Datenbank konnte mit dieser Anmeldung nicht geöffnet werden',
 	'mcp.agent_no_result' => 'die Anweisung lieferte keine Ergebnismenge',
 	'mcp.agent_parse_error' => 'Parse-Fehler',
 	'mcp.agent_unknown_method' => 'unbekannte Methode',

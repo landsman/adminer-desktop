@@ -13,7 +13,7 @@ Feature: The stdio bridge when there is no app behind it
     Then initialize still succeeds
     And the agent is told not to reach the database another way
     When a client lists the tools through the bridge
-    Then the tools offered include "current_connection, list_tables, describe_table, preview_table_data, execute_query"
+    Then the tools offered include "list_connections, current_connection, list_databases, list_tables, describe_table, preview_table_data, execute_query"
     When a client calls a tool through the bridge
     Then the call is a tool error saying "AI access"
 

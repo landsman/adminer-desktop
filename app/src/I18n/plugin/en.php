@@ -86,7 +86,7 @@ return [
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'AI access',
 	'mcp.enable' => 'Let an AI agent query this database',
-	'mcp.description' => 'An agent you register below can read the database this window is logged into — the schema, and queries you ask it to run. It cannot write: every query runs in a transaction that is rolled back. Access lasts only while this window is open and logged in.',
+	'mcp.description' => 'An agent you register below can read the saved connections you are signed in to — the one this window is on, or any other it names — the schema, and queries you ask it to run. It cannot write: every query runs in a transaction that is rolled back. Access lasts only while this window is open and logged in.',
 	'mcp.status_off' => 'Off. Nothing can reach the database.',
 	'mcp.status_waiting' => 'On, but not reachable yet — log in to a database and the agent can query it.',
 	'mcp.status_ready' => 'Ready. A registered agent can query the database you are logged into.',
@@ -106,7 +106,7 @@ return [
 	'mcp.copied' => 'Copied',
 	'mcp.target' => 'The agent would query:',
 	'mcp.write_enable' => 'Let it change and permanently delete data (INSERT, UPDATE, DELETE)',
-	'mcp.write_on' => 'Writes are committed. The agent decides its own statements, and a wrong DELETE is not recoverable from here.',
+	'mcp.write_on' => 'Writes are committed, except on a connection marked Prod, which stays read-only. The agent decides its own statements, and a wrong DELETE is not recoverable from here.',
 	'mcp.write_off' => 'Read-only. Statements that would write are run and then rolled back, so they have no effect.',
 
 	'mcp.register_manual' => 'Any other agent works too: give it the same command as a stdio MCP server in its own configuration file.',
@@ -121,7 +121,9 @@ return [
 	'mcp.agent_note_committed' => 'Writes are enabled: anything this statement changed has been committed.',
 	'mcp.agent_note_rolled_back' => 'This ran inside a transaction that was rolled back. Nothing was written. Any id returned by RETURNING came from a sequence and does not identify a stored row.',
 	'mcp.agent_note_cut' => 'Values listed in truncated_cells were cut so that one large column does not fill your context. Call again with whole_values: true if you need them whole.',
-	'mcp.agent_note_no_database' => 'The window has no database open, so the tools run in the server\'s default one, if it has any. To query a particular database, ask the user to open it in the window: the tools follow it.',
+	'mcp.agent_note_no_database' => 'The window has no database open, so the tools run in the server\'s default one, if it has any. To query a particular database, pass it as database: list_databases names them.',
+	'mcp.agent_unknown_connection' => 'Not a signed-in saved connection. list_connections names them; one that is not signed in has to be opened in the Adminer Desktop window first',
+	'mcp.agent_no_database' => 'The database could not be opened with this login',
 	'mcp.agent_no_result' => 'the statement returned no result set',
 	'mcp.agent_parse_error' => 'parse error',
 	'mcp.agent_unknown_method' => 'unknown method',

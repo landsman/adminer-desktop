@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\Connections\Connection;
+use Desktop\Connections\Connections;
+use Desktop\Connections\Environment;
 use Desktop\Env;
 use Desktop\I18n\Strings;
 use Desktop\SettingKey;
@@ -17,9 +20,15 @@ use Desktop\UserSettings;
 * running inside a request it has already authenticated and connected, which is exactly what
 * this needs.
 *
-* Two jobs, both only ever on such a request: refresh the handshake so the agent can still find
-* this window — and tell the launcher's gate which session to lend it — and answer ?mcp=1 as
-* JSON-RPC instead of HTML.
+* Two jobs, both only ever on such a request: on a page the window loads, refresh the handshake so
+* the agent can still find this window — and tell the launcher's gate which session to lend it —
+* and on ?mcp=1, answer JSON-RPC instead of HTML.
+*
+* A call may name another saved connection, or another database, than the window's. The gate only
+* ever sends calls to the window's endpoint (launcher/mcpgate), so the call lands here and is passed
+* on from here: a second request to this same server, with the window's session, at the URL of the
+* connection asked for. Adminer connects per request from the URL, and a request knows only its own
+* driver, so there is no reaching another connection from inside this one.
 *
 * serve() does the I/O and exits; url() and answer() are the decisions behind it, kept separate
 * so they can be checked without a request to make or a process to end.
@@ -30,15 +39,19 @@ class Endpoint {
 	private Server $server;
 	private Activity $activity;
 	private RequestLog $log;
+	private ?Connections $connections;
 
-	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null) {
+	/** The ?mcp= value of a call passed on from another request, which has logged it already. */
+	private const string FORWARDED = 'forwarded';
+
+	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null, ?Connections $connections = null) {
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
-		$this->server = $server ?? new Server(
-			null,
-			(bool) $settings->get(SettingKey::McpWrite, false),
-			(bool) $settings->get(SettingKey::McpWholeValues, false),
-		);
+		$this->connections = $connections;
+		// Never on a connection marked Prod, whatever the setting says: the agent picks its own
+		// connection now, and one switch should not reach every database the user is signed in to.
+		$write = (bool) $settings->get(SettingKey::McpWrite, false) && $connections?->current()?->environment !== Environment::Prod;
+		$this->server = $server ?? new Server(new Tools($write, (bool) $settings->get(SettingKey::McpWholeValues, false), $connections), (bool) $settings->get(SettingKey::McpWrite, false), (bool) $settings->get(SettingKey::McpWholeValues, false));
 		$this->activity = $activity ?? new Activity();
 		$this->log = $log ?? new RequestLog();
 	}
@@ -55,17 +68,19 @@ class Endpoint {
 			return null;
 		}
 		$connected = \Adminer\driver() !== null;
-		// The gate's address, not ours: the bridge reaches this window through the launcher, which
-		// adds the session the agent never sees. Without a launcher there is no gate, nothing to
-		// hold the session, and so no handshake at all.
-		$gate = Env::McpGate->get();
-		$token = Env::McpToken->get();
-		$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
-		if ($url !== null && $token !== false && $token !== '') {
-			$this->report($this->cookie(), self::at($url));
-			$this->handshake->write($url, $token, $this->target());
-		}
 		if (!isset($_GET["mcp"])) {
+			// Only a page the window loads says where the window is. A call is answered wherever it
+			// asked to be, and reporting that would move every later call, and the panel, with it.
+			// The gate's address, not ours: the bridge reaches this window through the launcher,
+			// which adds the session the agent never sees. Without a launcher there is no gate,
+			// nothing to hold the session, and so no handshake at all.
+			$gate = Env::McpGate->get();
+			$token = Env::McpToken->get();
+			$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
+			if ($url !== null && $token !== false && $token !== '') {
+				$this->report($this->cookie(), self::at($url));
+				$this->handshake->write($url, $token, $this->target());
+			}
 			return null;
 		}
 		header("Content-Type: application/json");
@@ -73,9 +88,11 @@ class Endpoint {
 		// Before answering, so a call that goes on to fail still shows up: "something asked me
 		// this and it broke" is exactly as worth seeing as a call that worked.
 		$now = time();
-		[$method, $tool, $detail] = $this->describe($input);
-		$this->activity->record($method, $now);
-		$this->log->append($method, $tool, $detail, $now);
+		if ($_GET["mcp"] !== self::FORWARDED) {
+			[$method, $tool, $detail] = $this->describe($input);
+			$this->activity->record($method, $now);
+			$this->log->append($method, $tool, $detail, $now);
+		}
 		$answer = $this->answer($input, $connected);
 		// header(), not http_response_code(): a POST with no form fields — a JSON body — is what
 		// adminer takes for one over post_max_size, so it has already sent header("HTTP/1.1 413"),
@@ -89,7 +106,8 @@ class Endpoint {
 	* every call there whatever path it came in on.
 	*/
 	static function at(string $url): string {
-		return $url . (str_contains($url, '?') ? '&' : '?') . 'mcp=1';
+		// adminer's ME ends in "&", which a second one would leave an empty pair after.
+		return str_contains($url, '?') ? rtrim($url, '&') . '&mcp=1' : "$url?mcp=1";
 	}
 
 	/** Tell the gate which session an agent's call may borrow, and the one endpoint it may borrow
@@ -190,7 +208,9 @@ class Endpoint {
 				break;
 			}
 		}
-		return [$method, $tool, $detail];
+		// And where, when the call named somewhere other than the window.
+		$where = trim(implode(' ', array_filter([$args['connection'] ?? '', $args['database'] ?? ''], 'is_string')));
+		return [$method, $tool, $where !== '' ? "[$where] $detail" : $detail];
 	}
 
 	/** The body to answer an MCP request with, or null for 204.
@@ -207,6 +227,92 @@ class Endpoint {
 				"message" => Strings::t('mcp.agent_not_connected'),
 			]]);
 		}
+		$request = json_decode($input, true);
+		$id = is_array($request) ? ($request['id'] ?? null) : null;
+		try {
+			// A database adminer could not open still renders a page, and this hook with it, on
+			// whatever it fell back to: postgres connects to `postgres` instead. Answering there
+			// would hand the agent another database's tables under the name it asked for. Postgres
+			// only: there select_db() just says how the connect went, elsewhere it runs USE or
+			// ATTACH again.
+			if (\Adminer\DRIVER === 'pgsql' && \Adminer\DB !== '' && !\Adminer\connection()->select_db(\Adminer\DB)) {
+				throw new McpError(Strings::t('mcp.agent_no_database') . ': ' . \Adminer\DB . ' (' . \Adminer\connection()->error . ')');
+			}
+			$elsewhere = is_array($request) ? $this->elsewhere($request) : null;
+			if ($elsewhere !== null) {
+				return $this->forward(...$elsewhere);
+			}
+		} catch (McpError $e) {
+			return (string) json_encode(['jsonrpc' => '2.0', 'id' => $id, 'result' => [
+				'content' => [['type' => 'text', 'text' => $e->getMessage()]],
+				'isError' => true,
+			]]);
+		}
 		return $this->server->dispatch($input);
+	}
+
+	/** Where a tool call that named another connection or database has to run, and the message
+	* to send there, or null when it runs here.
+	*
+	* Only a saved connection the session holds a password for: anything else would be adminer's
+	* login page, and an id that was never saved is not ours to guess a URL for. The database is
+	* any name — adminer opens it with the same login, or the check in answer() says it could not.
+	*
+	* @param array<mixed> $request
+	* @return array{string,string}|null url, body
+	* @throws McpError
+	*/
+	private function elsewhere(array $request): ?array {
+		$args = $request['params']['arguments'] ?? null;
+		if (($request['method'] ?? '') !== 'tools/call' || !is_array($args)) {
+			return null;
+		}
+		$here = $this->connections?->current()?->key() ?? '';
+		$key = is_string($args['connection'] ?? null) && $args['connection'] !== '' ? $args['connection'] : $here;
+		$database = is_string($args['database'] ?? null) && $args['database'] !== '' ? $args['database'] : ($key === $here ? \Adminer\DB : '');
+		if ($key === $here && $database === \Adminer\DB) {
+			return null;
+		}
+		$found = array_values(array_filter($this->connections?->saved() ?? [], fn(Connection $c) => $c->key() === $key && $c->signedIn));
+		if ($found === []) {
+			throw new McpError(Strings::t('mcp.agent_unknown_connection') . ": $key");
+		}
+		$connection = $found[0];
+		// Built here rather than with adminer's auth_url(), which keeps the rest of this request's
+		// query — the window's schema among it. ns= empty when a database is named: without it
+		// postgres and MS SQL redirect to their default schema, and a redirect is not an answer.
+		$query = [$connection->driver => $connection->server, 'username' => $connection->username]
+			+ ($database !== '' ? ['db' => $database, 'ns' => ''] : [])
+			+ ['mcp' => self::FORWARDED];
+		unset($args['connection'], $args['database']);
+		$request['params']['arguments'] = $args === [] ? new \stdClass() : $args;
+		$script = str_replace("\\", "/", (string) ($_SERVER["SCRIPT_NAME"] ?? "/adminer.php"));
+		return ['http://' . $_SERVER["HTTP_HOST"] . $script . '?' . http_build_query($query), (string) json_encode($request)];
+	}
+
+	/** Send the call on to the request that can answer it, with this window's session.
+	*
+	* Straight to this server rather than back through the gate: the gate opens one endpoint, the
+	* window's, and the session is right here in this request's cookies. Adminer released the
+	* session's lock before any hook ran (auth.inc.php, stop_session()), so the second request does
+	* not wait on this one.
+	*
+	* @throws McpError
+	*/
+	private function forward(string $url, string $body): string {
+		$context = stream_context_create(['http' => [
+			'method' => 'POST',
+			'header' => ['Content-Type: application/json', 'Cookie: ' . $this->cookie()],
+			'content' => $body,
+			'timeout' => 60,
+			'follow_location' => 0,
+			'ignore_errors' => true,
+		]]);
+		$answer = @file_get_contents($url, false, $context);
+		if (!is_string($answer) || ($answer !== '' && $answer[0] !== '{')) {
+			// Adminer's login page: the password the list said it held did not open it.
+			throw new McpError(Strings::t('mcp.agent_unknown_connection') . ': ' . (string) parse_url($url, PHP_URL_QUERY));
+		}
+		return $answer;
 	}
 }

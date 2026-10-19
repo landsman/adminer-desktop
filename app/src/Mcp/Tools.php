@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 namespace Desktop\Mcp;
 
+use Desktop\Connections\Connection;
+use Desktop\Connections\Connections;
 use Desktop\I18n\Strings;
 
 /** What an agent may actually do to the database, and the limits it does it under.
 *
 * Every method here runs inside a request Adminer has already authenticated and connected, so
-* there is no connecting, no credentials and no driver choice to make — whatever this window is
-* logged into is what the agent sees.
+* there is no connecting, no credentials and no driver choice to make — the connection the request
+* is on is what the agent sees: the window's, or the saved one the call named (Endpoint::elsewhere()).
 *
 * Two limits are the point of the class rather than details of it:
 *
@@ -34,9 +36,13 @@ class Tools {
 	/** Whether every value comes back whole, as if each call asked for whole_values. */
 	private bool $whole;
 
-	function __construct(bool $write = false, bool $whole = false) {
+	/** The saved ones, for list_connections; none without it. */
+	private ?Connections $connections;
+
+	function __construct(bool $write = false, bool $whole = false, ?Connections $connections = null) {
 		$this->write = $write;
 		$this->whole = $whole;
+		$this->connections = $connections;
 	}
 
 	/** Rows returned before we stop and say there were more. */
@@ -122,10 +128,37 @@ class Tools {
 			$database = (string) \Adminer\get_val(self::CURRENT_DATABASE[\Adminer\DRIVER]);
 		}
 		return [
+			'id' => \Adminer\DRIVER . '|' . \Adminer\SERVER . '|' . (string) $_GET["username"],
 			'driver' => \Adminer\DRIVER,
 			'server' => \Adminer\SERVER,
 			'database' => $database,
 		] + (\Adminer\DB === '' ? ['note' => Strings::t('mcp.agent_note_no_database')] : []);
+	}
+
+	/** Every saved connection, the way the start screen lists them, with the id the other tools
+	* take as `connection`. Signed-out ones too, so the agent can say which one to sign in to
+	* rather than that it does not exist. `databases` is the ones opened before; list_databases
+	* asks the server.
+	* @return list<array<string,mixed>>
+	*/
+	function listConnections(): array {
+		return array_map(fn(Connection $c) => [
+			'id' => $c->key(),
+			'name' => $c->name,
+			'system' => $c->system(),
+			'server' => $c->server,
+			'username' => $c->username,
+			'environment' => $c->environment->value ?? '',
+			'databases' => $c->databases,
+			'signed_in' => $c->signedIn,
+		], $this->connections?->saved() ?? []);
+	}
+
+	/** The databases on this connection's server that the login may open.
+	* @return list<string>
+	*/
+	function listDatabases(): array {
+		return array_values(array_map('strval', \Adminer\adminer()->databases(false)));
 	}
 
 	/** Run one statement inside a transaction and roll it back.
