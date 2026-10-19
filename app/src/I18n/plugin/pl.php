@@ -115,6 +115,8 @@ return [
 	'mcp.agent_forward_failed' => 'Adminer Desktop nie obsłużył wywołania na tym połączeniu. Problem nie leży w połączeniu: przyczyna jest w logu aplikacji',
 	'mcp.agent_connect_failed' => 'Adminer Desktop nie połączył się z tym zapisanym logowaniem: jego serwer nie działa albo hasło jest już nieważne. Adminer wtedy je wylogowuje, więc poproś użytkownika, by zalogował się do niego ponownie w oknie, gdy serwer zacznie działać',
 	'mcp.agent_no_database' => 'Nie udało się otworzyć bazy danych przy tym logowaniu',
+	'mcp.agent_overprivileged' => 'To logowanie wykracza poza zapytanie tylko do odczytu — uruchomi program na serwerze bazy danych, odczyta jego pliki lub skróty haseł — dlatego Adminer Desktop nie udostępni go agentowi. Zaloguj okno rolą bez tych uprawnień albo odbierz je tej roli',
+	'mcp.agent_privileges_unknown' => 'Adminer Desktop nie mógł sprawdzić, co to logowanie może na serwerze, dlatego nie udostępni go agentowi',
 	'mcp.agent_no_result' => 'instrukcja nie zwróciła zbioru wyników',
 	'mcp.agent_parse_error' => 'błąd parsowania',
 	'mcp.agent_unknown_method' => 'nieznana metoda',

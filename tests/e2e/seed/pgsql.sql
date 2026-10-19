@@ -243,8 +243,15 @@ BEGIN
 	IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'reader') THEN
 		CREATE ROLE reader LOGIN PASSWORD 'demo';
 	END IF;
+	-- The window's login for the MCP scenarios: postgres is a superuser, which the agent tools
+	-- refuse, and the write scenarios need a login that may write. Data, never the server.
+	IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'agent') THEN
+		CREATE ROLE agent LOGIN PASSWORD 'demo';
+	END IF;
 END $$;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO reader;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO agent;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO agent;
 
 -- CREATE DATABASE has no IF NOT EXISTS and cannot run inside a DO block, so psql builds it.
 SELECT 'CREATE DATABASE inventory' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'inventory')\gexec
@@ -259,4 +266,4 @@ INSERT INTO products (name, stock) VALUES
 	('Hrnek', 12),
 	('Konvice', 3),
 	('Podšálek', 40);
-GRANT SELECT ON products TO reader;
+GRANT SELECT ON products TO reader, agent;

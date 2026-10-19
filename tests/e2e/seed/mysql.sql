@@ -166,3 +166,8 @@ END //
 DELIMITER ;
 CALL make_filler();
 DROP PROCEDURE make_filler;
+
+-- The window's login for the MCP scenarios: root holds ALL on *.*, which the agent tools refuse.
+-- It may write the demo data and nothing beyond it.
+CREATE USER IF NOT EXISTS 'agent'@'%' IDENTIFIED BY 'demo';
+GRANT SELECT, INSERT, UPDATE, DELETE ON demo.* TO 'agent'@'%';

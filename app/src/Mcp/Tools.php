@@ -23,7 +23,8 @@ use Desktop\I18n\Strings;
 * Neither is the boundary. A superuser runs a program on the server inside BEGIN READ ONLY
 * (COPY … TO PROGRAM), and DDL auto-commits on MySQL. What makes a write or a takeover
 * impossible is the login: a role with SELECT and nothing else (features/shell/mcp.feature
-* asserts that one refuses).
+* asserts that one refuses). So a login that can step out of the query is refused outright
+* (refuseOverprivileged()), with no switch to allow it: the switch would be the docs again.
 *
 * And every result is capped. An agent that asks for a million rows should get a page and a
 * note saying so, because the row it needed is nearly always in the first few and the rest is
@@ -152,6 +153,116 @@ class Tools {
 			'databases' => $c->databases,
 			'signed_in' => $c->signedIn,
 		], $this->connections?->saved() ?? []);
+	}
+
+	/** PostgreSQL, everything that reaches the server's files and programs, as one list:
+	* a superuser; a member of the roles that grant it, through pg_has_role() so a role the login
+	* can SET ROLE to counts too; EXECUTE on the file and large-object functions, which can be
+	* granted one by one without the roles; and CREATEROLE before 16, which could grant itself any
+	* of those roles (16 asks for ADMIN on them). A superuser has all of it, so it is named alone.
+	*/
+	private const string PGSQL_OVERPRIVILEGED = <<<'SQL'
+		WITH su AS (SELECT rolname FROM pg_roles WHERE rolsuper AND pg_has_role(current_user, oid, 'MEMBER'))
+		SELECT 'SUPERUSER ' || rolname FROM su
+		UNION ALL SELECT rolname FROM pg_roles
+			WHERE rolname IN ('pg_read_server_files', 'pg_write_server_files', 'pg_execute_server_program')
+			AND pg_has_role(current_user, oid, 'MEMBER') AND NOT EXISTS (SELECT FROM su)
+		UNION ALL SELECT 'EXECUTE ' || f FROM unnest(ARRAY['pg_read_file(text)', 'pg_read_binary_file(text)', 'pg_ls_dir(text)', 'lo_import(text)', 'lo_export(oid, text)']) f
+			WHERE has_function_privilege(current_user, f, 'EXECUTE') AND NOT EXISTS (SELECT FROM su)
+		UNION ALL SELECT 'CREATEROLE ' || rolname FROM pg_roles
+			WHERE rolcreaterole AND pg_has_role(current_user, oid, 'MEMBER') AND NOT EXISTS (SELECT FROM su)
+			AND current_setting('server_version_num')::int < 160000
+		SQL;
+
+	/** Refuse a login whose privileges reach past a read-only query — what the transaction cannot
+	* contain, a superuser running a program on the server inside BEGIN READ ONLY.
+	*
+	* About the server, not the data, so the writes setting changes nothing here. A check that
+	* could not be read refuses too: an empty answer from a failed query reads exactly like a clean
+	* login. PostgreSQL and MySQL/MariaDB only; the other drivers are not checked.
+	*
+	* @throws McpError
+	*/
+	function refuseOverprivileged(): void {
+		$found = match (\Adminer\DRIVER) {
+			'pgsql' => self::rows(self::PGSQL_OVERPRIVILEGED),
+			// ponytail: MySQL 8 leaves a granted role's privileges out of a bare SHOW GRANTS; add USING
+			// the active roles if logins that hold FILE through a role turn up.
+			'server' => self::overprivilegedGrants(self::rows('SHOW GRANTS') ?: throw new McpError(Strings::t('mcp.agent_privileges_unknown'))),
+			default => [],
+		};
+		if ($found !== []) {
+			throw new McpError(Strings::t('mcp.agent_overprivileged') . ': ' . implode(', ', $found));
+		}
+	}
+
+	/** The first column of every row, or an McpError where adminer's get_vals() would answer an
+	* empty list for a query that failed.
+	* @return list<string>
+	* @throws McpError
+	*/
+	private static function rows(string $sql): array {
+		$result = \Adminer\connection()->query($sql);
+		if (!is_object($result)) {
+			throw new McpError(Strings::t('mcp.agent_privileges_unknown') . ': ' . \Adminer\connection()->error);
+		}
+		$rows = [];
+		while ($row = $result->fetch_row()) {
+			$rows[] = (string) $row[0];
+		}
+		return $rows;
+	}
+
+	/** One part of a grant's target: a backquoted name, a bare one, or *. */
+	private const string GRANT_PART = '(?:`(?:[^`]|``)*`|[^\s`.]+)';
+
+	/** Which lines of MySQL's SHOW GRANTS reach past one database's data: any privilege on *.*
+	* but USAGE — a global SELECT reads mysql.user and its password hashes as much as FILE reads
+	* the server's files — and anything on the mysql schema, a wildcard that matches it included.
+	* ALL on one database is about that database's data, and is left to the writes setting.
+	*
+	* A line that names a target this cannot read is reported whole rather than skipped.
+	*
+	* @param list<string> $grants
+	* @return list<string>
+	*/
+	static function overprivilegedGrants(array $grants): array {
+		$found = [];
+		foreach ($grants as $grant) {
+			// A granted role reads GRANT `role`@`%` TO …, with no ON: not a privilege in itself.
+			if (!preg_match('~ ON ~i', $grant)) {
+				continue;
+			}
+			$part = self::GRANT_PART;
+			if (!preg_match("~^GRANT (.+?) ON (?:(?:TABLE|FUNCTION|PROCEDURE) )?($part)(?:\\.($part))? TO ~i", $grant, $match)) {
+				$found[] = $grant;
+				continue;
+			}
+			$schema = str_starts_with($match[2], '`') ? str_replace('``', '`', substr($match[2], 1, -1)) : $match[2];
+			if (preg_match('~^PROXY\b~i', $match[1])) {
+				// Lets the login act as another account, whoever that is.
+				$found[] = "PROXY ON $match[2]";
+			} elseif ($match[2] === '*' && ($match[3] ?? '') === '*') {
+				// Column lists off, SELECT (a, b) is a SELECT; MySQL 8 lists dynamic privileges with no space.
+				$privileges = array_map(fn($p) => trim((string) preg_replace('~\s*\(.*~', '', $p)), explode(',', strtoupper($match[1])));
+				array_push($found, ...array_diff($privileges, ['USAGE']));
+			} elseif (preg_match(self::schemaPattern($schema), 'mysql')) {
+				$found[] = "$match[1] ON $match[2]" . (isset($match[3]) ? ".$match[3]" : '');
+			}
+		}
+		return array_values(array_unique($found));
+	}
+
+	/** A grant's schema name as a regex: MySQL reads _ and % in it as LIKE wildcards, \_ and \% as
+	* the characters. */
+	private static function schemaPattern(string $schema): string {
+		$pattern = preg_replace_callback('~\\\\[_%]|[_%]|[^_%\\\\]+|\\\\~', fn($m) => match ($m[0]) {
+			'_' => '.',
+			'%' => '.*',
+			'\_', '\%' => preg_quote($m[0][1], '~'),
+			default => preg_quote($m[0], '~'),
+		}, $schema);
+		return "~^$pattern$~i";
 	}
 
 	/** The databases on this connection's server that the login may open.

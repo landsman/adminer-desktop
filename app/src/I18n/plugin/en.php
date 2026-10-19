@@ -126,6 +126,8 @@ return [
 	'mcp.agent_forward_failed' => 'Adminer Desktop could not answer the call on that connection. The connection is not the problem: the app\'s log has the cause',
 	'mcp.agent_connect_failed' => 'Adminer Desktop could not connect with this saved login: its server is down, or the password no longer works. Adminer signs a login out when that happens, so ask the user to sign in to it again in the window once the server is up',
 	'mcp.agent_no_database' => 'The database could not be opened with this login',
+	'mcp.agent_overprivileged' => 'This login can reach past a read-only query — run a program on the database server, read its files or the password hashes — so Adminer Desktop does not let an agent use it. Log the window in as a role without these, or take them away from this one',
+	'mcp.agent_privileges_unknown' => 'Adminer Desktop could not check what this login may do on the server, so it does not let an agent use it',
 	'mcp.agent_no_result' => 'the statement returned no result set',
 	'mcp.agent_parse_error' => 'parse error',
 	'mcp.agent_unknown_method' => 'unknown method',
