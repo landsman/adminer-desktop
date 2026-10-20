@@ -68,6 +68,11 @@ html {
 	/* The height of the two header rows, the sidebar's logo and the content's breadcrumb, so
 	   their rules run on as one line across the gutter. Scaled by hand: rem ignores --ad-scale. */
 	--ad-header-h: calc(2.4rem * var(--ad-scale, 1));
+	/* The band macOS's traffic lights take at the window's top when it has no title bar
+	   (layout.css): they are centred 26pt down (launcher/dialogs_darwin.m), so this clears them
+	   with the gutter's room to spare. In px: they are AppKit's, and follow neither --ad-scale nor
+	   rem. */
+	--ad-titlebar-h: 44px;
 	/* The same for the row under them, the sidebar's database switch and the page title: what
 	   that row holds is a select, whose height decides the sidebar's side of it. */
 	--ad-subheader-h: calc(3.375rem * var(--ad-scale, 1));

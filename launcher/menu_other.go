@@ -2,7 +2,11 @@
 
 package main
 
-import "unsafe"
+import (
+	"unsafe"
+
+	webview "github.com/webview/webview_go"
+)
 
 // ponytail: no menu bar off macOS. Windows and Linux put menus inside the window rather
 // than in a system bar, so there is nothing to mirror — it would be a new widget, drawn
@@ -36,6 +40,11 @@ func setWindowBackground(window unsafe.Pointer, r, g, b int) {}
 func enableInspector(window unsafe.Pointer) bool { return false }
 
 func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }
+
+// The title bar stays: GTK and Windows draw their own, and the page lays out under it.
+func installFrameless(w webview.WebView) {}
+
+func describeTitlebarHit(window unsafe.Pointer) string { return "(darwin only)" }
 
 // No screen query off macOS yet; the caller falls back to a fixed window size.
 func defaultWindowSize() (int, int) { return 0, 0 }

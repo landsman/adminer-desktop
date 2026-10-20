@@ -21,6 +21,13 @@ int installDownloads(void *nsWindow); // 1 when the download handler was attache
 int clearWebViewBackground(void *nsWindow); // 1 when the webview was found
 void setWindowBackground(void *nsWindow, int r, int g, int b); // sRGB, 0-255
 
+// No title bar: the page runs to the top and the traffic lights sit in the sidebar.
+int installFramelessTitlebar(void *nsWindow); // 1 when applied
+int isFullscreen(void *nsWindow);
+void dragWindow(void *nsWindow);          // from a mousedown on the page's empty header
+void titlebarDoubleClick(void *nsWindow); // zoom, minimise or nothing, as the system says
+const char *describeTitlebarHit(void *nsWindow);
+
 const char *describeUIDelegate(void *nsWindow);
 int enableInspector(void *nsWindow); // 1 if the web inspector was turned on
 

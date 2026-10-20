@@ -440,8 +440,10 @@ func main() {
 	installReloadShortcut(w.Window())
 	installDownloads(w.Window())
 	clearWebViewBackground(w.Window())
+	installFrameless(w)
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
+		log.Print("titlebar band hits ", describeTitlebarHit(w.Window()))
 		if enableInspector(w.Window()) {
 			log.Print("web inspector on: Safari > Develop > this machine > Adminer Desktop")
 		} else {

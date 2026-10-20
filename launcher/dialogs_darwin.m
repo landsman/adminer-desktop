@@ -4,6 +4,8 @@
 #include "menu_darwin.h"
 #import "webview_darwin.h"
 
+void goFullscreenChanged(int fullscreen);
+
 /* JavaScript alert(), confirm(), prompt() and the file picker.
  *
  * WKWebView implements none of these itself: it hands each one to its UIDelegate, and
@@ -221,4 +223,60 @@ const char *describeUIDelegate(void *nsWindow) {
 	id delegate = [webView UIDelegate];
 	return strdup([[NSString stringWithFormat:@"uiDelegate=%s",
 		delegate ? class_getName([delegate class]) : "(nil)"] UTF8String]);
+}
+
+/* The window has no title bar of its own: the page runs up to the top edge and the traffic
+ * lights sit in the sidebar's logo row, as in Mail. The empty toolbar is what puts them there --
+ * a unified toolbar's title bar is 52pt tall, centring them 26pt down, on the logo row (an 8px
+ * gutter plus half of a 2.4rem row). The title stays set but hidden, for Mission Control and the
+ * Window menu. The page learns it is framed this way from the class launcher/main.go adds. */
+int installFramelessTitlebar(void *nsWindow) {
+	NSWindow *window = (NSWindow *) nsWindow;
+	[window setStyleMask:[window styleMask] | NSWindowStyleMaskFullSizeContentView];
+	[window setTitlebarAppearsTransparent:YES];
+	[window setTitleVisibility:NSWindowTitleHidden];
+	if (@available(macOS 11.0, *)) {
+		[window setToolbar:[[NSToolbar alloc] initWithIdentifier:@"adminer-desktop"]];
+		[window setToolbarStyle:NSWindowToolbarStyleUnified];
+	}
+	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	[center addObserverForName:NSWindowDidEnterFullScreenNotification object:window queue:nil
+		usingBlock:^(NSNotification *n) { goFullscreenChanged(1); }];
+	[center addObserverForName:NSWindowDidExitFullScreenNotification object:window queue:nil
+		usingBlock:^(NSNotification *n) { goFullscreenChanged(0); }];
+	return 1;
+}
+
+int isFullscreen(void *nsWindow) {
+	return ([(NSWindow *) nsWindow styleMask] & NSWindowStyleMaskFullScreen) != 0;
+}
+
+/* With no title bar, the page's empty header is what moves the window (window-drag.js). The
+ * page's mousedown reaches here a moment after the event itself; the current event is then still
+ * the press or the first move of it, which AppKit takes the drag from -- as Tauri's drag regions
+ * do. */
+void dragWindow(void *nsWindow) {
+	NSEvent *event = [NSApp currentEvent];
+	if (event) {
+		[(NSWindow *) nsWindow performWindowDragWithEvent:event];
+	}
+}
+
+/* A double-click on a title bar does what System Settings > Desktop & Dock says: zoom (Fill and
+ * Maximize, the default), minimise, or nothing. */
+void titlebarDoubleClick(void *nsWindow) {
+	NSString *action = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleActionOnDoubleClick"];
+	if ([action isEqualToString:@"Minimize"]) {
+		[(NSWindow *) nsWindow performMiniaturize:nil];
+	} else if (![action isEqualToString:@"None"]) {
+		[(NSWindow *) nsWindow performZoom:nil];
+	}
+}
+
+/* What a click at the top of the window lands on: the page, or a title bar view in front of it.
+ * Logged under -debug, since a toolbar that swallowed the band would leave the breadcrumb dead. */
+const char *describeTitlebarHit(void *nsWindow) {
+	NSView *frame = [[(NSWindow *) nsWindow contentView] superview];
+	NSView *hit = [frame hitTest:NSMakePoint(NSWidth([frame bounds]) / 2, NSHeight([frame bounds]) - 20)];
+	return strdup(hit ? class_getName([hit class]) : "(nil)");
 }

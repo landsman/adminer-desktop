@@ -71,6 +71,7 @@ return [
 
 	// Whole-page import dropzone.
 	'js.import.drop_hint' => 'Upuść tutaj plik SQL, aby go zaimportować',
+	'js.sidebar.toggle' => 'Pokaż lub ukryj pasek boczny',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Dostęp AI',

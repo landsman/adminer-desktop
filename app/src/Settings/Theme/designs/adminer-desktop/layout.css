@@ -175,6 +175,17 @@ body {
 	align-content: center;
 	box-sizing: border-box;
 	min-height: var(--ad-subheader-h);
+	/* A label, like the logo row: hovering it showed an I-beam and a drag over it selected it. */
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: default;
+}
+
+/* On the server's own page (Select database) the path is the home mark alone, leading where you
+   already are: nothing to show. The row stays, as the header the sidebar's badge row lines up
+   with and a place to drag the window by. */
+#content #breadcrumb:not(:has(.ad-breadcrumb-current)) > .ad-breadcrumb-home {
+	visibility: hidden;
 }
 
 /* Directly under the breadcrumb the title's padding is the space between the two rules; the
@@ -236,8 +247,9 @@ body {
 	border-color: transparent;
 	background:
 		linear-gradient(var(--bg), var(--bg)) padding-box,
-		linear-gradient(var(--ad-badge-border), var(--ad-badge-border)) top / 100%
-		calc(var(--ad-header-h) + 1px) no-repeat border-box,
+		linear-gradient(var(--ad-badge-border), var(--ad-badge-border)) 0
+		var(--ad-menu-top, 0px) / 100% calc(var(--ad-header-h) + 1px) no-repeat
+		border-box,
 		linear-gradient(var(--ad-border), var(--ad-border)) border-box;
 }
 
@@ -278,6 +290,11 @@ body {
 	color: var(--fg);
 	text-decoration: none;
 	transition: background-color 0.15s;
+}
+
+/* Under the lights' band the badge no longer meets the panel's top, so it has no corner to follow. */
+.ad-frameless:not(.ad-fullscreen) #menu h1 #ad-connection-badge {
+	border-radius: 0;
 }
 
 #menu h1 #ad-connection-badge:hover {
@@ -367,6 +384,111 @@ body:has(#ad-connection-badge) .logout {
 	height: var(--ad-header-h);
 	padding-block: 0;
 	white-space: nowrap;
+	/* A name to read and a place to drag the window by, not text to select: no I-beam either. */
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: default;
+}
+
+/* macOS draws no title bar (the launcher's installFrameless sets .ad-frameless): the traffic
+   lights sit in a band of their own at the sidebar's top, over the logo row, as in Mail. The
+   content panel stays where it was; the breadcrumb row and the gutters are where the window is
+   dragged (window-chrome.js). A full-screen window shows no lights and keeps the plain layout.
+   --ad-menu-top is that band, for what is placed from the sidebar's top: the badge's border and
+   the gear. */
+.ad-frameless:not(.ad-fullscreen) {
+	--ad-menu-top: calc(var(--ad-titlebar-h) - var(--ad-gutter));
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu {
+	padding-top: var(--ad-menu-top);
+}
+
+/* And the sidebar is the window's own surface, as in Mail, not a framed panel round the lights:
+   no border, the badge's coloured one included (the badge's wash still says which connection). */
+.ad-frameless:not(.ad-fullscreen) #foot,
+.ad-frameless:not(.ad-fullscreen) #foot:has(#ad-connection-badge) {
+	border-color: transparent;
+	background: var(--ad-menu-bg);
+	transition:
+		margin-inline-start 0.2s ease,
+		visibility 0.2s;
+}
+
+/* With no sidebar beside it, the content panel is what the lights land on: its breadcrumb row
+   starts after them. In a narrow window the panel meets the window's top, so the row grows to be
+   centred on the lights (26px down) too. */
+@media (max-width: 800px) {
+	.ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
+		height: 52px;
+		padding-inline-start: 90px;
+	}
+}
+
+/* The button that hides the sidebar (window-chrome.js), on the lights' line: at the sidebar's
+   end while it shows, beside the lights once it is gone, as in Mail. Not in full screen, which
+   has no band to put it in, nor in a narrow window, whose burger already folds the sidebar. */
+#ad-sidebar-toggle {
+	display: none;
+}
+
+@media (min-width: 801px) {
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle {
+		position: fixed;
+		/* Centred on the lights, 26px down (launcher/dialogs_darwin.m). */
+		top: calc(26px - 0.9rem);
+		left: calc(var(--ad-gutter) + var(--ad-sidebar-width) - 1.8rem - 0.6rem);
+		z-index: 7;
+		display: block;
+		width: 1.8rem;
+		height: 1.8rem;
+		padding: 0;
+		border: 0;
+		border-radius: var(--ad-radius-sm);
+		background: transparent;
+		color: color-mix(in srgb, var(--fg) 55%, transparent);
+		transition: left 0.2s ease;
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle::before {
+		content: "";
+		display: block;
+		width: 1.1rem;
+		height: 1.1rem;
+		margin: auto;
+		background: currentcolor;
+		-webkit-mask: url("icons/sidebar.svg") center / contain no-repeat;
+		mask: url("icons/sidebar.svg") center / contain no-repeat;
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle:hover {
+		background: var(--ad-accent-quiet);
+		color: var(--fg);
+	}
+
+	/* Hidden, the sidebar slides out past the window's edge rather than vanishing, so the content
+	   panel grows into its room; the drag handle goes with it. 78px is where the lights end. */
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #foot {
+		margin-inline-start: calc(
+			-1 *
+			(var(--ad-sidebar-width) + var(--ad-gutter))
+		);
+		visibility: hidden;
+	}
+
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #ad-sidebar-resizer {
+		display: none;
+	}
+
+	/* The lights end at 78px; the toggle keeps the gap they keep between each other, and more. */
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #ad-sidebar-toggle {
+		left: 92px;
+	}
+
+	/* Past the lights and the toggle beside them, less the gutter and border the panel starts at. */
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #content #breadcrumb {
+		padding-inline-start: calc(92px + 1.8rem + 0.9rem - var(--ad-gutter) - 1px);
+	}
 }
 
 /* The logo image sat on the text's baseline, a little above its middle; centred instead, without
@@ -387,7 +509,7 @@ body:has(#ad-connection-badge) .logout {
 	   sidebar; right-anchored so it follows the panel's width rather than a magic offset. */
 	position: absolute;
 	/* Centred on the logo's row (#menu h1), whatever the scale makes of its height. */
-	inset: calc(var(--ad-header-h) / 2) 0.6rem auto auto;
+	inset: calc(var(--ad-menu-top, 0px) + var(--ad-header-h) / 2) 0.6rem auto auto;
 	transform: translateY(-50%);
 	width: 1.6rem;
 	height: 1.6rem;
@@ -578,10 +700,18 @@ body:has(input[name="auth[username]"]) #menu {
 /* The logo alone, centred over the panel — the name of the app, not a corner of a sidebar. */
 body:has(input[name="auth[username]"]) #menu h1 {
 	justify-content: center;
+	height: auto;
 	margin: 0;
 	padding: 0;
 	border: 0;
 	background: none;
+	font-size: 192%;
+}
+
+/* Adminer sizes the mark at 24px; in em it grows with the name beside it. */
+body:has(input[name="auth[username]"]) #h1 > img {
+	width: 1.1em;
+	height: 1.1em;
 }
 
 /* The version and the gear, side by side at the foot of the window, out of the way: neither is
