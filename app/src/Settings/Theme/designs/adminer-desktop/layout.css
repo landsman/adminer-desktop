@@ -216,30 +216,129 @@ body {
 	display: none;
 }
 
-/* The connection's badge, moved from the sidebar's top into the header's corner
-   (before-paint/header.js): a pill rather than a full-width row. */
-#content #breadcrumb #ad-connection-badge {
-	flex: none;
-	margin: 0 0 0 auto;
-	padding: 0.15em 0.45em;
-	/* Not a link of the path: the breadcrumb's grey, and its accent and underline on hover
-	   (sidebar.css), would reach it in here. */
+/* The connection's badge, in the logo's place at the sidebar's top (before-paint/header.js): the
+   whole row, washed in the connection's colour from edge to edge, the gear over its end. The
+   colour only as a wash, so the PROD tag inside it is the one loud thing. */
+#menu h1:has(#ad-connection-badge) {
+	padding: 0;
+}
+
+/* The panel's border, in the connection's colour along the badge's row and its own below. A
+   border cannot change colour partway, and the panel clips the badge to inside it, so the border
+   is transparent and painted by the backgrounds under it instead: the panel's surface over the
+   padding box, the coloured strip, then the grey. */
+#foot:has(#ad-connection-badge) {
+	--ad-badge-border: color-mix(
+		in srgb,
+		var(--ad-conn, var(--fg)) 40%,
+		transparent
+	);
+	border-color: transparent;
+	background:
+		linear-gradient(var(--bg), var(--bg)) padding-box,
+		linear-gradient(var(--ad-badge-border), var(--ad-badge-border)) top / 100%
+		calc(var(--ad-header-h) + 1px) no-repeat border-box,
+		linear-gradient(var(--ad-border), var(--ad-border)) border-box;
+}
+
+#menu h1:has(#ad-connection-badge) {
+	border-bottom-color: var(--ad-badge-border);
+}
+
+/* The logo and adminer's version give way to it; the start screen shows the version. */
+#menu h1:has(#ad-connection-badge) > :not(#ad-connection-badge) {
+	display: none;
+}
+
+#menu h1 #ad-connection-badge {
+	flex: 1;
+	min-width: 0;
+	align-self: stretch;
+	gap: 0.55em;
+	margin: 0;
+	/* The end clears the gear (#desktop-gear), which sits over it. */
+	padding: 0 calc(0.6rem + 1.6rem + 0.5rem) 0 0.75rem;
+	/* The heading's size is the logo's; the badge reads at the body's (base.css). */
+	font-size: calc(13.5px * var(--ad-scale, 1));
+	font-weight: 400;
+	border: 0;
+	/* The panel's top corners (#foot), so the wash does not square them off. */
+	border-radius: max(
+			var(--ad-radius),
+			calc(var(--ad-window-radius) - var(--ad-gutter))
+		)
+		max(var(--ad-radius), calc(var(--ad-window-radius) - var(--ad-gutter))) 0 0;
+	background: color-mix(
+		in srgb,
+		var(--ad-conn, var(--fg)) 9%,
+		var(--ad-menu-bg)
+	);
+	/* Not the logo: its colour, and the sidebar's link accent and underline on hover, would
+	   reach it in here. */
 	color: var(--fg);
 	text-decoration: none;
+	transition: background-color 0.15s;
 }
 
-#content #breadcrumb #ad-connection-badge:hover {
-	background: color-mix(in srgb, var(--ad-conn, var(--fg)) 20%, transparent);
+#menu h1 #ad-connection-badge:hover {
+	background: color-mix(
+		in srgb,
+		var(--ad-conn, var(--fg)) 15%,
+		var(--ad-menu-bg)
+	);
 }
 
-/* The environment tag sits as close to the end as to the top and bottom. */
-#content #breadcrumb #ad-connection-badge:has(.ad-env) {
-	padding-inline-end: 0.15em;
+/* The driver's icon in a disc of the connection's colour. */
+#menu h1 #ad-connection-badge .ad-card-icon {
+	width: 1.45em;
+	height: 1.45em;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--ad-conn-tint) 18%, transparent);
 }
 
-#content #breadcrumb #ad-connection-badge .ad-card-icon {
-	width: 1.3em;
-	height: 1.3em;
+#menu h1 #ad-connection-badge .ad-badge-name {
+	font-weight: 500;
+}
+
+/* The tag as a capsule of its own: a tint of the environment's hue with the text in it, a
+   dot in front. The text is the hue mixed towards --fg, darker on light and lighter on dark,
+   which keeps it readable on the tint in both schemes. */
+#menu h1 #ad-connection-badge .ad-env {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	/* As tall as the icon's disc (1.45em of the badge, in its own 0.7em), so the two ends of
+	   the capsule sit the same distance in. */
+	height: calc(1.45em / 0.7);
+	/* The letter spacing trails the last letter too; the end pads that much less. */
+	padding: 0 0.49em 0 0.55em;
+	border-radius: 999px;
+	font-size: 0.7em;
+	letter-spacing: 0.06em;
+	color: color-mix(in srgb, var(--ad-env) 70%, var(--fg));
+	background: color-mix(in srgb, var(--ad-env) 16%, transparent);
+}
+
+#menu h1 #ad-connection-badge .ad-env::before {
+	content: "";
+	width: 0.55em;
+	height: 0.55em;
+	border-radius: 50%;
+	background: var(--ad-env);
+	box-shadow: 0 0 0 0.2em color-mix(in srgb, var(--ad-env) 25%, transparent);
+}
+
+/* On PROD the dot breathes, slowly enough to be noticed rather than watched. */
+@media (prefers-reduced-motion: no-preference) {
+	#menu h1 #ad-connection-badge .ad-env-prod::before {
+		animation: ad-env-breathe 2.4s ease-in-out infinite;
+	}
+}
+
+@keyframes ad-env-breathe {
+	50% {
+		box-shadow: 0 0 0 0.35em color-mix(in srgb, var(--ad-env) 0%, transparent);
+	}
 }
 
 /* The badge takes Logout's place (before-paint/header.js); the start screen's cards log out. */

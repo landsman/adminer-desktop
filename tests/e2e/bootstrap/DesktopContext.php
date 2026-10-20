@@ -1816,6 +1816,20 @@ class DesktopContext implements Context
 		);
 	}
 
+	#[When('I click the connection badge')]
+	public function clickConnectionBadge(): void
+	{
+		// A real click, not element.click(): it fails naming whatever lies over the badge.
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-connection-badge .ad-badge-name',
+		)->click();
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.querySelector("#ad-connections .ad-card") && document.readyState === "complete"',
+		);
+	}
+
 	#[Then('the connection badge reads :name')]
 	public function connectionBadgeReads(string $name): void
 	{

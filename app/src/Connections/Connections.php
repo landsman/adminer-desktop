@@ -158,7 +158,7 @@ class Connections {
 		]);
 	}
 
-	/** The badge once logged in, printed atop the sidebar and moved into the header's corner
+	/** The badge once logged in, printed in the sidebar and moved into its logo row
 	* (before-paint/header.js), so the colour follows you around. */
 	function badge(): void {
 		$current = $this->current();

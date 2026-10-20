@@ -200,19 +200,20 @@ body:has(#ad-connections) #logins {
 	font-weight: 600;
 	letter-spacing: 0.04em;
 	color: #fff;
-	background: #667085;
+	background: var(--ad-env);
+	--ad-env: #667085;
 }
 
 .ad-env-dev {
-	background: #079455;
+	--ad-env: #079455;
 }
 
 .ad-env-stage {
-	background: #dc6803;
+	--ad-env: #dc6803;
 }
 
 .ad-env-prod {
-	background: #d92d20;
+	--ad-env: #d92d20;
 }
 
 #ad-new-connection {
