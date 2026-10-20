@@ -53,6 +53,18 @@
 
 	// Where the thumb goes: the visible share of the content is its length, how far it scrolled
 	// its offset along the track.
+	// Under no title bar the toolbar's band tops both panels, and the track starts below it, as
+	// Mail's does (window.css does the same for legacy bars).
+	const lead = () => {
+		const root = document.documentElement;
+		return root.classList.contains("ad-frameless") &&
+			!root.classList.contains("ad-fullscreen")
+			? Number.parseFloat(
+					getComputedStyle(root).getPropertyValue("--ad-titlebar-h"),
+				) || 0
+			: 0;
+	};
+
 	const place = (panel) => {
 		const rect = panel.getBoundingClientRect();
 		const [ty, tx] = thumbsOf(panel);
@@ -62,8 +74,8 @@
 				panel.clientHeight,
 				panel.scrollHeight,
 				panel.scrollTop,
-				rect.top,
-				rect.height,
+				rect.top + lead(),
+				rect.height - lead(),
 			],
 			[
 				tx,
@@ -130,7 +142,11 @@
 			const view = y ? panel.clientHeight : panel.clientWidth;
 			const full = y ? panel.scrollHeight : panel.scrollWidth;
 			const length = y ? thumb.offsetHeight : thumb.offsetWidth;
-			const scale = (full - view) / (view - 2 * INSET - length);
+			// The track the thumb runs along, as place() measured it.
+			const track = y
+				? panel.getBoundingClientRect().height - lead()
+				: panel.getBoundingClientRect().width;
+			const scale = (full - view) / (track - 2 * INSET - length);
 			const move = (e) => {
 				const to = at + ((y ? e.clientY : e.clientX) - from) * scale;
 				panel[y ? "scrollTop" : "scrollLeft"] = to;

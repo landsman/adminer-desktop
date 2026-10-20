@@ -26,11 +26,13 @@
    hairline round it and a soft shadow under it — the parts of Mail's buttons a stylesheet can
    draw; the refraction at their edge is the one it cannot. */
 .ad-frameless {
-	--ad-glass-bg: light-dark(rgb(255 255 255 / 62%), rgb(70 70 76 / 55%));
+	/* Dark: a grey lighter than the page, as Mail's is, not a darker pane on it. */
+	--ad-glass-bg: light-dark(rgb(255 255 255 / 66%), rgb(128 128 136 / 30%));
 	--ad-glass-filter: blur(16px) saturate(1.8);
 	--ad-glass-shadow:
-		inset 0 0.5px 0 light-dark(rgb(255 255 255 / 90%), rgb(255 255 255 / 18%)),
-		0 0 0 0.5px light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 9%)),
+		inset 0 1px 0 light-dark(rgb(255 255 255 / 90%), rgb(255 255 255 / 22%)),
+		inset 0 0 0 1px light-dark(rgb(255 255 255 / 40%), rgb(255 255 255 / 10%)),
+		0 0 0 0.5px light-dark(rgb(0 0 0 / 12%), rgb(0 0 0 / 40%)),
 		0 2px 10px rgb(0 0 0 / 8%);
 }
 
@@ -249,7 +251,7 @@
 	text-align: start;
 	font-size: 14px;
 	font-weight: 400;
-	color: color-mix(in srgb, var(--fg) 74%, transparent);
+	color: color-mix(in srgb, var(--fg) 82%, transparent);
 	cursor: text;
 }
 
@@ -362,11 +364,14 @@
    own padding goes out past the edge (sidebar.css), so the row's is the edge plus that. */
 .ad-frameless:not(.ad-fullscreen) #dbs {
 	height: auto;
-	padding: 0.75rem calc(2 * var(--ad-side-inset)) 0.5rem;
+	/* The end only to the inset: the start is the text's line, the end only the last icon's room,
+	   and the pickers had to give way to an ellipsis ("dem", "publi") for the difference. */
+	padding: 0.75rem var(--ad-side-inset) 0.5rem calc(2 * var(--ad-side-inset));
 }
 
 /* The actions are a toolbar's, grey until the pointer is on one, not links in the accent. */
 .ad-frameless:not(.ad-fullscreen) #menu .links a {
+	padding-inline: 0.4em;
 	color: color-mix(in srgb, var(--fg) 62%, transparent);
 }
 
@@ -517,4 +522,38 @@
 			16px
 		);
 	}
+}
+
+/* Legacy scrollbars (a mouse plugged in: the launcher's ad-legacy-scrollers), drawn as Mail draws
+   them under no title bar: the track starts below the toolbar's band rather than at the window's
+   top edge, and the thumb is a rounded bar inset in it, not WebKit's square grey slab. The
+   overlay ones are scrollers.js's, and keep the same clear band. */
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+:is(#menu, #content)::-webkit-scrollbar {
+	width: 14px;
+	height: 14px;
+	background: transparent;
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-track:vertical {
+	margin-top: var(--ad-titlebar-h);
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-thumb {
+	min-height: 32px;
+	border: 4px solid transparent;
+	border-radius: 7px;
+	background: color-mix(in srgb, var(--fg) 34%, transparent) padding-box;
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in srgb, var(--fg) 50%, transparent);
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-corner {
+	background: transparent;
 }
