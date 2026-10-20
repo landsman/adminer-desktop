@@ -1,0 +1,25 @@
+/* The tooltip that replaces every title="", built only by src/Assets/javascript/tooltip.js. */
+
+#ad-tooltip {
+	position: fixed;
+	/* Shorthand: a [popover] gets `inset: 0` from the UA stylesheet (see toast.css). */
+	inset: 0 auto auto 0;
+	z-index: 2147483647;
+	max-width: min(32em, calc(100vw - 12px));
+	margin: 0;
+	padding: 0.35em 0.65em;
+	border: 0;
+	border-radius: var(--ad-radius-sm);
+	background: var(--fg);
+	color: var(--bg);
+	font-size: 0.9em;
+	line-height: 1.35;
+	white-space: pre-line;
+	overflow-wrap: anywhere;
+	box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+	pointer-events: none;
+}
+
+#ad-tooltip[hidden] {
+	display: none;
+}

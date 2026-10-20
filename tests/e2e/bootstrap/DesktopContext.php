@@ -285,6 +285,15 @@ class DesktopContext implements Context
 		$this->goto($this->page->url());
 	}
 
+	/** A reload as Cmd+R makes it: the navigation's type is "reload", which "I reload the page"
+	 * (a fresh navigation to the same url) is not. */
+	#[When('I reload the window')]
+	public function reloadWindow(): void
+	{
+		$this->page->reload();
+		$this->page->waitForLoadState('networkidle');
+	}
+
 	// ── the data list ────────────────────────────────────────────────────────────────────────
 
 	/** Adminer's heading link, addressed by the column it sorts rather than by its position: the
@@ -910,23 +919,153 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** A label's text is hidden by zeroing its font, so the select's own size is what can break. */
+	#[Then('the database and schema pickers fill their row, with no "DB:" or "Schema:" in front of them')]
+	public function databasePickersUnlabelled(): void
+	{
+		/** @var list<array{label: float, select: float, height: float, font: float}> $pickers */
+		$pickers = $this->page->evaluate(
+			// language=JavaScript
+			'() => [...document.querySelectorAll("#dbs label")].map((label) => {
+				const select = label.querySelector("select");
+				return {
+					label: label.getBoundingClientRect().width,
+					select: select.getBoundingClientRect().width,
+					height: select.getBoundingClientRect().height,
+					font: parseFloat(getComputedStyle(select).fontSize),
+				};
+			})',
+		);
+		if (count($pickers) !== 2) {
+			throw new RuntimeException('expected the database and schema pickers, found ' . count($pickers));
+		}
+		foreach ($pickers as $state) {
+			if ($state['font'] < 10 || $state['height'] < 20 || $state['label'] - $state['select'] > 1) {
+				throw new RuntimeException('a picker is mis-sized: ' . json_encode($state));
+			}
+		}
+	}
+
+	/** One row: before-paint/header.js moves the actions into the pickers' row, after them. */
+	#[Then('the actions follow the pickers on their row')]
+	public function actionsShareThePickersRow(): void
+	{
+		/** @var array{inside: bool, middle: float, actionMiddle: float, schemaRight: float, actionLeft: float} $state */
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const row = document.querySelector("#dbs");
+				// The last picker: the schema one, or the database one alone on the server\'s page.
+				const schema = [...row.querySelectorAll("label select")].at(-1).getBoundingClientRect();
+				const action = document.querySelector("#menu .links a").getBoundingClientRect();
+				return {
+					inside: row.contains(document.querySelector("#menu .links")),
+					middle: schema.top + schema.height / 2,
+					actionMiddle: action.top + action.height / 2,
+					schemaRight: schema.right,
+					actionLeft: action.left,
+				};
+			}',
+		);
+		if (!$state['inside'] || abs($state['middle'] - $state['actionMiddle']) > 1 || $state['actionLeft'] < $state['schemaRight']) {
+			throw new RuntimeException('the actions are not after the pickers on one row: ' . json_encode($state));
+		}
+	}
+
+	/** field-sizing: a short schema name is a short select, and a long one in the database picker
+	 * is cut to fit rather than pushing the row past the panel. */
+	#[Then('each picker is as wide as the name in it, and a long name stays inside the sidebar')]
+	public function pickersFitTheirNames(): void
+	{
+		/** @var array{row: float, schema: float, overflow: float} $state */
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const row = document.querySelector("#dbs");
+				const schema = row.querySelector("select[name=ns]").getBoundingClientRect().width;
+				const db = row.querySelector("select[name=db]");
+				db.selectedOptions[0].textContent = "a_database_name_far_too_long_for_any_sidebar_to_hold";
+				const last = [...row.querySelectorAll("label")].at(-1).getBoundingClientRect();
+				return {
+					row: row.clientWidth,
+					schema,
+					overflow: last.right - row.getBoundingClientRect().right,
+				};
+			}',
+		);
+		if ($state['schema'] > $state['row'] / 2.5 || $state['overflow'] > 0) {
+			throw new RuntimeException('the pickers do not fit their names: ' . json_encode($state));
+		}
+	}
+
+	#[When('I point at the schema picker')]
+	public function pointAtSchemaPicker(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#dbs select[name="ns"]',
+		)->hover();
+	}
+
+	#[Then('a tooltip says :text')]
+	public function tooltipSays(string $text): void
+	{
+		$tip = $this->page->locator(
+			// language=JQuery-CSS
+			'#ad-tooltip:not([hidden])',
+		);
+		$tip->waitFor(['timeout' => 800]);
+		if (trim($tip->textContent() ?? '') !== $text) {
+			throw new RuntimeException("the tooltip says '{$tip->textContent()}'");
+		}
+	}
+
+	#[When('I point at :name in the sidebar')]
+	public function pointAtSidebarLink(string $name): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#menu .links',
+		)->getByRole('link', ['name' => $name, 'exact' => true])->hover();
+	}
+
+	/** Under a second, which is about what the native one takes; the title is lifted while
+	 * hovered so the native one cannot also appear. */
+	#[Then('a tooltip says :text right away, and the link keeps its name')]
+	public function tooltipShows(string $text): void
+	{
+		$tip = $this->page->locator(
+			// language=JQuery-CSS
+			'#ad-tooltip:not([hidden])',
+		);
+		$tip->waitFor(['timeout' => 800]);
+		if (trim($tip->textContent() ?? '') !== $text) {
+			throw new RuntimeException("the tooltip says '{$tip->textContent()}'");
+		}
+		$hovered = $this->page->locator(
+			// language=JQuery-CSS
+			'#menu .links',
+		)->getByRole('link', ['name' => $text, 'exact' => true]);
+		if ($hovered->count() !== 1 || $hovered->getAttribute('title') !== null) {
+			throw new RuntimeException("'$text' lost its name, or kept the title the system would show");
+		}
+	}
+
 	/** Measured where each column starts, not where its box does: a row pads its own highlight
 	 * and the list around it gives that back, so changing either alone moves the icons off. */
-	#[Then('each table is marked with an icon, in line with the actions and the labels above')]
+	#[Then('each table is marked with an icon, in line with the database name above')]
 	public function tablesAreMarked(): void
 	{
-		/** @var array{unmarked: int, label: float, action: float, table: float} $state */
+		/** @var array{unmarked: int, label: float, table: float} $state */
 		$state = $this->page->evaluate(
 			// language=JavaScript
 			'() => {
 				const names = [...document.querySelectorAll("#tables li > a:not(.select)")];
-				const range = document.createRange();
-				range.selectNodeContents(document.querySelector("#dbs label"));
+				const select = document.querySelector("#dbs select[name=db]");
 				const first = names[0];
 				return {
 					unmarked: names.filter((a) => !getComputedStyle(a, "::before").maskImage.includes("icons/")).length,
-					label: range.getBoundingClientRect().left,
-					action: document.querySelector("#menu .links .ad-icon").getBoundingClientRect().left,
+					label: select.getBoundingClientRect().left + parseFloat(getComputedStyle(select).paddingLeft),
 					table: first.getBoundingClientRect().left + parseFloat(getComputedStyle(first).paddingLeft),
 				};
 			}',
@@ -934,10 +1073,8 @@ class DesktopContext implements Context
 		if ($state['unmarked'] > 0) {
 			throw new RuntimeException("{$state['unmarked']} tables in the sidebar have no icon");
 		}
-		foreach (['action', 'table'] as $what) {
-			if (abs($state[$what] - $state['label']) > 0.5) {
-				throw new RuntimeException("the first $what icon starts at {$state[$what]}px, the label at {$state['label']}px");
-			}
+		if (abs($state['table'] - $state['label']) > 0.5) {
+			throw new RuntimeException("the first table icon starts at {$state['table']}px, the database name at {$state['label']}px");
 		}
 	}
 

@@ -78,5 +78,9 @@ if (gear && dialog) {
 			// Through the gear, so modal.js snapshots the fields and the guard works.
 			gear.click();
 		}
+	} else {
+		// Left behind by a way out that never fires close: Save posts and navigates with the
+		// dialog still open, and the next Cmd+R would bring it back.
+		sessionStorage.removeItem(OPEN_KEY);
 	}
 }

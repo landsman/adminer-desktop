@@ -81,6 +81,11 @@ Feature: The settings dialog
     Then the settings dialog is closed
     And the focus is back on the gear
 
+  Scenario: A reload after saving does not bring the dialog back
+    When I save the settings
+    And I reload the window
+    Then the settings dialog is closed
+
   Scenario: The × on a changed form asks before throwing it away
     When I pick the "compact" row density
     And I click the close button
