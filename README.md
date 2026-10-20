@@ -7,6 +7,10 @@
     Download it, open it, connect to your favourite database, and start working.
 </h3>
 
+<p align="center">
+    <img src="assets/screenshot.webp" width="800" alt="Adminer Desktop on macOS, browsing a PostgreSQL table in dark mode"/>
+</p>
+
 ----
 
 > Adminer itself is not modified or forked. This app runs the official [Adminer](https://www.adminer.org) release in a
