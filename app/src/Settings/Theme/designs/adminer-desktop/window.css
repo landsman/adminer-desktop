@@ -387,6 +387,129 @@
 	--ad-tool-icon: url("icons/tool-new.svg");
 }
 
+.ad-frameless .ad-toolbar-actions a[data-tool="processes"] {
+	--ad-tool-icon: url("icons/tool-processes.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="variables"] {
+	--ad-tool-icon: url("icons/tool-variables.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="status"] {
+	--ad-tool-icon: url("icons/tool-status.svg");
+}
+
+/* On the server's own page the home mark leads where you are; the toolbar's title says it. */
+.ad-frameless #content #breadcrumb > .ad-breadcrumb-home {
+	display: none;
+}
+
+/* A table's sort: adminer's box stays in the form, hidden, and the toolbar's button stands for it
+   (before-paint/header.js, sort-menu.js) — a glass capsule with the sort mark and a chevron, as
+   Finder's group-by button is. */
+.ad-frameless .ad-sort-moved {
+	display: none;
+}
+
+.ad-frameless .ad-toolbar-sort {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	box-sizing: border-box;
+	height: var(--ad-toolbar-h);
+	padding: 0 10px 0 12px;
+	border: 0;
+	border-radius: calc(var(--ad-toolbar-h) / 2);
+	background: var(--ad-glass-bg);
+	-webkit-backdrop-filter: var(--ad-glass-filter);
+	backdrop-filter: var(--ad-glass-filter);
+	box-shadow: var(--ad-glass-shadow);
+	color: color-mix(in srgb, var(--fg) 85%, transparent);
+}
+
+.ad-frameless .ad-toolbar-sort:hover,
+.ad-frameless .ad-toolbar-sort[aria-expanded="true"] {
+	background: var(--ad-glass-bg);
+	color: var(--fg);
+}
+
+.ad-frameless .ad-toolbar-sort::before,
+.ad-frameless .ad-toolbar-sort::after {
+	content: "";
+	background: currentcolor;
+}
+
+.ad-frameless .ad-toolbar-sort::before {
+	width: 18px;
+	height: 18px;
+	-webkit-mask: url("icons/sort.svg") center / contain no-repeat;
+	mask: url("icons/sort.svg") center / contain no-repeat;
+}
+
+.ad-frameless .ad-toolbar-sort::after {
+	width: 10px;
+	height: 10px;
+	-webkit-mask: url("icons/chevron-down.svg") center / contain no-repeat;
+	mask: url("icons/chevron-down.svg") center / contain no-repeat;
+}
+
+/* Its menu: a glass panel under the button, as a macOS menu is — a check by the column it is
+   sorted by, hairlines between None, the columns and descending, the row under the pointer in
+   the accent. */
+#ad-sort-menu {
+	position: fixed;
+	inset: auto;
+	margin: 0;
+	min-width: 12rem;
+	max-height: 60vh;
+	overflow-y: auto;
+	padding: 5px;
+	border: 0;
+	border-radius: 12px;
+	background: light-dark(rgb(246 246 246 / 82%), rgb(44 44 46 / 82%));
+	-webkit-backdrop-filter: blur(24px) saturate(1.8);
+	backdrop-filter: blur(24px) saturate(1.8);
+	box-shadow:
+		inset 0 0 0 0.5px light-dark(rgb(255 255 255 / 60%), rgb(255 255 255 / 12%)),
+		0 0 0 0.5px rgb(0 0 0 / 18%),
+		0 10px 30px rgb(0 0 0 / 22%);
+	color: var(--fg);
+	font-size: 13px;
+}
+
+#ad-sort-menu button {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	padding: 4px 12px 4px 26px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: start;
+	position: relative;
+}
+
+#ad-sort-menu button[aria-checked="true"]::before {
+	content: "✓";
+	position: absolute;
+	left: 9px;
+}
+
+#ad-sort-menu button:hover,
+#ad-sort-menu button:focus-visible {
+	outline: none;
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
+}
+
+#ad-sort-menu [role="separator"] {
+	height: 1px;
+	margin: 5px 10px;
+	background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+
 /* A button drawn as Mail's search field; a click opens the search box Shift Shift opens. */
 .ad-frameless .ad-toolbar-search {
 	position: relative;

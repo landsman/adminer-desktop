@@ -157,27 +157,34 @@
 			bar.append(here);
 			document.body.append(bar);
 			document.body.classList.add("ad-has-pathbar");
+		}
+	};
 
-			// Back and forward before the title, one capsule, as Finder's toolbar has them. Greyed
-			// where the Navigation API says there is nowhere to go; without it, always offered.
-			const steps = document.createElement("div");
-			steps.className = "ad-history";
-			for (const [step, label] of [
-				["back", "Back"],
-				["forward", "Forward"],
-			]) {
-				const button = document.createElement("button");
-				button.type = "button";
-				button.className = `ad-history-${step}`;
-				button.title = strings()[`history.${step}`] ?? label;
-				button.setAttribute("aria-label", button.title);
-				const can =
-					window.navigation?.[step === "back" ? "canGoBack" : "canGoForward"];
-				button.disabled = can === false;
-				button.addEventListener("click", () => window.history[step]());
-				steps.append(button);
-			}
-			name.before(steps);
+	// Back and forward at the start of the toolbar, one capsule, as Finder's has them. Greyed where
+	// the Navigation API says there is nowhere to go; without it, always offered.
+	const historySteps = (breadcrumb) => {
+		const steps = document.createElement("div");
+		steps.className = "ad-history";
+		for (const [step, label] of [
+			["back", "Back"],
+			["forward", "Forward"],
+		]) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = `ad-history-${step}`;
+			button.title = strings()[`history.${step}`] ?? label;
+			button.setAttribute("aria-label", button.title);
+			const can =
+				window.navigation?.[step === "back" ? "canGoBack" : "canGoForward"];
+			button.disabled = can === false;
+			button.addEventListener("click", () => window.history[step]());
+			steps.append(button);
+		}
+		const burger = breadcrumb.querySelector("#menuopen");
+		if (burger) {
+			burger.after(steps);
+		} else {
+			breadcrumb.prepend(steps);
 		}
 	};
 
@@ -200,6 +207,8 @@
 	const frameless = document.documentElement.classList.contains("ad-frameless");
 	let toolbar = null;
 	let actionsDone = false;
+	let sortDone = false;
+	let titled = false;
 
 	// A gallery design knows nothing of the missing title bar: the window's own layout for it is
 	// ours alone (window.css). Said once the parser reaches <body> — adminer links the design after
@@ -227,6 +236,9 @@
 		select: "data",
 		table: "structure",
 		edit: "new",
+		processlist: "processes",
+		variables: "variables",
+		status: "status",
 	};
 	const TOOL_SECTIONS = {
 		"#routines": "routine",
@@ -240,11 +252,18 @@
 			const param = Object.keys(TOOL_PARAMS).find((key) =>
 				url.searchParams.has(key),
 			);
-			link.dataset.tool = TOOL_SECTIONS[url.hash] ?? TOOL_PARAMS[param] ?? "";
+			// `database=` alters the database a page is in, and on the server's own page, which is in
+			// none, creates one.
+			const creates =
+				param === "database" && !new URLSearchParams(location.search).get("db");
+			link.dataset.tool = creates
+				? "new"
+				: (TOOL_SECTIONS[url.hash] ?? TOOL_PARAMS[param] ?? "");
 		}
 	};
 
 	const buildToolbar = (breadcrumb) => {
+		historySteps(breadcrumb);
 		toolbar = document.createElement("div");
 		toolbar.className = "ad-toolbar";
 		const search = document.createElement("button");
@@ -281,11 +300,25 @@
 			}
 			rewritePath(breadcrumb);
 			pathDone = true;
-			// Only where the path names a page: on the server's own page the row is hidden
-			// (layout.css), and its links are that page's content.
-			if (frameless && breadcrumb.querySelector(".ad-breadcrumb-current")) {
+			if (frameless) {
 				buildToolbar(breadcrumb);
 			}
+		}
+		// The server's own page (Select database) has no page in its path to be the toolbar's title,
+		// so its heading is, once parsed; the heading then hides as on every other page.
+		const heading = breadcrumb?.nextElementSibling;
+		if (
+			toolbar &&
+			!titled &&
+			!breadcrumb.querySelector(".ad-breadcrumb-current") &&
+			heading?.matches("h2") &&
+			heading.nextSibling
+		) {
+			const title = document.createElement("span");
+			title.className = "ad-breadcrumb-current";
+			title.textContent = heading.textContent.trim();
+			toolbar.before(title);
+			titled = true;
 		}
 		// Moved the moment they arrive, like the sidebar's actions below.
 		const actions = toolbar && !actionsDone && pageActions();
@@ -296,6 +329,30 @@
 		}
 		if (actionsDone) {
 			markTools();
+		}
+		// A table's sort, out of its box on the page and into the toolbar as one button with a menu,
+		// as Finder's "group by" is (sort-menu.js opens it). The box stays in the form, which posts
+		// it, only hidden (window.css); hidden the moment it arrives, so it is never seen.
+		const order =
+			toolbar &&
+			!sortDone &&
+			document.querySelector('#form select[name="order[0]"]');
+		if (order) {
+			order.closest("fieldset")?.classList.add("ad-sort-moved");
+			const sort = document.createElement("button");
+			sort.type = "button";
+			sort.className = "ad-toolbar-sort";
+			sort.setAttribute("aria-haspopup", "menu");
+			// adminer's own word for it, from the box's legend, which comes before the select.
+			sort.title =
+				order
+					.closest("fieldset")
+					?.querySelector("legend")
+					?.textContent.trim() || "Sort";
+			sort.setAttribute("aria-label", sort.title);
+			// Between the page's actions and the search.
+			toolbar.querySelector(".ad-toolbar-search")?.before(sort);
+			sortDone = true;
 		}
 		// The sidebar's actions on the pickers' row rather than one of their own below it: the
 		// pickers are short now (sidebar.css), and two rows of controls read as one toolbar.

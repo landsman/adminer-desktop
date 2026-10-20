@@ -76,6 +76,7 @@ return [
 	'js.history.back' => 'Wstecz',
 	'js.history.forward' => 'Dalej',
 	'js.pathbar.label' => 'Ścieżka',
+	'js.sort.none' => 'Brak',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Dostęp AI',

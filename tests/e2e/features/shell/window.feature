@@ -22,6 +22,23 @@ Feature: The window without a title bar
     Then the page's "Alter schema, Database schema" are buttons in the toolbar
     And no list of links is left under the title
 
+  Scenario: The server's own page has the toolbar too, its links as icon buttons
+    When I open the server's list of databases
+    Then the toolbar's title reads "Select database"
+    And the page's "Create database, Process list, Variables" are buttons in the toolbar
+    And no list of links is left under the title
+
+  Scenario: A table sorts from the toolbar's menu, which stands for adminer's Sort box
+    When I open the "users" table
+    And I open the toolbar's sort menu
+    Then the sort menu offers "None, id, name, email, created_at, active, descending", with "None" checked
+    When I pick "name" from the sort menu
+    Then the URL contains "order[0]=name"
+    When I open the toolbar's sort menu
+    Then the sort menu offers "None, id, name, email, created_at, active, descending", with "name" checked
+    When I pick "descending" from the sort menu
+    Then the URL contains "desc[0]=1"
+
   Scenario: The way to a table is a path bar along the window's foot, as in Finder
     When I open the "users" table
     Then the path bar reads "PostgreSQL › demo › public › users", its steps leading back

@@ -76,6 +76,7 @@ return [
 	'js.history.back' => 'Späť',
 	'js.history.forward' => 'Dopredu',
 	'js.pathbar.label' => 'Cesta',
+	'js.sort.none' => 'Neradiť',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Prístup pre AI',

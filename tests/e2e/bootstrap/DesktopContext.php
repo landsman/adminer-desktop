@@ -2964,6 +2964,64 @@ class DesktopContext implements Context
 		$this->page->mouse()->click((float) $box['x'], (float) $box['y']);
 	}
 
+	#[When('I open the toolbar\'s sort menu')]
+	public function openSortMenu(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#breadcrumb .ad-toolbar',
+		)->getByRole('button', ['name' => 'Sort'])->click();
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => document.querySelector('#ad-sort-menu')?.matches(':popover-open')",
+		);
+	}
+
+	#[Then('the sort menu offers :items, with :checked checked')]
+	public function sortMenuOffers(string $items, string $checked): void
+	{
+		$menu = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => ({
+				items: [...document.querySelectorAll('#ad-sort-menu [role=menuitemcheckbox]')].map((el) => el.textContent.trim()),
+				checked: [...document.querySelectorAll('#ad-sort-menu [aria-checked=true]')].map((el) => el.textContent.trim()),
+				boxHidden: getComputedStyle(document.querySelector('#form select[name=\"order[0]\"]').closest('fieldset')).display === 'none',
+			})",
+		);
+		$want = array_map('trim', explode(',', $items));
+		$on = array_map('trim', explode(',', $checked));
+		if ($menu['items'] !== $want || $menu['checked'] !== $on || !$menu['boxHidden']) {
+			throw new RuntimeException('the sort menu is otherwise: ' . json_encode($menu));
+		}
+	}
+
+	/** A pick submits adminer's form, so it is done once another page is in. */
+	#[When('I pick :item from the sort menu')]
+	public function pickFromSortMenu(string $item): void
+	{
+		$before = $this->page->url();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-sort-menu',
+		)->getByRole('menuitemcheckbox', ['name' => $item, 'exact' => true])->click();
+		for ($i = 0; $i < 100 && $this->page->url() === $before; $i++) {
+			usleep(100_000);
+		}
+		$this->page->waitForLoadState('load');
+	}
+
+	#[Then('the toolbar\'s title reads :title')]
+	public function toolbarTitleReads(string $title): void
+	{
+		$text = $this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('#breadcrumb > .ad-breadcrumb-current')?.textContent.trim()",
+		);
+		if ($text !== $title) {
+			throw new RuntimeException("the toolbar's title reads \"$text\", not \"$title\"");
+		}
+	}
+
 	#[When('I press the mouse on one of the toolbar\'s buttons')]
 	public function pressToolbarButton(): void
 	{
