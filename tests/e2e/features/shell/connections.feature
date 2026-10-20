@@ -20,6 +20,12 @@ Feature: Saved connections
     And Permanent login is ticked
     And logging in, from the form or a card, shows the activity indicator
 
+  Scenario: Without a title bar the version and the gear are still at the foot
+    Given the window has no title bar
+    When I go to the login page
+    Then the version and the gear are centred as a pair
+    And nothing masks out the version and the gear
+
   Scenario: A login that fails says why in the modal, with what was typed still in it
     When I log in with the password "not-the-password"
     Then the new connection says why, with what I typed still in it

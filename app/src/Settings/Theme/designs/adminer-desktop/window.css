@@ -592,6 +592,13 @@
 	);
 }
 
+/* Not on the login page: it has no list to fade, and a mask clips what it covers to #menu's box,
+   the fixed version and gear at the window's foot (layout.css) with it. */
+.ad-frameless:not(.ad-fullscreen) body:has(input[name="auth[username]"]) #menu {
+	-webkit-mask-image: none;
+	mask-image: none;
+}
+
 /* No rules in it: sections are set apart by room, as in Mail, not drawn across the sidebar to end
    in nothing at its edge. And no fill behind the logo row, which every h1 has (base.css). */
 .ad-frameless:not(.ad-fullscreen)
