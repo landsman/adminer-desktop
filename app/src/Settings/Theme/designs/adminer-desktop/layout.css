@@ -175,6 +175,39 @@ body {
 	align-content: center;
 	box-sizing: border-box;
 	min-height: var(--ad-subheader-h);
+	/* A label, like the logo row: hovering it showed an I-beam and a drag over it selected it. */
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: default;
+}
+
+/* On the server's own page (Select database) the path is the home mark alone, leading where you
+   already are: nothing to show, so the row goes and the title heads the panel. It stays where it
+   holds something else: a narrow window's burger, and — on macOS with no title bar — the traffic
+   lights over a hidden sidebar (window.css). The stored hidden sidebar means nothing anywhere else,
+   so only that one window keeps the row for it. */
+#content #breadcrumb:not(:has(.ad-breadcrumb-current)) > .ad-breadcrumb-home {
+	visibility: hidden;
+}
+
+@media (min-width: 801px) {
+	#content #breadcrumb:not(:has(.ad-breadcrumb-current)) {
+		display: none;
+	}
+
+	.ad-frameless:not(.ad-fullscreen)
+		.ad-sidebar-hidden
+		#content
+		#breadcrumb:not(:has(.ad-breadcrumb-current)) {
+		display: flex;
+	}
+}
+
+/* Everywhere else it is the title that repeats: adminer prints the page's title as the
+   breadcrumb's last item and again as the <h2> (page_header(), include/design.inc.php), so
+   "Schema: public" sat under a path ending in the same words, beside a sidebar naming it too. */
+#content:has(> #breadcrumb .ad-breadcrumb-current) > h2 {
+	display: none;
 }
 
 /* Directly under the breadcrumb the title's padding is the space between the two rules; the
@@ -236,8 +269,9 @@ body {
 	border-color: transparent;
 	background:
 		linear-gradient(var(--bg), var(--bg)) padding-box,
-		linear-gradient(var(--ad-badge-border), var(--ad-badge-border)) top / 100%
-		calc(var(--ad-header-h) + 1px) no-repeat border-box,
+		linear-gradient(var(--ad-badge-border), var(--ad-badge-border)) 0
+		var(--ad-menu-top, 0px) / 100% calc(var(--ad-header-h) + 1px) no-repeat
+		border-box,
 		linear-gradient(var(--ad-border), var(--ad-border)) border-box;
 }
 
@@ -367,6 +401,10 @@ body:has(#ad-connection-badge) .logout {
 	height: var(--ad-header-h);
 	padding-block: 0;
 	white-space: nowrap;
+	/* A name to read and a place to drag the window by, not text to select: no I-beam either. */
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: default;
 }
 
 /* The logo image sat on the text's baseline, a little above its middle; centred instead, without
@@ -387,7 +425,7 @@ body:has(#ad-connection-badge) .logout {
 	   sidebar; right-anchored so it follows the panel's width rather than a magic offset. */
 	position: absolute;
 	/* Centred on the logo's row (#menu h1), whatever the scale makes of its height. */
-	inset: calc(var(--ad-header-h) / 2) 0.6rem auto auto;
+	inset: calc(var(--ad-menu-top, 0px) + var(--ad-header-h) / 2) 0.6rem auto auto;
 	transform: translateY(-50%);
 	width: 1.6rem;
 	height: 1.6rem;
@@ -578,10 +616,18 @@ body:has(input[name="auth[username]"]) #menu {
 /* The logo alone, centred over the panel — the name of the app, not a corner of a sidebar. */
 body:has(input[name="auth[username]"]) #menu h1 {
 	justify-content: center;
+	height: auto;
 	margin: 0;
 	padding: 0;
 	border: 0;
 	background: none;
+	font-size: 192%;
+}
+
+/* Adminer sizes the mark at 24px; in em it grows with the name beside it. */
+body:has(input[name="auth[username]"]) #h1 > img {
+	width: 1.1em;
+	height: 1.1em;
 }
 
 /* The version and the gear, side by side at the foot of the window, out of the way: neither is
@@ -615,7 +661,7 @@ body:has(input[name="auth[username]"]) .ad-versions {
 	line-height: 1.6rem;
 	font-size: 0.8rem;
 	white-space: nowrap;
-	color: color-mix(in srgb, var(--fg) 55%, transparent);
+	color: color-mix(in srgb, var(--fg) 64%, transparent);
 }
 
 body:has(input[name="auth[username]"]) .ad-versions a {

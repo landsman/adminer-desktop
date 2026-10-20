@@ -83,6 +83,14 @@ return [
 	// Whole-page import dropzone (AdminerDesktop::head()).
 	'js.import.drop_hint' => 'Drop the SQL file to import',
 
+	// The button by the traffic lights on macOS (window-chrome.js).
+	'js.sidebar.toggle' => 'Show or hide the sidebar',
+	'js.toolbar.search' => 'Search',
+	'js.history.back' => 'Back',
+	'js.history.forward' => 'Forward',
+	'js.pathbar.label' => 'Path',
+	'js.sort.none' => 'None',
+
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'AI access',
 	'mcp.enable' => 'Let an AI agent query this database',

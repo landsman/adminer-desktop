@@ -9,10 +9,89 @@ package main
 import "C"
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 	"unsafe"
+
+	webview "github.com/webview/webview_go"
 )
+
+// Set by installFrameless; the notification that calls it only fires once the window is up.
+var onFullscreen func(bool)
+
+//export goFullscreenChanged
+func goFullscreenChanged(on C.int) {
+	if onFullscreen != nil {
+		onFullscreen(on == 1)
+	}
+}
+
+// installFrameless takes the title bar away: the page runs to the window's top edge and the
+// traffic lights sit in a band over the sidebar (the theme's window.css). The page is told by the
+// ad-frameless class on <html>, set before it paints, and moves the window from that band
+// (window-chrome.js) through the bindings here. ad-fullscreen marks a full-screen window, which
+// shows no lights: set the same way, by an init script added again on each change — it runs
+// after the earlier ones and wins — so a page loaded in full screen paints that way from the start.
+func installFrameless(w webview.WebView) {
+	win := w.Window()
+	if C.installFramelessTitlebar(win) != 1 {
+		return
+	}
+	bind := func(name string, f any) {
+		if err := w.Bind(name, f); err != nil {
+			log.Printf("frameless: %s bind failed: %v", name, err)
+		}
+	}
+	bind("adDragWindow", func() { C.dragWindow(win) })
+	bind("adTitlebarDoubleClick", func() { C.titlebarDoubleClick(win) })
+	mark := func(on bool) string {
+		return fmt.Sprintf(`document.documentElement.classList.toggle("ad-fullscreen", %t);`, on)
+	}
+	onFullscreen = func(on bool) {
+		w.Init(mark(on))
+		w.Eval(mark(on))
+	}
+	w.Init(`document.documentElement.classList.add("ad-frameless");`)
+}
+
+// moveToBuiltinScreen puts the window on the laptop's own display, for -dev.
+func moveToBuiltinScreen(window unsafe.Pointer) bool {
+	return C.moveToBuiltinScreen(window) == 1
+}
+
+// Set by installScrollerStyle; the notification that calls it only fires once the window is up.
+var onScrollerStyle func(bool)
+
+//export goScrollerStyleChanged
+func goScrollerStyleChanged(legacy C.int) {
+	if onScrollerStyle != nil {
+		onScrollerStyle(legacy == 1)
+	}
+}
+
+// installScrollerStyle tells every page which scrollbars the system draws, as the class
+// ad-legacy-scrollers on <html> (base.css shows WebKit's own then). An init script, so the class
+// is there before the page paints; on a change another one is added, which runs after and wins,
+// and the page on screen is told directly.
+func installScrollerStyle(w webview.WebView) {
+	mark := func(legacy bool) string {
+		return fmt.Sprintf(`document.documentElement.classList.toggle("ad-legacy-scrollers", %t);`, legacy)
+	}
+	w.Init(mark(C.legacyScrollers() == 1))
+	onScrollerStyle = func(legacy bool) {
+		w.Init(mark(legacy))
+		w.Eval(mark(legacy))
+	}
+	C.watchScrollerStyle()
+}
+
+// describeTitlebarHit names the view a click near the window's top lands on.
+func describeTitlebarHit(window unsafe.Pointer) string {
+	c := C.describeTitlebarHit(window)
+	defer C.free(unsafe.Pointer(c))
+	return C.GoString(c)
+}
 
 // Set by installMenu before the menu can be clicked. The menu only exists while the
 // webview is running, so these are always populated by the time a callback fires.

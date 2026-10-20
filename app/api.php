@@ -35,6 +35,7 @@ Tracy\Debugger::$showBar = false;
 * @var array<string,class-string> */
 $actions = [
 	"resize" => Desktop\Api\ResizePreference::class,
+	"sidebar" => Desktop\Api\SidebarPreference::class,
 ];
 
 // One status out of every path rather than an early exit each, so the log below sees the

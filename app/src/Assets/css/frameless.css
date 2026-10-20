@@ -1,0 +1,9 @@
+/* A gallery design in a window with no title bar (macOS: the launcher's installFrameless). The
+ * window's own layout for it is the Adminer Desktop design's (window.css); a gallery design knows
+ * nothing of it and would lay its page out from the very top, under the traffic lights.
+ * before-paint/header.js marks that case with ad-frameless-foreign, and this keeps the page below
+ * the lights' band — the band window-chrome.js moves the window by. 52px: the theme's
+ * --ad-titlebar-h, which a gallery design does not load. */
+.ad-frameless-foreign:not(.ad-fullscreen) body {
+	padding-top: 52px;
+}

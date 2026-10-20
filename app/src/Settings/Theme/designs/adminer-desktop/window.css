@@ -1,0 +1,838 @@
+/* The window on macOS, where the launcher draws no title bar (installFrameless sets .ad-frameless
+ * on <html>): laid out as Mail is. The sidebar is the window's own surface, running to its edges
+ * with the traffic lights in a band at its top and nothing framed or ruled in it; the content
+ * meets the window's edges too, set off from the sidebar by one hairline. Elsewhere — Windows,
+ * Linux, a full-screen window, a browser — the islands layout (layout.css) stands: two framed
+ * panels on the window's surface, which is what Windows 11's own apps look like. The toolbar's
+ * controls (below) are the one part a full-screen window keeps, as before-paint/header.js builds
+ * them whenever the title bar is gone.
+ *
+ * Loaded last, so at equal specificity these win over the components they adjust. */
+
+/* The gutter goes, and with it the islands: --ad-gutter is what the body's padding, the gap
+   between the panels and the drag handle's margins are made of. --ad-menu-top is the lights'
+   band inside the sidebar, for what is placed from the sidebar's top: the gear, the badge. */
+.ad-frameless:not(.ad-fullscreen) {
+	--ad-gutter: 0px;
+	--ad-menu-top: var(--ad-titlebar-h);
+	/* Mail's inset: a row's highlight stands this far off the sidebar's edges, and its text as far
+	   inside it, so it starts level with the red light. */
+	--ad-side-inset: 12px;
+}
+
+/* The glass the toolbar's controls are made of, drawn by hand: WebKit has the system's Liquid
+   Glass (-apple-visual-effect), but private and on iOS only, so a page on macOS cannot have it.
+   A light fill the page frosts through, a bright top edge where the light would catch it, a
+   hairline round it and a soft shadow under it — the parts of Mail's buttons a stylesheet can
+   draw; the refraction at their edge is the one it cannot. */
+.ad-frameless {
+	/* Dark: a grey lighter than the page, as Mail's is, not a darker pane on it. */
+	--ad-glass-bg: light-dark(rgb(255 255 255 / 66%), rgb(128 128 136 / 30%));
+	--ad-glass-filter: blur(16px) saturate(1.8);
+	--ad-glass-shadow:
+		inset 0 1px 0 light-dark(rgb(255 255 255 / 90%), rgb(255 255 255 / 22%)),
+		inset 0 0 0 1px light-dark(rgb(255 255 255 / 40%), rgb(255 255 255 / 10%)),
+		0 0 0 0.5px light-dark(rgb(0 0 0 / 12%), rgb(0 0 0 / 40%)),
+		0 2px 10px rgb(0 0 0 / 8%);
+}
+
+/* Not on the login page, whose one column stays a card on the window's surface. */
+.ad-frameless:not(.ad-fullscreen)
+	body:not(:has(input[name="auth[username]"]))
+	:is(#foot, #content) {
+	border: 0;
+	border-radius: 0;
+}
+
+/* The one line between the two, as Mail draws it. On the content's edge, so it goes with the
+   sidebar when that is hidden. */
+.ad-frameless:not(.ad-fullscreen) #content {
+	border-inline-start: 1px solid var(--ad-border);
+}
+
+.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #content {
+	border-inline-start: 0;
+}
+
+/* The content's header row is the window's toolbar: as tall as the lights' band, so what is in
+   it is centred on their line, and in Mail's look — a frosted fill the page shows through as it
+   scrolls under, back and forward, the object you are on as its title, the page's actions and the
+   search. Its hairline only while the page is scrolled under it or the window is in the background
+   (window-chrome.js sets the two classes), and faint, as Mail's is. */
+.ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
+	height: var(--ad-titlebar-h);
+	margin-bottom: 0.25rem;
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.2s ease;
+	background: color-mix(in srgb, var(--ad-panel) 60%, transparent);
+	-webkit-backdrop-filter: saturate(1.8) blur(20px);
+	backdrop-filter: saturate(1.8) blur(20px);
+	font-size: 13px;
+}
+
+.ad-frameless:is(.ad-content-scrolled, .ad-window-inactive):not(.ad-fullscreen)
+	#content
+	#breadcrumb {
+	border-bottom-color: color-mix(in srgb, var(--fg) 9%, transparent);
+}
+
+/* The toolbar's title as Mail's: the object you are on alone, bold. The way there is in the path
+   bar along the window's foot (below), as Finder keeps it. adminer's "Schema: public" is the kind
+   of page and the object: the kind the toolbar's lit icon already says, so it is hidden — not
+   removed, so a screen reader still hears the whole of it. */
+.ad-frameless #content #breadcrumb > .ad-breadcrumb-current {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--fg);
+	font-size: 15px;
+	font-weight: 650;
+}
+
+.ad-frameless #content #breadcrumb .ad-breadcrumb-kind {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* Back and forward, one glass capsule before the title, as in Finder's toolbar. */
+.ad-frameless #content #breadcrumb .ad-history {
+	display: flex;
+	flex: none;
+	align-items: center;
+	box-sizing: border-box;
+	height: 32px;
+	margin-inline-end: 8px;
+	padding: 0 2px;
+	border-radius: 16px;
+	background: var(--ad-glass-bg);
+	-webkit-backdrop-filter: var(--ad-glass-filter);
+	backdrop-filter: var(--ad-glass-filter);
+	box-shadow: var(--ad-glass-shadow);
+}
+
+.ad-frameless #content #breadcrumb .ad-history button {
+	width: 32px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: 14px;
+	background: transparent;
+	color: color-mix(in srgb, var(--fg) 80%, transparent);
+}
+
+.ad-frameless #content #breadcrumb .ad-history button + button {
+	background:
+		linear-gradient(
+			color-mix(in srgb, var(--fg) 14%, transparent),
+			color-mix(in srgb, var(--fg) 14%, transparent)
+		)
+		left center / 1px 55% no-repeat;
+}
+
+.ad-frameless #content #breadcrumb .ad-history button::before {
+	content: "";
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: auto;
+	background: currentcolor;
+	-webkit-mask: var(--ad-history-icon) center / contain no-repeat;
+	mask: var(--ad-history-icon) center / contain no-repeat;
+}
+
+.ad-frameless #content #breadcrumb .ad-history-back {
+	--ad-history-icon: url("icons/history-back.svg");
+}
+
+.ad-frameless #content #breadcrumb .ad-history-forward {
+	--ad-history-icon: url("icons/history-forward.svg");
+}
+
+.ad-frameless #content #breadcrumb .ad-history button:hover:not(:disabled) {
+	color: var(--fg);
+}
+
+.ad-frameless #content #breadcrumb .ad-history button:disabled {
+	color: color-mix(in srgb, var(--fg) 30%, transparent);
+	cursor: default;
+}
+
+/* The path bar: the way to where you are, along the window's foot under the content, drawn as
+   Finder's — "PostgreSQL › demo › public › users", a small blue mark before each step (the server,
+   a database, a schema's folder, a table), small grey text, a hairline over it and the content's
+   own fill. Each step but the last is a link (before-paint/header.js builds it). The content panel
+   stops above it, so nothing on the page — adminer's own sticky row of actions included — slides
+   under it. It starts where the content does: past the sidebar, or at the edge with the sidebar
+   hidden or folded into a drawer. */
+.ad-frameless {
+	--ad-pathbar-h: 26px;
+	--ad-pathbar-left: calc(var(--ad-sidebar-width) + 2 * var(--ad-gutter));
+}
+
+.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden {
+	--ad-pathbar-left: 0px;
+}
+
+.ad-frameless .ad-has-pathbar #content {
+	margin-bottom: var(--ad-pathbar-h);
+}
+
+#ad-pathbar {
+	position: fixed;
+	inset: auto 0 0 var(--ad-pathbar-left);
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	box-sizing: border-box;
+	height: var(--ad-pathbar-h);
+	padding: 0 14px;
+	overflow: hidden;
+	white-space: nowrap;
+	border-top: 1px solid color-mix(in srgb, var(--fg) 9%, transparent);
+	background: var(--ad-panel);
+	color: color-mix(in srgb, var(--fg) 72%, transparent);
+	font-size: 12px;
+	transition: left 0.2s ease;
+}
+
+#ad-pathbar .ad-pathbar-step {
+	display: inline-flex;
+	flex: 0 1 auto;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
+	color: inherit;
+	text-decoration: none;
+}
+
+#ad-pathbar a.ad-pathbar-step:hover {
+	color: var(--fg);
+}
+
+#ad-pathbar .ad-pathbar-step::before {
+	content: "";
+	flex: none;
+	width: 13px;
+	height: 13px;
+	background: var(--ad-accent);
+	-webkit-mask: var(--ad-step-icon) center / contain no-repeat;
+	mask: var(--ad-step-icon) center / contain no-repeat;
+}
+
+#ad-pathbar [data-step="server"] {
+	--ad-step-icon: url("icons/home.svg");
+}
+
+#ad-pathbar [data-step="database"] {
+	--ad-step-icon: url("/src/Assets/icons/database.svg");
+}
+
+#ad-pathbar [data-step="schema"] {
+	--ad-step-icon: url("icons/schema.svg");
+}
+
+#ad-pathbar [data-step="table"] {
+	--ad-step-icon: url("/src/Assets/icons/table.svg");
+}
+
+/* » drawn as Finder's small chevron, dimmer than the steps; a box that centres it on the line, as
+   in a line box of no size it sat on the baseline, high, like a superscript. */
+#ad-pathbar .ad-breadcrumb-sep {
+	display: flex;
+	flex: none;
+	align-items: center;
+	font-size: 0;
+	color: color-mix(in srgb, var(--fg) 45%, transparent);
+}
+
+#ad-pathbar .ad-breadcrumb-sep::before {
+	content: "›";
+	font-size: 13px;
+	line-height: 1;
+}
+
+@media (max-width: 800px) {
+	.ad-frameless {
+		--ad-pathbar-left: 0px;
+	}
+}
+
+/* The toolbar's controls (before-paint/header.js puts them there): the page's own actions as one
+   group of buttons, and the search, at the row's end as in Mail. Drawn like the window's round
+   buttons (the gear, the toggle), so the row reads as one toolbar; the path gives way to them. */
+.ad-frameless .ad-toolbar {
+	--ad-toolbar-h: 36px;
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 10px;
+	margin-inline-start: auto;
+}
+
+.ad-frameless :is(.ad-toolbar-actions, .ad-toolbar-search) {
+	box-sizing: border-box;
+	height: var(--ad-toolbar-h);
+	border-radius: calc(var(--ad-toolbar-h) / 2);
+	background: var(--ad-glass-bg);
+	-webkit-backdrop-filter: var(--ad-glass-filter);
+	backdrop-filter: var(--ad-glass-filter);
+	box-shadow: var(--ad-glass-shadow);
+}
+
+/* adminer's links, a row of segments as Mail's reply/forward group is: an icon each, a hairline
+   between them, and the word as the tooltip and the accessible name (icon-tooltips.js) — the
+   word stays the link's text, font-size 0 only hides it. Which icon, data-tool says
+   (before-paint/header.js reads it off the link's URL); a link with none keeps its word. */
+.ad-frameless #breadcrumb .ad-toolbar-actions {
+	display: flex;
+	align-items: center;
+	margin: 0;
+	padding: 0 4px;
+	font-size: 13px;
+}
+
+.ad-frameless #breadcrumb .ad-toolbar-actions a {
+	--ad-tool-w: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	/* Not adminer's 20px after each link (.links a in default.css), which spaced the segments apart. */
+	margin: 0;
+	padding: 0 10px;
+	color: color-mix(in srgb, var(--fg) 85%, transparent);
+	text-decoration: none;
+}
+
+.ad-frameless #breadcrumb .ad-toolbar-actions a + a {
+	background:
+		linear-gradient(
+			color-mix(in srgb, var(--fg) 14%, transparent),
+			color-mix(in srgb, var(--fg) 14%, transparent)
+		)
+		left center / 1px 45% no-repeat;
+}
+
+.ad-frameless #breadcrumb .ad-toolbar-actions a:hover {
+	color: var(--fg);
+	text-decoration: none;
+}
+
+/* The page you are on, among them. */
+.ad-frameless #breadcrumb .ad-toolbar-actions a.active {
+	color: var(--ad-accent);
+}
+
+.ad-frameless #breadcrumb .ad-toolbar-actions a[data-tool]:not([data-tool=""]) {
+	width: var(--ad-tool-w);
+	padding: 0;
+	font-size: 0;
+}
+
+.ad-frameless
+	#breadcrumb
+	.ad-toolbar-actions
+	a[data-tool]:not([data-tool=""])::before {
+	content: "";
+	width: 18px;
+	height: 18px;
+	background: currentcolor;
+	-webkit-mask: var(--ad-tool-icon) center / contain no-repeat;
+	mask: var(--ad-tool-icon) center / contain no-repeat;
+}
+
+/* Alter the schema, the database, the table: one pencil, as each is "change this". */
+.ad-frameless .ad-toolbar-actions a[data-tool="alter"] {
+	--ad-tool-icon: url("icons/tool-alter.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="diagram"] {
+	--ad-tool-icon: url("icons/tool-diagram.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="routine"] {
+	--ad-tool-icon: url("icons/tool-routine.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="sequence"] {
+	--ad-tool-icon: url("icons/tool-sequence.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="types"] {
+	--ad-tool-icon: url("icons/tool-types.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="events"] {
+	--ad-tool-icon: url("icons/tool-events.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="privileges"] {
+	--ad-tool-icon: url("icons/tool-privileges.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="data"] {
+	--ad-tool-icon: url("icons/tool-data.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="structure"] {
+	--ad-tool-icon: url("icons/tool-structure.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="new"] {
+	--ad-tool-icon: url("icons/tool-new.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="processes"] {
+	--ad-tool-icon: url("icons/tool-processes.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="variables"] {
+	--ad-tool-icon: url("icons/tool-variables.svg");
+}
+
+.ad-frameless .ad-toolbar-actions a[data-tool="status"] {
+	--ad-tool-icon: url("icons/tool-status.svg");
+}
+
+/* On the server's own page the home mark leads where you are; the toolbar's title says it. */
+.ad-frameless #content #breadcrumb > .ad-breadcrumb-home {
+	display: none;
+}
+
+/* A table's sort: adminer's box stays in the form, hidden, and the toolbar's button stands for it
+   (before-paint/header.js, sort-menu.js) — a glass capsule with the sort mark and a chevron, as
+   Finder's group-by button is. */
+.ad-frameless .ad-sort-moved {
+	display: none;
+}
+
+.ad-frameless .ad-toolbar-sort {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	box-sizing: border-box;
+	height: var(--ad-toolbar-h);
+	padding: 0 10px 0 12px;
+	border: 0;
+	border-radius: calc(var(--ad-toolbar-h) / 2);
+	background: var(--ad-glass-bg);
+	-webkit-backdrop-filter: var(--ad-glass-filter);
+	backdrop-filter: var(--ad-glass-filter);
+	box-shadow: var(--ad-glass-shadow);
+	color: color-mix(in srgb, var(--fg) 85%, transparent);
+}
+
+.ad-frameless .ad-toolbar-sort:hover,
+.ad-frameless .ad-toolbar-sort[aria-expanded="true"] {
+	background: var(--ad-glass-bg);
+	color: var(--fg);
+}
+
+.ad-frameless .ad-toolbar-sort::before,
+.ad-frameless .ad-toolbar-sort::after {
+	content: "";
+	background: currentcolor;
+}
+
+.ad-frameless .ad-toolbar-sort::before {
+	width: 18px;
+	height: 18px;
+	-webkit-mask: url("icons/sort.svg") center / contain no-repeat;
+	mask: url("icons/sort.svg") center / contain no-repeat;
+}
+
+.ad-frameless .ad-toolbar-sort::after {
+	width: 10px;
+	height: 10px;
+	-webkit-mask: url("icons/chevron-down.svg") center / contain no-repeat;
+	mask: url("icons/chevron-down.svg") center / contain no-repeat;
+}
+
+/* Its menu: a glass panel under the button, as a macOS menu is — a check by the column it is
+   sorted by, hairlines between None, the columns and descending, the row under the pointer in
+   the accent. */
+#ad-sort-menu {
+	position: fixed;
+	inset: auto;
+	margin: 0;
+	min-width: 12rem;
+	max-height: 60vh;
+	overflow-y: auto;
+	padding: 5px;
+	border: 0;
+	border-radius: 12px;
+	background: light-dark(rgb(246 246 246 / 82%), rgb(44 44 46 / 82%));
+	-webkit-backdrop-filter: blur(24px) saturate(1.8);
+	backdrop-filter: blur(24px) saturate(1.8);
+	box-shadow:
+		inset 0 0 0 0.5px light-dark(rgb(255 255 255 / 60%), rgb(255 255 255 / 12%)),
+		0 0 0 0.5px rgb(0 0 0 / 18%),
+		0 10px 30px rgb(0 0 0 / 22%);
+	color: var(--fg);
+	font-size: 13px;
+}
+
+#ad-sort-menu button {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	padding: 4px 12px 4px 26px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: start;
+	position: relative;
+}
+
+#ad-sort-menu button[aria-checked="true"]::before {
+	content: "✓";
+	position: absolute;
+	left: 9px;
+}
+
+#ad-sort-menu button:hover,
+#ad-sort-menu button:focus-visible {
+	outline: none;
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
+}
+
+#ad-sort-menu [role="separator"] {
+	height: 1px;
+	margin: 5px 10px;
+	background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+
+/* A button drawn as Mail's search field; a click opens the search box Shift Shift opens. */
+.ad-frameless .ad-toolbar-search {
+	position: relative;
+	width: 16rem;
+	padding: 0 14px 0 36px;
+	border: 0;
+	background: var(--ad-glass-bg);
+	text-align: start;
+	font-size: 14px;
+	font-weight: 400;
+	color: color-mix(in srgb, var(--fg) 82%, transparent);
+	cursor: text;
+}
+
+.ad-frameless .ad-toolbar-search:hover {
+	background: var(--bg);
+}
+
+.ad-frameless .ad-toolbar-search::before {
+	content: "";
+	position: absolute;
+	inset: 0 auto 0 13px;
+	width: 15px;
+	margin: auto 0;
+	height: 15px;
+	background: currentcolor;
+	-webkit-mask: url("icons/search.svg") center / contain no-repeat;
+	mask: url("icons/search.svg") center / contain no-repeat;
+}
+
+/* A narrow window has room for the title and the actions, not the search too; Shift Shift stays.
+   The actions close up. */
+@media (max-width: 800px) {
+	.ad-frameless .ad-toolbar-search {
+		display: none;
+	}
+
+	.ad-frameless #breadcrumb .ad-toolbar-actions a {
+		--ad-tool-w: 32px;
+	}
+
+	/* Nor back and forward, which squeezed the title out; the mouse's buttons and the keys still
+	   step through the history. */
+	.ad-frameless #content #breadcrumb .ad-history {
+		display: none;
+	}
+}
+
+/* The sidebar: the window's surface, behind it the system's sidebar material where the launcher
+   put one (installFrameless), which shows through because nothing here paints over it. */
+.ad-frameless:not(.ad-fullscreen) body,
+.ad-frameless:not(.ad-fullscreen) #foot,
+.ad-frameless:not(.ad-fullscreen) #foot:has(#ad-connection-badge),
+.ad-frameless:not(.ad-fullscreen) #menu {
+	background: transparent;
+}
+
+/* The lights' band is room at the top of what scrolls, so the list starts below the lights and,
+   scrolled, passes under them, fading out as it goes — as Mail's mailboxes do. Cut off at the band
+   instead, the list read as stopping short. The gear and the toggle are fixed (below), so they stay
+   over it. The settings dialog lives in #menu too, but in the top layer, which the mask does not
+   reach. */
+.ad-frameless:not(.ad-fullscreen) #foot {
+	transition:
+		margin-inline-start 0.2s ease,
+		visibility 0.2s;
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu {
+	padding-top: var(--ad-menu-top);
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		transparent calc(var(--ad-menu-top) * 0.35),
+		#000 var(--ad-menu-top)
+	);
+	mask-image: linear-gradient(
+		to bottom,
+		transparent calc(var(--ad-menu-top) * 0.35),
+		#000 var(--ad-menu-top)
+	);
+}
+
+/* No rules in it: sections are set apart by room, as in Mail, not drawn across the sidebar to end
+   in nothing at its edge. And no fill behind the logo row, which every h1 has (base.css). */
+.ad-frameless:not(.ad-fullscreen)
+:is(#menu p, #logins, #tables, #menu h1, #dbs) {
+	border: 0;
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu h1 {
+	background: transparent;
+}
+
+/* The connection's badge, a sidebar row like an account in Mail's: inset, rounded, tinted with
+   the connection's colour, its PROD tag the loud thing. The gear moved up to the band (below), so
+   the name has the row. */
+.ad-frameless:not(.ad-fullscreen) #menu h1:has(#ad-connection-badge) {
+	height: auto;
+	padding: 4px var(--ad-side-inset) 0;
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu h1 #ad-connection-badge {
+	min-height: 2.3rem;
+	padding-inline: var(--ad-side-inset);
+	border-radius: var(--ad-radius);
+	background: color-mix(in srgb, var(--ad-conn, var(--fg)) 10%, transparent);
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu h1 #ad-connection-badge:hover {
+	background: color-mix(in srgb, var(--ad-conn, var(--fg)) 16%, transparent);
+}
+
+/* The database and schema pickers and the actions, one toolbar row under the badge. The picker's
+   own padding goes out past the edge (sidebar.css), so the row's is the edge plus that. */
+.ad-frameless:not(.ad-fullscreen) #dbs {
+	height: auto;
+	/* The end only to the inset: the start is the text's line, the end only the last icon's room,
+	   and the pickers had to give way to an ellipsis ("dem", "publi") for the difference. */
+	padding: 0.75rem var(--ad-side-inset) 0.5rem calc(2 * var(--ad-side-inset));
+}
+
+/* Each picker's chip on the sidebar's one grid: its highlight starts at the inset, where the
+   badge's and a table row's do, its text the inset further in, where theirs does, and it is
+   rounded as they are. sidebar.css pulled it out by its own padding instead, which left the
+   chip a few pixels off the badge above it. */
+.ad-frameless:not(.ad-fullscreen) #dbs label {
+	border-radius: var(--ad-radius);
+}
+
+.ad-frameless:not(.ad-fullscreen) #dbs label:first-of-type {
+	margin-left: calc(-1 * var(--ad-side-inset));
+}
+
+.ad-frameless:not(.ad-fullscreen) #dbs label select {
+	padding-left: var(--ad-side-inset);
+}
+
+/* The actions are a toolbar's, grey until the pointer is on one, not links in the accent. */
+.ad-frameless:not(.ad-fullscreen) #menu .links a {
+	padding-inline: 0.4em;
+	color: color-mix(in srgb, var(--fg) 62%, transparent);
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu .links a:hover {
+	color: var(--fg);
+}
+
+/* The tables: names in the text colour, read as a list, the accent left to the icons and the
+   selected row — as Mail's mailboxes are. A name in the accent on the sidebar's frosted material
+   was hard to read. */
+.ad-frameless:not(.ad-fullscreen) #tables {
+	padding-inline: var(--ad-side-inset);
+}
+
+.ad-frameless:not(.ad-fullscreen) #tables li > a {
+	padding-inline: var(--ad-side-inset);
+	color: var(--fg);
+}
+
+.ad-frameless:not(.ad-fullscreen) #tables li > a:not(.select)::before {
+	color: var(--ad-accent);
+	opacity: 1;
+}
+
+/* Selected while the sidebar has the focus, the icon takes the selected text's colour too
+   (sidebar.css). */
+.ad-frameless:not(.ad-fullscreen).ad-sidebar-focused
+	#tables
+	li:is(:has(a.active), :has(a.select.active))
+	> a:not(.select)::before {
+	color: var(--ad-accent-fg);
+}
+
+/* A narrow window: the sidebar folds into a drawer over the content (layout.css), which has
+   nothing behind it to frost — the system material is behind the page, not behind the drawer — so
+   it takes the sidebar's colour back, or its text sat on the blurred table under it. And the
+   content's header row is the only one there is: it starts after the lights. */
+@media (max-width: 800px) {
+	/* Both, as the transparent rule above names the badge's sidebar too, which outranks #foot alone. */
+	.ad-frameless.js:not(.ad-fullscreen) #foot,
+	.ad-frameless.js:not(.ad-fullscreen) #foot:has(#ad-connection-badge) {
+		background: var(--ad-menu-bg);
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
+		padding-inline-start: calc(var(--ad-lights-end) + 12px);
+	}
+}
+
+/* The toolbar's buttons on the lights' line: the gear and the toggle that hides the sidebar
+   (window-chrome.js). Round, filled and lifted a little off what is under them, as macOS 26 draws a
+   toolbar button, so they read as controls of the window and not as one more grey glyph beside the
+   path. Fixed, so they do not scroll with the sidebar; at its end while it shows, beside the lights
+   once it is gone, as in Mail. Not in full screen, which has no band to put them in, nor in a
+   narrow window, whose burger already folds the sidebar; the gear is in the footer on the login
+   page. */
+#ad-sidebar-toggle {
+	display: none;
+}
+
+@media (min-width: 801px) {
+	.ad-frameless:not(.ad-fullscreen) {
+		--ad-tool: 32px;
+		/* Off the sidebar's end, and between the two: Mail's room round its toggle. */
+		--ad-tool-inset: 14px;
+		--ad-tool-gap: 10px;
+		/* A button beside the lights keeps a clear gap more than the one between them. */
+		--ad-tool-after-lights: calc(var(--ad-lights-end) + 16px);
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle,
+	.ad-frameless:not(.ad-fullscreen)
+		body:not(:has(input[name="auth[username]"]))
+		#desktop-gear {
+		position: fixed;
+		/* Centred on the lights, which the band is centred on. */
+		top: calc((var(--ad-titlebar-h) - var(--ad-tool)) / 2);
+		z-index: 7;
+		display: block;
+		width: var(--ad-tool);
+		height: var(--ad-tool);
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		transform: none;
+		background: var(--ad-glass-bg);
+		-webkit-backdrop-filter: var(--ad-glass-filter);
+		backdrop-filter: var(--ad-glass-filter);
+		box-shadow: var(--ad-glass-shadow);
+		color: color-mix(in srgb, var(--fg) 70%, transparent);
+		transition:
+			left 0.2s ease,
+			background-color 0.15s;
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle:hover,
+	.ad-frameless:not(.ad-fullscreen) #desktop-gear:hover {
+		background: var(--bg);
+		color: var(--fg);
+	}
+
+	/* At the sidebar's end, the inset off it, the gear just before. */
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle {
+		left: calc(var(--ad-sidebar-width) - var(--ad-tool-inset) - var(--ad-tool));
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #desktop-gear {
+		left: calc(
+			var(--ad-sidebar-width) -
+			var(--ad-tool-inset) -
+			2 *
+			var(--ad-tool) -
+			var(--ad-tool-gap)
+		);
+	}
+
+	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle::before {
+		content: "";
+		display: block;
+		width: 16px;
+		height: 16px;
+		margin: auto;
+		background: currentcolor;
+		-webkit-mask: url("icons/sidebar.svg") center / contain no-repeat;
+		mask: url("icons/sidebar.svg") center / contain no-repeat;
+	}
+
+	/* Hidden, the sidebar slides out past the window's edge rather than vanishing, so the content
+	   grows into its room; the drag handle goes with it. */
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #foot {
+		margin-inline-start: calc(-1 * var(--ad-sidebar-width));
+		visibility: hidden;
+	}
+
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #ad-sidebar-resizer {
+		display: none;
+	}
+
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #ad-sidebar-toggle {
+		left: var(--ad-tool-after-lights);
+	}
+
+	/* The path starts as far past the button as the button is past the lights. */
+	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #content #breadcrumb {
+		padding-inline-start: calc(
+			var(--ad-tool-after-lights) +
+			var(--ad-tool) +
+			16px
+		);
+	}
+}
+
+/* Legacy scrollbars (a mouse plugged in: the launcher's ad-legacy-scrollers), drawn as Mail draws
+   them under no title bar: the track starts below the toolbar's band rather than at the window's
+   top edge, and the thumb is a rounded bar inset in it, not WebKit's square grey slab. The
+   overlay ones are scrollers.js's, and keep the same clear band. */
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+:is(#menu, #content)::-webkit-scrollbar {
+	width: 16px;
+	height: 16px;
+	background: transparent;
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-track:vertical {
+	margin-top: var(--ad-titlebar-h);
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-thumb {
+	min-height: 32px;
+	/* A 9px bar in a 16px track, Mail's. */
+	border: 3.5px solid transparent;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--fg) 34%, transparent) padding-box;
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in srgb, var(--fg) 50%, transparent);
+}
+
+.ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
+	:is(#menu, #content)::-webkit-scrollbar-corner {
+	background: transparent;
+}

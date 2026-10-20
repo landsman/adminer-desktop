@@ -431,6 +431,9 @@ func main() {
 		winW, winH = sw, sh
 	}
 	w.SetSize(winW, winH, webview.HintNone)
+	if *dev && !moveToBuiltinScreen(w.Window()) {
+		log.Print("dev: no built-in display, the window opens where the system puts it")
+	}
 
 	// The menu is how logs stay reachable when login fails — a link inside adminer would
 	// only exist on pages you reach *after* logging in, which is exactly when you don't
@@ -440,8 +443,11 @@ func main() {
 	installReloadShortcut(w.Window())
 	installDownloads(w.Window())
 	clearWebViewBackground(w.Window())
+	installFrameless(w)
+	installScrollerStyle(w)
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
+		log.Print("titlebar band hits ", describeTitlebarHit(w.Window()))
 		if enableInspector(w.Window()) {
 			log.Print("web inspector on: Safari > Develop > this machine > Adminer Desktop")
 		} else {

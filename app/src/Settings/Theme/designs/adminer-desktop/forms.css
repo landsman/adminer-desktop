@@ -171,8 +171,8 @@ input[type="button"],
 input[type="reset"],
 button {
 	font: inherit;
-	background: var(--ad-accent);
-	color: var(--ad-accent-fg);
+	background: var(--ad-button);
+	color: var(--ad-button-fg);
 	border: 1px solid transparent;
 	border-radius: var(--ad-radius-sm);
 	padding: 0.38em 1em;
@@ -183,7 +183,7 @@ input[type="submit"]:hover,
 input[type="button"]:hover,
 input[type="reset"]:hover,
 button:hover {
-	background: color-mix(in srgb, var(--ad-accent) 88%, #000);
+	background: color-mix(in srgb, var(--ad-button) 88%, #000);
 }
 
 input[type="submit"]:focus-visible,

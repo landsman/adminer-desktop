@@ -71,6 +71,12 @@ return [
 
 	// Whole-page import dropzone.
 	'js.import.drop_hint' => 'SQL-Datei zum Importieren hier ablegen',
+	'js.sidebar.toggle' => 'Seitenleiste ein- oder ausblenden',
+	'js.toolbar.search' => 'Suchen',
+	'js.history.back' => 'Zurück',
+	'js.history.forward' => 'Vorwärts',
+	'js.pathbar.label' => 'Pfad',
+	'js.sort.none' => 'Keine',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'KI-Zugriff',

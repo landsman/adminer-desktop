@@ -135,3 +135,16 @@ void defaultWindowSize(int *width, int *height) {
 	*width = (int)(frame.size.width * 0.6);
 	*height = (int)(frame.size.height * 0.6);
 }
+
+/* -dev only: the window opens on the laptop's own display, filling it, out of the way of the
+ * screen being worked on. 0 when there is no built-in display (a desktop Mac, the lid shut). */
+int moveToBuiltinScreen(void *nsWindow) {
+	for (NSScreen *screen in [NSScreen screens]) {
+		CGDirectDisplayID id = [[screen deviceDescription][@"NSScreenNumber"] unsignedIntValue];
+		if (CGDisplayIsBuiltin(id)) {
+			[(NSWindow *) nsWindow setFrame:[screen visibleFrame] display:YES];
+			return 1;
+		}
+	}
+	return 0;
+}

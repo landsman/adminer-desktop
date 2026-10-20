@@ -22,6 +22,9 @@ enum Icon: string {
 	case Import = "import";
 	case Export = "export";
 	case CreateTable = "create-table";
+	// Each table in the sidebar's list, and the path bar's last step (the theme's sidebar.css,
+	// window.css).
+	case Table = "table";
 
 	// The saved connections' database logos, by adminer driver id (forDriver()).
 	case Database = "database";
@@ -56,7 +59,10 @@ enum Icon: string {
 	* too late. crossorigin, because a CSS mask is fetched in cors mode and a preload is used only
 	* by a request made the same way. Called from the head() hook. */
 	static function preload(): void {
-		foreach ([self::Spinner] as $icon) {
+		// The sidebar's too: a mask fetched only once its element is painted left the sidebar's icons
+		// blank for a frame on every page, which going back and forth fast showed as blinking — the
+		// server sends them with no Cache-Control, so WebKit fetches them again for each page.
+		foreach ([self::Spinner, self::Sql, self::Import, self::Export, self::CreateTable, self::Table] as $icon) {
 			echo "<link rel='preload' href='" . $icon->url() . "' as='image' crossorigin>\n";
 		}
 	}

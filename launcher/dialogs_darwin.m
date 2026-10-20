@@ -4,6 +4,9 @@
 #include "menu_darwin.h"
 #import "webview_darwin.h"
 
+void goFullscreenChanged(int fullscreen);
+void goScrollerStyleChanged(int legacy);
+
 /* JavaScript alert(), confirm(), prompt() and the file picker.
  *
  * WKWebView implements none of these itself: it hands each one to its UIDelegate, and
@@ -221,4 +224,87 @@ const char *describeUIDelegate(void *nsWindow) {
 	id delegate = [webView UIDelegate];
 	return strdup([[NSString stringWithFormat:@"uiDelegate=%s",
 		delegate ? class_getName([delegate class]) : "(nil)"] UTF8String]);
+}
+
+/* The window has no title bar of its own: the page runs up to the top edge and the traffic
+ * lights sit in a band over the sidebar, as in Mail. The empty toolbar is what puts them there --
+ * a unified toolbar's title bar is 52pt tall, centring them 26pt down, and the theme's band
+ * (--ad-titlebar-h) is as tall, so what shares their line is centred on it. The title stays set
+ * but hidden, for Mission Control and the Window menu. The page learns it is framed this way
+ * from the class installFrameless (menu_darwin.go) adds. */
+int installFramelessTitlebar(void *nsWindow) {
+	NSWindow *window = (NSWindow *) nsWindow;
+	[window setStyleMask:[window styleMask] | NSWindowStyleMaskFullSizeContentView];
+	[window setTitlebarAppearsTransparent:YES];
+	[window setTitleVisibility:NSWindowTitleHidden];
+	if (@available(macOS 11.0, *)) {
+		[window setToolbar:[[NSToolbar alloc] initWithIdentifier:@"adminer-desktop"]];
+		[window setToolbarStyle:NSWindowToolbarStyleUnified];
+	}
+	// The sidebar's material behind the page, which the theme leaves transparent where the sidebar
+	// is (window.css): the desktop shows through it, frosted, as in Mail, and it greys out with the
+	// window in the background. The webview already paints no background of its own
+	// (clearWebViewBackground); the content panel paints its own, so only the sidebar is glass.
+	NSView *page = [window contentView];
+	NSVisualEffectView *material = [[NSVisualEffectView alloc] initWithFrame:[page frame]];
+	[material setMaterial:NSVisualEffectMaterialSidebar];
+	[material setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+	[material setState:NSVisualEffectStateFollowsWindowActiveState];
+	[window setContentView:material];
+	[page setFrame:[material bounds]];
+	[page setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	[material addSubview:page];
+	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	[center addObserverForName:NSWindowDidEnterFullScreenNotification object:window queue:nil
+		usingBlock:^(NSNotification *n) { goFullscreenChanged(1); }];
+	[center addObserverForName:NSWindowDidExitFullScreenNotification object:window queue:nil
+		usingBlock:^(NSNotification *n) { goFullscreenChanged(0); }];
+	return 1;
+}
+
+/* Which scrollbars the system draws: legacy ones, always on screen, while a mouse is plugged in
+ * or System Settings says Always; overlay ones, shown while scrolling, with a trackpad alone. The
+ * theme hides WebKit's (it keeps them on screen even when the system says overlay), which left a
+ * mouse user with none at all; told the style, it shows them exactly when a native app would.
+ * Answered now, and again whenever it changes — a mouse plugged in while the app runs. */
+int legacyScrollers(void) {
+	return [NSScroller preferredScrollerStyle] == NSScrollerStyleLegacy;
+}
+
+void watchScrollerStyle(void) {
+	[[NSNotificationCenter defaultCenter] addObserverForName:NSPreferredScrollerStyleDidChangeNotification
+		object:nil queue:nil usingBlock:^(NSNotification *n) { goScrollerStyleChanged(legacyScrollers()); }];
+}
+
+/* With no title bar, the page's empty header is what moves the window (window-chrome.js). The
+ * page's mousedown reaches here a moment after the event itself, over IPC from WebKit's content
+ * process; the current event is then usually still the press or the first move of it, which
+ * AppKit takes the drag from -- as Tauri's drag regions do. Only while the button is still down
+ * and that event is a press or a drag: after a quick click it can already be the release, and a
+ * drag started from that sticks the window to the pointer until the next click. */
+void dragWindow(void *nsWindow) {
+	NSEvent *event = [NSApp currentEvent];
+	BOOL pressing = event && ([event type] == NSEventTypeLeftMouseDown || [event type] == NSEventTypeLeftMouseDragged);
+	if (pressing && ([NSEvent pressedMouseButtons] & 1)) {
+		[(NSWindow *) nsWindow performWindowDragWithEvent:event];
+	}
+}
+
+/* A double-click on a title bar does what System Settings > Desktop & Dock says: zoom (Fill and
+ * Maximize, the default), minimise, or nothing. */
+void titlebarDoubleClick(void *nsWindow) {
+	NSString *action = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleActionOnDoubleClick"];
+	if ([action isEqualToString:@"Minimize"]) {
+		[(NSWindow *) nsWindow performMiniaturize:nil];
+	} else if (![action isEqualToString:@"None"]) {
+		[(NSWindow *) nsWindow performZoom:nil];
+	}
+}
+
+/* What a click at the top of the window lands on: the page, or a title bar view in front of it.
+ * Logged under -debug, since a toolbar that swallowed the band would leave the breadcrumb dead. */
+const char *describeTitlebarHit(void *nsWindow) {
+	NSView *frame = [[(NSWindow *) nsWindow contentView] superview];
+	NSView *hit = [frame hitTest:NSMakePoint(NSWidth([frame bounds]) / 2, NSHeight([frame bounds]) - 20)];
+	return strdup(hit ? class_getName([hit class]) : "(nil)");
 }

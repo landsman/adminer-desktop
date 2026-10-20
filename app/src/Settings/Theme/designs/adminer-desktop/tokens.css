@@ -12,6 +12,38 @@
  * inverting Adminer's sprite icons on the dark surface — is in base.css.
  */
 
+/* On macOS the accent is the system's (System Settings > Appearance > Colour), read through
+   WebKit's own keyword, so links, icons and the selected row follow it and change with it. Other
+   engines have no such keyword and keep the theme's indigo below. Text on it is white on a dark
+   accent and black on a light one (yellow, orange, green), chosen from the accent's own lightness:
+   white on the yellow one is about 1.6:1. */
+@supports (color: -apple-system-control-accent) {
+	/* :root, not html: it outranks the html block below, which sets the default. */
+	:root {
+		--ad-accent: -apple-system-control-accent;
+		--ad-accent-fg: oklch(
+			from var(--ad-accent) clamp(0, (0.72 - l) * 1000, 1) 0 0
+		);
+		/* The buttons stay out of it: graphite, so a form's Save does not shout in the accent
+		   every link already wears. Lighter on the dark surface, or it sinks into it; white on both. */
+		--ad-button: light-dark(#333336, #5a5a5f);
+		--ad-button-fg: #ffffff;
+		/* The dark side in macOS's own neutral greys, as Mail and the system's windows are, not
+		   the theme's blue-tinted ones, which beside the system's sidebar material read as
+		   another app's. The light side keeps the theme's. */
+		--bg: light-dark(#ffffff, #1e1e1e);
+		--fg: light-dark(#1d2127, #dcdcdc);
+		--dim: light-dark(#f1f3f6, #2a2a2a);
+		--ad-panel: light-dark(#ffffff, #1e1e1e);
+		--ad-menu-bg: light-dark(#f7f8fa, #262626);
+		/* Adminer's highlight (a row it marks, :target, a checked row) tinted by the accent. */
+		--lit: light-dark(
+			color-mix(in srgb, var(--ad-accent) 12%, #ffffff),
+			color-mix(in srgb, var(--ad-accent) 22%, #1e1e1e)
+		);
+	}
+}
+
 html {
 	/* Adminer's structural tokens. */
 	--bg: light-dark(#ffffff, #15171c);
@@ -22,6 +54,9 @@ html {
 	/* Ours. */
 	--ad-accent: light-dark(#4b5bd4, #808ef6);
 	--ad-accent-fg: light-dark(#ffffff, #12131a);
+	/* A form's buttons; the accent unless a platform says otherwise (the macOS block above). */
+	--ad-button: var(--ad-accent);
+	--ad-button-fg: var(--ad-accent-fg);
 	--ad-accent-quiet: light-dark(
 		color-mix(in srgb, var(--ad-accent) 12%, transparent),
 		color-mix(in srgb, var(--ad-accent) 18%, transparent)
@@ -68,6 +103,14 @@ html {
 	/* The height of the two header rows, the sidebar's logo and the content's breadcrumb, so
 	   their rules run on as one line across the gutter. Scaled by hand: rem ignores --ad-scale. */
 	--ad-header-h: calc(2.4rem * var(--ad-scale, 1));
+	/* The band macOS's traffic lights take at the window's top when it has no title bar
+	   (window.css): a unified toolbar's height, which centres them 26pt down
+	   (launcher/dialogs_darwin.m), so whatever shares their line is centred on it too — Mail's
+	   toolbar is this tall. In px: they are AppKit's, and follow neither --ad-scale nor rem. */
+	--ad-titlebar-h: 52px;
+	/* Where the three lights end, from the window's edge: AppKit places them, at 20px in and 6px
+	   apart, so this is measured off a screenshot rather than read from anywhere. */
+	--ad-lights-end: 78px;
 	/* The same for the row under them, the sidebar's database switch and the page title: what
 	   that row holds is a select, whose height decides the sidebar's side of it. */
 	--ad-subheader-h: calc(3.375rem * var(--ad-scale, 1));

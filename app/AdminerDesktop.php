@@ -292,6 +292,11 @@ class AdminerDesktop extends Adminer\Plugin {
 		if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			echo " ad-posted";
 		}
+		// From the server rather than the script that toggles it, so a hidden sidebar is never
+		// painted on the way to being hidden.
+		if ($this->userSettings->get(SettingKey::SidebarHidden, false) === true) {
+			echo " ad-sidebar-hidden";
+		}
 		$this->theme->bodyClass();
 		$current = $this->connections->current();
 		// The stripe in the connection's colour marks the pages that change something, not every

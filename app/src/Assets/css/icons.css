@@ -38,6 +38,11 @@
 	mask-image: url("../icons/edit.svg");
 }
 
+.ad-icon-table {
+	-webkit-mask-image: url("../icons/table.svg");
+	mask-image: url("../icons/table.svg");
+}
+
 .ad-icon-logout {
 	-webkit-mask-image: url("../icons/logout.svg");
 	mask-image: url("../icons/logout.svg");

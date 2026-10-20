@@ -16,6 +16,8 @@ enum SettingKey: string {
 	// widget, because there is nothing to say about any of them individually and the next
 	// resizable thing should not need a new key on disk.
 	case UserResized = 'user_resized_px';
+	// Whether the user hid the sidebar with the button by the traffic lights — Api\SidebarPreference.
+	case SidebarHidden = 'sidebar_hidden';
 	case Appearance = 'appearance';
 	case Density = 'density';
 	case Scaling = 'scaling';
