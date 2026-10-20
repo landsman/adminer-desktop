@@ -8,7 +8,7 @@
 </h3>
 
 <p align="center">
-    <img src="assets/screenshot.png" width="800" alt="Adminer Desktop on macOS, browsing a PostgreSQL table in dark mode"/>
+    <img src="assets/screenshot.webp" width="800" alt="Adminer Desktop on macOS, browsing a PostgreSQL table in dark mode"/>
 </p>
 
 ----
