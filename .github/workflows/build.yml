@@ -9,6 +9,11 @@ on:
     # ready_for_review is not in the default set, so marking a draft ready would
     # otherwise never trigger anything and the checks would sit there as skipped.
     types: [opened, synchronize, reopened, ready_for_review]
+    # Prose and the readme screenshot touch nothing quality lints or semgrep scans. Safe
+    # only while no check is required on main: a required one skipped this way stays pending.
+    paths-ignore:
+      - "**/*.md"
+      - assets/screenshot.webp
   workflow_dispatch:
     inputs:
       build:
@@ -18,6 +23,12 @@ on:
       tag:
         description: Existing tag — build it and attach the packages to its release
         type: string
+
+# A new push to a pull request makes the run still going on it worthless; on GitHub that
+# run is billed to the end anyway. A dispatch or schedule is never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Kept separate from build so a lint failure reads as a lint failure rather than as a
