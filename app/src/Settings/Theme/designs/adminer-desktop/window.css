@@ -369,6 +369,22 @@
 	padding: 0.75rem var(--ad-side-inset) 0.5rem calc(2 * var(--ad-side-inset));
 }
 
+/* Each picker's chip on the sidebar's one grid: its highlight starts at the inset, where the
+   badge's and a table row's do, its text the inset further in, where theirs does, and it is
+   rounded as they are. sidebar.css pulled it out by its own padding instead, which left the
+   chip a few pixels off the badge above it. */
+.ad-frameless:not(.ad-fullscreen) #dbs label {
+	border-radius: var(--ad-radius);
+}
+
+.ad-frameless:not(.ad-fullscreen) #dbs label:first-of-type {
+	margin-left: calc(-1 * var(--ad-side-inset));
+}
+
+.ad-frameless:not(.ad-fullscreen) #dbs label select {
+	padding-left: var(--ad-side-inset);
+}
+
 /* The actions are a toolbar's, grey until the pointer is on one, not links in the accent. */
 .ad-frameless:not(.ad-fullscreen) #menu .links a {
 	padding-inline: 0.4em;
@@ -530,8 +546,8 @@
    overlay ones are scrollers.js's, and keep the same clear band. */
 .ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
 :is(#menu, #content)::-webkit-scrollbar {
-	width: 14px;
-	height: 14px;
+	width: 16px;
+	height: 16px;
 	background: transparent;
 }
 
@@ -543,8 +559,9 @@
 .ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
 	:is(#menu, #content)::-webkit-scrollbar-thumb {
 	min-height: 32px;
-	border: 4px solid transparent;
-	border-radius: 7px;
+	/* A 9px bar in a 16px track, Mail's. */
+	border: 3.5px solid transparent;
+	border-radius: 8px;
 	background: color-mix(in srgb, var(--fg) 34%, transparent) padding-box;
 }
 
