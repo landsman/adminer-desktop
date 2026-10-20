@@ -445,8 +445,8 @@ APP = build.noindex/Adminer Desktop.app
 ICON = build.noindex/AdminerDesktop.icns
 
 # sips and iconutil ship with macOS, so the icon needs no image tooling installed.
-# ponytail: the source is adminer's own 57px pictogram, the largest that exists —
-# so the big sizes are upscaled and soft. Swap in a vector if upstream ever has one.
+# logo.png is rendered from logo.svg, a vector redraw of adminer's 57px pictogram, so the
+# 1024px sizes are sharp. After editing the SVG: swift cli/render-logo.swift assets/logo.svg assets/logo.png 1024
 $(ICON): assets/logo.png
 	@mkdir -p build.noindex/icon.iconset
 	@for s in 16 32 64 128 256 512 1024; do \
