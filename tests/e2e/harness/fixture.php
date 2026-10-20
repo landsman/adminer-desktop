@@ -195,9 +195,10 @@ function e2e_boot(): array
 	$gate = $root . '/.cache/e2e-gate';
 	(new Process(['go', 'build', '-o', $gate, './tests/e2e/harness/gate'], $root))->mustRun();
 	$server = new Process(
-		[$gate, "http://127.0.0.1:$port", $root . '/bin/frankenphp', 'php-server', '--root', $app, '--listen', "127.0.0.1:$port", '--no-compress'],
+		[$gate, "http://127.0.0.1:$port", $root . '/bin/frankenphp', 'run', '--config', $root . '/launcher/Caddyfile', '--adapter', 'caddyfile'],
 		null,
-		['ADMINER_DESKTOP_DATA' => $data],
+		// The launcher's Caddyfile, with the cache policy of a build: what is tested is what ships.
+		['ADMINER_DESKTOP_DATA' => $data, 'AD_PORT' => $port, 'AD_ROOT' => $app, 'AD_ASSET_CACHE' => 'max-age=31536000, immutable'],
 	);
 	// frankenphp logs every request it serves and nothing here ever reads that pipe, so it fills:
 	// sixty-four kilobytes in, the server blocks writing to it and stops answering. From the

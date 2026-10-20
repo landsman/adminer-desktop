@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /** The one URL the page's own scripts talk to — everything the app answers that is not adminer.
 *
-* A bare entry, served directly by php-server: it boots the autoloader, checks the method and
+* A bare entry, served directly by the server: it boots the autoloader, checks the method and
 * hands the request to the handler named by ?action=. Adding an endpoint is a class in
 * src/Api/ plus a line in the table below, not another file at a URL — which is what the two
 * one-off endpoints before it had grown into.

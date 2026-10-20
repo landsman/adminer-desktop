@@ -612,7 +612,7 @@ logs:  ## Open the log folder (macOS)
 
 # Just the server, no window. Handy for poking at it with curl.
 serve: fetch  ## Serve app/ with no window, for poking at with curl
-	./bin/frankenphp$(EXE) php-server --root app --listen 127.0.0.1:18000 --no-compress
+	AD_PORT=18000 AD_ROOT=app AD_ASSET_CACHE=no-cache ./bin/frankenphp$(EXE) run --config launcher/Caddyfile --adapter caddyfile
 
 clean:  ## Remove downloaded and built files (app/, bin/, .cache/)
 	rm -rf app bin .cache
