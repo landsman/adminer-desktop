@@ -13,9 +13,10 @@
 
 ----
 
-> Adminer itself is not modified or forked. This app runs the official [Adminer](https://www.adminer.org) release in a
-native desktop window and adds a few desktop-friendly improvements around it. Not affiliated
-with the Adminer project.
+> Adminer is not forked. This app runs the official [Adminer](https://www.adminer.org) release in a
+native desktop window and adds desktop-friendly improvements around it. A fix already sent upstream
+is applied to Adminer's sources only until a release carries it ([patches](patches/)). Not
+affiliated with the Adminer project.
 
 ---
 
