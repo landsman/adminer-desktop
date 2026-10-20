@@ -72,6 +72,7 @@ return [
 	// Whole-page import dropzone.
 	'js.import.drop_hint' => 'Trageți aici fișierul SQL pentru import',
 	'js.sidebar.toggle' => 'Afișează sau ascunde bara laterală',
+	'js.toolbar.search' => 'Caută',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Acces AI',

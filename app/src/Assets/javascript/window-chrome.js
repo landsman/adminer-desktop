@@ -11,11 +11,20 @@
  */
 
 if (window.adDragWindow) {
+	// The header is the band across the window's top that a title bar would take, as tall as the
+	// lights' band in the theme (--ad-titlebar-h): the sidebar's room for the lights and the
+	// content's breadcrumb row alike, whichever of them a page shows.
+	const band = () =>
+		Number.parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue(
+				"--ad-titlebar-h",
+			),
+		) || 0;
 	document.addEventListener("mousedown", (event) => {
 		const target = event.target;
 		if (
 			event.button !== 0 ||
-			!(target === document.body || target.closest("#menu h1, #breadcrumb")) ||
+			!(target === document.body || event.clientY < band()) ||
 			target.closest("a, button, input, select, textarea, label")
 		) {
 			return;

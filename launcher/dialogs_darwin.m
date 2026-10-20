@@ -5,6 +5,7 @@
 #import "webview_darwin.h"
 
 void goFullscreenChanged(int fullscreen);
+void goScrollerStyleChanged(int legacy);
 
 /* JavaScript alert(), confirm(), prompt() and the file picker.
  *
@@ -239,12 +240,39 @@ int installFramelessTitlebar(void *nsWindow) {
 		[window setToolbar:[[NSToolbar alloc] initWithIdentifier:@"adminer-desktop"]];
 		[window setToolbarStyle:NSWindowToolbarStyleUnified];
 	}
+	// The sidebar's material behind the page, which the theme leaves transparent where the sidebar
+	// is (window.css): the desktop shows through it, frosted, as in Mail, and it greys out with the
+	// window in the background. The webview already paints no background of its own
+	// (clearWebViewBackground); the content panel paints its own, so only the sidebar is glass.
+	NSView *page = [window contentView];
+	NSVisualEffectView *material = [[NSVisualEffectView alloc] initWithFrame:[page frame]];
+	[material setMaterial:NSVisualEffectMaterialSidebar];
+	[material setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+	[material setState:NSVisualEffectStateFollowsWindowActiveState];
+	[window setContentView:material];
+	[page setFrame:[material bounds]];
+	[page setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	[material addSubview:page];
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	[center addObserverForName:NSWindowDidEnterFullScreenNotification object:window queue:nil
 		usingBlock:^(NSNotification *n) { goFullscreenChanged(1); }];
 	[center addObserverForName:NSWindowDidExitFullScreenNotification object:window queue:nil
 		usingBlock:^(NSNotification *n) { goFullscreenChanged(0); }];
 	return 1;
+}
+
+/* Which scrollbars the system draws: legacy ones, always on screen, while a mouse is plugged in
+ * or System Settings says Always; overlay ones, shown while scrolling, with a trackpad alone. The
+ * theme hides WebKit's (it keeps them on screen even when the system says overlay), which left a
+ * mouse user with none at all; told the style, it shows them exactly when a native app would.
+ * Answered now, and again whenever it changes — a mouse plugged in while the app runs. */
+int legacyScrollers(void) {
+	return [NSScroller preferredScrollerStyle] == NSScrollerStyleLegacy;
+}
+
+void watchScrollerStyle(void) {
+	[[NSNotificationCenter defaultCenter] addObserverForName:NSPreferredScrollerStyleDidChangeNotification
+		object:nil queue:nil usingBlock:^(NSNotification *n) { goScrollerStyleChanged(legacyScrollers()); }];
 }
 
 int isFullscreen(void *nsWindow) {

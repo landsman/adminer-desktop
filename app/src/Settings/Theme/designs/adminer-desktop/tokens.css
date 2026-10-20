@@ -12,6 +12,26 @@
  * inverting Adminer's sprite icons on the dark surface — is in base.css.
  */
 
+/* On macOS the accent is the system's (System Settings > Appearance > Colour), read through
+   WebKit's own keyword, so links, icons and the selected row follow it and change with it. Other
+   engines have no such keyword and keep the theme's indigo below. White reads on any of the
+   system's accents, in both schemes, as on a native button. */
+@supports (color: -apple-system-control-accent) {
+	/* :root, not html: it outranks the html block below, which sets the default. */
+	:root {
+		--ad-accent: -apple-system-control-accent;
+		--ad-accent-fg: #ffffff;
+		/* The buttons stay out of it: graphite, so a form's Save does not shout in the accent
+		   every link already wears. Lighter on the dark surface, or it sinks into it. */
+		--ad-button: light-dark(#333336, #5a5a5f);
+		/* Adminer's highlight (the open table's row) was tinted the indigo; tinted by the accent. */
+		--lit: light-dark(
+			color-mix(in srgb, var(--ad-accent) 12%, #ffffff),
+			color-mix(in srgb, var(--ad-accent) 22%, #15171c)
+		);
+	}
+}
+
 html {
 	/* Adminer's structural tokens. */
 	--bg: light-dark(#ffffff, #15171c);
@@ -22,6 +42,9 @@ html {
 	/* Ours. */
 	--ad-accent: light-dark(#4b5bd4, #808ef6);
 	--ad-accent-fg: light-dark(#ffffff, #12131a);
+	/* A form's buttons; the accent unless a platform says otherwise (the macOS block above). */
+	--ad-button: var(--ad-accent);
+	--ad-button-fg: var(--ad-accent-fg);
 	--ad-accent-quiet: light-dark(
 		color-mix(in srgb, var(--ad-accent) 12%, transparent),
 		color-mix(in srgb, var(--ad-accent) 18%, transparent)
@@ -69,10 +92,10 @@ html {
 	   their rules run on as one line across the gutter. Scaled by hand: rem ignores --ad-scale. */
 	--ad-header-h: calc(2.4rem * var(--ad-scale, 1));
 	/* The band macOS's traffic lights take at the window's top when it has no title bar
-	   (layout.css): they are centred 26pt down (launcher/dialogs_darwin.m), so this clears them
-	   with the gutter's room to spare. In px: they are AppKit's, and follow neither --ad-scale nor
-	   rem. */
-	--ad-titlebar-h: 44px;
+	   (window.css): a unified toolbar's height, which centres them 26pt down
+	   (launcher/dialogs_darwin.m), so whatever shares their line is centred on it too — Mail's
+	   toolbar is this tall. In px: they are AppKit's, and follow neither --ad-scale nor rem. */
+	--ad-titlebar-h: 52px;
 	/* The same for the row under them, the sidebar's database switch and the page title: what
 	   that row holds is a select, whose height decides the sidebar's side of it. */
 	--ad-subheader-h: calc(3.375rem * var(--ad-scale, 1));

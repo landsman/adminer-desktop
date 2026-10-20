@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Linked into the binary on macOS (the Makefile's build), so an unbundled run — make run, make
+     debug — names the app menu "Adminer Desktop" rather than the executable. The name and nothing
+     more: a CFBundleIdentifier here would point the dev run at the installed app's WebKit data. The
+     .app's own Info.plist (Info.plist.in) takes precedence over this one. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Adminer Desktop</string>
+</dict>
+</plist>

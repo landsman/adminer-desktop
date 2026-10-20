@@ -81,6 +81,41 @@
 		}
 	};
 
+	// No title bar (macOS, launcher's installFrameless): the path's row is the window's toolbar
+	// (window.css), and as in Mail it carries the page's own actions and the search. The search is
+	// a button that opens the one Shift Shift opens (search.js); its label comes from the i18n block
+	// head() printed, as api.js, which would read it, is deferred.
+	const frameless = document.documentElement.classList.contains("ad-frameless");
+	let toolbar = null;
+	let actionsDone = false;
+
+	const buildToolbar = (breadcrumb) => {
+		toolbar = document.createElement("div");
+		toolbar.className = "ad-toolbar";
+		const strings = JSON.parse(
+			document.getElementById("ad-i18n")?.textContent || "{}",
+		);
+		const search = document.createElement("button");
+		search.type = "button";
+		search.className = "ad-toolbar-search";
+		search.textContent = strings["toolbar.search"] ?? "Search";
+		search.addEventListener("click", () => window.desktopSearch?.());
+		toolbar.append(search);
+		breadcrumb.append(toolbar);
+	};
+
+	// The page's actions are the first links adminer prints under the title, before any content:
+	// only its status line, a message and the scripts that go with them may come between. A list of
+	// links further down the page is something else and stays.
+	const pageActions = () => {
+		const links = document.querySelector("#content > p.links");
+		let before = links?.previousElementSibling;
+		while (before?.matches("#ajaxstatus, .message, .error, script")) {
+			before = before.previousElementSibling;
+		}
+		return before?.matches("h2, #breadcrumb") ? links : null;
+	};
+
 	const observer = new MutationObserver(() => {
 		const breadcrumb = document.querySelector("#content #breadcrumb");
 		// Complete once the parser has moved past it: something follows it.
@@ -91,6 +126,18 @@
 			}
 			rewritePath(breadcrumb);
 			pathDone = true;
+			// Only where the path names a page: on the server's own page the row is hidden
+			// (layout.css), and its links are that page's content.
+			if (frameless && breadcrumb.querySelector(".ad-breadcrumb-current")) {
+				buildToolbar(breadcrumb);
+			}
+		}
+		// Moved the moment they arrive, like the sidebar's actions below.
+		const actions = toolbar && !actionsDone && pageActions();
+		if (actions) {
+			actions.classList.add("ad-toolbar-actions");
+			toolbar.prepend(actions);
+			actionsDone = true;
 		}
 		// The sidebar's actions on the pickers' row rather than one of their own below it: the
 		// pickers are short now (sidebar.css), and two rows of controls read as one toolbar.

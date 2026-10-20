@@ -46,5 +46,11 @@ func installFrameless(w webview.WebView) {}
 
 func describeTitlebarHit(window unsafe.Pointer) string { return "(darwin only)" }
 
+// Windows and Linux keep their scrollbars on screen natively; the theme only hides them on macOS.
+func installScrollerStyle(w webview.WebView) {}
+
+// The window manager places the window; -dev leaves it to it.
+func moveToBuiltinScreen(window unsafe.Pointer) bool { return false }
+
 // No screen query off macOS yet; the caller falls back to a fixed window size.
 func defaultWindowSize() (int, int) { return 0, 0 }

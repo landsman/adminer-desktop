@@ -84,14 +84,22 @@
 	opacity: 0.7;
 }
 
-/* Active table — a background highlight like the hover, in the normal text colour, never
-   an accent one. It is class "active" on the name when a table is open as structure, and
-   "select active" on the hidden select link when open as data; cover both. */
+/* Active table, the way a native list marks its selection: a quiet grey while the focus is
+   elsewhere, the accent with white text while the sidebar has it (.ad-sidebar-focused, from
+   sidebar-focus.js) — as Mail's message list does. It is class "active" on the name when a table
+   is open as structure, and "select active" on the hidden select link when open as data; cover
+   both. */
 #tables li:has(a.active) > a:not(.select),
 #tables li:has(a.select.active) > a:not(.select) {
-	background: var(--lit);
+	background: color-mix(in srgb, var(--fg) 10%, transparent);
 	color: var(--fg);
 	font-weight: 600;
+}
+
+.ad-sidebar-focused #tables li:has(a.active) > a:not(.select),
+.ad-sidebar-focused #tables li:has(a.select.active) > a:not(.select) {
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
 }
 
 #menu .active {
@@ -137,7 +145,7 @@
    becomes a ghost button instead of a loud filled one in the corner. */
 #breadcrumb {
 	background: transparent;
-	color: color-mix(in srgb, var(--fg) 55%, transparent);
+	color: color-mix(in srgb, var(--fg) 64%, transparent);
 	font-size: 92%;
 }
 

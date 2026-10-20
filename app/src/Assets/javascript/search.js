@@ -147,6 +147,11 @@
 		input.focus();
 	};
 
+	// For the toolbar's search button (before-paint/header.js), which opens the same box.
+	if (dialog) {
+		window.desktopSearch = open;
+	}
+
 	input?.addEventListener("input", render);
 	input?.addEventListener("keydown", (e) => {
 		if (e.key === "ArrowDown" || e.key === "ArrowUp") {

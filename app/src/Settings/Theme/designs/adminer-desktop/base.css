@@ -204,21 +204,53 @@ body.theme-dark .icon {
  * its own apps. WebKit here keeps them on screen for good — Safari too, on a bare page, with the
  * system set to hide them — so the panels wore two grey bars at all times. Transparent until
  * hovered (`:hover` holds for every element under the pointer, so the scroller it is in), and
- * thin, as an overlay scrollbar is. macOS only: Windows and Linux keep theirs on screen
- * natively. */
-.os-mac * {
+ * thin, as an overlay scrollbar is, and while it scrolls (.ad-scrolling, scrollers.js), as an
+ * overlay one appears then. macOS only: Windows and Linux keep theirs on screen natively.
+ *
+ * Only while the system draws overlay scrollbars. With a mouse plugged in, or System Settings set
+ * to Always, macOS draws legacy ones that stay on screen, and so does every native app — Mail
+ * included; the launcher says which (ad-legacy-scrollers on <html>, installScrollerStyle), and then
+ * WebKit's own are left as they are, the panels' too. A plain browser is never told, and keeps
+ * the overlay behaviour. */
+:root:not(.ad-legacy-scrollers) .os-mac * {
 	scrollbar-width: thin;
 	scrollbar-color: transparent transparent;
 }
 
-.os-mac :hover {
+:root:not(.ad-legacy-scrollers) .os-mac :is(:hover, .ad-scrolling) {
 	scrollbar-color: color-mix(in srgb, var(--fg) 35%, transparent) transparent;
 }
 
 /* Even transparent, that bar keeps its width, so every rule in the two panels stopped one
    scrollbar short of the right edge. The panels scroll by trackpad and wheel, as macOS's own
    overlay scrollbars do when hidden; the scrollers inside them keep theirs. */
-.os-mac #menu,
-.os-mac #content {
+:root:not(.ad-legacy-scrollers) .os-mac #menu,
+:root:not(.ad-legacy-scrollers) .os-mac #content {
 	scrollbar-width: none;
+}
+
+/* The panels' overlay thumbs (scrollers.js): a rounded bar over the content's edge, in macOS's
+   overlay grey, there while the panel scrolls and fading after. It takes no room, so the
+   content does not move when it shows. */
+.ad-thumb {
+	position: fixed;
+	z-index: 20;
+	width: 7px;
+	height: 7px;
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--fg) 40%, transparent);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease;
+}
+
+.ad-thumb.ad-shown {
+	opacity: 1;
+	pointer-events: auto;
+	transition-duration: 0.1s;
+}
+
+.ad-thumb:hover,
+.ad-thumb.ad-dragging {
+	background: color-mix(in srgb, var(--fg) 55%, transparent);
 }

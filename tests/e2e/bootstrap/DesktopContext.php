@@ -54,6 +54,8 @@ class DesktopContext implements Context
 	/** @var array<string, string> what the last login typed, which a failed one gives back */
 	private array $typed = [];
 
+	private bool $hidSidebar = false;
+
 	public function __construct(string $driver)
 	{
 		$this->driver = $driver;
@@ -71,6 +73,14 @@ class DesktopContext implements Context
 	public function close(): void
 	{
 		$this->page->context()->close();
+		// The scenario hid the sidebar, which the app stores; every later one expects it shown.
+		if ($this->hidSidebar) {
+			$file = $this->fix['data'] . '/settings.json';
+			$stored = e2e_settings($this->fix);
+			unset($stored['sidebar_hidden']);
+			file_put_contents($file, (string) json_encode($stored));
+			$this->hidSidebar = false;
+		}
 	}
 
 	/** Save the page a step failed on, so a failure in CI is more than a line of text.
@@ -2706,6 +2716,242 @@ class DesktopContext implements Context
 	public function tableIsOpen(string $table): void
 	{
 		$this->page->waitForURL("**select=$table**");
+	}
+
+	// ── the window without a title bar (macOS) ───────────────────────────────────────────────
+
+	/** What the macOS launcher does to every page (installFrameless): the bindings it adds and
+	 * the class it sets before anything paints. Stubs here, as Chromium has no launcher; a press
+	 * that would move the window is counted instead. Chromium runs an init script before the
+	 * parser has made <html>, so the class goes on the moment it does: waiting for readystatechange
+	 * marked it after the page had parsed, and before-paint/header.js, which reads it, never saw it.
+	 */
+	#[Given('the window has no title bar')]
+	public function windowHasNoTitleBar(): void
+	{
+		$this->page->addInitScript(
+			// language=JavaScript
+			'window.adDrags = 0;
+			window.adDragWindow = () => { window.adDrags++; };
+			window.adTitlebarDoubleClick = () => {};
+			window.adFullscreen = async () => false;
+			// The sidebar is see-through there, onto the system material the launcher puts behind the
+			// page; Chromium has none, so the sidebar colour stands in, or axe reads its text on white.
+			const mark = () => {
+				document.documentElement.classList.add("ad-frameless");
+				document.documentElement.style.background = "var(--ad-menu-bg)";
+			};
+			if (document.documentElement) {
+				mark();
+			} else {
+				new MutationObserver((_, watch) => {
+					if (document.documentElement) { mark(); watch.disconnect(); }
+				}).observe(document, { childList: true });
+			}',
+		);
+	}
+
+	#[Then('the page\'s :links are buttons in the toolbar')]
+	public function linksAreToolbarButtons(string $links): void
+	{
+		foreach (array_map('trim', explode(',', $links)) as $name) {
+			$button = $this->page->locator(
+				// language=JQuery-CSS
+				'#breadcrumb .ad-toolbar-actions',
+			)->getByRole('link', ['name' => $name, 'exact' => true]);
+			$width = $button->evaluate(
+				// language=JavaScript
+				'(a) => [a.getBoundingClientRect().width, getComputedStyle(a, "::before").maskImage || getComputedStyle(a, "::before").webkitMaskImage]',
+			);
+			if (!is_array($width) || $width[0] < 30 || $width[0] > 50 || !str_contains((string) $width[1], 'tool-')) {
+				throw new RuntimeException("\"$name\" is not an icon button in the toolbar: " . json_encode($width));
+			}
+		}
+	}
+
+	#[Then('no list of links is left under the title')]
+	public function noLinksUnderTitle(): void
+	{
+		$left = $this->page->locator(
+			// language=JQuery-CSS
+			'#content > p.links',
+		)->count();
+		$moved = $this->page->locator(
+			// language=JQuery-CSS
+			'#breadcrumb .ad-toolbar-actions',
+		)->count();
+		if ($moved !== 1 || $left > 0 && $this->page->evaluate(
+			// language=JavaScript
+			'() => { let b = document.querySelector("#content > p.links")?.previousElementSibling; while (b?.matches("#ajaxstatus, .message, .error, script")) { b = b.previousElementSibling; } return !!b?.matches("h2, #breadcrumb"); }',
+		)) {
+			throw new RuntimeException("the page's links stayed under its title ($moved in the toolbar, $left left)");
+		}
+	}
+
+	#[When('I click the toolbar\'s search')]
+	public function clickToolbarSearch(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#breadcrumb .ad-toolbar',
+		)->getByRole('button', ['name' => 'Search'])->click();
+	}
+
+	#[Then('the search box is open')]
+	public function searchBoxIsOpen(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => document.querySelector('#desktop-search').open && document.activeElement === document.querySelector('#desktop-search input')",
+		);
+	}
+
+	#[When('I hide the sidebar')]
+	#[When('I show the sidebar')]
+	public function toggleSidebar(): void
+	{
+		$this->page->getByRole('button', ['name' => 'Show or hide the sidebar'])->click();
+		$this->hidSidebar = true;
+	}
+
+	#[Then('the sidebar is hidden')]
+	public function sidebarIsHidden(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => document.body.classList.contains('ad-sidebar-hidden') && getComputedStyle(document.querySelector('#foot')).visibility === 'hidden' && document.querySelector('#content').getBoundingClientRect().left < 2",
+		);
+	}
+
+	#[Then('the sidebar shows')]
+	public function sidebarShows(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => !document.body.classList.contains('ad-sidebar-hidden') && getComputedStyle(document.querySelector('#foot')).visibility === 'visible' && document.querySelector('#content').getBoundingClientRect().left > 100",
+		);
+	}
+
+	#[Then('the toggle sits after the traffic lights, and the path after the toggle')]
+	public function toggleAfterLights(): void
+	{
+		$at = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const toggle = document.querySelector('#ad-sidebar-toggle').getBoundingClientRect();
+				const path = document.querySelector('#breadcrumb > :not(#menuopen)').getBoundingClientRect();
+				return { toggle: toggle.left, toggleEnd: toggle.right, path: path.left };
+			}",
+		);
+		// The lights end 78px in (launcher/dialogs_darwin.m).
+		if ($at['toggle'] < 78 + 8 || $at['path'] < $at['toggleEnd'] + 8) {
+			throw new RuntimeException('the toggle or the path crowds what is before it: ' . json_encode($at));
+		}
+	}
+
+	#[When('I press the mouse on the empty toolbar')]
+	public function pressEmptyToolbar(): void
+	{
+		$box = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => { const r = document.querySelector('#breadcrumb').getBoundingClientRect(); return { x: r.left + r.width * 0.45, y: r.top + r.height / 2 }; }",
+		);
+		$this->page->mouse()->click((float) $box['x'], (float) $box['y']);
+	}
+
+	#[When('I press the mouse on the path\'s first link')]
+	public function pressPathLink(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#breadcrumb > a:not(.ad-breadcrumb-home)',
+		)->first()->dispatchEvent('mousedown');
+	}
+
+	#[Then('/^the window was asked to move (\d+) times?$/')]
+	public function windowAskedToMove(string $times): void
+	{
+		$drags = $this->page->evaluate(
+			// language=JavaScript
+			'() => window.adDrags',
+		);
+		if ((int) $drags !== (int) $times) {
+			throw new RuntimeException("asked to move $drags times, not $times");
+		}
+	}
+
+	#[Then('the toolbar\'s controls fit beside the path')]
+	public function toolbarFits(): void
+	{
+		$fit = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const row = document.querySelector('#breadcrumb').getBoundingClientRect();
+				const bar = document.querySelector('#breadcrumb .ad-toolbar').getBoundingClientRect();
+				return { rowRight: row.right, barRight: bar.right, barLeft: bar.left, rowLeft: row.left, parts: [...document.querySelectorAll('#breadcrumb .ad-toolbar > *, #breadcrumb .ad-toolbar-actions > a')].map((el) => el.className + ':' + Math.round(el.getBoundingClientRect().width) + ':' + getComputedStyle(el).display) };
+			}",
+		);
+		if ($fit['barRight'] > $fit['rowRight'] + 1 || $fit['barLeft'] < $fit['rowLeft']) {
+			throw new RuntimeException('the toolbar runs out of its row: ' . json_encode($fit));
+		}
+	}
+
+	// ── accessibility ────────────────────────────────────────────────────────────────────────
+
+	/** axe-core (a dev dependency in package.json) against what is on screen, at WCAG 2.2 AA.
+	 * Evaluated rather than added as a <script>: adminer's CSP carries a nonce, which turns
+	 * 'unsafe-inline' off, and evaluate() is not a script the page loads. Scoped to what is ours —
+	 * the sidebar, the toolbar, our dialogs and the login — because adminer's own markup (its
+	 * tables, its forms) is upstream's, and a violation there is a pull request to adminer, not a
+	 * failure here — so is a plugin's from adminer's catalogue inside our sidebar, the table
+	 * filter's unlabelled field. What axe finds there is printed, so it is seen.
+	 */
+	#[Then('axe finds no violations in our own chrome')]
+	public function axeFindsNothingInOurs(): void
+	{
+		$found = $this->axe();
+		$ours = array_filter($found, fn(array $v) => $v['ours']);
+		$theirs = array_filter($found, fn(array $v) => !$v['ours']);
+		if ($theirs) {
+			fwrite(STDERR, "axe, in adminer's markup (not failed): " . json_encode(array_values($theirs), JSON_UNESCAPED_SLASHES) . "\n");
+		}
+		if ($ours) {
+			throw new RuntimeException('axe: ' . json_encode(array_values($ours), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+		}
+	}
+
+	/** @return list<array{id: string, impact: string, help: string, ours: bool, nodes: list<string>}> */
+	private function axe(): array
+	{
+		$source = (string) file_get_contents(dirname(__DIR__, 3) . '/node_modules/axe-core/axe.min.js');
+		$this->page->evaluate($source);
+		// Settled first: a fade mid-way reads as low contrast.
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => new Promise((done) => setTimeout(done, 400))',
+		);
+		return (array) $this->page->evaluate(
+			// language=JavaScript
+			"async () => {
+				const upstream = '#filter-field';
+				const ours = '#foot, #breadcrumb, #ad-sidebar-toggle, #ad-sidebar-resizer, #desktop-gear, dialog, .ad-toolbar, .ad-login, .ad-connections, .ad-versions, #table td > a.edit';
+				const result = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } });
+				const out = [];
+				for (const v of result.violations) {
+					const split = { true: [], false: [] };
+					for (const node of v.nodes) {
+						const el = document.querySelector(node.target[0]);
+						split[!!el?.closest(ours) && !el.matches(upstream)].push(node.target.join(' ') + (node.any[0]?.message ? ' — ' + node.any[0].message : ''));
+					}
+					for (const side of [true, false]) {
+						if (split[side].length) {
+							out.push({ id: v.id, impact: v.impact, help: v.help, ours: side, nodes: split[side].slice(0, 5) });
+						}
+					}
+				}
+				return out;
+			}",
+		);
 	}
 
 	// ── a long select, filtered ──────────────────────────────────────────────────────────────

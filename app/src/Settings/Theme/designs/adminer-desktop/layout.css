@@ -182,10 +182,26 @@ body {
 }
 
 /* On the server's own page (Select database) the path is the home mark alone, leading where you
-   already are: nothing to show. The row stays, as the header the sidebar's badge row lines up
-   with and a place to drag the window by. */
+   already are: nothing to show, so the row goes and the title heads the panel. It stays where it
+   holds something else: a narrow window's burger, and the traffic lights over a hidden sidebar
+   (the toggle's rules below). */
 #content #breadcrumb:not(:has(.ad-breadcrumb-current)) > .ad-breadcrumb-home {
 	visibility: hidden;
+}
+
+@media (min-width: 801px) {
+	body:not(.ad-sidebar-hidden)
+		#content
+		#breadcrumb:not(:has(.ad-breadcrumb-current)) {
+		display: none;
+	}
+}
+
+/* Everywhere else it is the title that repeats: adminer prints the page's title as the
+   breadcrumb's last item and again as the <h2> (page_header(), include/design.inc.php), so
+   "Schema: public" sat under a path ending in the same words, beside a sidebar naming it too. */
+#content:has(> #breadcrumb .ad-breadcrumb-current) > h2 {
+	display: none;
 }
 
 /* Directly under the breadcrumb the title's padding is the space between the two rules; the
@@ -292,11 +308,6 @@ body {
 	transition: background-color 0.15s;
 }
 
-/* Under the lights' band the badge no longer meets the panel's top, so it has no corner to follow. */
-.ad-frameless:not(.ad-fullscreen) #menu h1 #ad-connection-badge {
-	border-radius: 0;
-}
-
 #menu h1 #ad-connection-badge:hover {
 	background: color-mix(
 		in srgb,
@@ -388,107 +399,6 @@ body:has(#ad-connection-badge) .logout {
 	-webkit-user-select: none;
 	user-select: none;
 	cursor: default;
-}
-
-/* macOS draws no title bar (the launcher's installFrameless sets .ad-frameless): the traffic
-   lights sit in a band of their own at the sidebar's top, over the logo row, as in Mail. The
-   content panel stays where it was; the breadcrumb row and the gutters are where the window is
-   dragged (window-chrome.js). A full-screen window shows no lights and keeps the plain layout.
-   --ad-menu-top is that band, for what is placed from the sidebar's top: the badge's border and
-   the gear. */
-.ad-frameless:not(.ad-fullscreen) {
-	--ad-menu-top: calc(var(--ad-titlebar-h) - var(--ad-gutter));
-}
-
-.ad-frameless:not(.ad-fullscreen) #menu {
-	padding-top: var(--ad-menu-top);
-}
-
-/* And the sidebar is the window's own surface, as in Mail, not a framed panel round the lights:
-   no border, the badge's coloured one included (the badge's wash still says which connection). */
-.ad-frameless:not(.ad-fullscreen) #foot,
-.ad-frameless:not(.ad-fullscreen) #foot:has(#ad-connection-badge) {
-	border-color: transparent;
-	background: var(--ad-menu-bg);
-	transition:
-		margin-inline-start 0.2s ease,
-		visibility 0.2s;
-}
-
-/* With no sidebar beside it, the content panel is what the lights land on: its breadcrumb row
-   starts after them. In a narrow window the panel meets the window's top, so the row grows to be
-   centred on the lights (26px down) too. */
-@media (max-width: 800px) {
-	.ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
-		height: 52px;
-		padding-inline-start: 90px;
-	}
-}
-
-/* The button that hides the sidebar (window-chrome.js), on the lights' line: at the sidebar's
-   end while it shows, beside the lights once it is gone, as in Mail. Not in full screen, which
-   has no band to put it in, nor in a narrow window, whose burger already folds the sidebar. */
-#ad-sidebar-toggle {
-	display: none;
-}
-
-@media (min-width: 801px) {
-	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle {
-		position: fixed;
-		/* Centred on the lights, 26px down (launcher/dialogs_darwin.m). */
-		top: calc(26px - 0.9rem);
-		left: calc(var(--ad-gutter) + var(--ad-sidebar-width) - 1.8rem - 0.6rem);
-		z-index: 7;
-		display: block;
-		width: 1.8rem;
-		height: 1.8rem;
-		padding: 0;
-		border: 0;
-		border-radius: var(--ad-radius-sm);
-		background: transparent;
-		color: color-mix(in srgb, var(--fg) 55%, transparent);
-		transition: left 0.2s ease;
-	}
-
-	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle::before {
-		content: "";
-		display: block;
-		width: 1.1rem;
-		height: 1.1rem;
-		margin: auto;
-		background: currentcolor;
-		-webkit-mask: url("icons/sidebar.svg") center / contain no-repeat;
-		mask: url("icons/sidebar.svg") center / contain no-repeat;
-	}
-
-	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle:hover {
-		background: var(--ad-accent-quiet);
-		color: var(--fg);
-	}
-
-	/* Hidden, the sidebar slides out past the window's edge rather than vanishing, so the content
-	   panel grows into its room; the drag handle goes with it. 78px is where the lights end. */
-	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #foot {
-		margin-inline-start: calc(
-			-1 *
-			(var(--ad-sidebar-width) + var(--ad-gutter))
-		);
-		visibility: hidden;
-	}
-
-	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #ad-sidebar-resizer {
-		display: none;
-	}
-
-	/* The lights end at 78px; the toggle keeps the gap they keep between each other, and more. */
-	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #ad-sidebar-toggle {
-		left: 92px;
-	}
-
-	/* Past the lights and the toggle beside them, less the gutter and border the panel starts at. */
-	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #content #breadcrumb {
-		padding-inline-start: calc(92px + 1.8rem + 0.9rem - var(--ad-gutter) - 1px);
-	}
 }
 
 /* The logo image sat on the text's baseline, a little above its middle; centred instead, without
@@ -745,7 +655,7 @@ body:has(input[name="auth[username]"]) .ad-versions {
 	line-height: 1.6rem;
 	font-size: 0.8rem;
 	white-space: nowrap;
-	color: color-mix(in srgb, var(--fg) 55%, transparent);
+	color: color-mix(in srgb, var(--fg) 64%, transparent);
 }
 
 body:has(input[name="auth[username]"]) .ad-versions a {

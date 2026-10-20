@@ -52,6 +52,37 @@ func installFrameless(w webview.WebView) {
 window.adFullscreen().then((on) => document.documentElement.classList.toggle("ad-fullscreen", on));`)
 }
 
+// moveToBuiltinScreen puts the window on the laptop's own display, for -dev.
+func moveToBuiltinScreen(window unsafe.Pointer) bool {
+	return C.moveToBuiltinScreen(window) == 1
+}
+
+// Set by installScrollerStyle; the notification that calls it only fires once the window is up.
+var onScrollerStyle func(bool)
+
+//export goScrollerStyleChanged
+func goScrollerStyleChanged(legacy C.int) {
+	if onScrollerStyle != nil {
+		onScrollerStyle(legacy == 1)
+	}
+}
+
+// installScrollerStyle tells every page which scrollbars the system draws, as the class
+// ad-legacy-scrollers on <html> (base.css shows WebKit's own then). An init script, so the class
+// is there before the page paints; on a change another one is added, which runs after and wins,
+// and the page on screen is told directly.
+func installScrollerStyle(w webview.WebView) {
+	mark := func(legacy bool) string {
+		return fmt.Sprintf(`document.documentElement.classList.toggle("ad-legacy-scrollers", %t);`, legacy)
+	}
+	w.Init(mark(C.legacyScrollers() == 1))
+	onScrollerStyle = func(legacy bool) {
+		w.Init(mark(legacy))
+		w.Eval(mark(legacy))
+	}
+	C.watchScrollerStyle()
+}
+
 // describeTitlebarHit names the view a click near the window's top lands on.
 func describeTitlebarHit(window unsafe.Pointer) string {
 	c := C.describeTitlebarHit(window)

@@ -26,8 +26,10 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	const STEP = 16;
 
 	const clamp = (px) => Math.max(MIN, Math.min(MAX, px));
-	const apply = (px) =>
+	const apply = (px) => {
 		root.style.setProperty("--ad-sidebar-width", `${clamp(px)}px`);
+		handle.setAttribute("aria-valuenow", String(clamp(Math.round(px))));
+	};
 	const width = () => foot.getBoundingClientRect().width;
 
 	// Fire-and-forget: nothing waits on the answer, and a beacon survives the page being
@@ -48,6 +50,11 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	handle.setAttribute("role", "separator");
 	handle.setAttribute("aria-orientation", "vertical");
 	handle.setAttribute("aria-label", "Resize sidebar");
+	// A separator that takes the focus is a control, and says where it stands and how far it
+	// goes (WAI-ARIA); apply() keeps the value current.
+	handle.setAttribute("aria-valuemin", String(MIN));
+	handle.setAttribute("aria-valuemax", String(MAX));
+	handle.setAttribute("aria-valuenow", String(clamp(Math.round(width()))));
 	content.before(handle);
 
 	let startX = 0;

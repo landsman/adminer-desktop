@@ -72,6 +72,7 @@ return [
 	// Whole-page import dropzone.
 	'js.import.drop_hint' => 'Přetáhněte sem SQL soubor pro import',
 	'js.sidebar.toggle' => 'Zobrazit nebo skrýt postranní panel',
+	'js.toolbar.search' => 'Hledat',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Přístup pro AI',

@@ -341,3 +341,19 @@ span.ad-page-step {
 	padding-inline: 0.15em 0.35em;
 	color: color-mix(in srgb, var(--fg) 62%, transparent);
 }
+
+/* Each row's "edit" link is a pencil: the same word down every row of data read as part of it.
+   The word stays the link's text, so a screen reader still names it; font-size 0 only hides it.
+   The mark is the app's own (src/Assets/icons/), the one its connection cards edit with. */
+#table td > a.edit {
+	display: inline-block;
+	/* 24px, the smallest target WCAG 2.2 allows (2.5.8); the mark inside stays its size. */
+	width: 24px;
+	height: 24px;
+	vertical-align: middle;
+	font-size: 0;
+	background: currentcolor;
+	-webkit-mask:
+		url("../../../../Assets/icons/edit.svg") center / 0.85rem no-repeat;
+	mask: url("../../../../Assets/icons/edit.svg") center / 0.85rem no-repeat;
+}
