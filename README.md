@@ -77,5 +77,5 @@ with the Adminer project.
 
 ## Licence
 
-Adminer is Apache-2.0 / GPL-2.0. This wrapper is MIT. The Adminer logo, used as the app icon,
+[Adminer](https://github.com/vrana/adminer) is Apache-2.0 / GPL-2.0. This wrapper is MIT. The Adminer logo, used as the app icon,
 belongs to the Adminer project.
