@@ -143,9 +143,10 @@ pre.jush {
 	white-space: pre-wrap;
 }
 
-/* A visible accent ring everywhere the keyboard lands. */
+/* A visible accent ring everywhere the keyboard lands. Not on a dialog that takes the focus
+   itself (focusSelf): it has no ring (modal.css), and this radius squared its corners. */
 a:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:not(dialog):focus-visible {
 	outline: 2px solid var(--ad-accent);
 	outline-offset: 2px;
 	border-radius: var(--ad-radius-sm);
