@@ -480,6 +480,20 @@ func main() {
 		log.Print("window background bind failed: ", err)
 	}
 
+	// The appearance preference, from window-background.js: what the sidebar's material is drawn in.
+	if err := w.Bind("adSetAppearance", func(mode string) {
+		dark := -1
+		switch mode {
+		case "light":
+			dark = 0
+		case "dark":
+			dark = 1
+		}
+		setWindowAppearance(w.Window(), dark)
+	}); err != nil {
+		log.Print("window appearance bind failed: ", err)
+	}
+
 	// Show the loader now rather than blocking on the server first: a background probe swaps
 	// in the app once it answers, or the error page if it never does, so the window is up and
 	// painted from the first frame instead of after the whole cold start.

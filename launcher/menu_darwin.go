@@ -193,6 +193,11 @@ func setWindowBackground(window unsafe.Pointer, r, g, b int) {
 	C.setWindowBackground(window, C.int(r), C.int(g), C.int(b))
 }
 
+// setWindowAppearance pins the window light (0) or dark (1), or lets it follow the system (-1).
+func setWindowAppearance(window unsafe.Pointer, dark int) {
+	C.setWindowAppearance(window, C.int(dark))
+}
+
 // installDownloads makes the webview save an attachment response (Adminer's Export > save)
 // through a native Save panel instead of rendering the file into the window. macOS 11.3+;
 // below that it is a no-op and the old behaviour stands.
