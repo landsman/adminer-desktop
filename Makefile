@@ -381,6 +381,11 @@ i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation 
 
 build: fetch i18n  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
+# NSLocalizedString reads the .lproj folders beside an unbundled binary as it does a bundle's
+# Resources: without them `make run` showed the menu's keys (menu.edit) for its titles.
+ifeq ($(UNAME_S),Darwin)
+	cp -R lproj/*.lproj build.noindex/
+endif
 
 # The app itself: opens a window.
 run: build  ## Build and open the app window
