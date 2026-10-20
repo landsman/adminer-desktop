@@ -178,7 +178,7 @@ because PHP forbids narrowing an inherited signature.
 Verify:
 
 ```sh
-make qa       # php lint, phpstan level 6, phpcs, golangci-lint, biome, shellcheck
+make qa       # php lint, phpstan level 6, phpcs, golangci-lint, oxfmt, oxlint, shellcheck
 make check    # boots the app, constructs every picked plugin, asserts before-login behaviour
 make e2e      # Behat browser scenarios (needs docker); plugins in features/pgsql/plugins.feature
 make debug    # run with Safari Web Inspector attached — use this the moment a symptom is visual

@@ -2,7 +2,7 @@
 #
 # The runtime PHP is frankenphp (bundled — see Makefile), so mise does not build a second
 # one: composer and the PHP e2e tests run through `./bin/frankenphp php-cli`. mise pins
-# node — needed for Biome and for the browser the Playwright e2e driver launches — and go,
+# node — needed for oxfmt and oxlint, and for the browser the Playwright e2e driver launches — and go,
 # which builds the launcher, so a fresh checkout needs neither on the system. The go pin
 # tracks go.mod's `go` directive. The tasks below are the single entry point for
 # install / format / lint / e2e.
@@ -48,12 +48,12 @@ run = [
 ]
 
 [tasks.format]
-description = "Format CSS and JS with Biome"
-run = "npx --no-install @biomejs/biome format --write ."
+description = "Format CSS and JS with oxfmt"
+run = "npm run --silent format"
 
 [tasks.lint]
-description = "Check formatting and lint with Biome"
-run = "npx --no-install @biomejs/biome check ."
+description = "Check formatting with oxfmt and lint JS with oxlint"
+run = "npm run --silent lint"
 
 # Behat, on the bundled frankenphp like everything else here. SUITE picks one driver
 # (`make e2e SUITE=mysql`) and ARGS is passed through, so a single feature or a scenario by name

@@ -45,7 +45,7 @@ make debug                          # run with Safari's Web Inspector attached
 ## Checking it
 
 ```sh
-make qa                             # php lint, phpstan, phpcs, golangci-lint, biome, shellcheck
+make qa                             # php lint, phpstan, phpcs, golangci-lint, oxfmt, oxlint, shellcheck
 make verify                         # adminer checksums + frankenphp's build provenance
 make check                          # boots the app and asserts its behaviour before login
 make e2e                            # Behat scenarios against postgres and mysql (needs docker)

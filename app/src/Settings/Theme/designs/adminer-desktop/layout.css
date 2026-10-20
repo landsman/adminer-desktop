@@ -474,14 +474,14 @@ body:has(#ad-connection-badge) .logout {
 	}
 
 	#content {
-		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
+		/* Undoes adminer's own !important */
 		margin-inline-start: 0 !important;
 		border: 0;
 		border-radius: 0;
 	}
 
 	#content #breadcrumb {
-		/* biome-ignore lint/complexity/noImportantStyles: undoes adminer's own !important */
+		/* Undoes adminer's own !important */
 		left: calc(-1 * var(--ad-panel-pad)) !important;
 	}
 

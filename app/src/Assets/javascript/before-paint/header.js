@@ -88,6 +88,7 @@
 		// The path's » between its steps, in a span of their own so the theme can draw them
 		// (window.css draws a thin ›): as bare text no selector reaches them. After the home mark
 		// takes the server's place, which finds the server as the element after it.
+		// oxlint-disable-next-line unicorn/no-useless-spread -- childNodes is live and the loop moves nodes out of it
 		for (const node of [...breadcrumb.childNodes]) {
 			if (node.nodeType === Node.TEXT_NODE && node.textContent.includes("»")) {
 				const sep = document.createElement("span");
@@ -112,6 +113,7 @@
 			const bar = document.createElement("nav");
 			bar.id = "ad-pathbar";
 			bar.setAttribute("aria-label", strings()["pathbar.label"] ?? "Path");
+			// oxlint-disable-next-line unicorn/no-useless-spread -- childNodes is live and the loop moves nodes out of it
 			for (const node of [...breadcrumb.childNodes]) {
 				if (node !== burger && node !== name) {
 					bar.append(node);

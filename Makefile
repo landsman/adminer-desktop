@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci biome security check check-app e2e e2e-visual e2e-packaged i18n i18n-check build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -231,18 +231,20 @@ phpcs: app/vendor
 golangci:
 	GOLANGCI_LINT_CACHE=$(CURDIR)/.cache/golangci-lint go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
-# Format-check and lint CSS and JS with Biome. Run `mise run install` once to fetch it.
-# Prefer the installed binary directly (it needs only node on PATH); fall back to mise,
-# which puts node on PATH, when node is not there itself; skip with a note if neither is
-# set up, so `make qa` is not blocked on a machine that has not installed the JS tooling.
+# Format-check CSS and JS with oxfmt and lint JS with oxlint; the file list is package.json's.
+# Its --ignore-path=.gitignore is load-bearing: without it oxfmt also reads the main checkout's
+# .gitignore, which ignores .claude/worktrees/, so in an agent's worktree it checks nothing.
+# Run `mise run install` once to fetch them. Prefer npm directly (it needs only node on PATH);
+# fall back to mise, which puts node on PATH, when node is not there itself; skip with a note
+# if neither is set up, so `make qa` is not blocked on a machine without the JS tooling.
 # Bare `mise` is not assumed to be on PATH — in a plain make shell it often is not.
-biome:
-	@if [ -x node_modules/.bin/biome ] && command -v node >/dev/null 2>&1; then \
-		node_modules/.bin/biome check . ; \
+oxc:
+	@if [ -x node_modules/.bin/oxfmt ] && command -v npm >/dev/null 2>&1; then \
+		npm run --silent lint ; \
 	elif command -v mise >/dev/null 2>&1; then \
 		mise run lint ; \
 	else \
-		echo "biome skipped (run 'mise run install', or put node on PATH)" ; \
+		echo "oxfmt skipped (run 'mise run install', or put node on PATH)" ; \
 	fi
 
 # Security scan, for a local run — CI calls the shared semgrep workflow in
@@ -322,7 +324,7 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	@$(MAKE) --no-print-directory phpstan
 	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
 	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
-	@$(MAKE) --no-print-directory biome && echo "biome ok"
+	@$(MAKE) --no-print-directory oxc && echo "oxfmt + oxlint ok"
 
 # Boot the app and assert the desktop plugin's before-login behaviour — prefill, refresh
 # shortcut, design switch, plugin toggle — against the real login page. app/vendor is a
