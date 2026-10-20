@@ -1,8 +1,7 @@
 /**
- * The content panel's header row: the narrow window's burger, the path, and the connection's
- * badge in the corner, so a long path shrinks instead of running under either. The path starts
- * at a home mark rather than the driver's name and the server's address, which is the badge's
- * to show. A narrow window moves the badge into the sidebar's drawer instead.
+ * The content panel's header row: the narrow window's burger and the path, which shrinks instead
+ * of running under it. The path starts at a home mark rather than the driver's name and the
+ * server's address, which is the connection's badge's to show, in the sidebar's logo row.
  *
  * Nothing here may be seen to move, so it runs as the page is parsed rather than after: loaded
  * from <head> without defer (Javascript::beforePaint()), it watches the parser, and a mutation
@@ -68,22 +67,16 @@
 		}
 	};
 
-	const placeBadge = (breadcrumb, badge) => {
-		// In a narrow window the header row is the burger and the path, and the badge goes in
-		// the drawer, under the logo; the same breakpoint as the burger's (layout.css), and live,
-		// so resizing the window moves it back.
-		const narrow = matchMedia("(max-width: 800px)");
-		const heading = document.querySelector("#menu h1");
-		const place = () => {
-			if (narrow.matches && heading) {
-				heading.after(badge);
-			} else {
-				breadcrumb.append(badge);
-			}
-		};
-		place();
+	// In the sidebar's logo row, in the logo's place (layout.css hides it): the sidebar is the
+	// connection's, so it says whose. The narrow window's drawer is the same sidebar.
+	const placeBadge = (badge) => {
+		document.querySelector("#menu h1")?.prepend(badge);
 		badge.classList.add("ad-placed");
-		narrow.addEventListener("change", place);
+		// Up to the panel, whose border takes the colour along the badge's row (layout.css).
+		const conn = badge.style.getPropertyValue("--ad-conn");
+		if (conn) {
+			document.querySelector("#foot")?.style.setProperty("--ad-conn", conn);
+		}
 	};
 
 	const observer = new MutationObserver(() => {
@@ -99,7 +92,7 @@
 		}
 		const badge = document.querySelector("#ad-connection-badge");
 		if (pathDone && badge) {
-			placeBadge(breadcrumb, badge);
+			placeBadge(badge);
 			observer.disconnect();
 		}
 	});
