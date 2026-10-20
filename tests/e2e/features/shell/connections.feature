@@ -41,6 +41,11 @@ Feature: Saved connections
     When I open the edit form for "users" row 1
     Then the body carries the "ad-writing" class
 
+  Scenario: The connection badge leads back to the saved connections
+    When I open the connection from its card
+    And I click the connection badge
+    Then the saved connection is a card
+
   Scenario: Picking an environment picks its colour, which stays changeable
     When I open the connection's editor
     And I pick the "prod" environment
