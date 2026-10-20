@@ -29,8 +29,7 @@ make demo                           # run logged into a seeded postgres (needs d
 Other targets: `editor`, `logs`, `serve`, `down`, `destroy`, `dist`, `tarball`, `deb`,
 `windows`, `clean`. `make` on its own lists them.
 
-A window that crashed, was killed or was quit with Cmd+Q can leave its server running, holding
-its port. `make kill-orphans` stops every such server, the installed app's too.
+- `make kill-orphans` stops a server whose window is gone (crash, kill, Cmd+Q), the installed app's too.
 
 ## Debugging
 
@@ -38,10 +37,10 @@ its port. `make kill-orphans` stops every such server, the installed app's too.
 make debug                          # run with Safari's Web Inspector attached
 ```
 
-Safari → Develop → this machine → Adminer Desktop gives a real console, the DOM and the network.
-Reach for it as soon as a symptom is visual or behavioural: `curl` against the server only shows
-what HTML was generated. PHP errors land in `~/Library/Logs/Adminer Desktop/`, and under `-debug`
-`<data dir>/log/api.log` records every call the page's own scripts make to `api.php`.
+- Safari → Develop → this machine → Adminer Desktop: console, DOM, network.
+- Use it for anything visual or behavioural; `curl` only shows the generated HTML.
+- PHP errors: `~/Library/Logs/Adminer Desktop/` (`make logs`).
+- Under `-debug`, `<data dir>/log/api.log` records every call to `api.php`.
 
 ## Checking it
 
@@ -55,14 +54,14 @@ make e2e-packaged                   # the same, against app/ as a release ships 
 
 `make check` is the one that matters most: Adminer streams dumps with `ob_flush(); flush()`,
 so it asserts long responses neither buffer nor time out, and it boots every shipped plugin in
-turn. `make e2e` runs the Behat scenarios in `tests/e2e/features/` in a real browser, and a failed
-step leaves the page it failed on in `tests/e2e/artifacts/`. The folder decides where a scenario
-runs: `data/` on both drivers, `shell/` (the app's own chrome: connections, settings, search,
-shortcuts, MCP) and `pgsql/` on postgres, `mysql/` on mysql. `make e2e-visual` runs the same in
-a browser you can watch; `SUITE=mysql` or `ARGS='--name …'` narrows either. A step no context
-defines fails the run, and `make qa` dry-runs every feature to catch one without docker.
-`make e2e-packaged` runs against production deps with the templates precompiled, so a template
-the build missed fails a scenario.
+turn. `make e2e` runs the Behat scenarios in `tests/e2e/features/` in a real browser:
+
+- A failed step leaves its page in `tests/e2e/artifacts/`.
+- The folder decides the database: `data/` runs on both, `shell/` (connections, settings, search,
+  shortcuts, MCP) and `pgsql/` on postgres, `mysql/` on mysql.
+- `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows a run.
+- A step no context defines fails the run; `make qa` catches one without docker.
+- `make e2e-packaged` runs against app/ as a release ships it, so a template the build missed fails.
 
 CI is billed on this repo and macOS runners cost ten times the rest, so `qa` and `check` pass
 locally before a push rather than being iterated against in Actions.
