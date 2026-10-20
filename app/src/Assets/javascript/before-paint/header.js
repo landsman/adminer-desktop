@@ -18,6 +18,16 @@
 
 {
 	let pathDone = false;
+
+	// Our strings in the page's language, from the block head() prints: api.js, which reads it for
+	// the other scripts, is deferred, and this runs as the page parses. Read once, when first asked.
+	let catalogue = null;
+	const strings = () => {
+		catalogue ??= JSON.parse(
+			document.getElementById("ad-i18n")?.textContent || "{}",
+		);
+		return catalogue;
+	};
 	let badgeDone = false;
 	let linksDone = false;
 
@@ -94,6 +104,81 @@
 		if (burger) {
 			breadcrumb.prepend(burger);
 		}
+		// With no title bar the row is the window's toolbar, whose title is the object you are on
+		// alone, as Mail's is; the way there goes to a path bar along the window's foot, as
+		// Finder's does (window.css) — "⌂ PostgreSQL › demo › public › users", each step a link.
+		const name = breadcrumb.querySelector(".ad-breadcrumb-current");
+		if (frameless && name) {
+			const bar = document.createElement("nav");
+			bar.id = "ad-pathbar";
+			bar.setAttribute("aria-label", strings()["pathbar.label"] ?? "Path");
+			for (const node of [...breadcrumb.childNodes]) {
+				if (node !== burger && node !== name) {
+					bar.append(node);
+				}
+			}
+			// Each step marked with what it is, for its icon, as Finder marks a disk and its folders:
+			// the server (the home mark, which reads its driver's name here), a database, a schema,
+			// and where you are — a table, or the schema or database itself.
+			const home = bar.querySelector(".ad-breadcrumb-home");
+			if (home) {
+				home.className = "ad-pathbar-step";
+				home.dataset.step = "server";
+				home.textContent = home.title;
+			}
+			for (const link of bar.querySelectorAll("a:not([data-step])")) {
+				link.className = "ad-pathbar-step";
+				link.dataset.step = new URL(link.href, location.href).searchParams.get(
+					"ns",
+				)
+					? "schema"
+					: "database";
+			}
+			const page = new URLSearchParams(location.search);
+			const here = document.createElement("span");
+			here.className = "ad-pathbar-step";
+			here.setAttribute("aria-current", "page");
+			here.dataset.step = [
+				"select",
+				"table",
+				"edit",
+				"create",
+				"indexes",
+				"foreign",
+				"trigger",
+			].some((key) => page.has(key))
+				? "table"
+				: page.get("ns")
+					? "schema"
+					: "database";
+			here.textContent =
+				name.querySelector(".ad-breadcrumb-name")?.textContent ??
+				name.textContent;
+			bar.append(here);
+			document.body.append(bar);
+			document.body.classList.add("ad-has-pathbar");
+
+			// Back and forward before the title, one capsule, as Finder's toolbar has them. Greyed
+			// where the Navigation API says there is nowhere to go; without it, always offered.
+			const steps = document.createElement("div");
+			steps.className = "ad-history";
+			for (const [step, label] of [
+				["back", "Back"],
+				["forward", "Forward"],
+			]) {
+				const button = document.createElement("button");
+				button.type = "button";
+				button.className = `ad-history-${step}`;
+				button.title = strings()[`history.${step}`] ?? label;
+				button.setAttribute("aria-label", button.title);
+				const can =
+					window.navigation?.[step === "back" ? "canGoBack" : "canGoForward"];
+				button.disabled = can === false;
+				button.addEventListener("click", () => window.history[step]());
+				steps.append(button);
+			}
+			name.before(steps);
+		}
 	};
 
 	// In the sidebar's logo row, in the logo's place (layout.css hides it): the sidebar is the
@@ -162,13 +247,10 @@
 	const buildToolbar = (breadcrumb) => {
 		toolbar = document.createElement("div");
 		toolbar.className = "ad-toolbar";
-		const strings = JSON.parse(
-			document.getElementById("ad-i18n")?.textContent || "{}",
-		);
 		const search = document.createElement("button");
 		search.type = "button";
 		search.className = "ad-toolbar-search";
-		search.textContent = strings["toolbar.search"] ?? "Search";
+		search.textContent = strings()["toolbar.search"] ?? "Search";
 		search.addEventListener("click", () => window.desktopSearch?.());
 		toolbar.append(search);
 		breadcrumb.append(toolbar);

@@ -22,11 +22,15 @@ Feature: The window without a title bar
     Then the page's "Alter schema, Database schema" are buttons in the toolbar
     And no list of links is left under the title
 
+  Scenario: The way to a table is a path bar along the window's foot, as in Finder
+    When I open the "users" table
+    Then the path bar reads "PostgreSQL › demo › public › users", its steps leading back
+
   Scenario: The empty toolbar moves the window, a link in it does not
     When I open the "users" table
     And I press the mouse on the empty toolbar
     Then the window was asked to move 1 time
-    When I press the mouse on the path's first link
+    When I press the mouse on one of the toolbar's buttons
     Then the window was asked to move 1 time
 
   Scenario: The sidebar stays hidden across pages, its toggle beside the lights

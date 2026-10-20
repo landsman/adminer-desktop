@@ -54,10 +54,10 @@
 	border-inline-start: 0;
 }
 
-/* The content's header row is the window's toolbar: as tall as the lights' band, so the path is
-   centred on their line, and in Mail's look — a frosted fill the page shows through as it scrolls
-   under, the object you are on as its title and the path back dim before it, stepped by a thin ›.
-   Its hairline only while the page is scrolled under it or the window is in the background
+/* The content's header row is the window's toolbar: as tall as the lights' band, so what is in
+   it is centred on their line, and in Mail's look — a frosted fill the page shows through as it
+   scrolls under, back and forward, the object you are on as its title, the page's actions and the
+   search. Its hairline only while the page is scrolled under it or the window is in the background
    (window-chrome.js sets the two classes), and faint, as Mail's is. */
 .ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
 	height: var(--ad-titlebar-h);
@@ -70,25 +70,26 @@
 	font-size: 13px;
 }
 
-.ad-frameless:not(.ad-fullscreen)
-	#content
-	#breadcrumb
-	> .ad-breadcrumb-current {
-	color: var(--fg);
-	font-size: 15px;
-	font-weight: 650;
-}
-
 .ad-frameless:is(.ad-content-scrolled, .ad-window-inactive):not(.ad-fullscreen)
 	#content
 	#breadcrumb {
 	border-bottom-color: color-mix(in srgb, var(--fg) 9%, transparent);
 }
 
-/* adminer's "Schema: public" is the kind of page and the object: the object is the title, and
-   the kind the toolbar's lit icon already says (its tooltip names it). Hidden, not removed, so a
-   screen reader still hears the whole of it. */
-.ad-frameless:not(.ad-fullscreen) #content #breadcrumb .ad-breadcrumb-kind {
+/* The toolbar's title as Mail's: the object you are on alone, bold. The way there is in the path
+   bar along the window's foot (below), as Finder keeps it. adminer's "Schema: public" is the kind
+   of page and the object: the kind the toolbar's lit icon already says, so it is hidden — not
+   removed, so a screen reader still hears the whole of it. */
+.ad-frameless #content #breadcrumb > .ad-breadcrumb-current {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--fg);
+	font-size: 15px;
+	font-weight: 650;
+}
+
+.ad-frameless #content #breadcrumb .ad-breadcrumb-kind {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -97,23 +98,168 @@
 	white-space: nowrap;
 }
 
-/* » drawn as a thin chevron, dimmer than the links it sits between. */
-.ad-frameless:not(.ad-fullscreen) #content #breadcrumb > .ad-breadcrumb-sep {
-	font-size: 0;
-	/* A box that centres its chevron on the row: in a line box of no size it sat on the baseline,
-	   high, like a superscript. */
+/* Back and forward, one glass capsule before the title, as in Finder's toolbar. */
+.ad-frameless #content #breadcrumb .ad-history {
 	display: flex;
+	flex: none;
 	align-items: center;
-	color: color-mix(in srgb, var(--fg) 40%, transparent);
+	box-sizing: border-box;
+	height: 32px;
+	margin-inline-end: 8px;
+	padding: 0 2px;
+	border-radius: 16px;
+	background: var(--ad-glass-bg);
+	-webkit-backdrop-filter: var(--ad-glass-filter);
+	backdrop-filter: var(--ad-glass-filter);
+	box-shadow: var(--ad-glass-shadow);
 }
 
-.ad-frameless:not(.ad-fullscreen)
-	#content
-	#breadcrumb
-	> .ad-breadcrumb-sep::before {
+.ad-frameless #content #breadcrumb .ad-history button {
+	width: 32px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: 14px;
+	background: transparent;
+	color: color-mix(in srgb, var(--fg) 80%, transparent);
+}
+
+.ad-frameless #content #breadcrumb .ad-history button + button {
+	background:
+		linear-gradient(
+			color-mix(in srgb, var(--fg) 14%, transparent),
+			color-mix(in srgb, var(--fg) 14%, transparent)
+		)
+		left center / 1px 55% no-repeat;
+}
+
+.ad-frameless #content #breadcrumb .ad-history button::before {
+	content: "";
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: auto;
+	background: currentcolor;
+	-webkit-mask: var(--ad-history-icon) center / contain no-repeat;
+	mask: var(--ad-history-icon) center / contain no-repeat;
+}
+
+.ad-frameless #content #breadcrumb .ad-history-back {
+	--ad-history-icon: url("icons/history-back.svg");
+}
+
+.ad-frameless #content #breadcrumb .ad-history-forward {
+	--ad-history-icon: url("icons/history-forward.svg");
+}
+
+.ad-frameless #content #breadcrumb .ad-history button:hover:not(:disabled) {
+	color: var(--fg);
+}
+
+.ad-frameless #content #breadcrumb .ad-history button:disabled {
+	color: color-mix(in srgb, var(--fg) 30%, transparent);
+	cursor: default;
+}
+
+/* The path bar: the way to where you are, along the window's foot under the content, drawn as
+   Finder's — "PostgreSQL › demo › public › users", a small blue mark before each step (the server,
+   a database, a schema's folder, a table), small grey text, a hairline over it and the content's
+   own fill. Each step but the last is a link (before-paint/header.js builds it). The content panel
+   stops above it, so nothing on the page — adminer's own sticky row of actions included — slides
+   under it. It starts where the content does: past the sidebar, or at the edge with the sidebar
+   hidden or folded into a drawer. */
+.ad-frameless {
+	--ad-pathbar-h: 26px;
+	--ad-pathbar-left: calc(var(--ad-sidebar-width) + 2 * var(--ad-gutter));
+}
+
+.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden {
+	--ad-pathbar-left: 0px;
+}
+
+.ad-frameless .ad-has-pathbar #content {
+	margin-bottom: var(--ad-pathbar-h);
+}
+
+#ad-pathbar {
+	position: fixed;
+	inset: auto 0 0 var(--ad-pathbar-left);
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	box-sizing: border-box;
+	height: var(--ad-pathbar-h);
+	padding: 0 14px;
+	overflow: hidden;
+	white-space: nowrap;
+	border-top: 1px solid color-mix(in srgb, var(--fg) 9%, transparent);
+	background: var(--ad-panel);
+	color: color-mix(in srgb, var(--fg) 72%, transparent);
+	font-size: 12px;
+	transition: left 0.2s ease;
+}
+
+#ad-pathbar .ad-pathbar-step {
+	display: inline-flex;
+	flex: 0 1 auto;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
+	color: inherit;
+	text-decoration: none;
+}
+
+#ad-pathbar a.ad-pathbar-step:hover {
+	color: var(--fg);
+}
+
+#ad-pathbar .ad-pathbar-step::before {
+	content: "";
+	flex: none;
+	width: 13px;
+	height: 13px;
+	background: var(--ad-accent);
+	-webkit-mask: var(--ad-step-icon) center / contain no-repeat;
+	mask: var(--ad-step-icon) center / contain no-repeat;
+}
+
+#ad-pathbar [data-step="server"] {
+	--ad-step-icon: url("icons/home.svg");
+}
+
+#ad-pathbar [data-step="database"] {
+	--ad-step-icon: url("../../../../Assets/icons/database.svg");
+}
+
+#ad-pathbar [data-step="schema"] {
+	--ad-step-icon: url("icons/schema.svg");
+}
+
+#ad-pathbar [data-step="table"] {
+	--ad-step-icon: url("icons/table.svg");
+}
+
+/* » drawn as Finder's small chevron, dimmer than the steps; a box that centres it on the line, as
+   in a line box of no size it sat on the baseline, high, like a superscript. */
+#ad-pathbar .ad-breadcrumb-sep {
+	display: flex;
+	flex: none;
+	align-items: center;
+	font-size: 0;
+	color: color-mix(in srgb, var(--fg) 45%, transparent);
+}
+
+#ad-pathbar .ad-breadcrumb-sep::before {
 	content: "›";
-	font-size: 17px;
+	font-size: 13px;
 	line-height: 1;
+}
+
+@media (max-width: 800px) {
+	.ad-frameless {
+		--ad-pathbar-left: 0px;
+	}
 }
 
 /* The toolbar's controls (before-paint/header.js puts them there): the page's own actions as one
@@ -271,9 +417,8 @@
 	mask: url("icons/search.svg") center / contain no-repeat;
 }
 
-/* A narrow window has room for the path and the actions, not the search too; Shift Shift stays.
-   The actions close up, and the path keeps only where you are: the links back are in the drawer
-   the burger opens. */
+/* A narrow window has room for the title and the actions, not the search too; Shift Shift stays.
+   The actions close up. */
 @media (max-width: 800px) {
 	.ad-frameless .ad-toolbar-search {
 		display: none;
@@ -283,15 +428,9 @@
 		--ad-tool-w: 32px;
 	}
 
-	.ad-frameless
-		#content
-		#breadcrumb:has(.ad-toolbar)
-		> a:not(.ad-breadcrumb-home) {
-		display: none;
-	}
-
-	/* And their separators with them (before-paint/header.js wraps them). */
-	.ad-frameless #content #breadcrumb:has(.ad-toolbar) > .ad-breadcrumb-sep {
+	/* Nor back and forward, which squeezed the title out; the mouse's buttons and the keys still
+	   step through the history. */
+	.ad-frameless #content #breadcrumb .ad-history {
 		display: none;
 	}
 }

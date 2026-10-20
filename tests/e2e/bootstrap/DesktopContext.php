@@ -2964,13 +2964,41 @@ class DesktopContext implements Context
 		$this->page->mouse()->click((float) $box['x'], (float) $box['y']);
 	}
 
-	#[When('I press the mouse on the path\'s first link')]
-	public function pressPathLink(): void
+	#[When('I press the mouse on one of the toolbar\'s buttons')]
+	public function pressToolbarButton(): void
 	{
 		$this->page->locator(
 			// language=JQuery-CSS
-			'#breadcrumb > a:not(.ad-breadcrumb-home)',
+			'#breadcrumb .ad-toolbar-actions a',
 		)->first()->dispatchEvent('mousedown');
+	}
+
+	/** Finder's path bar, along the window's foot: the steps there, each a link but the last, and
+	 * the content panel ending where the bar begins, so nothing of the page is under it. */
+	#[Then('the path bar reads :path, its steps leading back')]
+	public function pathBarReads(string $path): void
+	{
+		$bar = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const bar = document.querySelector('#ad-pathbar');
+				const steps = [...bar.querySelectorAll('.ad-pathbar-step')].map((el) => el.textContent.trim());
+				return {
+					steps,
+					links: bar.querySelectorAll('a').length,
+					here: bar.querySelector('[aria-current=page]')?.textContent.trim(),
+					barTop: bar.getBoundingClientRect().top,
+					contentBottom: document.querySelector('#content').getBoundingClientRect().bottom,
+				};
+			}",
+		);
+		$want = array_map('trim', explode('›', $path));
+		if ($bar['steps'] !== $want || $bar['here'] !== end($want) || $bar['links'] < count($want) - 1) {
+			throw new RuntimeException('the path bar reads otherwise: ' . json_encode($bar));
+		}
+		if ($bar['contentBottom'] > $bar['barTop'] + 1) {
+			throw new RuntimeException('the content runs under the path bar: ' . json_encode($bar));
+		}
 	}
 
 	#[Then('/^the window was asked to move (\d+) times?$/')]

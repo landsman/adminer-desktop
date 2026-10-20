@@ -73,6 +73,9 @@ return [
 	'js.import.drop_hint' => 'Upuść tutaj plik SQL, aby go zaimportować',
 	'js.sidebar.toggle' => 'Pokaż lub ukryj pasek boczny',
 	'js.toolbar.search' => 'Szukaj',
+	'js.history.back' => 'Wstecz',
+	'js.history.forward' => 'Dalej',
+	'js.pathbar.label' => 'Ścieżka',
 
 	// Letting an agent query the open database (Mcp\Panel, mcp-panel.latte).
 	'settings.tab_mcp' => 'Dostęp AI',
