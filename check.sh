@@ -22,7 +22,9 @@ fi
 ADMINER_DESKTOP_DATA=$(mktemp -d)
 export ADMINER_DESKTOP_DATA
 
-./bin/frankenphp php-server --root app --listen "127.0.0.1:$PORT" --no-compress \
+# The launcher's own Caddyfile and the cache policy a build gets, so what is checked is what ships.
+AD_PORT=$PORT AD_ROOT=app AD_ASSET_CACHE="max-age=31536000, immutable" \
+	./bin/frankenphp run --config launcher/Caddyfile --adapter caddyfile \
 	2>/tmp/adminer-desktop-check.log &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null; rm -rf "$ADMINER_DESKTOP_DATA"' EXIT
@@ -51,6 +53,16 @@ curl -s "$BASE/adminer.php" | grep -q "src/Assets/javascript/shortcuts.js?v=[0-9
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/src/Assets/javascript/shortcuts.js")" = "200" ] || {
 	echo "FAIL: shortcuts.js does not serve"; exit 1; }
 echo "ok: refresh shortcut wired and served"
+
+# Static files are cached, or WebKit fetches every icon again on each page and a CSS mask shows
+# blank until it arrives. Pages are not: adminer's own no-cache must survive the header rule.
+cache() { curl -s -o /dev/null -w '%header{cache-control}' "$BASE/$1"; }
+[ "$(cache icons/table.svg)" = "max-age=31536000, immutable" ] || {
+	echo "FAIL: /icons/table.svg not served, or not cached: [$(cache icons/table.svg)]"; exit 1; }
+case "$(cache adminer.php)" in
+*immutable*) echo "FAIL: adminer.php sent as immutable"; exit 1 ;;
+esac
+echo "ok: static files cached, pages not"
 
 # version-noverify is on whatever the user picked: adminer otherwise fetches
 # adminer.org/version/ from <body onload> and offers an upgrade this app cannot install.

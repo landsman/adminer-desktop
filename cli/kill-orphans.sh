@@ -18,7 +18,8 @@ set -eu
 
 filter() {
 	# The whole line, not a field: the installed app's path has a space in it.
-	awk '$2 == 1 && index($0, "frankenphp php-server ") { print $1 }'
+	# php-server: what an install from before the Caddyfile still runs.
+	awk '$2 == 1 && (index($0, "frankenphp run --config ") || index($0, "frankenphp php-server ")) { print $1 }'
 }
 
 if [ "${1:-}" = "--filter" ]; then

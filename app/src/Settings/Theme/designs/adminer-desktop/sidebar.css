@@ -69,7 +69,7 @@
 	background: var(--ad-accent-quiet);
 }
 
-/* Each table is marked with an icon (src/Assets/icons/table.svg, Desktop\Assets\Icon::Table), masked so it takes the row's colour, and
+/* Each table is marked with an icon (src/Assets/icons/table.svg), masked so it takes the row's colour, and
    in the column the actions above sit in. */
 #tables li > a:not(.select)::before {
 	content: "";
@@ -79,8 +79,8 @@
 	margin-inline-end: 0.45em;
 	vertical-align: -0.2em;
 	background: currentcolor;
-	-webkit-mask: url("/src/Assets/icons/table.svg") center / contain no-repeat;
-	mask: url("/src/Assets/icons/table.svg") center / contain no-repeat;
+	-webkit-mask: url("/icons/table.svg") center / contain no-repeat;
+	mask: url("/icons/table.svg") center / contain no-repeat;
 	opacity: 0.7;
 }
 

@@ -244,6 +244,19 @@ var unreachableHTML string
 //go:embed loader/loader.css
 var loaderCSS string
 
+//go:embed Caddyfile
+var caddyfile string
+
+// assetCache is the Cache-Control on static files. A year is safe in a build: the port, and so
+// the origin WebKit keys its cache by, is new each launch, and app/ does not change within one.
+// -dev serves the checkout live, and its @imports and icons carry no version in their URL.
+func assetCache(dev bool) string {
+	if dev {
+		return "no-cache"
+	}
+	return "max-age=31536000, immutable"
+}
+
 func loaderPage(html string) string {
 	return strings.Replace(html, `<link rel="stylesheet" href="loader.css">`, "<style>\n"+loaderCSS+"</style>", 1)
 }
@@ -285,12 +298,18 @@ func main() {
 	fmt.Printf("adminer-desktop %s (adminer %s, frankenphp %s)\n", version, adminerVersion, frankenphpVersion)
 	fmt.Printf("logging to %s\n", logPath)
 
-	// --no-compress: adminer/file.inc.php:14 already sets zlib.output_compression.
-	// --access-log: off by default; on a single-user local app the request list is the
-	// most useful thing in the log and there is no privacy cost to writing it.
-	// Everything else we need is a php-server default and is asserted by check-stream.sh:
-	// no request timeout, no response buffering, plaintext HTTP, localhost-only bind.
-	srv := exec.Command(php, "php-server", "--root", root, "--listen", addr, "--no-compress", "--access-log")
+	// The Caddyfile says what the server does; it is written out because frankenphp reads a
+	// file, and not into app/, which is read-only in a build and would be served.
+	dir, dirErr := dataDir()
+	confDir := dir
+	if dirErr != nil {
+		confDir = os.TempDir()
+	}
+	conf := filepath.Join(confDir, "Caddyfile")
+	if err := os.WriteFile(conf, []byte(caddyfile), 0o600); err != nil {
+		log.Fatal(err)
+	}
+	srv := exec.Command(php, "run", "--config", conf, "--adapter", "caddyfile")
 	// Both, not either: stderr is what you read during `make run`, the file is the only
 	// thing that survives being launched from Finder, where stderr goes nowhere.
 	// Adminer's permanent login needs somewhere durable to keep its key. Passing the
@@ -299,8 +318,9 @@ func main() {
 	// PHP_INI_SCAN_DIR: frankenphp logs nothing on a PHP fatal error by default -- it
 	// goes to the page and no further, so the log file a user is pointed at never sees
 	// the one thing they went looking for. app/php/desktop.ini turns log_errors on.
-	srv.Env = append(os.Environ(), "PHP_INI_SCAN_DIR="+filepath.Join(root, "php"))
-	if dir, err := dataDir(); err == nil {
+	srv.Env = append(os.Environ(), "PHP_INI_SCAN_DIR="+filepath.Join(root, "php"),
+		fmt.Sprintf("AD_PORT=%d", port), "AD_ROOT="+root, "AD_ASSET_CACHE="+assetCache(*dev))
+	if dirErr == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 		// desktop.ini's opcache.file_cache points here, and PHP will not create it.
 		os.MkdirAll(filepath.Join(dir, "opcache"), 0o700) //nolint:errcheck // missing just means a cold launch

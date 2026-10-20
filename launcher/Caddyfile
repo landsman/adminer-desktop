@@ -1,0 +1,29 @@
+# The server the app runs, and the one check.sh and the e2e fixture start, so what is tested is
+# what ships. Not in app/: php_server includes a file server, and would serve this file.
+#
+# What `php-server --root --listen --no-compress --access-log` did, plus one header it cannot set.
+# No encode directive: adminer/file.inc.php:14 already sets zlib.output_compression. No request
+# timeout and no response buffering, so a slow export still streams.
+#
+#     AD_PORT          the port, bound on 127.0.0.1 only
+#     AD_ROOT          app/
+#     AD_ASSET_CACHE   Cache-Control for static files
+{
+	admin off
+	# caddy run otherwise writes this config to its own data dir on every start.
+	persist_config off
+	auto_https off
+	frankenphp
+}
+
+http://:{$AD_PORT} {
+	bind 127.0.0.1
+	# Quoted: the installed app's path has a space in it.
+	root * "{$AD_ROOT}"
+	log
+	# A short path for the stylesheets to the shared icons, still answered by the file server.
+	rewrite /icons/* /src/Assets{path}
+	@assets path *.css *.js *.svg *.png *.gif *.ico *.woff2
+	header @assets Cache-Control "{$AD_ASSET_CACHE}"
+	php_server
+}
