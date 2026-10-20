@@ -125,8 +125,7 @@
 }
 
 .ad-frameless #content #breadcrumb .ad-history button + button {
-	background:
-		linear-gradient(
+	background: linear-gradient(
 			color-mix(in srgb, var(--fg) 14%, transparent),
 			color-mix(in srgb, var(--fg) 14%, transparent)
 		)
@@ -310,8 +309,7 @@
 }
 
 .ad-frameless #breadcrumb .ad-toolbar-actions a + a {
-	background:
-		linear-gradient(
+	background: linear-gradient(
 			color-mix(in srgb, var(--fg) 14%, transparent),
 			color-mix(in srgb, var(--fg) 14%, transparent)
 		)
@@ -602,7 +600,7 @@
 /* No rules in it: sections are set apart by room, as in Mail, not drawn across the sidebar to end
    in nothing at its edge. And no fill behind the logo row, which every h1 has (base.css). */
 .ad-frameless:not(.ad-fullscreen)
-:is(#menu p, #logins, #tables, #menu h1, #dbs) {
+	:is(#menu p, #logins, #tables, #menu h1, #dbs) {
 	border: 0;
 }
 
@@ -765,11 +763,8 @@
 
 	.ad-frameless:not(.ad-fullscreen) #desktop-gear {
 		left: calc(
-			var(--ad-sidebar-width) -
-			var(--ad-tool-inset) -
-			2 *
-			var(--ad-tool) -
-			var(--ad-tool-gap)
+			var(--ad-sidebar-width) - var(--ad-tool-inset) - 2 * var(--ad-tool) -
+				var(--ad-tool-gap)
 		);
 	}
 
@@ -802,9 +797,7 @@
 	/* The path starts as far past the button as the button is past the lights. */
 	.ad-frameless:not(.ad-fullscreen) .ad-sidebar-hidden #content #breadcrumb {
 		padding-inline-start: calc(
-			var(--ad-tool-after-lights) +
-			var(--ad-tool) +
-			16px
+			var(--ad-tool-after-lights) + var(--ad-tool) + 16px
 		);
 	}
 }
@@ -814,7 +807,7 @@
    top edge, and the thumb is a rounded bar inset in it, not WebKit's square grey slab. The
    overlay ones are scrollers.js's, and keep the same clear band. */
 .ad-frameless.ad-legacy-scrollers:not(.ad-fullscreen)
-:is(#menu, #content)::-webkit-scrollbar {
+	:is(#menu, #content)::-webkit-scrollbar {
 	width: 16px;
 	height: 16px;
 	background: transparent;

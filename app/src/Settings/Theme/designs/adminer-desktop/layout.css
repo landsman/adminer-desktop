@@ -270,8 +270,8 @@ body {
 	background:
 		linear-gradient(var(--bg), var(--bg)) padding-box,
 		linear-gradient(var(--ad-badge-border), var(--ad-badge-border)) 0
-		var(--ad-menu-top, 0px) / 100% calc(var(--ad-header-h) + 1px) no-repeat
-		border-box,
+			var(--ad-menu-top, 0px) / 100% calc(var(--ad-header-h) + 1px) no-repeat
+			border-box,
 		linear-gradient(var(--ad-border), var(--ad-border)) border-box;
 }
 
