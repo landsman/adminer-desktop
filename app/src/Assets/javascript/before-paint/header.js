@@ -38,7 +38,22 @@
 		if (current?.nodeType === Node.TEXT_NODE && current.textContent.trim()) {
 			const span = document.createElement("span");
 			span.className = "ad-breadcrumb-current";
-			span.textContent = current.textContent.replace(/^\s*»?\s*/, "").trim();
+			const title = current.textContent.replace(/^\s*»?\s*/, "").trim();
+			// adminer's title is the kind of page and its object ("Schema: public", "Select: users"):
+			// apart, so a toolbar can make the object its title and the kind part of the path
+			// (window.css). The colon stays, hidden there, so the text reads as adminer wrote it.
+			const [, kind, name] = title.match(/^([^:]+):\s+(.+)$/) ?? [];
+			if (name) {
+				const kindSpan = document.createElement("span");
+				kindSpan.className = "ad-breadcrumb-kind";
+				kindSpan.textContent = `${kind}: `;
+				const nameSpan = document.createElement("span");
+				nameSpan.className = "ad-breadcrumb-name";
+				nameSpan.textContent = name;
+				span.append(kindSpan, nameSpan);
+			} else {
+				span.textContent = title;
+			}
 			current.replaceWith(" » ", span);
 		}
 		// The driver's name ("PostgreSQL") is where the path starts, not something to read on
@@ -58,6 +73,18 @@
 				}
 				server.previousSibling.remove();
 				server.remove();
+			}
+		}
+		// The path's » between its steps, in a span of their own so the theme can draw them
+		// (window.css draws a thin ›): as bare text no selector reaches them. After the home mark
+		// takes the server's place, which finds the server as the element after it.
+		for (const node of [...breadcrumb.childNodes]) {
+			if (node.nodeType === Node.TEXT_NODE && node.textContent.includes("»")) {
+				const sep = document.createElement("span");
+				sep.className = "ad-breadcrumb-sep";
+				sep.setAttribute("aria-hidden", "true");
+				sep.textContent = "»";
+				node.replaceWith(sep);
 			}
 		}
 		// Adminer's burger for a narrow window, which it floats over the corner the breadcrumb

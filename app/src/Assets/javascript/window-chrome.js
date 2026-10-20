@@ -22,6 +22,24 @@
 	const CONTROLS =
 		"a, button, input, select, textarea, label, summary, [role=button], [tabindex], [contenteditable], dialog";
 
+	// The toolbar's hairline shows only once the page scrolls under it, or while the window is not
+	// the active one, as Mail's does (window.css): two classes on <html> to draw it by.
+	if (window.adDragWindow) {
+		const content = document.querySelector("#content");
+		const scrolled = () =>
+			root.classList.toggle(
+				"ad-content-scrolled",
+				(content?.scrollTop ?? 0) > 0,
+			);
+		content?.addEventListener("scroll", scrolled, { passive: true });
+		scrolled();
+		const active = () =>
+			root.classList.toggle("ad-window-inactive", !document.hasFocus());
+		addEventListener("focus", active);
+		addEventListener("blur", active);
+		active();
+	}
+
 	if (window.adDragWindow) {
 		document.addEventListener("mousedown", (event) => {
 			const target = event.target;
@@ -75,5 +93,23 @@
 			);
 		});
 		document.body.append(toggle);
+		// The gear joins it, out of the sidebar's list: the list fades out under the lights' band
+		// (window.css), and a mask reaches a fixed child too, so the gear faded with it. Only while
+		// the window is wide enough for the band; a narrow one keeps the gear in the drawer, where
+		// it is put back. settings-dialog.js finds it by its id, wherever it is.
+		const gear = document.querySelector("#desktop-gear");
+		if (gear) {
+			const home = [gear.parentNode, gear.nextSibling];
+			const wide = matchMedia("(min-width: 801px)");
+			const place = () => {
+				if (wide.matches) {
+					document.body.append(gear);
+				} else {
+					home[0].insertBefore(gear, home[1]);
+				}
+			};
+			place();
+			wide.addEventListener("change", place);
+		}
 	}
 }

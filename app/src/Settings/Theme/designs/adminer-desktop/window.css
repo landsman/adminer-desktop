@@ -20,6 +20,20 @@
 	--ad-side-inset: 12px;
 }
 
+/* The glass the toolbar's controls are made of, drawn by hand: WebKit has the system's Liquid
+   Glass (-apple-visual-effect), but private and on iOS only, so a page on macOS cannot have it.
+   A light fill the page frosts through, a bright top edge where the light would catch it, a
+   hairline round it and a soft shadow under it — the parts of Mail's buttons a stylesheet can
+   draw; the refraction at their edge is the one it cannot. */
+.ad-frameless {
+	--ad-glass-bg: light-dark(rgb(255 255 255 / 62%), rgb(70 70 76 / 55%));
+	--ad-glass-filter: blur(16px) saturate(1.8);
+	--ad-glass-shadow:
+		inset 0 0.5px 0 light-dark(rgb(255 255 255 / 90%), rgb(255 255 255 / 18%)),
+		0 0 0 0.5px light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 9%)),
+		0 2px 10px rgb(0 0 0 / 8%);
+}
+
 /* Not on the login page, whose one column stays a card on the window's surface. */
 .ad-frameless:not(.ad-fullscreen)
 	body:not(:has(input[name="auth[username]"]))
@@ -39,13 +53,16 @@
 }
 
 /* The content's header row is the window's toolbar: as tall as the lights' band, so the path is
-   centred on their line, and in Mail's look — no rule under it, a frosted fill the page scrolls
-   under, the place you are as its title and the path back smaller and dim before it. */
+   centred on their line, and in Mail's look — a frosted fill the page shows through as it scrolls
+   under, the object you are on as its title and the path back dim before it, stepped by a thin ›.
+   Its hairline only while the page is scrolled under it or the window is in the background
+   (window-chrome.js sets the two classes), and faint, as Mail's is. */
 .ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
 	height: var(--ad-titlebar-h);
 	margin-bottom: 0.25rem;
-	border-bottom: 0;
-	background: color-mix(in srgb, var(--ad-panel) 78%, transparent);
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.2s ease;
+	background: color-mix(in srgb, var(--ad-panel) 60%, transparent);
 	-webkit-backdrop-filter: saturate(1.8) blur(20px);
 	backdrop-filter: saturate(1.8) blur(20px);
 	font-size: 13px;
@@ -58,6 +75,43 @@
 	color: var(--fg);
 	font-size: 15px;
 	font-weight: 650;
+}
+
+.ad-frameless:is(.ad-content-scrolled, .ad-window-inactive):not(.ad-fullscreen)
+	#content
+	#breadcrumb {
+	border-bottom-color: color-mix(in srgb, var(--fg) 9%, transparent);
+}
+
+/* adminer's "Schema: public" is the kind of page and the object: the object is the title, and
+   the kind the toolbar's lit icon already says (its tooltip names it). Hidden, not removed, so a
+   screen reader still hears the whole of it. */
+.ad-frameless:not(.ad-fullscreen) #content #breadcrumb .ad-breadcrumb-kind {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* » drawn as a thin chevron, dimmer than the links it sits between. */
+.ad-frameless:not(.ad-fullscreen) #content #breadcrumb > .ad-breadcrumb-sep {
+	font-size: 0;
+	/* A box that centres its chevron on the row: in a line box of no size it sat on the baseline,
+	   high, like a superscript. */
+	display: flex;
+	align-items: center;
+	color: color-mix(in srgb, var(--fg) 40%, transparent);
+}
+
+.ad-frameless:not(.ad-fullscreen)
+	#content
+	#breadcrumb
+	> .ad-breadcrumb-sep::before {
+	content: "›";
+	font-size: 17px;
+	line-height: 1;
 }
 
 /* The toolbar's controls (before-paint/header.js puts them there): the page's own actions as one
@@ -76,10 +130,10 @@
 	box-sizing: border-box;
 	height: var(--ad-toolbar-h);
 	border-radius: calc(var(--ad-toolbar-h) / 2);
-	background: color-mix(in srgb, var(--bg) 72%, transparent);
-	box-shadow:
-		0 0 0 0.5px color-mix(in srgb, var(--fg) 14%, transparent),
-		0 1px 3px color-mix(in srgb, #000 10%, transparent);
+	background: var(--ad-glass-bg);
+	-webkit-backdrop-filter: var(--ad-glass-filter);
+	backdrop-filter: var(--ad-glass-filter);
+	box-shadow: var(--ad-glass-shadow);
 }
 
 /* adminer's links, a row of segments as Mail's reply/forward group is: an icon each, a hairline
@@ -189,13 +243,13 @@
 .ad-frameless .ad-toolbar-search {
 	position: relative;
 	width: 16rem;
-	padding: 0 12px 0 32px;
+	padding: 0 14px 0 36px;
 	border: 0;
-	background: color-mix(in srgb, var(--bg) 72%, transparent);
+	background: var(--ad-glass-bg);
 	text-align: start;
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 400;
-	color: color-mix(in srgb, var(--fg) 64%, transparent);
+	color: color-mix(in srgb, var(--fg) 74%, transparent);
 	cursor: text;
 }
 
@@ -206,10 +260,10 @@
 .ad-frameless .ad-toolbar-search::before {
 	content: "";
 	position: absolute;
-	inset: 0 auto 0 12px;
-	width: 14px;
+	inset: 0 auto 0 13px;
+	width: 15px;
 	margin: auto 0;
-	height: 14px;
+	height: 15px;
 	background: currentcolor;
 	-webkit-mask: url("icons/search.svg") center / contain no-repeat;
 	mask: url("icons/search.svg") center / contain no-repeat;
@@ -234,14 +288,9 @@
 		display: none;
 	}
 
-	/* And their » with them: bare text nodes, which only a size of nothing on the row reaches.
-	   What is left in it sets its own size back. */
-	.ad-frameless #content #breadcrumb:has(.ad-toolbar) {
-		font-size: 0;
-	}
-
-	.ad-frameless #content #breadcrumb:has(.ad-toolbar) > .ad-breadcrumb-current {
-		font-size: 15px;
+	/* And their separators with them (before-paint/header.js wraps them). */
+	.ad-frameless #content #breadcrumb:has(.ad-toolbar) > .ad-breadcrumb-sep {
+		display: none;
 	}
 }
 
@@ -254,14 +303,29 @@
 	background: transparent;
 }
 
-/* The lights' band is the sidebar's own top, not the top of what scrolls in it: on #foot, so the
-   list scrolls under the band rather than taking the band, and the lights over it, along. */
+/* The lights' band is room at the top of what scrolls, so the list starts below the lights and,
+   scrolled, passes under them, fading out as it goes — as Mail's mailboxes do. Cut off at the band
+   instead, the list read as stopping short. The gear and the toggle are fixed (below), so they stay
+   over it. The settings dialog lives in #menu too, but in the top layer, which the mask does not
+   reach. */
 .ad-frameless:not(.ad-fullscreen) #foot {
-	box-sizing: border-box;
-	padding-top: var(--ad-menu-top);
 	transition:
 		margin-inline-start 0.2s ease,
 		visibility 0.2s;
+}
+
+.ad-frameless:not(.ad-fullscreen) #menu {
+	padding-top: var(--ad-menu-top);
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		transparent calc(var(--ad-menu-top) * 0.35),
+		#000 var(--ad-menu-top)
+	);
+	mask-image: linear-gradient(
+		to bottom,
+		transparent calc(var(--ad-menu-top) * 0.35),
+		#000 var(--ad-menu-top)
+	);
 }
 
 /* No rules in it: sections are set apart by room, as in Mail, not drawn across the sidebar to end
@@ -388,10 +452,10 @@
 		border: 0;
 		border-radius: 50%;
 		transform: none;
-		background: color-mix(in srgb, var(--bg) 72%, transparent);
-		box-shadow:
-			0 0 0 0.5px color-mix(in srgb, var(--fg) 14%, transparent),
-			0 1px 3px color-mix(in srgb, #000 10%, transparent);
+		background: var(--ad-glass-bg);
+		-webkit-backdrop-filter: var(--ad-glass-filter);
+		backdrop-filter: var(--ad-glass-filter);
+		box-shadow: var(--ad-glass-shadow);
 		color: color-mix(in srgb, var(--fg) 70%, transparent);
 		transition:
 			left 0.2s ease,
