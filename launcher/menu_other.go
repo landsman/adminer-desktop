@@ -34,6 +34,8 @@ func clearWebViewBackground(window unsafe.Pointer) {}
 
 func setWindowBackground(window unsafe.Pointer, r, g, b int) {}
 
+func setWindowAppearance(window unsafe.Pointer, dark int) {}
+
 // installDownloads is per-platform: real on Linux (download_linux.c), a no-op on Windows
 // (download_other.go), and the macOS build has its own in menu_darwin.go.
 

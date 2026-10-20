@@ -203,6 +203,14 @@ void setWindowBackground(void *nsWindow, int r, int g, int b) {
 		green:g / 255.0 blue:b / 255.0 alpha:1]];
 }
 
+/* The sidebar is the system's material (installFramelessTitlebar), drawn in the window's
+ * appearance, which follows the system: pinned to Light on a dark Mac it stayed dark under a
+ * light page. The page's Light/Dark override pins the window too; Auto (-1) hands it back. */
+void setWindowAppearance(void *nsWindow, int dark) {
+	[(NSWindow *) nsWindow setAppearance:dark < 0 ? nil
+		: [NSAppearance appearanceNamed:dark ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua]];
+}
+
 /* Safari's Web Inspector against the app's page: Develop > <machine> > Adminer Desktop.
  * Without it there is no console and no way to see a JavaScript error, which is how a
  * confirm() that never fired stayed invisible for as long as it did.

@@ -20,6 +20,8 @@ int installDownloads(void *nsWindow); // 1 when the download handler was attache
 // Let the window's appearance-following background show where WebKit has not painted yet.
 int clearWebViewBackground(void *nsWindow); // 1 when the webview was found
 void setWindowBackground(void *nsWindow, int r, int g, int b); // sRGB, 0-255
+// The sidebar's material is drawn in the window's appearance, so it follows the app's Light/Dark override.
+void setWindowAppearance(void *nsWindow, int dark); // -1 follows the system, 0 light, 1 dark
 
 // No title bar: the page runs to the top and the traffic lights sit in the sidebar.
 int installFramelessTitlebar(void *nsWindow); // 1 when applied

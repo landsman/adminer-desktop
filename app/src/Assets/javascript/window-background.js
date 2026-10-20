@@ -12,6 +12,15 @@ function reportBackground() {
 }
 
 reportBackground();
+// The sidebar is the system's material, drawn in the window's appearance; a Light/Dark override
+// has to pin the window too, or a light page keeps a dark sidebar on a dark Mac.
+window.adSetAppearance?.(
+	document.body.classList.contains("theme-light")
+		? "light"
+		: document.body.classList.contains("theme-dark")
+			? "dark"
+			: "auto",
+);
 matchMedia("(prefers-color-scheme: dark)").addEventListener(
 	"change",
 	reportBackground,
