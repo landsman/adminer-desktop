@@ -42,7 +42,7 @@ test harness to iterate against. The three-platform build only runs on manual di
 mise trust         # once per clone: mise.toml carries a [settings] block
 gh auth login      # once per machine: make verify reads frankenphp's attestation over the API
 mise run install   # once: node deps, composer deps, and the e2e browser
-make qa            # php lint, phpstan, golangci-lint, biome, shellcheck, gofmt, go vet, every e2e step defined, the launcher's downloads
+make qa            # php lint, phpstan, golangci-lint, oxfmt, oxlint, shellcheck, gofmt, go vet, every e2e step defined, the launcher's downloads
 make verify        # adminer build checksums + proof frankenphp is the binary upstream built
 make check         # boots the app; asserts the plugin's before-login behaviour (prefill, design, plugins)
 make e2e           # browser check: logs in, asserts the theme light and dark (needs docker)
@@ -145,7 +145,7 @@ inverting adminer's sprite icons on the dark surface — lives in `base.css` and
 `theme-auto`/`theme-dark` body class instead. `system-ui` gives the native OS font with no
 branching; the `theme-*`, `os-mac`/`os-windows`/`os-linux` and `density-compact`/`-cozy`/
 `-comfortable` body classes come from `AdminerDesktop::bodyClass()` and are the hooks for
-appearance, per-OS and per-density tweaks. Biome owns the formatting — one declaration per
+appearance, per-OS and per-density tweaks. oxfmt owns the formatting — one declaration per
 line.
 
 ## The dev toolchain and e2e

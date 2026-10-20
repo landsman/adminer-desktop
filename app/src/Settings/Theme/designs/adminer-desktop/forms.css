@@ -29,9 +29,8 @@ textarea {
 select:not([multiple], .ad-page-select) {
 	appearance: none;
 	padding-right: 1.8em;
-	background:
-		var(--bg) url("icons/select-chevron-light.svg") right 0.45em center / 1.1em
-		no-repeat;
+	background: var(--bg) url("icons/select-chevron-light.svg") right 0.45em
+		center / 1.1em no-repeat;
 }
 
 body.theme-dark select:not([multiple], .ad-page-select) {
@@ -198,31 +197,31 @@ button:focus-visible {
    the two must not look alike. Tinted rather than filled, like the modal's .ad-danger: it is the
    button nobody should be drawn to. Kill on the process list has no name to match. */
 input[type="submit"]:is(
-	[name="delete"],
-	[name="drop"],
-	[name="truncate"],
-	[name="clear"]
-) {
+		[name="delete"],
+		[name="drop"],
+		[name="truncate"],
+		[name="clear"]
+	) {
 	background: var(--ad-danger-bg);
 	color: var(--ad-danger);
 	border-color: color-mix(in srgb, var(--ad-danger) 45%, transparent);
 }
 
 input[type="submit"]:is(
-	[name="delete"],
-	[name="drop"],
-	[name="truncate"],
-	[name="clear"]
-):hover {
+		[name="delete"],
+		[name="drop"],
+		[name="truncate"],
+		[name="clear"]
+	):hover {
 	background: color-mix(in srgb, var(--ad-danger) 16%, var(--ad-danger-bg));
 }
 
 input[type="submit"]:is(
-	[name="delete"],
-	[name="drop"],
-	[name="truncate"],
-	[name="clear"]
-):focus-visible {
+		[name="delete"],
+		[name="drop"],
+		[name="truncate"],
+		[name="clear"]
+	):focus-visible {
 	outline-color: var(--ad-danger);
 }
 
