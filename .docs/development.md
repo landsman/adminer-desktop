@@ -6,6 +6,8 @@ Everything in here is the build side of the app. What it does for the person usi
 ## One command to set up
 
 ```sh
+mise trust                          # once per clone: mise.toml carries a [settings] block
+gh auth login                       # once per machine: make verify reads frankenphp's provenance over the API
 make install
 ```
 
@@ -20,10 +22,25 @@ links against.
 make run                            # build and open the window
 make bundle                         # build.noindex/Adminer Desktop.app (icon, menu bar)
 make zip                            # ...zipped, to hand to someone else
+make dev                            # run, reloading the window on any change under app/
+make demo                           # run logged into a seeded postgres (needs docker)
 ```
 
-Other targets: `editor`, `debug`, `demo`, `logs`, `serve`, `tarball`, `deb`, `clean`. `make`
-on its own lists them.
+Other targets: `editor`, `logs`, `serve`, `down`, `destroy`, `dist`, `tarball`, `deb`,
+`windows`, `clean`. `make` on its own lists them.
+
+- `make kill-orphans` stops a server whose window is gone (crash, kill, Cmd+Q), the installed app's too.
+
+## Debugging
+
+```sh
+make debug                          # run with Safari's Web Inspector attached
+```
+
+- Safari → Develop → this machine → Adminer Desktop: console, DOM, network.
+- Use it for anything visual or behavioural; `curl` only shows the generated HTML.
+- PHP errors: `~/Library/Logs/Adminer Desktop/` (`make logs`).
+- Under `-debug`, `<data dir>/log/api.log` records every call to `api.php`.
 
 ## Checking it
 
@@ -32,14 +49,19 @@ make qa                             # php lint, phpstan, phpcs, golangci-lint, b
 make verify                         # adminer checksums + frankenphp's build provenance
 make check                          # boots the app and asserts its behaviour before login
 make e2e                            # Behat scenarios against postgres and mysql (needs docker)
+make e2e-packaged                   # the same, against app/ as a release ships it
 ```
 
 `make check` is the one that matters most: Adminer streams dumps with `ob_flush(); flush()`,
 so it asserts long responses neither buffer nor time out, and it boots every shipped plugin in
-turn. `make e2e` runs the Behat scenarios in `tests/e2e/features/` in a real browser — login,
-the theme, the settings dialog, the resizable sidebar and columns, drag-and-drop import, the MCP
-endpoint — and a failed step leaves the page it failed on in `tests/e2e/artifacts/`.
-`make e2e-visual` runs the same in a browser you can watch.
+turn. `make e2e` runs the Behat scenarios in `tests/e2e/features/` in a real browser:
+
+- A failed step leaves its page in `tests/e2e/artifacts/`.
+- The folder decides the database: `data/` runs on both, `shell/` (connections, settings, search,
+  shortcuts, MCP) and `pgsql/` on postgres, `mysql/` on mysql.
+- `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows a run.
+- A step no context defines fails the run; `make qa` catches one without docker.
+- `make e2e-packaged` runs against app/ as a release ships it, so a template the build missed fails.
 
 CI is billed on this repo and macOS runners cost ten times the rest, so `qa` and `check` pass
 locally before a push rather than being iterated against in Actions.

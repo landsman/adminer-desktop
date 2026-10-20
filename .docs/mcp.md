@@ -32,6 +32,9 @@ launcher ships its own and resolves it.
 Register it once. The port the app listens on changes every start, but the agent re-reads it per
 message, so it keeps working across restarts without touching the config again.
 
+- **Remove** on the same tab prints the command to unregister it.
+- Use it when the app moves or is uninstalled: a stale registration only shows as a server that will not connect.
+
 Windows is not covered yet — see the platform table in [install.md](install.md).
 
 For other MCP clients, the command is the same; only the way you register it differs — most want
@@ -77,8 +80,12 @@ write will be rolled back when it will not.
 **one statement, inside a read-only transaction**: a write is refused, and so is a second
 statement smuggled in after a `COMMIT;`. On the other databases the statement runs inside a
 transaction that is **always rolled back** (MySQL runs one statement per call anyway). Either way
-it is the database refusing, not us reading the SQL and guessing. Results are capped at 200 rows
-and long values are truncated, so one wide column cannot crowd out the answer.
+it is the database refusing, not us reading the SQL and guessing. What comes back:
+
+- At most 200 rows.
+- A long value is cut and listed in `truncated_cells` with its full length.
+- `whole_values: true` on `preview_table_data` or `execute_query` returns values whole.
+- A value that is not text (BLOB, BINARY, control characters) comes back as hex, listed in `binary_cells`.
 
 **None of that is the boundary — the login is.** A superuser still runs a program on the
 database server inside a read-only transaction (`COPY … TO PROGRAM`), reads its files
@@ -117,6 +124,9 @@ database is that database's data, and is left to the writes switch. The other da
 checked, and on MySQL 8 a privilege held only through a granted role is not seen.
 
 ## Answers you might get instead
+
+- The tools stay listed while the app is closed, so the agent asks you to open it instead of building its own way in.
+- Each call then answers with one of these; once the app is open, the next call goes through.
 
 | Message | What it means |
 | --- | --- |
