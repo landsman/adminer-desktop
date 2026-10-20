@@ -1785,6 +1785,28 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** A mask clips what it covers to its own box, a fixed descendant too: the sidebar's fade under
+	 * the lights hid the login page's foot, which sits in #menu but is pinned to the window's. */
+	#[Then('nothing masks out the version and the gear')]
+	public function versionAndGearUnmasked(): void
+	{
+		$masked = (string) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				for (let el = document.querySelector('.ad-login-foot'); el; el = el.parentElement) {
+					const style = getComputedStyle(el);
+					if ((style.maskImage || style.webkitMaskImage || 'none') !== 'none') {
+						return el.id || el.tagName;
+					}
+				}
+				return '';
+			}",
+		);
+		if ($masked !== '') {
+			throw new RuntimeException("#$masked masks the version and the gear");
+		}
+	}
+
 	#[When('the window is :width by :height pixels')]
 	public function windowIs(string $width, string $height): void
 	{
