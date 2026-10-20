@@ -193,8 +193,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	*/
 	function head(): ?string {
 		$this->styles->link();
-		// The theme's mark on every table in the sidebar (sidebar.css), the one repeated most.
-		Icon::preload("src/Settings/Theme/designs/adminer-desktop/icons/table.svg");
+		Icon::preload();
 		$this->javascript->link();
 		$this->javascript->beforePaint("header.js");
 		$this->javascript->beforePaint("open-on-load.js");
