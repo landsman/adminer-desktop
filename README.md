@@ -64,7 +64,7 @@ with the Adminer project.
 
 - Let Claude, Codex or another agent query your saved connections, read-only or with writes, as you choose.
 - The agent can pick the connection and database itself, not only the one the window is on.
-- Writes are off by default, and always off on a connection tagged PROD.
+- Writes need a switch of their own, and never reach a connection tagged PROD.
 - A superuser login is refused outright, since it could escape a read-only query.
 
 ## Documentation
