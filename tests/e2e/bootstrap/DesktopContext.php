@@ -91,7 +91,7 @@ class DesktopContext implements Context
 			$this->hidSidebar = false;
 		}
 		// Ours fail the scenario; adminer's own (adminer.php?file=…) are upstream's to fix, and are
-		// printed so they are seen — functionChange() on the edit form throws in 6.1.1, for one.
+		// printed so they are seen.
 		$ours = array_filter($errors, fn($error) => str_contains((string) $error, '/src/'));
 		if ($theirs = array_diff($errors, $ours)) {
 			fwrite(STDERR, "a script of adminer's failed on the page (not failed):\n" . implode("\n", $theirs) . "\n");
