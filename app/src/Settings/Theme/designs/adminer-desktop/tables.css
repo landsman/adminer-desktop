@@ -353,7 +353,6 @@ span.ad-page-step {
 	vertical-align: middle;
 	font-size: 0;
 	background: currentcolor;
-	-webkit-mask:
-		url("../../../../Assets/icons/edit.svg") center / 0.85rem no-repeat;
-	mask: url("../../../../Assets/icons/edit.svg") center / 0.85rem no-repeat;
+	-webkit-mask: url("/src/Assets/icons/edit.svg") center / 0.85rem no-repeat;
+	mask: url("/src/Assets/icons/edit.svg") center / 0.85rem no-repeat;
 }

@@ -229,7 +229,7 @@
 }
 
 #ad-pathbar [data-step="database"] {
-	--ad-step-icon: url("../../../../Assets/icons/database.svg");
+	--ad-step-icon: url("/src/Assets/icons/database.svg");
 }
 
 #ad-pathbar [data-step="schema"] {
@@ -237,7 +237,7 @@
 }
 
 #ad-pathbar [data-step="table"] {
-	--ad-step-icon: url("../../../../Assets/icons/table.svg");
+	--ad-step-icon: url("/src/Assets/icons/table.svg");
 }
 
 /* » drawn as Finder's small chevron, dimmer than the steps; a box that centres it on the line, as
