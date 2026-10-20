@@ -39,9 +39,18 @@ Feature: The window without a title bar
     When I show the sidebar
     Then the sidebar shows
 
-  Scenario: On a phone-sized window the toolbar still fits, beside the burger
+  Scenario: On a phone-sized window the toolbar still fits, beside the burger, and the drawer is filled
     When the window is 390 pixels wide
     And I open the "users" table
     Then the toolbar's controls fit beside the path
+    When I open the sidebar's drawer
+    Then the drawer is filled, not see-through
     When I open the list of tables
     Then the toolbar's controls fit beside the path
+
+  Scenario: In full screen the window has its framed panels back, and neither moves it nor offers the toggle
+    Given the window is full screen
+    When I open the "users" table
+    Then the toolbar's controls are drawn as in a window with a title bar
+    When I press the mouse on the empty toolbar
+    Then the window was asked to move 0 times

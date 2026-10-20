@@ -183,17 +183,23 @@ body {
 
 /* On the server's own page (Select database) the path is the home mark alone, leading where you
    already are: nothing to show, so the row goes and the title heads the panel. It stays where it
-   holds something else: a narrow window's burger, and the traffic lights over a hidden sidebar
-   (the toggle's rules below). */
+   holds something else: a narrow window's burger, and — on macOS with no title bar — the traffic
+   lights over a hidden sidebar (window.css). The stored hidden sidebar means nothing anywhere else,
+   so only that one window keeps the row for it. */
 #content #breadcrumb:not(:has(.ad-breadcrumb-current)) > .ad-breadcrumb-home {
 	visibility: hidden;
 }
 
 @media (min-width: 801px) {
-	body:not(.ad-sidebar-hidden)
+	#content #breadcrumb:not(:has(.ad-breadcrumb-current)) {
+		display: none;
+	}
+
+	.ad-frameless:not(.ad-fullscreen)
+		.ad-sidebar-hidden
 		#content
 		#breadcrumb:not(:has(.ad-breadcrumb-current)) {
-		display: none;
+		display: flex;
 	}
 }
 

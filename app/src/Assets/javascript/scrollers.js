@@ -21,9 +21,14 @@
 	const MIN = 32;
 	const timers = new WeakMap();
 
+	// Our design only, which hides WebKit's bars and styles the thumb (base.css); --ad-accent is
+	// defined by it alone, as table-nav.js tells it.
 	const overlay = () =>
 		document.body?.classList.contains("os-mac") &&
-		!document.documentElement.classList.contains("ad-legacy-scrollers");
+		!document.documentElement.classList.contains("ad-legacy-scrollers") &&
+		getComputedStyle(document.documentElement)
+			.getPropertyValue("--ad-accent")
+			.trim() !== "";
 
 	// One thumb per axis for each panel, in <body> so the panel's own clipping cannot hide it.
 	const thumbs = new Map();
@@ -36,6 +41,9 @@
 				thumb.setAttribute("aria-hidden", "true");
 				document.body.append(thumb);
 				drag(thumb, panel, axis);
+				// Kept while hovered, so the fade starts again once the pointer leaves; without it a
+				// thumb left under the pointer stayed on screen, and clickable, until the next scroll.
+				thumb.addEventListener("pointerleave", () => show(panel));
 				return thumb;
 			});
 			thumbs.set(panel, pair);

@@ -227,10 +227,11 @@ const char *describeUIDelegate(void *nsWindow) {
 }
 
 /* The window has no title bar of its own: the page runs up to the top edge and the traffic
- * lights sit in the sidebar's logo row, as in Mail. The empty toolbar is what puts them there --
- * a unified toolbar's title bar is 52pt tall, centring them 26pt down, on the logo row (an 8px
- * gutter plus half of a 2.4rem row). The title stays set but hidden, for Mission Control and the
- * Window menu. The page learns it is framed this way from the class launcher/main.go adds. */
+ * lights sit in a band over the sidebar, as in Mail. The empty toolbar is what puts them there --
+ * a unified toolbar's title bar is 52pt tall, centring them 26pt down, and the theme's band
+ * (--ad-titlebar-h) is as tall, so what shares their line is centred on it. The title stays set
+ * but hidden, for Mission Control and the Window menu. The page learns it is framed this way
+ * from the class installFrameless (menu_darwin.go) adds. */
 int installFramelessTitlebar(void *nsWindow) {
 	NSWindow *window = (NSWindow *) nsWindow;
 	[window setStyleMask:[window styleMask] | NSWindowStyleMaskFullSizeContentView];
@@ -275,17 +276,16 @@ void watchScrollerStyle(void) {
 		object:nil queue:nil usingBlock:^(NSNotification *n) { goScrollerStyleChanged(legacyScrollers()); }];
 }
 
-int isFullscreen(void *nsWindow) {
-	return ([(NSWindow *) nsWindow styleMask] & NSWindowStyleMaskFullScreen) != 0;
-}
-
-/* With no title bar, the page's empty header is what moves the window (window-drag.js). The
- * page's mousedown reaches here a moment after the event itself; the current event is then still
- * the press or the first move of it, which AppKit takes the drag from -- as Tauri's drag regions
- * do. */
+/* With no title bar, the page's empty header is what moves the window (window-chrome.js). The
+ * page's mousedown reaches here a moment after the event itself, over IPC from WebKit's content
+ * process; the current event is then usually still the press or the first move of it, which
+ * AppKit takes the drag from -- as Tauri's drag regions do. Only while the button is still down
+ * and that event is a press or a drag: after a quick click it can already be the release, and a
+ * drag started from that sticks the window to the pointer until the next click. */
 void dragWindow(void *nsWindow) {
 	NSEvent *event = [NSApp currentEvent];
-	if (event) {
+	BOOL pressing = event && ([event type] == NSEventTypeLeftMouseDown || [event type] == NSEventTypeLeftMouseDragged);
+	if (pressing && ([NSEvent pressedMouseButtons] & 1)) {
 		[(NSWindow *) nsWindow performWindowDragWithEvent:event];
 	}
 }

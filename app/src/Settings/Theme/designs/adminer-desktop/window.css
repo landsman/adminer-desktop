@@ -3,7 +3,9 @@
  * with the traffic lights in a band at its top and nothing framed or ruled in it; the content
  * meets the window's edges too, set off from the sidebar by one hairline. Elsewhere — Windows,
  * Linux, a full-screen window, a browser — the islands layout (layout.css) stands: two framed
- * panels on the window's surface, which is what Windows 11's own apps look like.
+ * panels on the window's surface, which is what Windows 11's own apps look like. The toolbar's
+ * controls (below) are the one part a full-screen window keeps, as before-paint/header.js builds
+ * them whenever the title bar is gone.
  *
  * Loaded last, so at equal specificity these win over the components they adjust. */
 
@@ -13,8 +15,8 @@
 .ad-frameless:not(.ad-fullscreen) {
 	--ad-gutter: 0px;
 	--ad-menu-top: var(--ad-titlebar-h);
-	/* Mail's inset: a row's highlight stands this far off the sidebar's edges, and its text starts
-	   level with the red light (20px from the window's edge). */
+	/* Mail's inset: a row's highlight stands this far off the sidebar's edges, and its text as far
+	   inside it, so it starts level with the red light. */
 	--ad-side-inset: 12px;
 }
 
@@ -36,17 +38,11 @@
 	border-inline-start: 0;
 }
 
-/* The content's header row is the window's toolbar now: as tall as the lights' band, so the path
-   is centred on their line (26px down). */
-@media (min-width: 801px) {
-	.ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
-		height: var(--ad-titlebar-h);
-	}
-}
-
-/* And it looks like Mail's toolbar: no rule under it, a frosted fill the page scrolls under, and
-   the place you are as its title, the path back smaller and dim before it. */
+/* The content's header row is the window's toolbar: as tall as the lights' band, so the path is
+   centred on their line, and in Mail's look — no rule under it, a frosted fill the page scrolls
+   under, the place you are as its title and the path back smaller and dim before it. */
 .ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
+	height: var(--ad-titlebar-h);
 	margin-bottom: 0.25rem;
 	border-bottom: 0;
 	background: color-mix(in srgb, var(--ad-panel) 78%, transparent);
@@ -67,7 +63,7 @@
 /* The toolbar's controls (before-paint/header.js puts them there): the page's own actions as one
    group of buttons, and the search, at the row's end as in Mail. Drawn like the window's round
    buttons (the gear, the toggle), so the row reads as one toolbar; the path gives way to them. */
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar {
+.ad-frameless .ad-toolbar {
 	--ad-toolbar-h: 36px;
 	display: flex;
 	flex: none;
@@ -76,7 +72,7 @@
 	margin-inline-start: auto;
 }
 
-.ad-frameless:not(.ad-fullscreen) :is(.ad-toolbar-actions, .ad-toolbar-search) {
+.ad-frameless :is(.ad-toolbar-actions, .ad-toolbar-search) {
 	box-sizing: border-box;
 	height: var(--ad-toolbar-h);
 	border-radius: calc(var(--ad-toolbar-h) / 2);
@@ -88,11 +84,9 @@
 
 /* adminer's links, a row of segments as Mail's reply/forward group is: an icon each, a hairline
    between them, and the word as the tooltip and the accessible name (icon-tooltips.js) — the
-   word stays the link's text, font-size 0 only hides it. A link the table below has no icon for
-   keeps its word. Which action a link is, its URL says: adminer's end in the action's parameter
-   (`&scheme=`) or point at the section (`#routines`). The links arrive as the page parses, after
-   the group has moved into the toolbar, so CSS marks them rather than a script. */
-.ad-frameless:not(.ad-fullscreen) #breadcrumb .ad-toolbar-actions {
+   word stays the link's text, font-size 0 only hides it. Which icon, data-tool says
+   (before-paint/header.js reads it off the link's URL); a link with none keeps its word. */
+.ad-frameless #breadcrumb .ad-toolbar-actions {
 	display: flex;
 	align-items: center;
 	margin: 0;
@@ -100,7 +94,8 @@
 	font-size: 13px;
 }
 
-.ad-frameless:not(.ad-fullscreen) #breadcrumb .ad-toolbar-actions a {
+.ad-frameless #breadcrumb .ad-toolbar-actions a {
+	--ad-tool-w: 40px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -112,7 +107,7 @@
 	text-decoration: none;
 }
 
-.ad-frameless:not(.ad-fullscreen) #breadcrumb .ad-toolbar-actions a + a {
+.ad-frameless #breadcrumb .ad-toolbar-actions a + a {
 	background:
 		linear-gradient(
 			color-mix(in srgb, var(--fg) 14%, transparent),
@@ -121,57 +116,26 @@
 		left center / 1px 45% no-repeat;
 }
 
-.ad-frameless:not(.ad-fullscreen) #breadcrumb .ad-toolbar-actions a:hover {
+.ad-frameless #breadcrumb .ad-toolbar-actions a:hover {
 	color: var(--fg);
 	text-decoration: none;
 }
 
 /* The page you are on, among them. */
-.ad-frameless:not(.ad-fullscreen) #breadcrumb .ad-toolbar-actions a.active {
+.ad-frameless #breadcrumb .ad-toolbar-actions a.active {
 	color: var(--ad-accent);
 }
 
-.ad-frameless:not(.ad-fullscreen)
-	#breadcrumb
-	.ad-toolbar-actions
-	a:is(
-		[href*="&scheme="],
-		[href*="&database="],
-		[href*="&create="],
-		[href*="&schema="],
-		[href$="#routines"],
-		[href$="#sequences"],
-		[href$="#user-types"],
-		[href$="#events"],
-		[href*="&privileges="],
-		[href*="&select="],
-		[href*="&table="],
-		[href*="&edit="]
-	) {
-	width: 40px;
+.ad-frameless #breadcrumb .ad-toolbar-actions a[data-tool]:not([data-tool=""]) {
+	width: var(--ad-tool-w);
 	padding: 0;
 	font-size: 0;
 }
 
-/* The same links: only one with an icon below gets the mark, or an unknown one would show a
-   filled square. */
-.ad-frameless:not(.ad-fullscreen)
+.ad-frameless
 	#breadcrumb
 	.ad-toolbar-actions
-	a:is(
-		[href*="&scheme="],
-		[href*="&database="],
-		[href*="&create="],
-		[href*="&schema="],
-		[href$="#routines"],
-		[href$="#sequences"],
-		[href$="#user-types"],
-		[href$="#events"],
-		[href*="&privileges="],
-		[href*="&select="],
-		[href*="&table="],
-		[href*="&edit="]
-	)::before {
+	a[data-tool]:not([data-tool=""])::before {
 	content: "";
 	width: 18px;
 	height: 18px;
@@ -181,54 +145,53 @@
 }
 
 /* Alter the schema, the database, the table: one pencil, as each is "change this". */
-.ad-frameless:not(.ad-fullscreen)
-	.ad-toolbar-actions
-	a:is([href*="&scheme="], [href*="&database="], [href*="&create="]) {
+.ad-frameless .ad-toolbar-actions a[data-tool="alter"] {
 	--ad-tool-icon: url("icons/tool-alter.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href*="&schema="] {
+.ad-frameless .ad-toolbar-actions a[data-tool="diagram"] {
 	--ad-tool-icon: url("icons/tool-diagram.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href$="#routines"] {
+.ad-frameless .ad-toolbar-actions a[data-tool="routine"] {
 	--ad-tool-icon: url("icons/tool-routine.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href$="#sequences"] {
+.ad-frameless .ad-toolbar-actions a[data-tool="sequence"] {
 	--ad-tool-icon: url("icons/tool-sequence.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href$="#user-types"] {
+.ad-frameless .ad-toolbar-actions a[data-tool="types"] {
 	--ad-tool-icon: url("icons/tool-types.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href$="#events"] {
+.ad-frameless .ad-toolbar-actions a[data-tool="events"] {
 	--ad-tool-icon: url("icons/tool-events.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href*="&privileges="] {
+.ad-frameless .ad-toolbar-actions a[data-tool="privileges"] {
 	--ad-tool-icon: url("icons/tool-privileges.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href*="&select="] {
+.ad-frameless .ad-toolbar-actions a[data-tool="data"] {
 	--ad-tool-icon: url("icons/tool-data.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href*="&table="] {
+.ad-frameless .ad-toolbar-actions a[data-tool="structure"] {
 	--ad-tool-icon: url("icons/tool-structure.svg");
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-actions a[href*="&edit="] {
+.ad-frameless .ad-toolbar-actions a[data-tool="new"] {
 	--ad-tool-icon: url("icons/tool-new.svg");
 }
 
 /* A button drawn as Mail's search field; a click opens the search box Shift Shift opens. */
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-search {
+.ad-frameless .ad-toolbar-search {
 	position: relative;
 	width: 16rem;
 	padding: 0 12px 0 32px;
 	border: 0;
+	background: color-mix(in srgb, var(--bg) 72%, transparent);
 	text-align: start;
 	font-size: 13px;
 	font-weight: 400;
@@ -236,11 +199,11 @@
 	cursor: text;
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-search:hover {
+.ad-frameless .ad-toolbar-search:hover {
 	background: var(--bg);
 }
 
-.ad-frameless:not(.ad-fullscreen) .ad-toolbar-search::before {
+.ad-frameless .ad-toolbar-search::before {
 	content: "";
 	position: absolute;
 	inset: 0 auto 0 12px;
@@ -256,47 +219,28 @@
    The actions close up, and the path keeps only where you are: the links back are in the drawer
    the burger opens. */
 @media (max-width: 800px) {
-	.ad-frameless:not(.ad-fullscreen) .ad-toolbar-search {
+	.ad-frameless .ad-toolbar-search {
 		display: none;
 	}
 
-	.ad-frameless:not(.ad-fullscreen)
-		#breadcrumb
-		.ad-toolbar-actions
-		a:is(
-			[href*="&scheme="],
-			[href*="&database="],
-			[href*="&create="],
-			[href*="&schema="],
-			[href$="#routines"],
-			[href$="#sequences"],
-			[href$="#user-types"],
-			[href$="#events"],
-			[href*="&privileges="],
-			[href*="&select="],
-			[href*="&table="],
-			[href*="&edit="]
-		) {
-		width: 32px;
+	.ad-frameless #breadcrumb .ad-toolbar-actions a {
+		--ad-tool-w: 32px;
 	}
 
-	.ad-frameless:not(.ad-fullscreen)
+	.ad-frameless
 		#content
-		#breadcrumb
+		#breadcrumb:has(.ad-toolbar)
 		> a:not(.ad-breadcrumb-home) {
 		display: none;
 	}
 
 	/* And their » with them: bare text nodes, which only a size of nothing on the row reaches.
 	   What is left in it sets its own size back. */
-	.ad-frameless:not(.ad-fullscreen) #content #breadcrumb:has(.ad-toolbar) {
+	.ad-frameless #content #breadcrumb:has(.ad-toolbar) {
 		font-size: 0;
 	}
 
-	.ad-frameless:not(.ad-fullscreen)
-		#content
-		#breadcrumb
-		> .ad-breadcrumb-current {
+	.ad-frameless #content #breadcrumb:has(.ad-toolbar) > .ad-breadcrumb-current {
 		font-size: 15px;
 	}
 }
@@ -330,9 +274,6 @@
 .ad-frameless:not(.ad-fullscreen) #menu h1 {
 	background: transparent;
 }
-
-/* One left edge for everything in the sidebar, level with the red light (20px in): a row's
-   highlight stands --ad-side-inset off the sidebar's edge, and its text as far inside that. */
 
 /* The connection's badge, a sidebar row like an account in Mail's: inset, rounded, tinted with
    the connection's colour, its PROD tag the loud thing. The gear moved up to the band (below), so
@@ -386,7 +327,8 @@
 	opacity: 1;
 }
 
-/* Selected while the sidebar has the focus, the icon goes white with the name (sidebar.css). */
+/* Selected while the sidebar has the focus, the icon takes the selected text's colour too
+   (sidebar.css). */
 .ad-frameless:not(.ad-fullscreen).ad-sidebar-focused
 	#tables
 	li:is(:has(a.active), :has(a.select.active))
@@ -394,12 +336,19 @@
 	color: var(--ad-accent-fg);
 }
 
-/* With no sidebar beside it, the content is what the lights land on: its header row starts after
-   them. In a narrow window that row is the only header there is. */
+/* A narrow window: the sidebar folds into a drawer over the content (layout.css), which has
+   nothing behind it to frost — the system material is behind the page, not behind the drawer — so
+   it takes the sidebar's colour back, or its text sat on the blurred table under it. And the
+   content's header row is the only one there is: it starts after the lights. */
 @media (max-width: 800px) {
+	/* Both, as the transparent rule above names the badge's sidebar too, which outranks #foot alone. */
+	.ad-frameless.js:not(.ad-fullscreen) #foot,
+	.ad-frameless.js:not(.ad-fullscreen) #foot:has(#ad-connection-badge) {
+		background: var(--ad-menu-bg);
+	}
+
 	.ad-frameless:not(.ad-fullscreen) #content #breadcrumb {
-		height: var(--ad-titlebar-h);
-		padding-inline-start: 90px;
+		padding-inline-start: calc(var(--ad-lights-end) + 12px);
 	}
 }
 
@@ -420,8 +369,8 @@
 		/* Off the sidebar's end, and between the two: Mail's room round its toggle. */
 		--ad-tool-inset: 14px;
 		--ad-tool-gap: 10px;
-		/* The lights end 78px in; a button beside them keeps a clear gap more than theirs. */
-		--ad-tool-after-lights: 94px;
+		/* A button beside the lights keeps a clear gap more than the one between them. */
+		--ad-tool-after-lights: calc(var(--ad-lights-end) + 16px);
 	}
 
 	.ad-frameless:not(.ad-fullscreen) #ad-sidebar-toggle,
@@ -429,8 +378,8 @@
 		body:not(:has(input[name="auth[username]"]))
 		#desktop-gear {
 		position: fixed;
-		/* Centred on the lights, 26px down (launcher/dialogs_darwin.m). */
-		top: calc(26px - var(--ad-tool) / 2);
+		/* Centred on the lights, which the band is centred on. */
+		top: calc((var(--ad-titlebar-h) - var(--ad-tool)) / 2);
 		z-index: 7;
 		display: block;
 		width: var(--ad-tool);
@@ -501,7 +450,7 @@
 		padding-inline-start: calc(
 			var(--ad-tool-after-lights) +
 			var(--ad-tool) +
-			14px
+			16px
 		);
 	}
 }

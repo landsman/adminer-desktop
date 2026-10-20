@@ -72,6 +72,15 @@ class DesktopContext implements Context
 	#[AfterScenario]
 	public function close(): void
 	{
+		$errors = [];
+		try {
+			$errors = (array) $this->page->evaluate(
+				// language=JavaScript
+				'() => { try { return JSON.parse(sessionStorage.getItem("ad-e2e-errors") || "[]"); } catch { return []; } }',
+			);
+		} catch (\Throwable) {
+			// A page that is not ours (about:blank, a closed one) has nothing recorded to read.
+		}
 		$this->page->context()->close();
 		// The scenario hid the sidebar, which the app stores; every later one expects it shown.
 		if ($this->hidSidebar) {
@@ -80,6 +89,9 @@ class DesktopContext implements Context
 			unset($stored['sidebar_hidden']);
 			file_put_contents($file, (string) json_encode($stored));
 			$this->hidSidebar = false;
+		}
+		if ($errors) {
+			throw new RuntimeException("a script failed on the page:\n" . implode("\n", $errors));
 		}
 	}
 
@@ -2406,6 +2418,20 @@ class DesktopContext implements Context
 			'domain' => '127.0.0.1',
 			'path' => '/',
 		]]);
+		// Every uncaught script error of the scenario, on any page it went through: sessionStorage
+		// outlives the navigations of one tab, a page's own variables do not. close() fails the
+		// scenario on any. A script that dies on load is silent otherwise — one did, and with it the
+		// sidebar's kept scroll position, through a whole green run.
+		$context->addInitScript(
+			// language=JavaScript
+			'addEventListener("error", (event) => {
+				try {
+					const errors = JSON.parse(sessionStorage.getItem("ad-e2e-errors") || "[]");
+					errors.push(`${event.message} (${event.filename}:${event.lineno})`);
+					sessionStorage.setItem("ad-e2e-errors", JSON.stringify(errors));
+				} catch {}
+			});',
+		);
 		return $context->newPage();
 	}
 
@@ -2734,7 +2760,6 @@ class DesktopContext implements Context
 			'window.adDrags = 0;
 			window.adDragWindow = () => { window.adDrags++; };
 			window.adTitlebarDoubleClick = () => {};
-			window.adFullscreen = async () => false;
 			// The sidebar is see-through there, onto the system material the launcher puts behind the
 			// page; Chromium has none, so the sidebar colour stands in, or axe reads its text on white.
 			const mark = () => {
@@ -2806,12 +2831,80 @@ class DesktopContext implements Context
 		);
 	}
 
+	/** What the launcher adds once the window goes full screen (installFrameless): the class, set
+	 * from the start of every page. */
+	#[Given('the window is full screen')]
+	public function windowIsFullScreen(): void
+	{
+		$this->page->addInitScript(
+			// language=JavaScript
+			'const mark = () => document.documentElement.classList.add("ad-fullscreen");
+			if (document.documentElement) {
+				mark();
+			} else {
+				new MutationObserver((_, watch) => {
+					if (document.documentElement) { mark(); watch.disconnect(); }
+				}).observe(document, { childList: true });
+			}',
+		);
+	}
+
+	/** And waits for the app to have stored it: the toggle's beacon and the next page are two
+	 * requests that race, and a page served first would show the sidebar again. */
 	#[When('I hide the sidebar')]
 	#[When('I show the sidebar')]
 	public function toggleSidebar(): void
 	{
+		$hidden = $this->page->evaluate(
+			// language=JavaScript
+			"() => !document.body.classList.contains('ad-sidebar-hidden')",
+		);
 		$this->page->getByRole('button', ['name' => 'Show or hide the sidebar'])->click();
 		$this->hidSidebar = true;
+		for ($i = 0; $i < 50 && (e2e_settings($this->fix)['sidebar_hidden'] ?? false) !== $hidden; $i++) {
+			usleep(100_000);
+		}
+		if ((e2e_settings($this->fix)['sidebar_hidden'] ?? false) !== $hidden) {
+			throw new RuntimeException('the sidebar\'s state was never stored');
+		}
+	}
+
+	#[Then('the toolbar\'s controls are drawn as in a window with a title bar')]
+	public function toolbarStyledInFullScreen(): void
+	{
+		$style = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const search = getComputedStyle(document.querySelector('#breadcrumb .ad-toolbar-search'));
+				const foot = getComputedStyle(document.querySelector('#foot'));
+				return { radius: parseFloat(search.borderTopLeftRadius), height: parseFloat(search.height), footBorder: foot.borderTopStyle, toggle: getComputedStyle(document.querySelector('#ad-sidebar-toggle')).display };
+			}",
+		);
+		// Round search field, the islands' framed sidebar back, no toggle without the lights' band.
+		if ($style['radius'] < 10 || $style['footBorder'] !== 'solid' || $style['toggle'] !== 'none') {
+			throw new RuntimeException('full screen is not the windowed layout with a dressed toolbar: ' . json_encode($style));
+		}
+	}
+
+	#[When('I open the sidebar\'s drawer')]
+	public function openDrawer(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#menuopen button',
+		)->click();
+	}
+
+	#[Then('the drawer is filled, not see-through')]
+	public function drawerIsFilled(): void
+	{
+		$background = $this->page->evaluate(
+			// language=JavaScript
+			"() => getComputedStyle(document.querySelector('#foot')).backgroundColor",
+		);
+		if (in_array($background, ['transparent', 'rgba(0, 0, 0, 0)'], true)) {
+			throw new RuntimeException("the drawer has no fill: $background");
+		}
 	}
 
 	#[Then('the sidebar is hidden')]
@@ -2843,7 +2936,7 @@ class DesktopContext implements Context
 				return { toggle: toggle.left, toggleEnd: toggle.right, path: path.left };
 			}",
 		);
-		// The lights end 78px in (launcher/dialogs_darwin.m).
+		// The lights end 78px in (--ad-lights-end, tokens.css).
 		if ($at['toggle'] < 78 + 8 || $at['path'] < $at['toggleEnd'] + 8) {
 			throw new RuntimeException('the toggle or the path crowds what is before it: ' . json_encode($at));
 		}
@@ -2854,7 +2947,13 @@ class DesktopContext implements Context
 	{
 		$box = (array) $this->page->evaluate(
 			// language=JavaScript
-			"() => { const r = document.querySelector('#breadcrumb').getBoundingClientRect(); return { x: r.left + r.width * 0.45, y: r.top + r.height / 2 }; }",
+			// Halfway between where the path ends and the toolbar's controls begin: empty at any width.
+			"() => {
+				const row = document.querySelector('#breadcrumb').getBoundingClientRect();
+				const path = document.querySelector('#breadcrumb .ad-breadcrumb-current').getBoundingClientRect();
+				const bar = document.querySelector('#breadcrumb .ad-toolbar').getBoundingClientRect();
+				return { x: (path.right + bar.left) / 2, y: row.top + row.height / 2 };
+			}",
 		);
 		$this->page->mouse()->click((float) $box['x'], (float) $box['y']);
 	}
@@ -2888,10 +2987,12 @@ class DesktopContext implements Context
 			"() => {
 				const row = document.querySelector('#breadcrumb').getBoundingClientRect();
 				const bar = document.querySelector('#breadcrumb .ad-toolbar').getBoundingClientRect();
-				return { rowRight: row.right, barRight: bar.right, barLeft: bar.left, rowLeft: row.left, parts: [...document.querySelectorAll('#breadcrumb .ad-toolbar > *, #breadcrumb .ad-toolbar-actions > a')].map((el) => el.className + ':' + Math.round(el.getBoundingClientRect().width) + ':' + getComputedStyle(el).display) };
+				const path = document.querySelector('#breadcrumb .ad-breadcrumb-current').getBoundingClientRect();
+				return { rowRight: row.right, barRight: bar.right, barLeft: bar.left, pathRight: path.right, pathWidth: path.width, parts: [...document.querySelectorAll('#breadcrumb .ad-toolbar > *, #breadcrumb .ad-toolbar-actions > a')].map((el) => el.className + ':' + Math.round(el.getBoundingClientRect().width) + ':' + getComputedStyle(el).display) };
 			}",
 		);
-		if ($fit['barRight'] > $fit['rowRight'] + 1 || $fit['barLeft'] < $fit['rowLeft']) {
+		// Inside the row, clear of where you are, and that still readable rather than squeezed out.
+		if ($fit['barRight'] > $fit['rowRight'] + 1 || $fit['barLeft'] < $fit['pathRight'] || $fit['pathWidth'] < 24) {
 			throw new RuntimeException('the toolbar runs out of its row: ' . json_encode($fit));
 		}
 	}

@@ -89,6 +89,49 @@
 	let toolbar = null;
 	let actionsDone = false;
 
+	// A gallery design knows nothing of the missing title bar: the window's own layout for it is
+	// ours alone (window.css). Said once the parser reaches <body> — adminer links the design after
+	// this script, so asking at the top found none — and before anything paints, so
+	// css/frameless.css can at least keep its page out from under the lights, and the scripts that
+	// dress the window stand down.
+	let foreignChecked = false;
+	const markForeign = () => {
+		foreignChecked = true;
+		if (frameless && !ours()) {
+			document.documentElement.classList.add("ad-frameless-foreign");
+		}
+	};
+
+	// Which action each of the page's links is, for its icon (window.css): adminer's URLs end in
+	// the action's parameter (`&scheme=`) or point at a section of the page (`#routines`). Marked
+	// as they arrive, as the parser fills the group after it has moved; "" for one with no icon,
+	// which keeps its word.
+	const TOOL_PARAMS = {
+		scheme: "alter",
+		database: "alter",
+		create: "alter",
+		schema: "diagram",
+		privileges: "privileges",
+		select: "data",
+		table: "structure",
+		edit: "new",
+	};
+	const TOOL_SECTIONS = {
+		"#routines": "routine",
+		"#sequences": "sequence",
+		"#user-types": "types",
+		"#events": "events",
+	};
+	const markTools = () => {
+		for (const link of toolbar.querySelectorAll("a:not([data-tool])")) {
+			const url = new URL(link.href, location.href);
+			const param = Object.keys(TOOL_PARAMS).find((key) =>
+				url.searchParams.has(key),
+			);
+			link.dataset.tool = TOOL_SECTIONS[url.hash] ?? TOOL_PARAMS[param] ?? "";
+		}
+	};
+
 	const buildToolbar = (breadcrumb) => {
 		toolbar = document.createElement("div");
 		toolbar.className = "ad-toolbar";
@@ -117,6 +160,9 @@
 	};
 
 	const observer = new MutationObserver(() => {
+		if (!foreignChecked && document.body) {
+			markForeign();
+		}
 		const breadcrumb = document.querySelector("#content #breadcrumb");
 		// Complete once the parser has moved past it: something follows it.
 		if (!pathDone && breadcrumb?.nextSibling) {
@@ -138,6 +184,9 @@
 			actions.classList.add("ad-toolbar-actions");
 			toolbar.prepend(actions);
 			actionsDone = true;
+		}
+		if (actionsDone) {
+			markTools();
 		}
 		// The sidebar's actions on the pickers' row rather than one of their own below it: the
 		// pickers are short now (sidebar.css), and two rows of controls read as one toolbar.
@@ -164,5 +213,10 @@
 	});
 	observer.observe(document, { childList: true, subtree: true });
 	// A page without a badge (the login) or without actions has nothing to wait for past its end.
-	document.addEventListener("DOMContentLoaded", () => observer.disconnect());
+	document.addEventListener("DOMContentLoaded", () => {
+		observer.disconnect();
+		if (actionsDone) {
+			markTools();
+		}
+	});
 }

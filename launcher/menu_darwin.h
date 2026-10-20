@@ -23,7 +23,6 @@ void setWindowBackground(void *nsWindow, int r, int g, int b); // sRGB, 0-255
 
 // No title bar: the page runs to the top and the traffic lights sit in the sidebar.
 int installFramelessTitlebar(void *nsWindow); // 1 when applied
-int isFullscreen(void *nsWindow);
 int legacyScrollers(void);    // 1 while the system draws always-visible scrollbars
 void watchScrollerStyle(void); // calls goScrollerStyleChanged when that changes
 void dragWindow(void *nsWindow);          // from a mousedown on the page's empty header

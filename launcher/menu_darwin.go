@@ -28,9 +28,11 @@ func goFullscreenChanged(on C.int) {
 }
 
 // installFrameless takes the title bar away: the page runs to the window's top edge and the
-// traffic lights sit in the sidebar's logo row. The page is told by the ad-frameless class on
-// <html>, set before it paints, and moves the window from its empty header (window-drag.js)
-// through the bindings here. ad-fullscreen marks a full-screen window, which shows no lights.
+// traffic lights sit in a band over the sidebar (the theme's window.css). The page is told by the
+// ad-frameless class on <html>, set before it paints, and moves the window from that band
+// (window-chrome.js) through the bindings here. ad-fullscreen marks a full-screen window, which
+// shows no lights: set the same way, by an init script added again on each change — it runs
+// after the earlier ones and wins — so a page loaded in full screen paints that way from the start.
 func installFrameless(w webview.WebView) {
 	win := w.Window()
 	if C.installFramelessTitlebar(win) != 1 {
@@ -43,13 +45,14 @@ func installFrameless(w webview.WebView) {
 	}
 	bind("adDragWindow", func() { C.dragWindow(win) })
 	bind("adTitlebarDoubleClick", func() { C.titlebarDoubleClick(win) })
-	bind("adFullscreen", func() bool { return C.isFullscreen(win) == 1 })
-	onFullscreen = func(on bool) {
-		w.Eval(fmt.Sprintf(`document.documentElement.classList.toggle("ad-fullscreen", %t)`, on))
+	mark := func(on bool) string {
+		return fmt.Sprintf(`document.documentElement.classList.toggle("ad-fullscreen", %t);`, on)
 	}
-	// After the binds: their stubs are init scripts too, and run in the order they were added.
-	w.Init(`document.documentElement.classList.add("ad-frameless");
-window.adFullscreen().then((on) => document.documentElement.classList.toggle("ad-fullscreen", on));`)
+	onFullscreen = func(on bool) {
+		w.Init(mark(on))
+		w.Eval(mark(on))
+	}
+	w.Init(`document.documentElement.classList.add("ad-frameless");`)
 }
 
 // moveToBuiltinScreen puts the window on the laptop's own display, for -dev.

@@ -363,7 +363,7 @@ LDFLAGS = -X main.version=$(VERSION) \
 	-X main.frankenphpVersion=$(FRANKENPHP_VERSION)
 # Unbundled, macOS titles the app menu from the executable's name, which setProcessName no longer
 # changes; a plist linked into the binary names it (launcher/unbundled-Info.plist says why only that).
-ifeq ($(shell uname -s),Darwin)
+ifeq ($(UNAME_S),Darwin)
 LDFLAGS += -extldflags '-sectcreate __TEXT __info_plist $(CURDIR)/launcher/unbundled-Info.plist'
 endif
 
