@@ -36,7 +36,7 @@ Skipped: a version manager, multi-version support, an auto-update checker.
 Adminer.app/Contents/MacOS/
   adminer-desktop      <- Go: starts server, opens window, cleans up
   frankenphp           <- PHP runtime + Caddy, one file
-                       <- no config file; php-server flags cover it
+                       <- launcher/Caddyfile, embedded and written to the data dir
   app/adminer.php      <- the released artifact, embedded or bundled
   app/adminer-plugins/ <- desktop-mode plugin (M2)
 ```
@@ -92,6 +92,10 @@ That is safe here for a specific reason: the FrankenPHP version is pinned and
 `make check` asserts the behaviour, so a default cannot change under us without the
 gate going red.
 
+**Since replaced by `launcher/Caddyfile`:** static files needed a `Cache-Control` header,
+which `php-server` has no flag for. It keeps the `http://` and `bind 127.0.0.1` above, and
+`check.sh` asserts the header.
+
 ---
 
 ## M0 — verify the transport
@@ -120,7 +124,7 @@ fix is a thread-count flag — not an architecture change. Nothing in M1 depends
 
 - `go:embed app/*` → extract to a cache dir on first run (or run in place during dev)
 - listen on `:0`, take the OS-assigned port
-- `exec.Command(frankenphp, "php-server", "--root", dir, "--listen", addr, "--no-compress")`, wire stderr to our log
+- `exec.Command(frankenphp, "run", "--config", caddyfile, "--adapter", "caddyfile")`, wire stderr to our log
 - `webview.New()` → `Navigate("http://127.0.0.1:<port>/adminer.php")`
 - `defer cmd.Process.Kill()` + signal handling so no orphan server survives
 

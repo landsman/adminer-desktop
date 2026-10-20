@@ -300,8 +300,9 @@ func main() {
 
 	// The Caddyfile says what the server does; it is written out because frankenphp reads a
 	// file, and not into app/, which is read-only in a build and would be served.
-	confDir, err := dataDir()
-	if err != nil {
+	dir, dirErr := dataDir()
+	confDir := dir
+	if dirErr != nil {
 		confDir = os.TempDir()
 	}
 	conf := filepath.Join(confDir, "Caddyfile")
@@ -319,7 +320,7 @@ func main() {
 	// the one thing they went looking for. app/php/desktop.ini turns log_errors on.
 	srv.Env = append(os.Environ(), "PHP_INI_SCAN_DIR="+filepath.Join(root, "php"),
 		fmt.Sprintf("AD_PORT=%d", port), "AD_ROOT="+root, "AD_ASSET_CACHE="+assetCache(*dev))
-	if dir, err := dataDir(); err == nil {
+	if dirErr == nil {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DATA="+dir)
 		// desktop.ini's opcache.file_cache points here, and PHP will not create it.
 		os.MkdirAll(filepath.Join(dir, "opcache"), 0o700) //nolint:errcheck // missing just means a cold launch
