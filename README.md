@@ -61,7 +61,7 @@ affiliated with the Adminer project.
 - Resizable sidebar that remembers its width.
 - Reset everything back to the default settings with one click.
 
-### MCP server ![new](https://img.shields.io/badge/new-16a34a?style=flat-square)
+### MCP server
 
 - Let Claude, Codex or another agent query your saved connections, read-only or with writes, as you choose.
 - The agent can pick the connection and database itself, not only the one the window is on.
