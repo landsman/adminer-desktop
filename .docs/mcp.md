@@ -32,6 +32,10 @@ launcher ships its own and resolves it.
 Register it once. The port the app listens on changes every start, but the agent re-reads it per
 message, so it keeps working across restarts without touching the config again.
 
+The tab's **Remove** sub-tab prints the matching command to unregister it. Use it when the app
+moves or is uninstalled: a registration outlives the path it names, and a stale one only shows
+up in the agent as a server that will not connect.
+
 Windows is not covered yet — see the platform table in [install.md](install.md).
 
 For other MCP clients, the command is the same; only the way you register it differs — most want
@@ -77,8 +81,12 @@ write will be rolled back when it will not.
 **one statement, inside a read-only transaction**: a write is refused, and so is a second
 statement smuggled in after a `COMMIT;`. On the other databases the statement runs inside a
 transaction that is **always rolled back** (MySQL runs one statement per call anyway). Either way
-it is the database refusing, not us reading the SQL and guessing. Results are capped at 200 rows
-and long values are truncated, so one wide column cannot crowd out the answer.
+it is the database refusing, not us reading the SQL and guessing. Results are capped at 200 rows,
+and a value over the cell limit is cut so one wide column cannot crowd out the answer. Every cut
+value is listed in `truncated_cells` with its full length, and the agent can pass
+`whole_values: true` to `preview_table_data` or `execute_query` when it needs them whole.
+A value that is not text (a BLOB, a BINARY column, text holding control characters) comes back
+as hex, listed in `binary_cells` with its length in bytes, rather than blanking the answer.
 
 **None of that is the boundary — the login is.** A superuser still runs a program on the
 database server inside a read-only transaction (`COPY … TO PROGRAM`), reads its files
@@ -117,6 +125,10 @@ database is that database's data, and is left to the writes switch. The other da
 checked, and on MySQL 8 a privilege held only through a granted role is not seen.
 
 ## Answers you might get instead
+
+The tools are listed even while the app is closed, so an agent sees what it could do and asks you
+to open the app, rather than concluding there is no database access and building its own way in.
+Each call then answers with one of these, and the next one after you open the app goes through.
 
 | Message | What it means |
 | --- | --- |
