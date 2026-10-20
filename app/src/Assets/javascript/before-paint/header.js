@@ -18,6 +18,8 @@
 
 {
 	let pathDone = false;
+	let badgeDone = false;
+	let linksDone = false;
 
 	// Our design, on the side of the scheme in view: adminer links it per side with a media
 	// query when the other side is a gallery design (Theme::cssMap()). Asked of the <link>, not
@@ -90,13 +92,30 @@
 			rewritePath(breadcrumb);
 			pathDone = true;
 		}
-		const badge = document.querySelector("#ad-connection-badge");
+		// The sidebar's actions on the pickers' row rather than one of their own below it: the
+		// pickers are short now (sidebar.css), and two rows of controls read as one toolbar.
+		// They follow the pickers' form, and move the moment they arrive: the parser goes on filling
+		// the element it holds open wherever it now is. Waiting for something to follow them did
+		// not do, as on the server's page nothing does.
+		const links = document.querySelector("#menu > .links");
+		const dbs = document.querySelector("#dbs");
+		if (pathDone && links && dbs) {
+			dbs.append(links);
+			linksDone = true;
+		}
+		// The badge comes before the pickers, so placing it is not the end of the watch.
+		const badge = document.querySelector(
+			"#ad-connection-badge:not(.ad-placed)",
+		);
 		if (pathDone && badge) {
 			placeBadge(badge);
+			badgeDone = true;
+		}
+		if (badgeDone && linksDone) {
 			observer.disconnect();
 		}
 	});
 	observer.observe(document, { childList: true, subtree: true });
-	// A page with no badge (the login) has nothing to wait for past its end.
+	// A page without a badge (the login) or without actions has nothing to wait for past its end.
 	document.addEventListener("DOMContentLoaded", () => observer.disconnect());
 }

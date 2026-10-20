@@ -107,6 +107,15 @@
 	padding: 0.5em;
 }
 
+/* On the pickers' row (before-paint/header.js moves it there): the row is the one with the border
+   and the height, and the pickers give way to a long name before the icons do. */
+#dbs .links {
+	flex: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
 #menu .links a {
 	display: inline-flex;
 	margin: 0;
@@ -187,9 +196,12 @@
 	display: none;
 }
 
+/* Each as wide as the name picked in it, not half the row each: field-sizing measures the
+   selected option rather than the widest. A long name shrinks both, down to an ellipsis, rather
+   than running past the panel. Where field-sizing is unknown, the widest option it is. */
 #dbs label {
 	display: flex;
-	flex: 1;
+	flex: 0 1 auto;
 	align-items: center;
 	gap: 0.3em;
 	min-width: 0;
@@ -198,4 +210,54 @@
 #dbs select {
 	flex: 1;
 	min-width: 0;
+	field-sizing: content;
+	text-overflow: ellipsis;
+}
+
+/* Each select says what it is, so adminer's "DB:" and "Schema:" in front of them go. They are bare
+   text nodes in the labels, which no selector reaches: a label's font goes to zero and its select
+   takes the page's back (body's size in base.css). The label still names it for a screen reader. */
+/* And each is drawn as the pager's page chip (tables.css): no border or fill of its own, the
+   accent behind it on hover, the label the chip and its chevron laid over the select, deaf to
+   the pointer so a click there still opens the list. */
+#dbs label {
+	position: relative;
+	border-radius: var(--ad-radius-sm);
+	font-size: 0;
+}
+
+/* The database name in line with the actions below it: the chip's padding (the select's, below)
+   goes out into the gutter, as a table row's highlight does. In px, the label's font being 0. */
+#dbs label:first-of-type {
+	margin-left: calc(-0.55 * 13.5px * var(--ad-scale, 1));
+}
+
+#dbs label:hover,
+#dbs label:focus-within {
+	background: var(--ad-accent-quiet);
+}
+
+#dbs label::after {
+	content: "";
+	position: absolute;
+	right: 0.45em;
+	width: 1.1em;
+	height: 1.1em;
+	background: currentcolor;
+	-webkit-mask: url("icons/chevron-down.svg") center / contain no-repeat;
+	mask: url("icons/chevron-down.svg") center / contain no-repeat;
+	pointer-events: none;
+}
+
+#dbs label select,
+#dbs label::after {
+	font-size: calc(13.5px * var(--ad-scale, 1));
+}
+
+#dbs label select {
+	padding: 0.3em 1.8em 0.3em 0.55em;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
 }
