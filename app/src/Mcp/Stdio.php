@@ -36,11 +36,19 @@ class Stdio {
 
 	/** Pump messages until stdin closes.
 	*
+	* Until feof, not until fgets fails: Claude Code hands its servers a socketpair, which PHP
+	* opens as a socket stream, so fgets also fails after default_socket_timeout (60 s) with no
+	* message. Stopping there dropped the server a minute after every call.
+	*
 	* @param resource $in
 	* @param resource $out
 	*/
 	function run($in, $out): void {
-		while (($line = fgets($in)) !== false) {
+		while (!feof($in)) {
+			$line = fgets($in);
+			if ($line === false) {
+				continue;
+			}
 			$line = trim($line);
 			if ($line === '') {
 				continue;
