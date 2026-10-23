@@ -36,15 +36,17 @@ class Stdio {
 
 	/** Pump messages until stdin closes.
 	*
-	* Claude Code hands its servers a socketpair, which PHP opens as a socket stream with
-	* default_socket_timeout (60 s) on it: fgets then failed after a quiet minute and dropped the
-	* server. -1 waits for good; a pipe has no timeout and ignores it.
+	* Claude Code hands its servers a socketpair, which PHP opens as socket streams with
+	* default_socket_timeout (60 s) on them: fgets then failed after a quiet minute and dropped the
+	* server, and an fwrite the client is slow to read would stop halfway through a line. -1 blocks
+	* until data or EOF; a pipe has no timeout and ignores it.
 	*
 	* @param resource $in
 	* @param resource $out
 	*/
 	function run($in, $out): void {
 		stream_set_timeout($in, -1);
+		stream_set_timeout($out, -1);
 		while (($line = fgets($in)) !== false) {
 			$line = trim($line);
 			if ($line === '') {
