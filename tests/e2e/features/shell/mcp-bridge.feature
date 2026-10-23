@@ -53,5 +53,8 @@ Feature: The stdio bridge when there is no app behind it
   Scenario: It pumps a stream, blank lines and all
     Then the bridge answers each request once and every notification never
 
+  Scenario: A quiet spell on a socket stdin is not the client letting go
+    Then the bridge outlives a quiet socket and answers what comes after
+
   Scenario: MySQL grants that reach the server are told from grants on the data
     Then of MySQL's grants only those beyond one database's data are refused

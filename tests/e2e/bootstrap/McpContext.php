@@ -885,6 +885,30 @@ class McpContext implements Context
 		}
 	}
 
+	/** A socket stdin, as Claude Code spawns its servers with, quiet for longer than its read
+	 * timeout: shortened here from default_socket_timeout's 60 s so the scenario stays fast. */
+	#[Then('the bridge outlives a quiet socket and answers what comes after')]
+	public function bridgeOutlivesQuietSocket(): void
+	{
+		$handshake = new Handshake($this->scratch());
+		$handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
+		$request = var_export($this->request() . "\n", true);
+		$agent = proc_open(
+			[$this->fix['root'] . '/bin/frankenphp', 'php-cli', '-r', "echo $request; flush(); usleep(500000); echo $request;"],
+			[1 => ['socket']],
+			$pipes,
+		);
+		stream_set_timeout($pipes[1], 0, 100000);
+		$out = fopen('php://memory', 'r+');
+		(new Stdio($handshake, fn (): string => '{"jsonrpc":"2.0","id":7,"result":{}}'))->run($pipes[1], $out);
+		proc_close($agent);
+		rewind($out);
+		$written = (string) stream_get_contents($out);
+		if (substr_count($written, '"result"') !== 2) {
+			throw new RuntimeException("the bridge stopped at the first quiet spell, having answered: $written");
+		}
+	}
+
 	// ── the recorded url ─────────────────────────────────────────────────────────────────────
 
 	/** @var array<string, mixed> the server variables a scenario is asking about */
