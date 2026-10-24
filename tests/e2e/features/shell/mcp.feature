@@ -125,6 +125,13 @@ Feature: An agent reaching the databases this window is signed in to
     Then the answer no longer claims a rollback
     And the row named "mcp-committed" is in the database
 
+  Scenario: A write that returns no rows is answered as done, not as an error
+    Given AI access is on and allowed to write
+    When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-no-returning')"
+    Then it is answered with 1 affected row, not as an error
+    And the answer no longer claims a rollback
+    And the row named "mcp-no-returning" is in the database
+
   Scenario: A statement that outlasts its limit is stopped by the database, a write with it
     Given AI access is on and allowed to write
     When an agent runs the query "INSERT INTO users (name) SELECT 'mcp-too-slow' FROM pg_sleep(5) RETURNING id"

@@ -96,7 +96,7 @@ class Tools {
 	}
 
 	/** The first rows of a table, without the caller having to write SQL for the common case.
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>,affected_rows?:int}
 	*/
 	function previewTable(string $table, int $limit = 20, bool $whole = false): array {
 		$limit = max(1, min($limit, self::MAX_ROWS));
@@ -113,7 +113,7 @@ class Tools {
 	* postgres does not roll back, and the row went with the transaction. An agent that reports
 	* that as a successful write is worse than one that cannot write at all.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>,rolled_back:bool,note:string}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>,affected_rows?:int,rolled_back:bool,note:string}
 	*/
 	function query(string $sql, int $limit = self::MAX_ROWS, bool $whole = false): array {
 		$result = $this->select($sql, max(1, min($limit, self::MAX_ROWS)), $whole);
@@ -289,7 +289,7 @@ class Tools {
 	* sent as hex, with its length in bytes: one raw BLOB byte would fail json_encode() for the
 	* whole answer.
 	*
-	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>}
+	* @return array{columns:list<string>,rows:list<array<string,mixed>>,truncated:bool,truncated_cells:list<array{row:int,column:string,length:int}>,truncated_note?:string,binary_cells:list<array{row:int,column:string,length:int}>,affected_rows?:int}
 	*/
 	private function select(string $sql, int $limit, bool $whole): array {
 		$connection = \Adminer\connection();
@@ -308,9 +308,14 @@ class Tools {
 		$began = !$guarded && (bool) $driver->begin();
 		try {
 			$result = $connection->query($sql);
-			if ($result === false || $result === true) {
-				// No result set: either it failed, or it was a statement that returns nothing.
-				// Both are worth saying out loud rather than answering with zero rows.
+			if ($result === true) {
+				// It ran and returns no rows: an INSERT, UPDATE or DDL. That is an answer, not an
+				// error. Reported as one, a committed write read as a failed one, and an agent that
+				// retried it wrote twice. affected_rows says what it touched; query() says whether
+				// that was kept.
+				return ['columns' => [], 'rows' => [], 'truncated' => false, 'truncated_cells' => [], 'binary_cells' => [], 'affected_rows' => (int) $connection->affected_rows];
+			}
+			if ($result === false) {
 				$error = (string) ($connection->error ?? '');
 				if ($this->limit > 0 && $this->timedOut($error)) {
 					// Said as ours, with what to do: the database's own words do not say there is a

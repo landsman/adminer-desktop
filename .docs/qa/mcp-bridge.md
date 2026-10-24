@@ -113,6 +113,3 @@ HOME=$H ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 agent demo demo' ./build.noi
   `launcher/mcpbridge/data.json`, which `make mcp-bridge-data` generates.
 - **Upgrading from the PHP bridge:** remove the registration and add it again. The old
   `mcp.json` has no socket, so it is not followed until the window has loaded a page.
-- **Found while testing, and not fixed by [#186](https://github.com/landsman/adminer-desktop/pull/186):** with writes on, a committed statement that
-  returns no rows, such as a plain `INSERT`, is reported to the agent as an error. An agent
-  that retries it writes twice.
