@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -228,7 +228,7 @@ phpcs: app/vendor
 # A cache per checkout. The default one is per user and keeps absolute paths, so an agent's
 # worktree linted second got the first one's findings at that worktree's paths; once it was
 # deleted, the //nolint comments there could not be read and the lint failed on them.
-golangci:
+golangci: mcp-bridge-data  # the bridge embeds it: go cannot even type-check the package without it
 	GOLANGCI_LINT_CACHE=$(CURDIR)/.cache/golangci-lint go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
 # Format-check CSS and JS with oxfmt and lint JS with oxlint; the file list is package.json's.
@@ -337,10 +337,9 @@ check: fetch app/vendor  ## Boot the app, assert before-login behaviour (prefill
 # postgres and mysql in docker. app/vendor because behat and playwright live there. Kept out of
 # `qa` because it is slow and needs docker; run it on its own. A failed step leaves the page it
 # failed on in tests/e2e/artifacts/, which the workflow uploads.
-e2e: fetch app/vendor  ## Every scenario, against both drivers (needs docker)
+e2e: fetch app/vendor mcp-bridge-data  ## Every scenario, against both drivers (needs docker)
 	mise run e2e
-	@# The bridge scenarios a second time, through the Go bridge. Nothing else in the suite changes
-	@# hands, so this is the whole of what the rewrite touched.
+	@# The MCP scenarios again, through the Go bridge an installed app's agents spawn.
 	mise run e2e-bridge-go
 
 # The same, in a browser you can watch: this is how a scenario is written, and how a failing one
