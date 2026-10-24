@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -263,6 +265,61 @@ func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
 func closeBody(t *testing.T, resp *http.Response) {
 	t.Helper()
 	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+// A directory a quit app left behind goes at the next start; one whose gate still answers stays.
+func TestSweepsWhatAQuitAppLeft(t *testing.T) {
+	tmp, err := os.MkdirTemp("", "gs") // short: a unix socket path has to stay under ~100 bytes
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(tmp); err != nil {
+			t.Error(err)
+		}
+	})
+	stale := filepath.Join(tmp, "adminer-desktop-gate-1")
+	live := filepath.Join(tmp, "adminer-desktop-gate-2")
+	other := filepath.Join(tmp, "something-else")
+	for _, dir := range []string{stale, live, other} {
+		if err := os.Mkdir(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dead, err := net.Listen("unix", filepath.Join(stale, "call.sock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dead.(*net.UnixListener).SetUnlinkOnClose(false) // a quit app leaves its socket file behind
+	closeOrFail(t, dead)
+	ln, err := net.Listen("unix", filepath.Join(live, "report.sock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeOrFail(t, ln) })
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			closeOrFail(t, c)
+		}
+	}()
+
+	sweep(tmp)
+	for dir, want := range map[string]bool{stale: false, live: true, other: true} {
+		if _, err := os.Stat(dir); (err == nil) != want {
+			t.Errorf("%s: present %v, want %v", filepath.Base(dir), err == nil, want)
+		}
+	}
+}
+
+func closeOrFail(t *testing.T, c io.Closer) {
+	t.Helper()
+	if err := c.Close(); err != nil {
 		t.Error(err)
 	}
 }

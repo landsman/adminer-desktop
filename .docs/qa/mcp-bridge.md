@@ -69,17 +69,20 @@ HOME=$H ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 agent demo demo' ./build.noi
   - AI access turned off;
   - a listener on the old port receiving nothing;
   - a handshake pointing at another host, which is not followed;
-  - the `bridge-exit` line in the log.
+  - the `bridge-exit` line in the log;
+  - a call naming another signed-in connection runs as that login, a superuser one is refused,
+    and the window stays where it was;
+  - signing out in the window: the agent is told to log in again (it was a JSON-RPC error that
+    failed `initialize`, fixed in [#186](https://github.com/landsman/adminer-desktop/pull/186)).
 - **Statement limit:** `pg_sleep(70)` stopped at 45 s, and nothing was left in
-  `pg_stat_activity`.
+  `pg_stat_activity`. The same on a call forwarded to another connection, at 46 s.
 - **Load:** 5 agents × 10 calls of 2 s came back 50/50, every one with its own id. Pings came
   back in 0.1 s, against 4.1 s before the queue fix. A window page took 5–11 ms during the run,
   against 5 ms at rest, on a machine with 36 PHP threads.
-- **Not done yet:**
-  - a call that names another connection;
-  - signing out in the window;
-  - closing the lid;
-  - quitting with Cmd+Q (only SIGTERM was tried).
+- **Cmd+Q:** no bridge is left, but frankenphp keeps running under init. The gate's directory
+  stays too: 292 of them had piled up, and the gate now sweeps them at start. The server is
+  [#188](https://github.com/landsman/adminer-desktop/issues/188).
+- **Not done yet:** closing the lid; anything on Linux by hand.
 
 ## Known weak spots
 

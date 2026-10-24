@@ -38,6 +38,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Gate holds the window's session and lets a token-bearing MCP call borrow it.
@@ -60,6 +61,7 @@ func New(upstream string) (*Gate, error) {
 	if _, err := rand.Read(b); err != nil {
 		return nil, err
 	}
+	sweep(os.TempDir())
 	// MkdirTemp makes it 0700, so no other account can even connect.
 	dir, err := os.MkdirTemp("", "adminer-desktop-gate-")
 	if err != nil {
@@ -79,6 +81,31 @@ func New(upstream string) (*Gate, error) {
 		return nil, errors.Join(err, calls.Close(), reports.Close(), os.RemoveAll(dir))
 	}
 	return &Gate{upstream: upstream, token: hex.EncodeToString(b), ln: ln, calls: calls, reports: reports, dir: dir}, nil
+}
+
+// sweep removes the directories earlier gates left behind. Close removes its own, but a Cmd+Q
+// exits through AppKit without returning to it, as a kill or a crash does, so every such start
+// left one: 292 had piled up on one machine. A directory is left alone while either socket in it
+// still accepts, which is another app running. One that belongs to another account cannot be
+// removed by us at all (the sticky bit on a shared /tmp), and the error is ignored.
+func sweep(tmp string) {
+	dirs, err := filepath.Glob(filepath.Join(tmp, "adminer-desktop-gate-*"))
+	if err != nil {
+		return
+	}
+	for _, dir := range dirs {
+		if !listening(filepath.Join(dir, "call.sock")) && !listening(filepath.Join(dir, "report.sock")) {
+			_ = os.RemoveAll(dir) // another account's, or already gone: nothing to do about either
+		}
+	}
+}
+
+func listening(socket string) bool {
+	c, err := net.DialTimeout("unix", socket, 100*time.Millisecond)
+	if err != nil {
+		return false
+	}
+	return c.Close() == nil
 }
 
 // Env is what PHP needs to point the handshake here: the address, the socket the bridge posts
