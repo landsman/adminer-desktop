@@ -827,3 +827,31 @@ func TestGeneratedDataIsComplete(t *testing.T) {
 		}
 	}
 }
+
+// A client that stops reading the answers but keeps stdin open and quiet: the bridge notices at
+// the first answer it cannot write, rather than waiting on stdin for good.
+func TestClosedStdoutEndsTheBridge(t *testing.T) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{}}`)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	in, feed := io.Pipe()
+	defer closeOrFail(t, feed)
+	answers, out := io.Pipe()
+	closeOrFail(t, answers) // nobody reads what comes out
+	done := make(chan error, 1)
+	go func() { done <- bridge(t, dir).Run(in, out) }()
+	if _, err := io.WriteString(feed, listTools()+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Error("a closed stdout ended the bridge without an error to log")
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("the bridge kept waiting on stdin with nobody reading its answers")
+	}
+}

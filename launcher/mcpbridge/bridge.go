@@ -135,18 +135,59 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 		failed   error
 		running  sync.Map // a request's id → what cancels it, for notifications/cancelled
 	)
+	// The first write that fails closes this: nobody is reading the answers any more, which a
+	// read blocked on a quiet stdin would otherwise never notice.
+	gone := make(chan struct{})
 	slots := make(chan struct{}, maxCalls)
-	reader := bufio.NewReader(in)
-	for {
-		line, err := reader.ReadString('\n')
-		writing.Lock()
-		gone := failed
-		writing.Unlock()
-		if gone != nil {
-			inFlight.Wait()
-			return gone // stdout is closed: nobody is left to answer
+	lines := make(chan string)
+	ended := make(chan error, 1)
+	go func() {
+		reader := bufio.NewReader(in)
+		for {
+			line, err := reader.ReadString('\n')
+			if line != "" {
+				select {
+				case lines <- line:
+				case <-gone:
+					return
+				}
+			}
+			if err != nil {
+				ended <- err
+				return
+			}
 		}
-		if trimmed := strings.TrimSpace(line); trimmed != "" {
+	}()
+	stop := func() error {
+		running.Range(func(_, cancel any) bool {
+			cancel.(context.CancelCauseFunc)(errCancelled)
+			return true
+		})
+		inFlight.Wait()
+		writing.Lock()
+		defer writing.Unlock()
+		return failed
+	}
+	for {
+		select {
+		case <-gone:
+			return stop() // stdout is closed: nobody is left to answer
+		case err := <-ended:
+			inFlight.Wait() // stdin closing is the client letting go, not a reason to drop answers
+			writing.Lock()
+			defer writing.Unlock()
+			if failed != nil {
+				return failed
+			}
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
+		case line := <-lines:
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" {
+				continue
+			}
 			message := parse(trimmed)
 			if message.method == "notifications/cancelled" {
 				if cancel, ok := running.Load(message.cancels); ok {
@@ -179,22 +220,14 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 				}
 				writing.Lock()
 				defer writing.Unlock()
-				if _, writeErr := fmt.Fprintln(out, *answer); writeErr != nil && failed == nil {
-					failed = writeErr
+				if failed != nil {
+					return
+				}
+				if _, err := fmt.Fprintln(out, *answer); err != nil {
+					failed = err
+					close(gone)
 				}
 			}()
-		}
-		if err != nil {
-			inFlight.Wait() // stdin closing is the client letting go, not a reason to drop answers
-			writing.Lock()
-			defer writing.Unlock()
-			if failed != nil {
-				return failed
-			}
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-			return err
 		}
 	}
 }
