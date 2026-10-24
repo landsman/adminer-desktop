@@ -86,14 +86,20 @@ func New(upstream string) (*Gate, error) {
 // sweep removes the directories earlier gates left behind. Close removes its own, but a Cmd+Q
 // exits through AppKit without returning to it, as a kill or a crash does, so every such start
 // left one: 292 had piled up on one machine. A directory is left alone while either socket in it
-// still accepts, which is another app running. One that belongs to another account cannot be
-// removed by us at all (the sticky bit on a shared /tmp), and the error is ignored.
+// still accepts, which is another app running, and while it is younger than a minute: a gate
+// that is starting has made its directory but not yet bound a socket in it, and two launchers
+// started together would otherwise delete each other's. One that belongs to another account
+// cannot be removed by us at all (the sticky bit on a shared /tmp), and the error is ignored.
 func sweep(tmp string) {
 	dirs, err := filepath.Glob(filepath.Join(tmp, "adminer-desktop-gate-*"))
 	if err != nil {
 		return
 	}
 	for _, dir := range dirs {
+		info, err := os.Stat(dir)
+		if err != nil || time.Since(info.ModTime()) < time.Minute {
+			continue
+		}
 		if !listening(filepath.Join(dir, "call.sock")) && !listening(filepath.Join(dir, "report.sock")) {
 			_ = os.RemoveAll(dir) // another account's, or already gone: nothing to do about either
 		}

@@ -282,8 +282,9 @@ func TestSweepsWhatAQuitAppLeft(t *testing.T) {
 	})
 	stale := filepath.Join(tmp, "adminer-desktop-gate-1")
 	live := filepath.Join(tmp, "adminer-desktop-gate-2")
+	starting := filepath.Join(tmp, "adminer-desktop-gate-3") // made, its sockets not bound yet
 	other := filepath.Join(tmp, "something-else")
-	for _, dir := range []string{stale, live, other} {
+	for _, dir := range []string{stale, live, starting, other} {
 		if err := os.Mkdir(dir, 0o700); err != nil {
 			t.Fatal(err)
 		}
@@ -309,8 +310,14 @@ func TestSweepsWhatAQuitAppLeft(t *testing.T) {
 		}
 	}()
 
+	old := time.Now().Add(-time.Hour)
+	for _, dir := range []string{stale, live, other} {
+		if err := os.Chtimes(dir, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
 	sweep(tmp)
-	for dir, want := range map[string]bool{stale: false, live: true, other: true} {
+	for dir, want := range map[string]bool{stale: false, live: true, starting: true, other: true} {
 		if _, err := os.Stat(dir); (err == nil) != want {
 			t.Errorf("%s: present %v, want %v", filepath.Base(dir), err == nil, want)
 		}
