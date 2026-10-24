@@ -1,6 +1,6 @@
 # Every artifact below is derived from these two pins. Never "latest".
 ADMINER_VERSION    = 6.1.1
-FRANKENPHP_VERSION = 1.12.6
+FRANKENPHP_VERSION = 1.13.3
 
 ADMINER_URL = https://github.com/vrana/adminer/releases/download/v$(ADMINER_VERSION)
 FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_VERSION)
