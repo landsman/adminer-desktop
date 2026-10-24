@@ -136,6 +136,31 @@ class DesktopContext implements Context
 		);
 	}
 
+	#[Given('the text is scaled to :percent percent')]
+	public function textIsScaled(string $percent): void
+	{
+		file_put_contents(
+			$this->fix['data'] . '/settings.json',
+			(string) json_encode(['scaling' => $percent] + e2e_settings($this->fix)),
+		);
+	}
+
+	/** What the panel is laid out at, against the body's text, which carries the scale. */
+	#[Then('the sidebar is :ems times the text size wide')]
+	public function sidebarIsEms(string $ems): void
+	{
+		$at = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => ({
+				width: parseFloat(getComputedStyle(document.querySelector('#foot')).flexBasis),
+				text: parseFloat(getComputedStyle(document.body).fontSize),
+			})",
+		);
+		if (abs($at['width'] - (float) $ems * $at['text']) > 1) {
+			throw new RuntimeException("the sidebar is not $ems times the text: " . json_encode($at));
+		}
+	}
+
 	/** The scheme the OS is pretending to be is a browser-context option, so this opens a new one —
 	 * which is why it comes before logging in rather than after.
 	 */
@@ -2897,20 +2922,63 @@ class DesktopContext implements Context
 		}
 	}
 
-	#[Then('the toolbar\'s controls are drawn as in a window with a title bar')]
-	public function toolbarStyledInFullScreen(): void
+	/** Drawn, inside the viewport and not covered: what sits at each one's centre is that control.
+	 * And none on another — one drawn on top passes its own check, and hides the one below. */
+	#[Then('the :controls are on screen')]
+	public function controlsOnScreen(string $controls): void
 	{
-		$style = (array) $this->page->evaluate(
+		$selectors = [
+			'sidebar' => '#foot',
+			'tables' => '#tables li:first-child',
+			'sidebar toggle' => '#ad-sidebar-toggle',
+			'settings gear' => '#desktop-gear',
+			'toolbar' => '#breadcrumb .ad-toolbar',
+			'path' => '#breadcrumb .ad-breadcrumb-current',
+			'search' => '#breadcrumb .ad-toolbar-search',
+			'path bar' => '#ad-pathbar',
+		];
+		$names = array_map('trim', explode(',', $controls));
+		foreach ($names as $name) {
+			$off = $this->page->evaluate(
+				// language=JavaScript
+				"(selector) => {
+					const el = document.querySelector(selector);
+					if (!el) { return 'missing'; }
+					if (!el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) { return 'hidden'; }
+					const r = el.getBoundingClientRect();
+					if (r.width < 1 || r.height < 1 || r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) {
+						return 'outside the window: ' + JSON.stringify(r);
+					}
+					const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+					return el.contains(hit) ? '' : 'covered by ' + (hit?.id || hit?.className || hit?.tagName);
+				}",
+				$selectors[$name] ?? throw new RuntimeException("no selector for \"$name\""),
+			);
+			if ($off !== '') {
+				throw new RuntimeException("the $name is not on screen: $off");
+			}
+		}
+		$stacked = $this->page->evaluate(
 			// language=JavaScript
-			"() => {
-				const search = getComputedStyle(document.querySelector('#breadcrumb .ad-toolbar-search'));
-				const foot = getComputedStyle(document.querySelector('#foot'));
-				return { radius: parseFloat(search.borderTopLeftRadius), height: parseFloat(search.height), footBorder: foot.borderTopStyle, toggle: getComputedStyle(document.querySelector('#ad-sidebar-toggle')).display };
+			"(selectors) => {
+				const els = Object.entries(selectors).map(([name, s]) => [name, document.querySelector(s)]);
+				const clash = [];
+				for (const [i, [a, ea]] of els.entries()) {
+					for (const [b, eb] of els.slice(i + 1)) {
+						const ra = ea.getBoundingClientRect();
+						const rb = eb.getBoundingClientRect();
+						if (!ea.contains(eb) && !eb.contains(ea) && ra.left < rb.right && ra.right > rb.left && ra.top < rb.bottom && ra.bottom > rb.top) {
+							clash.push(a + ' on ' + b);
+						}
+					}
+				}
+				return clash;
 			}",
+			// The sidebar is the band the toggle and the gear sit on, not a control beside them.
+			array_diff_key(array_intersect_key($selectors, array_flip($names)), ['sidebar' => true]),
 		);
-		// Round search field, the islands' framed sidebar back, no toggle without the lights' band.
-		if ($style['radius'] < 10 || $style['footBorder'] !== 'solid' || $style['toggle'] !== 'none') {
-			throw new RuntimeException('full screen is not the windowed layout with a dressed toolbar: ' . json_encode($style));
+		if ($stacked !== []) {
+			throw new RuntimeException('controls drawn on one another: ' . implode(', ', $stacked));
 		}
 	}
 
@@ -2967,6 +3035,37 @@ class DesktopContext implements Context
 		// The lights end 78px in (--ad-lights-end, tokens.css).
 		if ($at['toggle'] < 78 + 8 || $at['path'] < $at['toggleEnd'] + 8) {
 			throw new RuntimeException('the toggle or the path crowds what is before it: ' . json_encode($at));
+		}
+	}
+
+	/** No control or text of the page within the toggle's box, and the toggle the one hit at its
+	 * centre — a sticky header or the gear drawn over it would take the click. */
+	#[Then('the sidebar\'s toggle overlaps nothing')]
+	public function toggleOverlapsNothing(): void
+	{
+		$overlap = $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const toggle = document.querySelector('#ad-sidebar-toggle');
+				const t = toggle.getBoundingClientRect();
+				const hit = document.elementFromPoint(t.left + t.width / 2, t.top + t.height / 2);
+				if (!toggle.contains(hit)) {
+					return ['covered by ' + (hit?.id || hit?.className || hit?.tagName)];
+				}
+				const hasText = (el) => [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+				return [...document.querySelectorAll('body *')]
+					.filter((el) => !toggle.contains(el) && !el.contains(toggle))
+					.filter((el) => el.matches('a, button, input, select, textarea, img, svg') || hasText(el))
+					.filter((el) => el.checkVisibility({ visibilityProperty: true, opacityProperty: true }))
+					.filter((el) => {
+						const r = el.getBoundingClientRect();
+						return r.width > 0 && r.height > 0 && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top;
+					})
+					.map((el) => el.id || el.className || el.tagName);
+			}",
+		);
+		if ($overlap !== []) {
+			throw new RuntimeException('the sidebar\'s toggle overlaps: ' . json_encode($overlap));
 		}
 	}
 
@@ -3051,6 +3150,19 @@ class DesktopContext implements Context
 			// language=JQuery-CSS
 			'#breadcrumb .ad-toolbar-actions a',
 		)->first()->dispatchEvent('mousedown');
+	}
+
+	/** The sidebar is a drawer there, so nothing holds the bar off the edge. */
+	#[Then('the path bar starts at the window\'s edge')]
+	public function pathBarAtEdge(): void
+	{
+		$left = $this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('#ad-pathbar').getBoundingClientRect().left",
+		);
+		if ($left > 1) {
+			throw new RuntimeException("the path bar starts {$left}px in");
+		}
 	}
 
 	/** Finder's path bar, along the window's foot: the steps there, each a link but the last, and

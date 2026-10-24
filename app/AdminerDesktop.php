@@ -203,7 +203,7 @@ class AdminerDesktop extends Adminer\Plugin {
 		// (Api\ResizePreference). The stored values are already clamped integers; cast again so
 		// nothing but a number can reach the stylesheet. The CSP has no style-src, so an inline
 		// <style> needs no nonce — and only our own theme reads the properties.
-		$properties = ['sidebar' => '--ad-sidebar-width', 'edit_field' => '--ad-edit-field-width'];
+		$properties = ['sidebar' => '--ad-sidebar-dragged', 'edit_field' => '--ad-edit-field-width'];
 		$resized = $this->userSettings->get(SettingKey::UserResized, []);
 		$css = '';
 		foreach (is_array($resized) ? $resized : [] as $what => $size) {

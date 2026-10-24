@@ -195,7 +195,7 @@ body {
 		display: none;
 	}
 
-	.ad-frameless:not(.ad-fullscreen)
+	.ad-frameless
 		.ad-sidebar-hidden
 		#content
 		#breadcrumb:not(:has(.ad-breadcrumb-current)) {

@@ -57,8 +57,7 @@
 	// Mail's does (window.css does the same for legacy bars).
 	const lead = () => {
 		const root = document.documentElement;
-		return root.classList.contains("ad-frameless") &&
-			!root.classList.contains("ad-fullscreen")
+		return root.classList.contains("ad-frameless")
 			? Number.parseFloat(
 					getComputedStyle(root).getPropertyValue("--ad-titlebar-h"),
 				) || 0

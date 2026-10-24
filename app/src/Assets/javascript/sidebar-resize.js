@@ -2,12 +2,12 @@
  * Drag the divider between the sidebar and the content to set the sidebar's width, and keep
  * that width across cold starts (issue #11, on the persistent store of issue #10).
  *
- * The width rides on the --ad-sidebar-width custom property that the islands layout's #foot
- * reads (theme/designs/adminer-desktop/layout.css). This inserts a grab handle between the
- * two panels, updates the property live while dragging, and posts the final width to the
- * resize action (src/Api/ResizePreference.php), which stores it in the app's durable config.
- * head() reads it back and emits it before paint, so the next launch opens at the same width
- * with no jump.
+ * The width rides on the --ad-sidebar-dragged custom property, which becomes the
+ * --ad-sidebar-width the islands layout's #foot reads (theme/designs/adminer-desktop/tokens.css).
+ * This inserts a grab handle between the two panels, updates the property live while dragging,
+ * and posts the final width to the resize action (src/Api/ResizePreference.php), which stores
+ * it in the app's durable config. head() reads it back and emits it before paint, so the next
+ * launch opens at the same width with no jump.
  *
  * Only the adminer-desktop theme lays the panels out as side-by-side flex columns, so the
  * handle is added only when that layout is in effect; every other design is left untouched.
@@ -27,7 +27,7 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 
 	const clamp = (px) => Math.max(MIN, Math.min(MAX, px));
 	const apply = (px) => {
-		root.style.setProperty("--ad-sidebar-width", `${clamp(px)}px`);
+		root.style.setProperty("--ad-sidebar-dragged", `${clamp(px)}px`);
 		handle.setAttribute("aria-valuenow", String(clamp(Math.round(px))));
 	};
 	const width = () => foot.getBoundingClientRect().width;
