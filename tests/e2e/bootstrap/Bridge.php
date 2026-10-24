@@ -143,14 +143,18 @@ final class Bridge
 		return $env;
 	}
 
-	/** @param resource $stream */
+	/** One answer, given as long as the bridge's own call timeout: every exchange may start a
+	 * php-cli and go through the gate into adminer, which a loaded runner takes its time over.
+	 * Silence is not read here — that is pump()'s, which knows when the bridge has finished.
+	 * @param resource $stream
+	 */
 	private function read($stream): ?string
 	{
 		$read = [$stream];
 		$write = null;
 		$except = null;
-		if (stream_select($read, $write, $except, 3) !== 1) {
-			return null; // silent, which for a notification is the whole answer
+		if (stream_select($read, $write, $except, 60) !== 1) {
+			throw new RuntimeException('the bridge gave no answer within 60 s');
 		}
 		$line = fgets($stream);
 		return $line === false ? null : rtrim($line, "\r\n");

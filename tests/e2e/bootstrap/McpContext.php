@@ -28,7 +28,8 @@ use Symfony\Component\Process\Process;
  * Bridge — PHP's, or the Go one when ADMINER_DESKTOP_MCP_BRIDGE names it — and point it at an
  * HTTP stub that answers a login page or an empty body on demand, which is the only way to
  * provoke a closed window or a midnight boundary. The rest talk to the real app through the
- * same bridge, so switching the variable changes the implementation under every MCP scenario.
+ * same bridge and the gate, so switching the variable changes the implementation under every MCP
+ * scenario; `mise run e2e-bridge-go` runs them all with it set.
  */
 class McpContext implements Context
 {
@@ -772,12 +773,33 @@ class McpContext implements Context
 		)), true);
 	}
 
+	/** Pumped, not exchanged: the bridge exits at the end of its stdin, so silence is everything
+	 * it wrote by then, rather than whatever a timeout happened not to see. */
 	#[When('a notification arrives through the bridge')]
 	public function notificationThroughBridge(): void
 	{
-		$this->raw = $this->bridge?->exchange((string) json_encode(
+		$said = $this->bridge?->pump((string) json_encode(
 			['jsonrpc' => '2.0', 'method' => 'notifications/initialized'],
-		));
+		) . "\n");
+		$this->raw = $said === null || $said === '' ? null : $said;
+	}
+
+	#[When('a client probes for a newer protocol through the bridge')]
+	public function discoverThroughBridge(): void
+	{
+		$this->answer = (array) json_decode((string) $this->bridge?->exchange((string) json_encode(
+			['jsonrpc' => '2.0', 'id' => 9, 'method' => 'server/discover'],
+		)), true);
+	}
+
+	/** What the app answers once it is up: a dual-era client reads -32601 as a legacy server and
+	 * falls back to initialize. A result would read as a discover that succeeded. */
+	#[Then('it is told the method is unknown, as the app would say')]
+	public function toldMethodUnknown(): void
+	{
+		if (($this->answer['error']['code'] ?? null) !== -32601 || isset($this->answer['result'])) {
+			throw new RuntimeException('server/discover was not answered -32601: ' . json_encode($this->answer));
+		}
 	}
 
 	/** Failing initialize is reported by clients as a dead server: they print the JSON-RPC code and
