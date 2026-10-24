@@ -44,6 +44,14 @@
 	}
 }
 
+/* Registered, so the 19em below becomes px on <html> and everything inherits that: unregistered,
+   it is text resolved against each user's own font size, and the gear (font-size 0) sat at 0. */
+@property --ad-sidebar-width {
+	syntax: "<length>";
+	inherits: true;
+	initial-value: 0px;
+}
+
 html {
 	/* Adminer's structural tokens. */
 	--bg: light-dark(#ffffff, #15171c);
