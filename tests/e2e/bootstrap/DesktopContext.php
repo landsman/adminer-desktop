@@ -2897,36 +2897,23 @@ class DesktopContext implements Context
 		}
 	}
 
-	#[Then('the toolbar\'s controls are drawn as in a window with a title bar')]
-	public function toolbarStyledInFullScreen(): void
-	{
-		$style = (array) $this->page->evaluate(
-			// language=JavaScript
-			"() => {
-				const search = getComputedStyle(document.querySelector('#breadcrumb .ad-toolbar-search'));
-				const foot = getComputedStyle(document.querySelector('#foot'));
-				return { radius: parseFloat(search.borderTopLeftRadius), height: parseFloat(search.height), footBorder: foot.borderTopStyle, toggle: getComputedStyle(document.querySelector('#ad-sidebar-toggle')).display };
-			}",
-		);
-		// Round search field, the islands' framed sidebar back, no toggle without the lights' band.
-		if ($style['radius'] < 10 || $style['footBorder'] !== 'solid' || $style['toggle'] !== 'none') {
-			throw new RuntimeException('full screen is not the windowed layout with a dressed toolbar: ' . json_encode($style));
-		}
-	}
-
-	/** Drawn, inside the viewport and not covered: what sits at each one's centre is that control. */
+	/** Drawn, inside the viewport and not covered: what sits at each one's centre is that control.
+	 * And none on another — one drawn on top passes its own check, and hides the one below. */
 	#[Then('the :controls are on screen')]
 	public function controlsOnScreen(string $controls): void
 	{
 		$selectors = [
 			'sidebar' => '#foot',
 			'tables' => '#tables li:first-child',
+			'sidebar toggle' => '#ad-sidebar-toggle',
 			'settings gear' => '#desktop-gear',
 			'toolbar' => '#breadcrumb .ad-toolbar',
+			'path' => '#breadcrumb .ad-breadcrumb-current',
 			'search' => '#breadcrumb .ad-toolbar-search',
 			'path bar' => '#ad-pathbar',
 		];
-		foreach (array_map('trim', explode(',', $controls)) as $name) {
+		$names = array_map('trim', explode(',', $controls));
+		foreach ($names as $name) {
 			$off = $this->page->evaluate(
 				// language=JavaScript
 				"(selector) => {
@@ -2945,6 +2932,28 @@ class DesktopContext implements Context
 			if ($off !== '') {
 				throw new RuntimeException("the $name is not on screen: $off");
 			}
+		}
+		$stacked = $this->page->evaluate(
+			// language=JavaScript
+			"(selectors) => {
+				const els = Object.entries(selectors).map(([name, s]) => [name, document.querySelector(s)]);
+				const clash = [];
+				for (const [i, [a, ea]] of els.entries()) {
+					for (const [b, eb] of els.slice(i + 1)) {
+						const ra = ea.getBoundingClientRect();
+						const rb = eb.getBoundingClientRect();
+						if (!ea.contains(eb) && !eb.contains(ea) && ra.left < rb.right && ra.right > rb.left && ra.top < rb.bottom && ra.bottom > rb.top) {
+							clash.push(a + ' on ' + b);
+						}
+					}
+				}
+				return clash;
+			}",
+			// The sidebar is the band the toggle and the gear sit on, not a control beside them.
+			array_diff_key(array_intersect_key($selectors, array_flip($names)), ['sidebar' => true]),
+		);
+		if ($stacked !== []) {
+			throw new RuntimeException('controls drawn on one another: ' . implode(', ', $stacked));
 		}
 	}
 

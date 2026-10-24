@@ -75,15 +75,20 @@ Feature: The window without a title bar
     When I open the list of tables
     Then the toolbar's controls fit beside the path
 
-  Scenario: In full screen the window has its framed panels back, and neither moves it nor offers the toggle
+  Scenario: In full screen the window keeps its layout, without moving
     Given the window is full screen
     When I open the "users" table
-    Then the toolbar's controls are drawn as in a window with a title bar
-    When I press the mouse on the empty toolbar
+    And I press the mouse on the empty toolbar
     Then the window was asked to move 0 times
 
-  Scenario: In full screen every control is on screen, none cut off or covered
+  Scenario: In full screen every control is on screen, none cut off, covered or on another
     Given the window is full screen
     And the window is 1512 by 982 pixels
     When I open the "users" table
-    Then the "sidebar, tables, settings gear, toolbar, search, path bar" are on screen
+    Then the "sidebar, tables, sidebar toggle, settings gear, toolbar, path, search, path bar" are on screen
+    When I hide the sidebar
+    Then the sidebar is hidden
+    And the "sidebar toggle, toolbar, path, search, path bar" are on screen
+    And the sidebar's toggle overlaps nothing
+    When I show the sidebar
+    Then the sidebar shows
