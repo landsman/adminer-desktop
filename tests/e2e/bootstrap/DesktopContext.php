@@ -136,6 +136,31 @@ class DesktopContext implements Context
 		);
 	}
 
+	#[Given('the text is scaled to :percent percent')]
+	public function textIsScaled(string $percent): void
+	{
+		file_put_contents(
+			$this->fix['data'] . '/settings.json',
+			(string) json_encode(['scaling' => $percent] + e2e_settings($this->fix)),
+		);
+	}
+
+	/** What the panel is laid out at, against the body's text, which carries the scale. */
+	#[Then('the sidebar is :ems times the text size wide')]
+	public function sidebarIsEms(string $ems): void
+	{
+		$at = (array) $this->page->evaluate(
+			// language=JavaScript
+			"() => ({
+				width: parseFloat(getComputedStyle(document.querySelector('#foot')).flexBasis),
+				text: parseFloat(getComputedStyle(document.body).fontSize),
+			})",
+		);
+		if (abs($at['width'] - (float) $ems * $at['text']) > 1) {
+			throw new RuntimeException("the sidebar is not $ems times the text: " . json_encode($at));
+		}
+	}
+
 	/** The scheme the OS is pretending to be is a browser-context option, so this opens a new one —
 	 * which is why it comes before logging in rather than after.
 	 */

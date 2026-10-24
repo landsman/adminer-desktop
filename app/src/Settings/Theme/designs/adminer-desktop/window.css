@@ -170,9 +170,12 @@
    own fill. Each step but the last is a link (before-paint/header.js builds it). The content panel
    stops above it, so nothing on the page — adminer's own sticky row of actions included — slides
    under it. It starts where the content does: past the sidebar, or at the edge with the sidebar
-   hidden or folded into a drawer. */
+   hidden or folded into a drawer. On <body>, where the sidebar's width is known (tokens.css). */
 .ad-frameless {
 	--ad-pathbar-h: 26px;
+}
+
+.ad-frameless body {
 	--ad-pathbar-left: calc(var(--ad-sidebar-width) + 2 * var(--ad-gutter));
 }
 

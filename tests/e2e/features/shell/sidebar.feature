@@ -9,6 +9,12 @@ Feature: Resizing the sidebar
     And I am logged in
     When I open the "users" table
 
+  Scenario: Never dragged, the sidebar is 19em of the page's text, so it grows with the text scale
+    Then the sidebar is 19 times the text size wide
+    When the text is scaled to 200 percent
+    And I open the "users" table
+    Then the sidebar is 19 times the text size wide
+
   Scenario: A drag widens the sidebar, and a fresh page opens where it was left
     When I drag the sidebar handle 120 pixels right
     Then the sidebar is at least 90 pixels wider
