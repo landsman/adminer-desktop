@@ -8,12 +8,12 @@ index 66d4444..8134a47 100644
  				return self::more_results() && parent::next_result(); // triggers E_STRICT on PHP < 7.4 otherwise
  			}
  
-+			function query(string $query, int $result_mode = MYSQLI_STORE_RESULT) {
++			function query($query, int $result_mode = MYSQLI_STORE_RESULT) {
 +				$start = microtime(true);
 +				return query_done($query, $start, parent::query($query, $result_mode));
 +			}
 +
-+			function multi_query(string $query) {
++			function multi_query($query) {
 +				$start = microtime(true);
 +				return query_done($query, $start, parent::multi_query($query));
 +			}
