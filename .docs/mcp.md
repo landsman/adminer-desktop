@@ -26,8 +26,7 @@ codex   mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
 gemini  mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
 ```
 
-Point the agent at the app itself. There is no PHP to install and no interpreter to find: the
-launcher ships its own and resolves it.
+- Point the agent at the app itself: `-mcp` is a small bridge built into the launcher, with no PHP to install and nothing to find.
 
 Register it once. The port the app listens on changes every start, but the agent re-reads it per
 message, so it keeps working across restarts without touching the config again.
