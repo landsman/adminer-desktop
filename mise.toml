@@ -80,5 +80,5 @@ env = { ADMINER_DESKTOP_MCP_BRIDGE = "{{config_root}}/build.noindex/mcpbridge" }
 run = [
 	"go build -o build.noindex/mcpbridge ./tests/e2e/harness/mcpbridge",
 	"./bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict --suite=pgsql features/shell/mcp-bridge.feature features/shell/mcp.feature",
-	"./bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict --suite=mysql features/mysql/mcp.feature features/mysql/mcp-limits.feature",
+	"./bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict --suite=mysql features/mysql/mcp.feature features/mysql/mcp-limits.feature features/mysql/mcp-writes.feature",
 ]

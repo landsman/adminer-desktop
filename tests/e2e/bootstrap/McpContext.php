@@ -609,6 +609,29 @@ class McpContext implements Context
 		}
 	}
 
+	/** A statement with no rows to return is an answer: as an error, a committed write read as a
+	 * failed one, and an agent that retried it wrote twice. */
+	#[Then('it is answered with :count affected row(s), not as an error')]
+	public function answeredWithAffectedRows(int $count): void
+	{
+		if (($this->answer['result']['isError'] ?? null) === true || $this->payload === null) {
+			throw new RuntimeException('a statement with no result set was answered as an error: ' . json_encode($this->answer));
+		}
+		if (($this->payload['affected_rows'] ?? null) !== $count) {
+			throw new RuntimeException("expected $count affected row(s): " . json_encode($this->payload));
+		}
+	}
+
+	/** With writes off the statement ran and was undone, and the agent has to be told which: a
+	 * row count alone reads as a write that stayed. */
+	#[Then('the answer says it was rolled back')]
+	public function answerSaysRolledBack(): void
+	{
+		if (($this->payload['rolled_back'] ?? null) !== true || !str_contains((string) ($this->payload['note'] ?? ''), 'rolled back')) {
+			throw new RuntimeException('the answer does not say the write was rolled back: ' . json_encode($this->payload));
+		}
+	}
+
 	#[Then('the answer no longer claims a rollback')]
 	public function answerDoesNotClaimRollback(): void
 	{
