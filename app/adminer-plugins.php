@@ -30,5 +30,6 @@ $desktop = new AdminerDesktop();
 $desktop->handlePost();
 
 // handlePost() first: ticking a plugin and seeing it take effect on the same request is the
-// whole point of saving before this line rather than after it.
-return array_merge([$desktop], $desktop->plugins()->instances(), Desktop\Debug::plugins());
+// whole point of saving before this line rather than after it. The debug ones first: the SQL
+// panel only notes the queries a hook reports and abstains, so no plugin can skip it.
+return array_merge(Desktop\Debug::plugins(), [$desktop], $desktop->plugins()->instances());
