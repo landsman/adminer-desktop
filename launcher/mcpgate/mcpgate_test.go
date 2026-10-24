@@ -213,3 +213,56 @@ func TestGivingUpReachesFrankenphp(t *testing.T) {
 		t.Error("frankenphp kept the call after the bridge gave up")
 	}
 }
+
+// The same, through the socket the bridge really uses: a client that hangs up is what cancels the
+// request, not a context a test hands in.
+func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
+	cancelled := make(chan struct{})
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, err := io.ReadAll(r.Body); err != nil {
+			t.Error(err)
+		}
+		select {
+		case <-r.Context().Done():
+			close(cancelled)
+		case <-time.After(3 * time.Second):
+		}
+	}))
+	t.Cleanup(upstream.Close)
+	g, err := New(upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(g.Close)
+	report(g, session)
+	go g.Serve()
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	client := &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", g.calls.Addr().String())
+		},
+	}}
+	req, err := http.NewRequestWithContext(ctx, "POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	if resp, err := client.Do(req); err == nil {
+		closeBody(t, resp)
+		t.Fatal("the call returned before the client gave up")
+	}
+	select {
+	case <-cancelled:
+	case <-time.After(2 * time.Second):
+		t.Error("frankenphp kept the call after the client hung up on the socket")
+	}
+}
+
+func closeBody(t *testing.T, resp *http.Response) {
+	t.Helper()
+	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
+}

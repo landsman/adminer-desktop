@@ -351,9 +351,120 @@ func TestPostsOverTheSocket(t *testing.T) {
 	if got := bridge(t, dir).Exchange(listTools()); got == nil || !strings.Contains(*got, "socket") {
 		t.Errorf("the call did not go over the socket: %v", got)
 	}
-	server.Close() // the app quit: its socket refuses, and the port is someone else's now
-	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "stopped answering") {
-		t.Errorf("a dead socket fell back to the port: %s", got)
+	server.Close() // the app quit: its socket is gone, and the port is someone else's now
+	if got := bridge(t, dir).Exchange(callTool()); got == nil || strings.Contains(*got, "port") || !strings.Contains(*got, `"isError":true`) {
+		t.Errorf("a gone socket fell back to the port: %v", got)
+	}
+}
+
+// A socket in a directory another account could have made is not dialled: on Linux the gate's
+// directory is in the shared /tmp, and after the app has gone anyone can recreate the path.
+func TestSocketInAnOpenDirectoryIsRefused(t *testing.T) {
+	short, err := os.MkdirTemp("", "mb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeOrFail(t, closerFunc(func() error { return os.RemoveAll(short) })) })
+	if err := os.Chmod(short, 0o755); err != nil { // what a directory made by someone else looks like to us, short of a second account
+		t.Fatal(err)
+	}
+	socket := filepath.Join(short, "call.sock")
+	ln, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reached := false
+	server := &httptest.Server{Listener: ln, Config: &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reached = true
+		reply(t, w, `{"jsonrpc":"2.0","id":3,"result":{}}`)
+	})}}
+	server.Start()
+	defer server.Close()
+	dir := t.TempDir()
+	body := fmt.Sprintf(`{"url":"http://127.0.0.1:1/adminer.php?pgsql=x","token":"tok","socket":%q}`, socket)
+	if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "AI access") || reached {
+		t.Errorf("a socket in an open directory was dialled (reached %v): %s", reached, got)
+	}
+}
+
+// A cancelled call gets no answer, and the window is hung up on rather than left working on it.
+func TestCancelledCallIsDropped(t *testing.T) {
+	asked, released := make(chan struct{}), make(chan struct{})
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(readBody(t, r), "tools/call") {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		close(asked)
+		select {
+		case <-r.Context().Done():
+			close(released)
+		case <-time.After(5 * time.Second):
+		}
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	pr, pw := io.Pipe()
+	out := new(syncBuffer)
+	done := make(chan error, 1)
+	go func() { done <- bridge(t, dir).Run(pr, out) }()
+	if _, err := io.WriteString(pw, callTool()+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	<-asked // the window is working on it now
+	if _, err := io.WriteString(pw, `{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":3}}`+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-released:
+	case <-time.After(2 * time.Second):
+		t.Error("the window was left working on a call the client cancelled")
+	}
+	closeOrFail(t, pw)
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "" {
+		t.Errorf("a cancelled call was answered: %q", out.String())
+	}
+}
+
+// More calls than run at once still leave a ping free to answer.
+func TestPingIsNotQueuedBehindCalls(t *testing.T) {
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := readBody(t, r)
+		if strings.Contains(body, "tools/call") {
+			time.Sleep(400 * time.Millisecond)
+		}
+		reply(t, w, `{"jsonrpc":"2.0","id":1,"result":{}}`)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	pr, pw := io.Pipe()
+	out := new(syncBuffer)
+	done := make(chan error, 1)
+	go func() { done <- bridge(t, dir).Run(pr, out) }()
+	for i := 0; i < maxCalls*3; i++ {
+		if _, err := io.WriteString(pw, callTool()+"\n"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	start := time.Now()
+	if _, err := io.WriteString(pw, `{"jsonrpc":"2.0","id":99,"method":"ping"}`+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, out, 1)
+	if took := time.Since(start); took > 300*time.Millisecond {
+		t.Errorf("the ping waited %v behind %d calls", took, maxCalls*3)
+	}
+	closeOrFail(t, pw)
+	if err := <-done; err != nil {
+		t.Fatal(err)
 	}
 }
 

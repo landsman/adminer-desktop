@@ -125,15 +125,17 @@ func locale() string {
 // Run pumps messages until stdin closes. Blank lines are skipped, one answer goes out per
 // request, and a notification gets none — JSON-RPC answers silence with silence.
 func (b *Bridge) Run(in io.Reader, out io.Writer) error {
-	// Messages are answered as they finish, not in turn: a ping, or the notification that
-	// cancels a call, must not wait in the pipe behind a slow query, or a client checking the
-	// server is alive gives up on it. JSON-RPC matches answers by id, so the order is free.
+	// Messages are answered as they finish, not in turn, and stdin is read on whatever is in
+	// flight: a ping, or the notification that cancels a call, must never wait in the pipe behind
+	// a slow query, or a client checking the server is alive gives up on it. JSON-RPC matches
+	// answers by id, so the order is free.
 	var (
 		writing  sync.Mutex
 		inFlight sync.WaitGroup
 		failed   error
+		running  sync.Map // a request's id → what cancels it, for notifications/cancelled
 	)
-	slots := make(chan struct{}, maxInFlight)
+	slots := make(chan struct{}, maxCalls)
 	reader := bufio.NewReader(in)
 	for {
 		line, err := reader.ReadString('\n')
@@ -145,16 +147,40 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 			return gone // stdout is closed: nobody is left to answer
 		}
 		if trimmed := strings.TrimSpace(line); trimmed != "" {
-			slots <- struct{}{}
+			message := parse(trimmed)
+			if message.method == "notifications/cancelled" {
+				if cancel, ok := running.Load(message.cancels); ok {
+					cancel.(context.CancelCauseFunc)(errCancelled)
+				}
+			}
+			// Registered here, before the goroutine starts, so a cancel that arrives right behind
+			// its request still finds it.
+			ctx, cancel := context.WithCancelCause(context.Background())
+			if message.hasID {
+				running.Store(string(message.id), cancel)
+			}
 			inFlight.Add(1)
 			go func() {
-				defer func() { <-slots; inFlight.Done() }()
-				if answer := b.Exchange(trimmed); answer != nil {
-					writing.Lock()
-					defer writing.Unlock()
-					if _, writeErr := fmt.Fprintln(out, *answer); writeErr != nil && failed == nil {
-						failed = writeErr
+				defer inFlight.Done()
+				defer cancel(nil)
+				defer running.Delete(string(message.id))
+				if message.method == "tools/call" {
+					select {
+					case slots <- struct{}{}:
+						defer func() { <-slots }()
+					case <-ctx.Done():
+						return // cancelled while it waited its turn
 					}
+				}
+				answer := b.exchange(ctx, trimmed)
+				// MCP: a request the client cancelled gets no answer at all.
+				if answer == nil || errors.Is(context.Cause(ctx), errCancelled) {
+					return
+				}
+				writing.Lock()
+				defer writing.Unlock()
+				if _, writeErr := fmt.Fprintln(out, *answer); writeErr != nil && failed == nil {
+					failed = writeErr
 				}
 			}()
 		}
@@ -173,22 +199,31 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 	}
 }
 
-// How many messages may be in flight at once. frankenphp has a handful of threads, and an agent
-// that floods the pipe should queue here rather than take every one the window needs.
-const maxInFlight = 4
+// How many tool calls one bridge runs at once; the rest wait their turn, and nothing else waits
+// at all. Each call holds a frankenphp thread, two when it names another connection, and
+// frankenphp has twice as many as there are cores: an agent that sends twenty queries must not
+// take every thread the window needs. A guess at "well under half of a small machine's", not a
+// measurement.
+const maxCalls = 4
+
+var errCancelled = errors.New("the client cancelled the request")
 
 // Exchange handles one message and returns what to write back, or nil when there is nothing to
 // say. Nil covers two cases that must not be confused: a JSON-RPC notification, which the
 // protocol answers with silence, and a failed request that carried no id, which is also a
 // notification and so also gets none.
 func (b *Bridge) Exchange(line string) *string {
+	return b.exchange(context.Background(), line)
+}
+
+func (b *Bridge) exchange(ctx context.Context, line string) *string {
 	message := parse(line)
 
 	call, ok := b.handshake()
 	if !ok {
 		return b.unavailable(message, b.say("mcp.agent_not_running"))
 	}
-	status, body, err := b.post(call, line)
+	status, body, err := b.post(ctx, call, line)
 	if errors.Is(err, errTimedOut) {
 		return b.unavailable(message, b.say("mcp.agent_timed_out"))
 	}
@@ -349,6 +384,11 @@ func (b *Bridge) handshake() (call, bool) {
 	if json.Unmarshal(raw, &c) != nil || c.URL == "" || c.Token == "" || !loopback(c.URL) {
 		return call{}, false
 	}
+	// A socket someone else could have made: on Linux the gate's directory is in the shared /tmp,
+	// and once the app has gone another account can recreate it at the path mcp.json still names.
+	if c.Socket != "" && !private(c.Socket) {
+		return call{}, false
+	}
 	return call{url: c.URL, token: c.Token, socket: c.Socket}, true
 }
 
@@ -368,8 +408,8 @@ var errTimedOut = errors.New("the window was silent for the whole timeout")
 // socket sits in the gate's 0700 directory, and once the app is gone it refuses. No proxy and no
 // redirect followed: the gate is the only place this goes, and Go would carry the token along to
 // a redirect on the same host.
-func (b *Bridge) post(c call, body string) (int, string, error) {
-	ctx, cancel := context.WithCancelCause(context.Background())
+func (b *Bridge) post(parent context.Context, c call, body string) (int, string, error) {
+	ctx, cancel := context.WithCancelCause(parent)
 	defer cancel(nil)
 	idle := time.AfterFunc(b.idle, func() { cancel(errTimedOut) })
 	defer idle.Stop()
@@ -383,11 +423,6 @@ func (b *Bridge) post(c call, body string) (int, string, error) {
 	client := &http.Client{
 		Transport:     transport,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	}
-	// A socket someone else could have made: on Linux the gate's directory is in the shared /tmp,
-	// and once the app has gone another account can recreate it at the path mcp.json still names.
-	if c.Socket != "" && !private(c.Socket) {
-		return call{}, false
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointAt(c.url), strings.NewReader(body))
 	if err != nil {
@@ -443,10 +478,11 @@ func endpointAt(url string) string {
 // to choose the answer, and the version an initialize asked for. Everything else is forwarded
 // untouched.
 type rpcMessage struct {
-	id     json.RawMessage
-	hasID  bool
-	method string
-	asked  string
+	id      json.RawMessage
+	hasID   bool
+	method  string
+	asked   string
+	cancels string // notifications/cancelled: the id of the request it cancels, as raw JSON
 }
 
 // parse reads each field on its own, as PHP's Stdio does: a method or a version of the wrong
@@ -464,9 +500,11 @@ func parse(line string) rpcMessage {
 	m := rpcMessage{method: str(raw.Method)}
 	var params struct {
 		ProtocolVersion json.RawMessage `json:"protocolVersion"`
+		RequestID       json.RawMessage `json:"requestId"`
 	}
 	if json.Unmarshal(raw.Params, &params) == nil {
 		m.asked = str(params.ProtocolVersion)
+		m.cancels = string(params.RequestID)
 	}
 	// json.RawMessage is nil when the key is absent; an explicit null is "null" and JSON-RPC
 	// treats a request with id null as a notification too. PHP's `?? null` cannot tell the two
