@@ -57,6 +57,9 @@ class McpContext implements Context
 
 	private string $appRecord = '';
 
+	/** The socket the stub listens on, which the handshake names as the gate's. */
+	private string $appSocket = '';
+
 	/** @var array{url:string, body:string, token:string}|null what the bridge posted */
 	private ?array $posted = null;
 
@@ -721,7 +724,7 @@ class McpContext implements Context
 		$home = $this->scratch();
 		$dir = $this->platformHome($home);
 		@mkdir($dir, 0700, true);
-		file_put_contents($dir . '/mcp.json', (string) json_encode(['url' => $this->appStub('json'), 'token' => 'tok']));
+		file_put_contents($dir . '/mcp.json', (string) json_encode(['url' => $this->appStub('json'), 'token' => 'tok', 'socket' => $this->appSocket]));
 		$this->bridge = new Bridge($this->fix['root'], new Handshake($dir), [
 			'ADMINER_DESKTOP_DATA' => null,
 			'HOME' => $home,
@@ -752,8 +755,12 @@ class McpContext implements Context
 	#[Given('the window was closed')]
 	public function windowWasClosed(): void
 	{
+		// As a Cmd+Q leaves it: the socket file still there, and nothing listening on it.
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
+		$url = $this->appStub('json');
+		$this->app?->stop();
+		$this->app = null;
+		$this->handshake->write($url, 'tok', '', $this->appSocket);
 		$this->bridge = $this->bridgeUnderTest();
 	}
 
@@ -773,8 +780,26 @@ class McpContext implements Context
 			throw new RuntimeException("no such answer to stub: $what");
 		}
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write($this->appStub($modes[$what]), 'tok');
+		$this->handshake->write($this->appStub($modes[$what]), 'tok', '', $this->appSocket);
 		$this->bridge = $this->bridgeUnderTest();
+	}
+
+	/** What an older version wrote: a port and no socket. The port may be someone else's by now,
+	 * so nothing is sent there, and the stub on it would record it if it were. */
+	#[Given('the handshake is one an older version wrote, with no socket')]
+	public function handshakeWithoutSocket(): void
+	{
+		$this->handshake = new Handshake($this->scratch());
+		$this->handshake->write($this->appStub('json'), 'tok');
+		$this->bridge = $this->bridgeUnderTest();
+	}
+
+	#[Then('nothing reached the app')]
+	public function nothingReachedTheApp(): void
+	{
+		if (is_file($this->appRecord) && trim((string) file_get_contents($this->appRecord)) !== '') {
+			throw new RuntimeException('the app was posted to: ' . file_get_contents($this->appRecord));
+		}
 	}
 
 	/** A handshake that names somewhere other than this machine: whoever is there would get the
@@ -920,7 +945,7 @@ class McpContext implements Context
 	public function bridgeIsAskedForAnything(): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write($this->appStub('json'), 'tok');
+		$this->handshake->write($this->appStub('json'), 'tok', '', $this->appSocket);
 		$this->bridge = $this->bridgeUnderTest();
 		$this->bridge->exchange($this->request());
 		$recorded = $this->recorded();
@@ -956,7 +981,7 @@ class McpContext implements Context
 	public function bridgePumpsTheStream(): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write($this->appStub('app'), 'tok');
+		$this->handshake->write($this->appStub('app'), 'tok', '', $this->appSocket);
 		$this->bridge = $this->bridgeUnderTest();
 		$written = $this->bridge->pump($this->request() . "\n\n"
 			. (string) json_encode(['jsonrpc' => '2.0', 'method' => 'notifications/initialized']) . "\n"
@@ -972,7 +997,7 @@ class McpContext implements Context
 	public function bridgeOutlivesQuietSocket(): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write($this->appStub('json'), 'tok');
+		$this->handshake->write($this->appStub('json'), 'tok', '', $this->appSocket);
 		$this->bridge = $this->bridgeUnderTest();
 		$written = $this->bridge->pumpQuiet($this->request());
 		if (substr_count($written, '"result"') !== 2) {
@@ -985,19 +1010,28 @@ class McpContext implements Context
 	{
 		$dir = $this->scratch();
 		$this->appRecord = $dir . '/requests.jsonl';
-		$port = e2e_free_port(56000);
+		// Its own 0700 directory, as the gate's is, and a short path: a unix socket's has to stay
+		// under about a hundred bytes, which the scratch directory's already nearly is.
+		$sockets = sys_get_temp_dir() . '/ms' . bin2hex(random_bytes(4));
+		mkdir($sockets, 0700);
+		$this->appSocket = $sockets . '/call.sock';
+		register_shutdown_function(static function () use ($sockets): void {
+			@unlink($sockets . '/call.sock');
+			@rmdir($sockets);
+		});
 		$process = new Process([
 			$this->fix['root'] . '/bin/frankenphp',
 			'php-cli',
 			dirname(__DIR__) . '/harness/mcp-app.php',
-			(string) $port,
+			$this->appSocket,
 			$mode,
 			$this->appRecord,
 		]);
 		$process->start();
 		$process->waitUntil(fn (string $type, string $output): bool => str_contains($output, 'listening'));
 		$this->app = $process;
-		return 'http://127.0.0.1:' . $port . '/adminer.php?pgsql=x&db=demo&';
+		// A name for the Host header only: the bridge posts to the socket.
+		return 'http://127.0.0.1:' . e2e_free_port(56000) . '/adminer.php?pgsql=x&db=demo&';
 	}
 
 	/** @return array{uri:string, authorization:string, body:string} the last request the stub got */

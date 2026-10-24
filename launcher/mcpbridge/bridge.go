@@ -362,7 +362,7 @@ func (b *Bridge) say(id string) string {
 type call struct {
 	url    string
 	token  string
-	socket string // the gate's unix socket; "" in a handshake from before it had one
+	socket string // the gate's unix socket, the only place a call goes
 }
 
 // handshake is where the window can be reached, written while the feature is on and a connected
@@ -384,9 +384,12 @@ func (b *Bridge) handshake() (call, bool) {
 	if json.Unmarshal(raw, &c) != nil || c.URL == "" || c.Token == "" || !loopback(c.URL) {
 		return call{}, false
 	}
-	// A socket someone else could have made: on Linux the gate's directory is in the shared /tmp,
-	// and once the app has gone another account can recreate it at the path mcp.json still names.
-	if c.Socket != "" && !private(c.Socket) {
+	// The socket, and only the socket: the url's port outlives the app and anyone can bind it.
+	// A handshake with none is one an older version wrote, and the next page the window loads
+	// writes a new one. And not a socket someone else could have made: on Linux the gate's
+	// directory is in the shared /tmp, and once the app has gone another account can recreate it
+	// at the path mcp.json still names.
+	if c.Socket == "" || !private(c.Socket) {
 		return call{}, false
 	}
 	return call{url: c.URL, token: c.Token, socket: c.Socket}, true
@@ -403,7 +406,7 @@ var errTimedOut = errors.New("the window was silent for the whole timeout")
 
 // post sends one message to the launcher's gate, with its token. The gate adds the session.
 //
-// Over the gate's unix socket when the handshake names one: a quit app leaves its port behind
+// Over the gate's unix socket, never the url's port: a quit app leaves its port behind
 // for anyone to bind, and whoever did would get the token and the SQL, and could answer. The
 // socket sits in the gate's 0700 directory, and once the app is gone it refuses. No proxy and no
 // redirect followed: the gate is the only place this goes, and Go would carry the token along to
@@ -413,12 +416,13 @@ func (b *Bridge) post(parent context.Context, c call, body string) (int, string,
 	defer cancel(nil)
 	idle := time.AfterFunc(b.idle, func() { cancel(errTimedOut) })
 	defer idle.Stop()
-	transport := &http.Transport{DisableKeepAlives: true}
-	if c.socket != "" {
-		transport.DialContext = func(ctx context.Context, _, _ string) (net.Conn, error) {
+	transport := &http.Transport{
+		DisableKeepAlives: true,
+		// Whatever host the url names: it is only the Host header the gate checks.
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 			var d net.Dialer
 			return d.DialContext(ctx, "unix", c.socket)
-		}
+		},
 	}
 	client := &http.Client{
 		Transport:     transport,

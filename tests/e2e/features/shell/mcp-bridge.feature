@@ -62,6 +62,12 @@ Feature: The stdio bridge when there is no app behind it
     Given the app answers with "a json answer behind a BOM"
     Then it is forwarded unchanged
 
+  Scenario: A handshake with no socket is not followed to the port it names
+    Given the handshake is one an older version wrote, with no socket
+    When a client calls a tool through the bridge
+    Then the call is a tool error saying "AI access"
+    And nothing reached the app
+
   Scenario: A handshake that points off this machine is not followed
     Given the handshake points off this machine
     When a client calls a tool through the bridge

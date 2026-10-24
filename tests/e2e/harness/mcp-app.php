@@ -8,7 +8,9 @@ declare(strict_types=1);
 * with one canned body, and records what was asked so the scenario can check the URL, the token
 * and the message that went through.
 *
-*     php-cli mcp-app.php <port> <mode> <record file>
+*     php-cli mcp-app.php <socket> <mode> <record file>
+*
+* On a unix socket, as the launcher's gate is reached: the bridges post nowhere else.
 *
 * Printed "listening" once it is bound, the way slow-server.php does, so the scenario can wait
 * for it rather than guess.
@@ -17,10 +19,10 @@ declare(strict_types=1);
 * login, padded (the JSON behind a BOM and around whitespace), error (JSON with a 502).
 */
 
-[, $port, $mode, $record] = $argv;
-$server = stream_socket_server("tcp://127.0.0.1:$port", $errno, $error);
+[, $socket, $mode, $record] = $argv;
+$server = stream_socket_server("unix://$socket", $errno, $error);
 if ($server === false) {
-	fwrite(STDERR, "mcp-app: cannot listen on $port: $error\n");
+	fwrite(STDERR, "mcp-app: cannot listen on $socket: $error\n");
 	exit(1);
 }
 echo "listening\n";

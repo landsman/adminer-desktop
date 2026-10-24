@@ -70,10 +70,11 @@ class Stdio {
 		$params = is_array($message) && is_array($message['params'] ?? null) ? $message['params'] : [];
 
 		$config = $this->handshake->read();
-		// A socket someone else could have made reads as no handshake, as in the Go bridge
-		// (private_unix.go): on Linux the gate's directory is in the shared /tmp, and once the app
-		// has gone another account can recreate it at the path mcp.json still names.
-		if ($config !== null && $config['socket'] !== '' && !self::isPrivate($config['socket'])) {
+		// The socket, and only the socket, as in the Go bridge (private_unix.go): the url's port
+		// outlives the app and anyone can bind it, and a handshake with no socket is one an older
+		// version wrote. Nor one someone else could have made: on Linux the gate's directory is in
+		// the shared /tmp, and once the app has gone another account can recreate it there.
+		if ($config !== null && ($config['socket'] === '' || !self::isPrivate($config['socket']))) {
 			$config = null;
 		}
 		if ($config === null) {
@@ -127,7 +128,7 @@ class Stdio {
 
 	/** POST one message to the launcher's gate, with its token. The gate adds the session.
 	*
-	* Over the gate's unix socket when the handshake names one: a quit app leaves its port behind
+	* Over the gate's unix socket, never the url's port: a quit app leaves its port behind
 	* for anyone to bind, and whoever did would get the token and the SQL, and could answer. curl
 	* rather than PHP's http wrapper, which cannot reach a socket. The timeout is idle, not total,
 	* as Go's is: a large result still arriving at a minute has not timed out. No proxy, whatever
@@ -149,9 +150,7 @@ class Stdio {
 			CURLOPT_LOW_SPEED_LIMIT => 1,
 			CURLOPT_LOW_SPEED_TIME => 60,
 		]);
-		if ($socket !== '') {
-			curl_setopt($curl, CURLOPT_UNIX_SOCKET_PATH, $socket);
-		}
+		curl_setopt($curl, CURLOPT_UNIX_SOCKET_PATH, $socket);
 		$answer = curl_exec($curl);
 		if (!is_string($answer)) {
 			return curl_errno($curl) === CURLE_OPERATION_TIMEDOUT ? self::TIMED_OUT : null;

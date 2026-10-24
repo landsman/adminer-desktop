@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -28,14 +29,52 @@ func bridge(t *testing.T, dir string) *Bridge {
 	return NewIn(dir)
 }
 
-// handshake points the bridge at a server, in the shape Desktop\Mcp\Handshake writes.
+// handshake points the bridge at a server, in the shape Desktop\Mcp\Handshake writes: the url
+// names it, and the socket serve() gave it is where the call goes.
 func handshake(t *testing.T, dir, url string) {
 	t.Helper()
-	body := fmt.Sprintf(`{"url":%q,"token":"tok","target":""}`, url)
+	socket := ""
+	stubs.Range(func(prefix, path any) bool {
+		if strings.HasPrefix(url, prefix.(string)) {
+			socket = path.(string)
+			return false
+		}
+		return true
+	})
+	body := fmt.Sprintf(`{"url":%q,"token":"tok","target":"","socket":%q}`, url, socket)
 	if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
+
+// serve is a stand-in for the gate, on a unix socket in a private directory as the gate's is,
+// since the bridge posts nowhere else. Its URL is only a name (each gets its own port, so
+// handshake() can find its socket by it); closing it leaves the socket file behind, refusing, as
+// a Cmd+Q leaves the gate's.
+func serve(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "mb") // a unix socket path has to stay under ~100 bytes
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeOrFail(t, closerFunc(func() error { return os.RemoveAll(dir) })) })
+	socket := filepath.Join(dir, "call.sock")
+	ln, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ln.(*net.UnixListener).SetUnlinkOnClose(false)
+	server := &httptest.Server{Listener: ln, Config: &http.Server{Handler: handler}}
+	server.Start()
+	server.URL = fmt.Sprintf("http://127.0.0.1:%d", 40000+stubCount.Add(1))
+	stubs.Store(server.URL+"/", socket)
+	return server
+}
+
+var (
+	stubs     sync.Map // a stub's URL → its socket
+	stubCount atomic.Int32
+)
 
 // reply is a test server's answer; a write that fails would leave the bridge with a short body
 // and the test asserting on something the server never meant to say.
@@ -245,7 +284,7 @@ func TestDiscoverAnswersLegacy(t *testing.T) {
 // The window closed between the handshake and the call.
 func TestWindowClosed(t *testing.T) {
 	dir := t.TempDir()
-	dead := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	dead := serve(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	url := dead.URL + "/adminer.php?pgsql=x"
 	dead.Close()
 	handshake(t, dir, url)
@@ -266,7 +305,7 @@ func said(t *testing.T, answer *string) string {
 // app answers every call with one status and body.
 func app(t *testing.T, status int, body string) string {
 	t.Helper()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 		reply(t, w, body)
 	}))
@@ -321,39 +360,43 @@ func TestOffMachineHandshakeIsNotFollowed(t *testing.T) {
 	}
 }
 
-// With a socket in the handshake the call goes there and nowhere else: a quit app's port can be
-// bound by anyone, its socket cannot.
-func TestPostsOverTheSocket(t *testing.T) {
-	short, err := os.MkdirTemp("", "mb") // a unix socket path has to stay under ~100 bytes
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { closeOrFail(t, closerFunc(func() error { return os.RemoveAll(short) })) })
-	socket := filepath.Join(short, "call.sock")
-	ln, err := net.Listen("unix", socket)
-	if err != nil {
-		t.Fatal(err)
-	}
-	server := &httptest.Server{Listener: ln, Config: &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// The call goes over the socket and never to the url's port: a quit app's port can be bound by
+// anyone, its socket cannot. Nor does a handshake without a socket — one an older version wrote,
+// before the window has been opened since the upgrade — send anything to the port it names.
+func TestPostsOverTheSocketOnly(t *testing.T) {
+	gate := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"via":"socket"}}`)
-	})}}
-	server.Start()
-	stranger := app(t, http.StatusOK, `{"jsonrpc":"2.0","id":7,"result":{"via":"port"}}`)
+	}))
+	reached := false
+	stranger := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reached = true
+		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"via":"port"}}`)
+	}))
+	stranger.Start()
+	defer stranger.Close()
+	socket, _ := stubs.Load(gate.URL + "/")
 
 	dir := t.TempDir()
 	write := func(socket string) {
-		body := fmt.Sprintf(`{"url":%q,"token":"tok","socket":%q}`, stranger, socket)
+		body := fmt.Sprintf(`{"url":%q,"token":"tok","socket":%q}`, stranger.URL+"/adminer.php?pgsql=x", socket)
 		if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
-	write(socket)
+	write(socket.(string))
 	if got := bridge(t, dir).Exchange(listTools()); got == nil || !strings.Contains(*got, "socket") {
 		t.Errorf("the call did not go over the socket: %v", got)
 	}
-	server.Close() // the app quit: its socket is gone, and the port is someone else's now
-	if got := bridge(t, dir).Exchange(callTool()); got == nil || strings.Contains(*got, "port") || !strings.Contains(*got, `"isError":true`) {
-		t.Errorf("a gone socket fell back to the port: %v", got)
+	gate.Close() // the app quit: its socket refuses, and the port is someone else's now
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "stopped answering") {
+		t.Errorf("a dead socket: %s", got)
+	}
+	write("")
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "AI access") {
+		t.Errorf("a handshake with no socket: %s", got)
+	}
+	if reached {
+		t.Error("the url's port was posted to, token and all")
 	}
 }
 
@@ -393,7 +436,7 @@ func TestSocketInAnOpenDirectoryIsRefused(t *testing.T) {
 // A cancelled call gets no answer, and the window is hung up on rather than left working on it.
 func TestCancelledCallIsDropped(t *testing.T) {
 	asked, released := make(chan struct{}), make(chan struct{})
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(readBody(t, r), "tools/call") {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -435,7 +478,7 @@ func TestCancelledCallIsDropped(t *testing.T) {
 
 // More calls than run at once still leave a ping free to answer.
 func TestPingIsNotQueuedBehindCalls(t *testing.T) {
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := readBody(t, r)
 		if strings.Contains(body, "tools/call") {
 			time.Sleep(400 * time.Millisecond)
@@ -475,12 +518,12 @@ func (f closerFunc) Close() error { return f() }
 // A redirect is not followed: Go would carry the token to another port on the same host.
 func TestRedirectIsNotFollowed(t *testing.T) {
 	reached := false
-	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	elsewhere := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reached = true
 		reply(t, w, `{}`)
 	}))
 	defer elsewhere.Close()
-	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	redirect := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, elsewhere.URL, http.StatusTemporaryRedirect)
 	}))
 	defer redirect.Close()
@@ -496,7 +539,7 @@ func TestRedirectIsNotFollowed(t *testing.T) {
 
 // A ping is answered while a slow call is still running, not after it.
 func TestPingIsNotHeldBehindASlowCall(t *testing.T) {
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := readBody(t, r)
 		if strings.Contains(body, "tools/call") {
 			time.Sleep(300 * time.Millisecond)
@@ -521,7 +564,7 @@ func TestPingIsNotHeldBehindASlowCall(t *testing.T) {
 
 // HTML back means the session expired, and the agent is told rather than handed markup to guess at.
 func TestHTMLMeansExpiredSession(t *testing.T) {
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reply(t, w, `<!doctype html><title>Login</title>`)
 	}))
 	defer app.Close()
@@ -536,7 +579,7 @@ func TestHTMLMeansExpiredSession(t *testing.T) {
 
 // An empty answer is a notification the app answered with 204: nothing to forward.
 func TestEmptyAnswerForwardsNothing(t *testing.T) {
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer app.Close()
@@ -550,7 +593,7 @@ func TestEmptyAnswerForwardsNothing(t *testing.T) {
 // A JSON answer is forwarded exactly as the server said it.
 func TestJSONAnswerIsUnchanged(t *testing.T) {
 	const answer = `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reply(t, w, answer)
 	}))
 	defer app.Close()
@@ -565,7 +608,7 @@ func TestJSONAnswerIsUnchanged(t *testing.T) {
 // It posts where the handshake says, with mcp=1 and the token, and the message unchanged.
 func TestPostsToTheHandshake(t *testing.T) {
 	var uri, auth, body string
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uri, auth = r.URL.RequestURI(), r.Header.Get("Authorization")
 		body = readBody(t, r)
 		reply(t, w, `{}`)
@@ -592,7 +635,7 @@ func TestPostsToTheHandshake(t *testing.T) {
 
 // run() pumps a stream: blank lines skipped, one answer per request, silence stays silent.
 func TestStreamPumping(t *testing.T) {
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(readBody(t, r), `"id"`) {
 			reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
 		}
@@ -620,7 +663,7 @@ func TestQuietStdinSurvives(t *testing.T) {
 	if seconds, err := strconv.Atoi(os.Getenv("MCP_BRIDGE_QUIET_SECONDS")); err == nil && seconds > 0 {
 		quiet = time.Duration(seconds) * time.Second
 	}
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{}}`)
 	}))
 	defer app.Close()
@@ -702,7 +745,7 @@ func TestFindsTheLaunchersDataDir(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
 	}))
 	defer app.Close()
@@ -742,7 +785,7 @@ func TestNonStringMethodIsAnswered(t *testing.T) {
 
 // The timeout is idle, as PHP's is: a body still arriving past it is not a closed window.
 func TestSlowBodyIsNotAClosedWindow(t *testing.T) {
-	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	app := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		flusher := w.(http.Flusher)
 		for _, part := range []string{`{"jsonrpc":"2.0",`, `"id":7,`, `"result":{}}`} {
 			reply(t, w, part)
@@ -759,7 +802,7 @@ func TestSlowBodyIsNotAClosedWindow(t *testing.T) {
 		t.Errorf("a slow body was cut off: %v", got)
 	}
 
-	silent := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	silent := serve(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(300 * time.Millisecond)
 	}))
 	defer silent.Close()

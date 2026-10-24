@@ -15,7 +15,7 @@ it; it stays as the baseline the e2e suite holds the Go bridge to.
   bridge (`mise run e2e-bridge-go`). A difference between the two fails the run.
   - `features/shell/mcp-bridge.feature`: the bridge against an HTTP stub. It covers the app not
     running, a closed window, an expired session, an empty answer, an error status, a BOM, a
-    handshake that points off this machine, a version negotiated offline, `server/discover`, a
+    handshake that points off this machine, one with no socket, a version negotiated offline, `server/discover`, a
     quiet socket stdin, and the stream framing.
   - `features/shell/mcp.feature`: the real gate and app on postgres. It covers the handshake and
     its permissions, the gate refusing anything without the token, reads, writes on and off,
@@ -111,7 +111,8 @@ HOME=$H ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 agent demo demo' ./build.noi
   The Go bridge's timeout is tested with a short limit.
 - **A fresh clone needs `make`** before a bare `go build` or gopls works. The bridge embeds
   `launcher/mcpbridge/data.json`, which `make mcp-bridge-data` generates.
-- **Upgrading from the PHP bridge:** remove the registration and add it again.
+- **Upgrading from the PHP bridge:** remove the registration and add it again. The old
+  `mcp.json` has no socket, so it is not followed until the window has loaded a page.
 - **Found while testing, and not fixed by [#186](https://github.com/landsman/adminer-desktop/pull/186):** with writes on, a committed statement that
   returns no rows, such as a plain `INSERT`, is reported to the agent as an error. An agent
   that retries it writes twice.
