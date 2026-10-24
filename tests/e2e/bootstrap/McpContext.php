@@ -758,6 +758,14 @@ class McpContext implements Context
 		);
 	}
 
+	#[When('a client at :version initializes through the bridge')]
+	public function initializeAtVersionThroughBridge(string $version): void
+	{
+		$this->answer = (array) json_decode((string) $this->bridge?->exchange((string) json_encode(
+			['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize', 'params' => ['protocolVersion' => $version]],
+		)), true);
+	}
+
 	#[When('a client lists the tools through the bridge')]
 	public function listToolsThroughBridge(): void
 	{

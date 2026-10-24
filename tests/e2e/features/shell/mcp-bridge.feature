@@ -18,6 +18,11 @@ Feature: The stdio bridge when there is no app behind it
     When a client calls a tool through the bridge
     Then the call is a tool error saying "AI access"
 
+  Scenario: An older client is met at its version, as the app would meet it
+    Given the app is not running
+    When a client at "2025-06-18" initializes through the bridge
+    Then it is met at "2025-06-18"
+
   Scenario: Described offline as the settings say, since a client keeps the list it got at connect
     Given the app is not running, with writes allowed in its settings
     When a client lists the tools through the bridge

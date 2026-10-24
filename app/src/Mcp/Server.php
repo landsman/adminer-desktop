@@ -12,7 +12,7 @@ use Desktop\I18n\Strings;
 * library here because there is nothing to a library: the transport is the HTTP request we are
 * already inside, and the framing is json_decode.
 *
-* The agent reaches this over stdio through mcp.php and the launcher's gate, which adds the
+* The agent reaches this over stdio through the launcher's -mcp bridge (or mcp.php) and its gate, which adds the
 * window's session (launcher/mcpgate) — so by the time dispatch() runs, Adminer has connected as
 * the logged-in user and Tools can simply ask. If the session was missing or stale, this code
 * never runs at all: Adminer answers the login page instead, which is exactly the failure we want.
@@ -77,7 +77,7 @@ class Server {
 		try {
 			return match ($method) {
 				'initialize' => $this->result($id, [
-					'protocolVersion' => $this->negotiate($params),
+					'protocolVersion' => self::negotiate($params),
 					'capabilities' => ['tools' => new \stdClass()],
 					'serverInfo' => ['name' => 'adminer-desktop', 'version' => \Adminer\VERSION],
 					'instructions' => self::INSTRUCTIONS,
@@ -106,9 +106,12 @@ class Server {
 	* the client's version back unconditionally would be the tempting bug — it reads as
 	* agreeable and promises whatever that revision added.
 	*
+	* Static so the bridge can answer the same with no app behind it (Stdio::unavailable(), and
+	* launcher/mcpbridge negotiate()).
+	*
 	* @param array<string,mixed> $params
 	*/
-	private function negotiate(array $params): string {
+	static function negotiate(array $params): string {
 		$asked = is_string($params['protocolVersion'] ?? null) ? $params['protocolVersion'] : '';
 		return ($asked !== '' && $asked < self::PROTOCOL) ? $asked : self::PROTOCOL;
 	}

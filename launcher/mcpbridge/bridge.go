@@ -19,6 +19,7 @@ package mcpbridge
 import (
 	"bufio"
 	"bytes"
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -68,9 +69,12 @@ func mustLoad() generated {
 	return g
 }
 
-// How long one call may wait for the window before it is reported as closed. The stdio side has
-// no timeout: a client that goes quiet has not let go, and a socket stdin once dropped the server
-// after a minute (the bug https://github.com/landsman/adminer-desktop/pull/183 fixed). This one bounds the HTTP hop only.
+// How long the window may stay silent on one call before it is reported as closed: to connect,
+// to answer, and between two reads of a body still arriving. Idle, as PHP's http `timeout` is,
+// not a cap on the whole call — a large result still streaming at a minute is not a closed window.
+// The stdio side has no timeout: a client that goes quiet has not let go, and a socket stdin once
+// dropped the server after a minute (the bug https://github.com/landsman/adminer-desktop/pull/183
+// fixed). This one bounds the HTTP hop only.
 const callTimeout = 60 * time.Second
 
 // Bridge reads one JSON-RPC message, answers it from PHP's own definitions when the app is
@@ -78,17 +82,18 @@ const callTimeout = 60 * time.Second
 type Bridge struct {
 	dir    string // where mcp.json and settings.json live; "" when the app has no durable home
 	client *http.Client
+	idle   time.Duration // callTimeout, shorter in a test
 	locale string
 }
 
-// New is the bridge an agent spawns: the data dir in ADMINER_DESKTOP_DATA when one is set (the
-// e2e scenarios set it), or the launcher's own. The fallback matters because an agent starts this
-// as a bare child with no environment of ours, and without it the bridge reports the app as not
-// running while it is open in front of you.
+// New is the bridge an agent spawns, on the launcher's own data dir whatever the environment
+// says: an agent started from a shell that has ADMINER_DESKTOP_DATA set for `make serve` or the
+// e2e suite would otherwise read another directory's handshake and report the app as not running
+// while it is open in front of you.
 func New() *Bridge {
-	dir := os.Getenv("ADMINER_DESKTOP_DATA")
-	if dir == "" {
-		dir, _ = datadir.Path() // no config dir at all: "" reads as "not running", which it is not far from
+	dir, err := datadir.Path()
+	if err != nil {
+		dir = "" // no config dir at all: nothing to reach, which is what the agent is told
 	}
 	return NewIn(dir)
 }
@@ -97,7 +102,8 @@ func New() *Bridge {
 func NewIn(dir string) *Bridge {
 	return &Bridge{
 		dir:    dir,
-		client: &http.Client{Timeout: callTimeout},
+		client: &http.Client{},
+		idle:   callTimeout,
 		locale: locale(),
 	}
 }
@@ -184,7 +190,7 @@ func (b *Bridge) unavailable(message rpcMessage, text string) *string {
 	case "initialize":
 		return message.result(fmt.Sprintf(
 			`{"protocolVersion":%s,"capabilities":{"tools":{}},"serverInfo":{"name":"adminer-desktop","version":"offline"},"instructions":%s}`,
-			quote(data.ProtocolVersion), quote(data.Instructions),
+			quote(negotiate(message.asked)), quote(data.Instructions),
 		))
 	case "tools/list":
 		return message.result(`{"tools":` + string(b.catalogue()) + `}`)
@@ -295,7 +301,11 @@ func (b *Bridge) handshake() (call, bool) {
 
 // post sends one message to the launcher's gate, with its token. The gate adds the session.
 func (b *Bridge) post(url, body, token string) (string, bool) {
-	req, err := http.NewRequest(http.MethodPost, endpointAt(url), strings.NewReader(body))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	idle := time.AfterFunc(b.idle, cancel)
+	defer idle.Stop()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointAt(url), strings.NewReader(body))
 	if err != nil {
 		return "", false
 	}
@@ -305,11 +315,26 @@ func (b *Bridge) post(url, body, token string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	answer, err := io.ReadAll(resp.Body)
+	answer, err := io.ReadAll(idleReader{resp.Body, idle, b.idle})
 	if err = errors.Join(err, resp.Body.Close()); err != nil {
 		return "", false
 	}
 	return string(answer), true
+}
+
+// idleReader pushes the deadline back on every read that brought something.
+type idleReader struct {
+	r     io.Reader
+	timer *time.Timer
+	idle  time.Duration
+}
+
+func (r idleReader) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	if n > 0 {
+		r.timer.Reset(r.idle)
+	}
+	return n, err
 }
 
 // endpointAt is the URL a message goes to: the handshake's, with mcp=1, which is the query the
@@ -322,29 +347,60 @@ func endpointAt(url string) string {
 	return url + "?mcp=1"
 }
 
-// rpcMessage is only as much of a message as a reply needs: the id to answer with, and the method
-// to choose the answer. Everything else is forwarded untouched.
+// rpcMessage is only as much of a message as a reply needs: the id to answer with, the method
+// to choose the answer, and the version an initialize asked for. Everything else is forwarded
+// untouched.
 type rpcMessage struct {
 	id     json.RawMessage
 	hasID  bool
 	method string
+	asked  string
 }
 
+// parse reads each field on its own, as PHP's Stdio does: a method or a version of the wrong
+// type reads as none, rather than failing the whole decode and losing an id that is owed an
+// answer.
 func parse(line string) rpcMessage {
 	var raw struct {
 		ID     json.RawMessage `json:"id"`
-		Method string          `json:"method"`
+		Method json.RawMessage `json:"method"`
+		Params json.RawMessage `json:"params"`
 	}
 	if json.Unmarshal([]byte(line), &raw) != nil {
 		return rpcMessage{}
 	}
+	m := rpcMessage{method: str(raw.Method)}
+	var params struct {
+		ProtocolVersion json.RawMessage `json:"protocolVersion"`
+	}
+	if json.Unmarshal(raw.Params, &params) == nil {
+		m.asked = str(params.ProtocolVersion)
+	}
 	// json.RawMessage is nil when the key is absent; an explicit null is "null" and JSON-RPC
 	// treats a request with id null as a notification too. PHP's `?? null` cannot tell the two
 	// apart either, so both are silence.
-	if len(raw.ID) == 0 || string(raw.ID) == "null" {
-		return rpcMessage{method: raw.Method}
+	if len(raw.ID) != 0 && string(raw.ID) != "null" {
+		m.id, m.hasID = raw.ID, true
 	}
-	return rpcMessage{id: raw.ID, hasID: true, method: raw.Method}
+	return m
+}
+
+// str is a JSON string's value, or "" for anything else — absent, null, a number.
+func str(raw json.RawMessage) string {
+	var s string
+	if json.Unmarshal(raw, &s) != nil {
+		return ""
+	}
+	return s
+}
+
+// negotiate is Desktop\Mcp\Server::negotiate(): the client's version when it is older than
+// ours, else ours. Versions are ISO dates, so older is a string comparison.
+func negotiate(asked string) string {
+	if asked != "" && asked < data.ProtocolVersion {
+		return asked
+	}
+	return data.ProtocolVersion
 }
 
 func (m rpcMessage) result(result string) *string {

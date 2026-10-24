@@ -15,6 +15,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/landsman/adminer-desktop/launcher/datadir"
 )
 
 // The scenarios tests/e2e/features/shell/mcp-bridge.feature describes, against this package with
@@ -423,18 +425,85 @@ func TestLocale(t *testing.T) {
 	}
 }
 
-// The data dir is the launcher's: ADMINER_DESKTOP_DATA when it is passed, else the same
-// os.UserConfigDir() home. An agent starts the bridge with no environment of ours.
-func TestFindsTheDataDirFromTheEnvironment(t *testing.T) {
-	dir := t.TempDir()
+// The data dir is the launcher's whatever the environment says: a shell with
+// ADMINER_DESKTOP_DATA left over from `make serve` must not point an agent somewhere else.
+func TestFindsTheLaunchersDataDir(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	t.Setenv("ADMINER_DESKTOP_DATA", t.TempDir()) // empty: reading it would say "not running"
+	dir, err := datadir.Path()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
 	}))
 	defer app.Close()
 	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
-	t.Setenv("ADMINER_DESKTOP_DATA", dir)
-	if got := New().Exchange(listTools()); got == nil || !strings.Contains(*got, `"tools"`) {
-		t.Errorf("the bridge did not use ADMINER_DESKTOP_DATA: %v", got)
+	if got := New().Exchange(listTools()); got == nil || *got != `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}` {
+		t.Errorf("the bridge did not use the launcher's data dir: %v", got)
+	}
+}
+
+// Offline initialize meets a client where Server::negotiate() would: an older version back, a
+// newer one or none told ours.
+func TestOfflineInitializeNegotiates(t *testing.T) {
+	for asked, want := range map[string]string{
+		`"2025-06-18"`: "2025-06-18",
+		`"2099-01-01"`: data.ProtocolVersion,
+		`""`:           data.ProtocolVersion,
+		`5`:            data.ProtocolVersion,
+	} {
+		line := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":` + asked + `}}`
+		got := decode(t, bridge(t, t.TempDir()).Exchange(line))["result"].(map[string]any)["protocolVersion"]
+		if got != want {
+			t.Errorf("asked %s, answered %v, want %s", asked, got, want)
+		}
+	}
+}
+
+// A method that is not a string still has an id owed an answer; PHP reads it as no method.
+func TestNonStringMethodIsAnswered(t *testing.T) {
+	answer := bridge(t, t.TempDir()).Exchange(`{"jsonrpc":"2.0","id":1,"method":5}`)
+	if answer == nil {
+		t.Fatal("a request with a numeric method got no answer, so the client waits on id 1")
+	}
+	if decode(t, answer)["result"].(map[string]any)["isError"] != true {
+		t.Errorf("not the tool error PHP gives: %s", *answer)
+	}
+}
+
+// The timeout is idle, as PHP's is: a body still arriving past it is not a closed window.
+func TestSlowBodyIsNotAClosedWindow(t *testing.T) {
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		flusher := w.(http.Flusher)
+		for _, part := range []string{`{"jsonrpc":"2.0",`, `"id":7,`, `"result":{}}`} {
+			reply(t, w, part)
+			flusher.Flush()
+			time.Sleep(60 * time.Millisecond)
+		}
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	b := bridge(t, dir)
+	b.idle = 100 * time.Millisecond // under the whole 180 ms, over each 60 ms gap
+	if got := b.Exchange(listTools()); got == nil || *got != `{"jsonrpc":"2.0","id":7,"result":{}}` {
+		t.Errorf("a slow body was cut off: %v", got)
+	}
+
+	silent := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(300 * time.Millisecond)
+	}))
+	defer silent.Close()
+	handshake(t, dir, silent.URL+"/adminer.php?pgsql=x")
+	result := decode(t, b.Exchange(callTool()))["result"].(map[string]any)
+	if said := result["content"].([]any)[0].(map[string]any)["text"].(string); !strings.Contains(said, "stopped answering") {
+		t.Errorf("a silent window was not reported closed: %s", said)
 	}
 }
 

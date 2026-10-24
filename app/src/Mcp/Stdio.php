@@ -69,15 +69,16 @@ class Stdio {
 		$message = json_decode($line, true);
 		$id = is_array($message) ? ($message['id'] ?? null) : null;
 		$method = is_array($message) && is_string($message['method'] ?? null) ? $message['method'] : '';
+		$params = is_array($message) && is_array($message['params'] ?? null) ? $message['params'] : [];
 
 		$config = $this->handshake->read();
 		if ($config === null) {
-			return $this->unavailable($id, $method, Strings::t('mcp.agent_not_running'));
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_not_running'));
 		}
 		$body = ($this->send)(Endpoint::at($config['url']), $line, $config['token']);
 
 		if ($body === false) {
-			return $this->unavailable($id, $method, Strings::t('mcp.agent_window_closed'));
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_window_closed'));
 		}
 		if ($body === '') {
 			return null; // the app answered 204: a notification, and nothing to forward
@@ -85,7 +86,7 @@ class Stdio {
 		// Adminer answers HTML when the session behind the handshake has expired. Say that,
 		// rather than handing the agent a page of markup to guess at.
 		if ($body[0] !== '{' && $body[0] !== '[') {
-			return $this->unavailable($id, $method, Strings::t('mcp.agent_session_expired'));
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_session_expired'));
 		}
 		return $body;
 	}
@@ -120,14 +121,16 @@ class Stdio {
 	* was the previous answer, and a model seeing no database tools concluded the server was not
 	* connected and wrote its own bridge to the database. The real list also means opening the app
 	* is enough: the next call goes through, with no reconnect to remember.
+	*
+	* @param array<mixed> $params
 	*/
-	private function unavailable(mixed $id, string $method, string $message): ?string {
+	private function unavailable(mixed $id, string $method, array $params, string $message): ?string {
 		if ($id === null) {
 			return null; // a notification: answered with silence whatever the state
 		}
 		return match ($method) {
 			'initialize' => $this->result($id, [
-				'protocolVersion' => Server::PROTOCOL,
+				'protocolVersion' => Server::negotiate($params),
 				'capabilities' => ['tools' => new \stdClass()],
 				'serverInfo' => ['name' => 'adminer-desktop', 'version' => 'offline'],
 				'instructions' => Server::INSTRUCTIONS,
