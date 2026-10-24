@@ -51,7 +51,8 @@ class UserSettings {
 		$data[$key->value] = $value;
 		// Write a temp file then rename over the real one: rename is atomic, so a crash
 		// mid-write can never leave half a JSON object that the next read chokes on.
-		$tmp = $this->file . "." . getmypid() . ".tmp";
+		// Random, not the pid: every frankenphp thread shares one, and two writes would share a temp file.
+		$tmp = $this->file . "." . bin2hex(random_bytes(6)) . ".tmp";
 		if (@file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT)) !== false) {
 			@rename($tmp, $this->file);
 			$this->cache = $data;
