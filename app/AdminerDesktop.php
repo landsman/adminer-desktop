@@ -425,11 +425,4 @@ class AdminerDesktop extends Adminer\Plugin {
 		}
 		Adminer\redirect($_SERVER["REQUEST_URI"]);
 	}
-
-	/** Adminer's plugin translations, keyed by dotted ID. Populated in the constructor from the
-	* per-language files under app/src/I18n/plugin/; Adminer's Plugin::lang() reads this as
-	* $translations[LANG], with en.php the base an untranslated ID falls back to.
-	* @var array<string,array<string,string>>
-	*/
-	protected $translations = []; // phpcs:ignore SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint -- overrides adminer's untyped Adminer\Plugin::$translations, which PHP forbids narrowing
 }

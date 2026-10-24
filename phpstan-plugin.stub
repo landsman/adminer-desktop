@@ -1,0 +1,12 @@
+<?php
+/** Adminer's own phpdoc for what we override, which phpstan cannot read from adminer.php:
+* the compiler strips doc-comments, so every type there is mixed. Copied from the release's
+* adminer/include/plugin.inc.php. Read by phpstan only (stubFiles in phpstan.neon).
+*/
+
+namespace Adminer;
+
+abstract class Plugin {
+	/** @var array<literal-string, string|list<string>>[] */
+	protected $translations = [];
+}

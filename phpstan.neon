@@ -1,3 +1,6 @@
+includes:
+    - app/vendor/phpstan/phpstan-strict-rules/rules.neon
+
 parameters:
     # Only what we wrote; everything excluded below ships verbatim from the adminer
     # release and is not ours to report on.
@@ -30,6 +33,10 @@ parameters:
         - app/adminer.php
         - phpstan-stubs.php
 
+    # Adminer's phpdoc for the members we override; see the file.
+    stubFiles:
+        - phpstan-plugin.stub
+
     # Level 6 adds the missing-type checks: every parameter, return and property in our own
     # code carries a type. The adminer hooks we override (head, css, csp, navigation, ...)
     # carry @param/@return phpdoc rather than native types — adminer's base leaves them
@@ -37,6 +44,32 @@ parameters:
     # TypeError, not just a phpstan note. Bare $_POST["x"] stays fine either way: phpstan
     # treats the superglobal as open-keyed, so an access is never "possibly undefined".
     level: 6
+
+    # Upstream adminer's stricter set (conf/phpstan.neon there), so code written next to
+    # adminer is held to the same bar adminer holds itself to.
+    checkNullables: true # level 8
+    checkUninitializedProperties: true # typed property without a default value
+    checkDynamicProperties: true # property not declared in the class
+    checkFunctionNameCase: true
+    checkMissingCallableSignature: true # callable without the types of its parameters
+    reportAnyTypeWideningInVarTag: true # @var widening the inferred type
+    reportMaybesInMethodSignatures: true # nullable parameter and return types of overridden methods
+    reportMaybesInPropertyPhpDocTypes: true
+    reportStaticMethodSignatures: true
+
+    strictRules:
+        allRules: false
+        closureUsesThis: true
+        disallowedBacktick: true
+        disallowedImplicitArrayCreation: true
+        dynamicCallOnStaticMethod: true
+        illegalConstructorMethodCall: true
+        matchingInheritedMethodNames: true
+        switchConditionsMatchingType: true
+    # rules.neon enables these outside strictRules, so they are set back as upstream does
+    polluteScopeWithLoopInitialAssignments: true
+    polluteScopeWithAlwaysIterableForeach: true
+    reportWrongPhpDocTypeInVarTag: false
 
     # Defined once per request by whichever driver the URL names; phpstan otherwise takes the
     # first define() in adminer.php ("pgsql") for the only value and calls every check of it

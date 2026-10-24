@@ -172,12 +172,7 @@ checksums:
 # Analysis tools are pinned like everything else, so a green build stays green for a
 # reason rather than because a linter happened not to ship a new rule today.
 GOLANGCI_VERSION = v2.12.2
-PHPSTAN_VERSION  = 2.2.5
 COMPOSER_VERSION = 2.10.2
-
-.cache/phpstan.phar:
-	@mkdir -p .cache
-	curl -fsSL --retry 3 --retry-delay 2 -o $@ https://github.com/phpstan/phpstan/releases/download/$(PHPSTAN_VERSION)/phpstan.phar
 
 .cache/composer.phar:
 	@mkdir -p .cache
@@ -214,8 +209,19 @@ app/vendor: app/composer.json app/composer.lock bin/frankenphp$(EXE) .cache/comp
 # --debug is not for debugging: phpstan's parallel workers shell out to a `php` binary,
 # and there deliberately is none here -- we run it through the frankenphp we download.
 # 2G because adminer.php is 500 KB of minified source on very long lines.
-phpstan: bin/frankenphp$(EXE) .cache/phpstan.phar app/adminer.php app/vendor
-	./bin/frankenphp$(EXE) php-cli .cache/phpstan.phar analyse -c phpstan.neon \
+# A composer dev dependency, not a download: the strict rules are a phpstan extension and
+# have to match its version, and composer.lock pins the pair the way upstream adminer does.
+# phpstan.restarted: phpstan restarts itself through PHP_BINARY to load its native extension
+# or retune OPcache, and under frankenphp's php-cli that is empty, so the restart fails and
+# takes the run with it. The value is what its own restart sets, so it skips it. An ini file
+# for the reason WIN_INI is one.
+PHPSTAN_INI = .cache/phpstan-ini
+$(PHPSTAN_INI)/phpstan.ini:
+	@mkdir -p $(dir $@)
+	printf 'phpstan.restarted=1\n' > $@
+
+phpstan: bin/frankenphp$(EXE) app/adminer.php app/vendor $(PHPSTAN_INI)/phpstan.ini
+	PHP_INI_SCAN_DIR=$(PHPSTAN_INI) ./bin/frankenphp$(EXE) php-cli app/vendor/phpstan/phpstan/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
 # The conventions phpstan does not judge: every property a native type (a bare @var is not
