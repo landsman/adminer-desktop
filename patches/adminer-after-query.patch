@@ -1,0 +1,133 @@
+Upstream: (pull request not opened yet) - delete this patch once a release with it is pinned.
+
+diff --git a/adminer/drivers/mysql.inc.php b/adminer/drivers/mysql.inc.php
+index 66d4444..8134a47 100644
+--- a/adminer/drivers/mysql.inc.php
++++ b/adminer/drivers/mysql.inc.php
+@@ -51,6 +51,16 @@ if (!defined('Adminer\DRIVER')) {
+ 				return self::more_results() && parent::next_result(); // triggers E_STRICT on PHP < 7.4 otherwise
+ 			}
+ 
++			function query($query, $result_mode = MYSQLI_STORE_RESULT) {
++				$start = microtime(true);
++				return query_done($query, $start, parent::query($query, $result_mode));
++			}
++
++			function multi_query($query) {
++				$start = microtime(true);
++				return query_done($query, $start, parent::multi_query($query));
++			}
++
+ 			function quote(string $string): string {
+ 				return "'" . $this->escape_string($string) . "'";
+ 			}
+diff --git a/adminer/drivers/pgsql.inc.php b/adminer/drivers/pgsql.inc.php
+index 9f43b7d..1c6fca9 100644
+--- a/adminer/drivers/pgsql.inc.php
++++ b/adminer/drivers/pgsql.inc.php
+@@ -71,6 +71,7 @@ if (isset($_GET["pgsql"])) {
+ 			}
+ 
+ 			function query(string $query, bool $unbuffered = false) {
++				$start = microtime(true);
+ 				if (self::$untrusted) {
+ 					// the extended protocol doesn't allow multiple commands, the transaction doesn't allow modifying data
+ 					$result = (@pg_query($this->link, "BEGIN READ ONLY")
+@@ -90,6 +91,7 @@ if (isset($_GET["pgsql"])) {
+ 				} else {
+ 					$return = new Result($result);
+ 				}
++				query_done($query, $start, $return);
+ 				if (self::$untrusted) {
+ 					@pg_query($this->link, "COMMIT"); // rollbacks the transaction if the query failed
+ 				}
+diff --git a/adminer/drivers/sqlite.inc.php b/adminer/drivers/sqlite.inc.php
+index 5a47ea4..341d5aa 100644
+--- a/adminer/drivers/sqlite.inc.php
++++ b/adminer/drivers/sqlite.inc.php
+@@ -22,17 +22,18 @@ if (isset($_GET["sqlite"])) {
+ 			}
+ 
+ 			function query(string $query, bool $unbuffered = false) {
++				$start = microtime(true);
+ 				$result = @$this->link->query($query);
+ 				$this->error = "";
+ 				if (!$result) {
+ 					$this->errno = $this->link->lastErrorCode();
+ 					$this->error = $this->link->lastErrorMsg();
+-					return false;
++					return query_done($query, $start, false);
+ 				} elseif ($result->numColumns()) {
+-					return new Result($result);
++					return query_done($query, $start, new Result($result));
+ 				}
+ 				$this->affected_rows = $this->link->changes();
+-				return true;
++				return query_done($query, $start, true);
+ 			}
+ 
+ 			function quote(string $string): string {
+diff --git a/adminer/include/adminer.inc.php b/adminer/include/adminer.inc.php
+index c8cccf7..6c8e3a2 100644
+--- a/adminer/include/adminer.inc.php
++++ b/adminer/include/adminer.inc.php
+@@ -99,6 +99,13 @@ class Adminer {
+ 	function afterConnect(): void {
+ 	}
+ 
++	/** Called after each query sent to the database, e.g. to profile them
++	* @param float $time seconds the query took
++	* @param Result|bool $result
++	*/
++	function afterQuery(string $query, float $time, $result): void {
++	}
++
+ 	/** Headers to send before HTML output */
+ 	function headers(): void {
+ 	}
+diff --git a/adminer/include/functions.inc.php b/adminer/include/functions.inc.php
+index d5b17b0..fa7805b 100644
+--- a/adminer/include/functions.inc.php
++++ b/adminer/include/functions.inc.php
+@@ -12,6 +12,19 @@ function connection(?Db $connection2 = null) {
+ 	return ($connection2 ?: Db::$instance);
+ }
+ 
++/** Report a finished query to plugins
++* @param float $start output of microtime(true) before sending the query
++* @param T $result
++* @return T
++* @template T
++*/
++function query_done(string $query, float $start, $result) {
++	if (Adminer::$instance) { // queries can be sent before plugins are loaded
++		adminer()->afterQuery($query, microtime(true) - $start, $result);
++	}
++	return $result;
++}
++
+ /** Get Adminer object
+ * @return Adminer|Plugins
+ */
+diff --git a/adminer/include/pdo.inc.php b/adminer/include/pdo.inc.php
+index 127e105..3a04941 100644
+--- a/adminer/include/pdo.inc.php
++++ b/adminer/include/pdo.inc.php
+@@ -28,14 +28,15 @@ if (extension_loaded('pdo')) {
+ 		}
+ 
+ 		function query(string $query, bool $unbuffered = false) {
++			$start = microtime(true);
+ 			/** @var Result|bool */
+ 			$result = $this->pdo->query($query);
+ 			$this->error = "";
+ 			if (!$result) {
+-				return $this->store_error(false);
++				return query_done($query, $start, $this->store_error(false));
+ 			}
+ 			$this->store_result($result);
+-			return $result;
++			return query_done($query, $start, $result);
+ 		}
+ 
+ 		/** Store the last error of the connection if the operation failed */

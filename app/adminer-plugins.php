@@ -31,4 +31,4 @@ $desktop->handlePost();
 
 // handlePost() first: ticking a plugin and seeing it take effect on the same request is the
 // whole point of saving before this line rather than after it.
-return array_merge([$desktop], $desktop->plugins()->instances());
+return array_merge([$desktop], $desktop->plugins()->instances(), Desktop\Debug::plugins());

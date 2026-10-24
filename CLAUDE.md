@@ -27,6 +27,10 @@ PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but
 because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to
 the page and nowhere else. `make logs` or the Open Logs menu item opens the folder.
 
+**Every query adminer sent is in Tracy's SQL panel**, under `-debug` in a checkout: dibi's own
+panel (a dev dependency), fed by the `afterQuery` hook that `patches/adminer-after-query.patch`
+adds — `Desktop\QueryLog`. No EXPLAIN, and no source link: the drivers live in one compiled file.
+
 **What the api did is in `<data dir>/log/api.log`**, under `-debug` only: `app/api.php`
 writes the action, the status and what was posted, one line per request. Tracy's bar cannot
 help there — the answer is a 204 to a `sendBeacon` fired as the page is being torn down, so
