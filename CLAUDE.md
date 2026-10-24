@@ -166,7 +166,8 @@ provenance, and `gh attestation verify` is what reads that. mise installs it, bu
 can log it in — the check goes over the API, so `mise run install` stops on a logged-out
 `gh` rather than letting `verify` fail later. There is no
 second PHP — composer and the e2e run on the bundled frankenphp (`./bin/frankenphp
-php-cli`), and `.cache/composer.phar` is fetched like `phpstan.phar`. `app/composer.json`
+php-cli`), `.cache/composer.phar` is downloaded, and phpstan is a composer dev dependency
+beside its strict rules. `app/composer.json`
 and `package.json` with their lockfiles are the source of truth; `app/vendor/` and
 `node_modules/` are built, not committed, and `dg/composer-cleaner` slims `app/vendor/` for
 a production build.
