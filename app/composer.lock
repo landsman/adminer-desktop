@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8dfa91a6b4824427bf4587f730f9b5a4",
+    "content-hash": "8b3f734511c28fc3ebb8f80c43213a78",
     "packages": [
         {
             "name": "latte/latte",
@@ -699,6 +699,82 @@
                 "source": "https://github.com/dg/composer-cleaner/tree/v2.2.2"
             },
             "time": "2026-04-27T09:05:14+00:00"
+        },
+        {
+            "name": "dibi/dibi",
+            "version": "v5.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dibi/dibi.git",
+                "reference": "a94470268345395377be8a52b9260587d56d9d7a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dibi/dibi/zipball/a94470268345395377be8a52b9260587d56d9d7a",
+                "reference": "a94470268345395377be8a52b9260587d56d9d7a",
+                "shasum": ""
+            },
+            "require": {
+                "php": "8.2 - 8.5"
+            },
+            "replace": {
+                "dg/dibi": "*"
+            },
+            "require-dev": {
+                "jetbrains/phpstorm-attributes": "^1.0",
+                "nette/di": "^3.1",
+                "nette/phpstan-rules": "^1.0",
+                "nette/tester": "^2.5",
+                "phpstan/extension-installer": "^1.4@stable",
+                "phpstan/phpstan": "^2.1@stable",
+                "tracy/tracy": "^2.9"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Dibi\\": "src/Dibi"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0-only",
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                }
+            ],
+            "description": "Dibi is Database Abstraction Library for PHP",
+            "homepage": "https://dibi.nette.org",
+            "keywords": [
+                "access",
+                "database",
+                "dbal",
+                "mssql",
+                "mysql",
+                "odbc",
+                "oracle",
+                "pdo",
+                "postgresql",
+                "sqlite",
+                "sqlsrv"
+            ],
+            "support": {
+                "issues": "https://github.com/dg/dibi/issues",
+                "source": "https://github.com/dg/dibi/tree/v5.1.1"
+            },
+            "time": "2026-02-22T20:46:57+00:00"
         },
         {
             "name": "nette/tester",

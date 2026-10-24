@@ -13,9 +13,6 @@ use Tracy\Debugger;
 *
 * Never outside -debug, for the same reason the web inspector is not: it would hand that
 * to anything that can reach the page.
-*
-* Adminer's CSP allows scripts by nonce, and Tracy's own are inline without one, so the
-* debug bar stays blank — the error screen replaces the page and is unaffected.
 */
 class Debug {
 	static function enable(): void {
@@ -49,5 +46,13 @@ class Debug {
 			}
 			return $tracy($severity, $message, $file, $line);
 		});
+	}
+
+	/** The plugins -debug adds to adminer's: the SQL panel, when dibi is installed — it is a
+	* dev dependency, so a release build under -debug simply has no SQL panel.
+	* @return list<object>
+	*/
+	static function plugins(): array {
+		return Env::Debug->get() && class_exists(\Dibi\Connection::class) ? [new QueryLog()] : [];
 	}
 }
