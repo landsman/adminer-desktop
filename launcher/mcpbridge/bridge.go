@@ -384,6 +384,11 @@ func (b *Bridge) post(c call, body string) (int, string, error) {
 		Transport:     transport,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
+	// A socket someone else could have made: on Linux the gate's directory is in the shared /tmp,
+	// and once the app has gone another account can recreate it at the path mcp.json still names.
+	if c.Socket != "" && !private(c.Socket) {
+		return call{}, false
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointAt(c.url), strings.NewReader(body))
 	if err != nil {
 		return 0, "", err

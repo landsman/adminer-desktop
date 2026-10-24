@@ -70,6 +70,12 @@ class Stdio {
 		$params = is_array($message) && is_array($message['params'] ?? null) ? $message['params'] : [];
 
 		$config = $this->handshake->read();
+		// A socket someone else could have made reads as no handshake, as in the Go bridge
+		// (private_unix.go): on Linux the gate's directory is in the shared /tmp, and once the app
+		// has gone another account can recreate it at the path mcp.json still names.
+		if ($config !== null && $config['socket'] !== '' && !self::isPrivate($config['socket'])) {
+			$config = null;
+		}
 		if ($config === null) {
 			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_not_running'));
 		}
@@ -104,6 +110,19 @@ class Stdio {
 			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_session_expired'));
 		}
 		return $body;
+	}
+
+	/** Whether a socket and its directory are this account's alone: not a link, owned by us, and a
+	* 0700 directory, as launcher/mcpgate makes it. Without posix (Windows) there is no gate yet. */
+	private static function isPrivate(string $socket): bool {
+		if (!function_exists('posix_geteuid')) {
+			return file_exists($socket);
+		}
+		$dir = dirname($socket);
+		$me = posix_geteuid();
+		clearstatcache();
+		return !is_link($dir) && is_dir($dir) && @fileowner($dir) === $me && (fileperms($dir) & 0077) === 0
+			&& !is_link($socket) && @filetype($socket) === 'socket' && @fileowner($socket) === $me;
 	}
 
 	/** POST one message to the launcher's gate, with its token. The gate adds the session.
