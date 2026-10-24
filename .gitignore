@@ -27,6 +27,10 @@
 # before every build. The per-language files are the committed source.
 /lproj/*.lproj/Localizable.strings
 /launcher/i18n_gen.h
+# The Go MCP bridge's catalogue and sentences, generated from the PHP definitions by
+# `make mcp-bridge-data` and embedded in the launcher. Rebuilt before every build, gitignored:
+# a committed copy is the drift the generation exists to prevent.
+/launcher/mcpbridge/data.json
 # Checked-in checksums are what make it reproducible — the bytes don't belong in git.
 # Everything below is downloaded by `make fetch` at a pinned version.
 # The enabled-plugin set is user state, not source.

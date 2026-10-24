@@ -24,5 +24,5 @@ Feature: The url the app records for an agent to come back to
     When the app records where it is, served from "h" at "\tools\adminer.php"
     Then the url recorded while connected is "http://h/tools/<me>"
 
-  Scenario: A request on a stale handshake is answered in JSON, saying what to do
+  Scenario: A stale handshake still comes up with its tools, and a call says to log in again
     Then a request on a stale handshake is told to log in again

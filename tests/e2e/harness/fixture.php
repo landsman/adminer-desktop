@@ -198,7 +198,8 @@ function e2e_boot(): array
 		[$gate, "http://127.0.0.1:$port", $root . '/bin/frankenphp', 'run', '--config', $root . '/launcher/Caddyfile', '--adapter', 'caddyfile'],
 		null,
 		// The launcher's Caddyfile, with the cache policy of a build: what is tested is what ships.
-		['ADMINER_DESKTOP_DATA' => $data, 'AD_PORT' => $port, 'AD_ROOT' => $app, 'AD_ASSET_CACHE' => 'max-age=31536000, immutable'],
+		// An agent statement stops after 3 s rather than 45, so a scenario can outlast the limit.
+		['ADMINER_DESKTOP_DATA' => $data, 'AD_PORT' => $port, 'AD_ROOT' => $app, 'AD_ASSET_CACHE' => 'max-age=31536000, immutable', 'ADMINER_DESKTOP_MCP_STATEMENT_SECONDS' => '3'],
 	);
 	// frankenphp logs every request it serves and nothing here ever reads that pipe, so it fills:
 	// sixty-four kilobytes in, the server blocks writing to it and stops answering. From the

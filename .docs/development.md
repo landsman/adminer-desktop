@@ -62,6 +62,7 @@ turn. `make e2e` runs the Behat scenarios in `tests/e2e/features/` in a real bro
 - `make e2e-visual` shows the browser; `SUITE=mysql` or `ARGS='--name …'` narrows a run.
 - A step no context defines fails the run; `make qa` catches one without docker.
 - `make e2e-packaged` runs against app/ as a release ships it, so a template the build missed fails.
+- [Manual testing](qa/manual-testing.md) covers what lives in the native shell (downloads), and [the MCP bridge](qa/mcp-bridge.md) covers what an agent's call goes through, how to try it by hand, and its known weak spots.
 
 CI is billed on this repo and macOS runners cost ten times the rest, so `qa` and `check` pass
 locally before a push rather than being iterated against in Actions.

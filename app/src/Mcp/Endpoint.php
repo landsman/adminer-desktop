@@ -88,7 +88,7 @@ class Endpoint {
 			$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
 			if ($url !== null && $token !== false && $token !== '') {
 				$this->report($this->cookie(), self::at($url));
-				$this->handshake->write($url, $token, $this->target());
+				$this->handshake->write($url, $token, $this->target(), (string) Env::McpSocket->get());
 			}
 			return null;
 		}
@@ -230,13 +230,32 @@ class Endpoint {
 		$request = json_decode($input, true);
 		$id = is_array($request) ? ($request['id'] ?? null) : null;
 		if (!$connected) {
-			// Cookies good enough to reach us, but no connection — a handshake outliving the
-			// login it was written for. Say so in JSON: the agent is not reading HTML, and
-			// falling through would crash on a null driver instead. With the call's id: an answer
-			// without one matches no call, and the client waits on it until it drops the server.
-			return (string) json_encode(["jsonrpc" => "2.0", "id" => $id, "error" => [
-				"code" => self::NOT_CONNECTED,
-				"message" => Strings::t('mcp.agent_not_connected'),
+			// Cookies good enough to reach us, but no connection: the window was signed out, or a
+			// handshake outlived the login it was written for. Falling through would crash on a
+			// null driver.
+			if (($_GET["mcp"] ?? '') === self::FORWARDED) {
+				// The request that passed a call on reads this code as "the saved login did not open"
+				// (forward()); it is between our two requests, and never reaches an agent.
+				return (string) json_encode(["jsonrpc" => "2.0", "id" => $id, "error" => [
+					"code" => self::NOT_CONNECTED,
+					"message" => Strings::t('mcp.agent_not_connected'),
+				]]);
+			}
+			// To an agent, as the bridge answers a closed app (Stdio::unavailable()): initialize,
+			// tools/list and ping need no database, so they answer as ever, and a tool call is a
+			// result it can read out. A JSON-RPC error here failed initialize, which a client shows
+			// as a dead server with the sentence saying what to do dropped, and left a model with no
+			// tools to conclude it should find its own way to the database.
+			$method = is_array($request) && is_string($request['method'] ?? null) ? $request['method'] : '';
+			if ($method !== 'tools/call') {
+				return $this->server->dispatch($input);
+			}
+			if ($id === null) {
+				return null; // a notification, whatever its method
+			}
+			return (string) json_encode(['jsonrpc' => '2.0', 'id' => $id, 'result' => [
+				'content' => [['type' => 'text', 'text' => Strings::t('mcp.agent_not_connected')]],
+				'isError' => true,
 			]]);
 		}
 		try {
@@ -307,7 +326,7 @@ class Endpoint {
 	* window's, and the session is right here in this request's cookies. Adminer released the
 	* session's lock before any hook ran (auth.inc.php, stop_session()), so the second request does
 	* not wait on this one. It does need a free PHP thread, so the timeout stays under the bridge's
-	* 60 s (Stdio::post()): a call stuck behind busy threads reaches the agent as this error.
+	* 60 s (Stdio::post(), and callTimeout in launcher/mcpbridge): a call stuck behind busy threads reaches the agent as this error.
 	*
 	* @throws McpError
 	*/

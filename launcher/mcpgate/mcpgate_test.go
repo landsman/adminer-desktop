@@ -1,10 +1,14 @@
 package mcpgate
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -144,4 +148,185 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 		}
 	}
 	t.Error("a report written to the socket never reached the gate")
+}
+
+// The bridge's own way in: the socket in the gate's private directory, under the TCP address's
+// name, which a quit app's port cannot be taken over to fake.
+func TestAnswersOverTheCallSocket(t *testing.T) {
+	g, seen := gate(t)
+	report(g, session)
+	go g.Serve()
+	client := &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", g.calls.Addr().String())
+		},
+	}}
+	req, err := http.NewRequest("POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err = errors.Join(err, resp.Body.Close()); err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 200 || string(body) != `{"ok":true}` || len(*seen) != 1 {
+		t.Errorf("over the socket: %d %q, frankenphp saw %q", resp.StatusCode, body, *seen)
+	}
+}
+
+// When the bridge gives up, so does the call to frankenphp, rather than a statement running on
+// with nobody left to hear how it ended.
+func TestGivingUpReachesFrankenphp(t *testing.T) {
+	cancelled := make(chan struct{})
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// A Go server notices a closed connection only once the body is read, as PHP has by then.
+		if _, err := io.ReadAll(r.Body); err != nil {
+			t.Error(err)
+		}
+		select {
+		case <-r.Context().Done():
+			close(cancelled)
+		case <-time.After(3 * time.Second):
+		}
+	}))
+	t.Cleanup(upstream.Close)
+	g, err := New(upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(g.Close)
+	report(g, session)
+	ctx, cancel := context.WithCancel(context.Background())
+	r := httptest.NewRequest("POST", "/adminer.php?mcp=1", strings.NewReader(`{}`)).WithContext(ctx)
+	r.Host = g.ln.Addr().String()
+	r.Header.Set("Authorization", "Bearer "+g.token)
+	go g.ServeHTTP(httptest.NewRecorder(), r)
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	select {
+	case <-cancelled:
+	case <-time.After(2 * time.Second):
+		t.Error("frankenphp kept the call after the bridge gave up")
+	}
+}
+
+// The same, through the socket the bridge really uses: a client that hangs up is what cancels the
+// request, not a context a test hands in.
+func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
+	cancelled := make(chan struct{})
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, err := io.ReadAll(r.Body); err != nil {
+			t.Error(err)
+		}
+		select {
+		case <-r.Context().Done():
+			close(cancelled)
+		case <-time.After(3 * time.Second):
+		}
+	}))
+	t.Cleanup(upstream.Close)
+	g, err := New(upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(g.Close)
+	report(g, session)
+	go g.Serve()
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	client := &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", g.calls.Addr().String())
+		},
+	}}
+	req, err := http.NewRequestWithContext(ctx, "POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	if resp, err := client.Do(req); err == nil {
+		closeBody(t, resp)
+		t.Fatal("the call returned before the client gave up")
+	}
+	select {
+	case <-cancelled:
+	case <-time.After(2 * time.Second):
+		t.Error("frankenphp kept the call after the client hung up on the socket")
+	}
+}
+
+func closeBody(t *testing.T, resp *http.Response) {
+	t.Helper()
+	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+// A directory a quit app left behind goes at the next start; one whose gate still answers stays.
+func TestSweepsWhatAQuitAppLeft(t *testing.T) {
+	tmp, err := os.MkdirTemp("", "gs") // short: a unix socket path has to stay under ~100 bytes
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(tmp); err != nil {
+			t.Error(err)
+		}
+	})
+	stale := filepath.Join(tmp, "adminer-desktop-gate-1")
+	live := filepath.Join(tmp, "adminer-desktop-gate-2")
+	starting := filepath.Join(tmp, "adminer-desktop-gate-3") // made, its sockets not bound yet
+	other := filepath.Join(tmp, "something-else")
+	for _, dir := range []string{stale, live, starting, other} {
+		if err := os.Mkdir(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dead, err := net.Listen("unix", filepath.Join(stale, "call.sock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dead.(*net.UnixListener).SetUnlinkOnClose(false) // a quit app leaves its socket file behind
+	closeOrFail(t, dead)
+	ln, err := net.Listen("unix", filepath.Join(live, "report.sock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeOrFail(t, ln) })
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			closeOrFail(t, c)
+		}
+	}()
+
+	old := time.Now().Add(-time.Hour)
+	for _, dir := range []string{stale, live, other} {
+		if err := os.Chtimes(dir, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sweep(tmp)
+	for dir, want := range map[string]bool{stale: false, live: true, starting: true, other: true} {
+		if _, err := os.Stat(dir); (err == nil) != want {
+			t.Errorf("%s: present %v, want %v", filepath.Base(dir), err == nil, want)
+		}
+	}
+}
+
+func closeOrFail(t *testing.T, c io.Closer) {
+	t.Helper()
+	if err := c.Close(); err != nil {
+		t.Error(err)
+	}
 }

@@ -69,3 +69,16 @@ run = './bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --st
 description = "Run the end-to-end scenarios in a browser you can watch"
 env = { ADMINER_DESKTOP_E2E_HEADED = "1" }
 run = './bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict ${SUITE:+--suite=$SUITE} $ARGS'
+
+# Every MCP scenario a second time, through the Go bridge instead of PHP's: the offline ones
+# against a stub, and the rest through the real gate and app, which is the path every shipped
+# `-mcp` agent takes. It builds the harness main rather than the launcher: CI has no WebKit, and
+# the bridge package is the same one.
+[tasks.e2e-bridge-go]
+description = "Run the MCP scenarios against the Go bridge"
+env = { ADMINER_DESKTOP_MCP_BRIDGE = "{{config_root}}/build.noindex/mcpbridge" }
+run = [
+	"go build -o build.noindex/mcpbridge ./tests/e2e/harness/mcpbridge",
+	"./bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict --suite=pgsql features/shell/mcp-bridge.feature features/shell/mcp.feature",
+	"./bin/frankenphp php-cli app/vendor/bin/behat -c tests/e2e/behat.php --strict --suite=mysql features/mysql/mcp.feature features/mysql/mcp-limits.feature",
+]
