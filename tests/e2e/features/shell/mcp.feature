@@ -125,6 +125,14 @@ Feature: An agent reaching the databases this window is signed in to
     Then the answer no longer claims a rollback
     And the row named "mcp-committed" is in the database
 
+  Scenario: A statement that outlasts its limit is stopped by the database, a write with it
+    Given AI access is on and allowed to write
+    When an agent runs the query "INSERT INTO users (name) SELECT 'mcp-too-slow' FROM pg_sleep(5) RETURNING id"
+    Then the answer is an error mentioning "ran longer than 3 seconds"
+    And no row named "mcp-too-slow" survived
+    When an agent lists the tools
+    Then the description of "execute_query" mentions "stopped by the database"
+
   Scenario: With writes allowed, a connection marked prod is still read-only
     Given AI access is on and allowed to write, but the connection is marked prod
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-prod-probe') RETURNING id"

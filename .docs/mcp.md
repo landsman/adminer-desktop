@@ -182,3 +182,4 @@ The gate is the launcher's, so served without it (`make serve`) there is no MCP 
 
 - **Calls go over a socket only your account can open**, in a private folder the app makes at start, not over the port the file names. A port outlives a quit app and anyone can bind it next; a stale `mcp.json` then reaches nothing.
 - **Only a loopback address is followed.** An `mcp.json` naming anywhere but `127.0.0.1` reads as no handshake.
+- **An agent's statement stops after 45 s**, in the database itself (PostgreSQL `statement_timeout`, MySQL `max_execution_time` for SELECT, MariaDB `max_statement_time`), so nothing keeps running once the agent has been told the call gave up. Other drivers have no such limit.

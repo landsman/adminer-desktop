@@ -33,6 +33,9 @@ enum Env: string {
 	/** The token the gate asks the bridge for. Opens the MCP endpoint and nothing else, so it may
 	* sit in mcp.json; it keeps out a web page posting to loopback, which cannot read that file. */
 	case McpToken = 'ADMINER_DESKTOP_MCP_TOKEN';
+	/** Seconds one agent statement may run (Mcp\Tools::STATEMENT_SECONDS when unset). Set by the
+	* e2e fixture alone, so a scenario can outlast it without waiting most of a minute. */
+	case McpStatementSeconds = 'ADMINER_DESKTOP_MCP_STATEMENT_SECONDS';
 	/** The unix socket the gate hears the window's session on (Mcp\Endpoint::report()). */
 	case McpReport = 'ADMINER_DESKTOP_MCP_REPORT';
 

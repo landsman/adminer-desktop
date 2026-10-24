@@ -125,6 +125,7 @@ return [
 	'mcp.agent_not_running' => 'Adminer Desktop is not running, or database access for agents is switched off in its settings. Open the app, log in, and switch it on under Settings > AI access, then ask again — the next call goes through without reconnecting.',
 	'mcp.agent_window_closed' => 'Adminer Desktop stopped answering — the window was probably closed. Open it again and ask again; nothing needs reconnecting.',
 	'mcp.agent_timed_out' => 'Adminer Desktop took longer than a minute to answer, and the call was given up. If it was a write, it may still have been applied — check before running it again.',
+	'mcp.agent_statement_too_long' => 'The statement ran longer than {n} seconds, so the database stopped it and nothing it did was kept. Narrow it (a WHERE, a LIMIT, an index), or ask the user to run it in the Adminer Desktop window, which has no limit.',
 	'mcp.agent_session_expired' => 'The Adminer Desktop session has expired. Log in to the database again in the app, then ask again.',
 	'mcp.agent_not_connected' => 'Adminer Desktop is not connected to a database. Log in again in the app.',
 	'mcp.agent_note_committed' => 'Writes are enabled: anything this statement changed has been committed.',

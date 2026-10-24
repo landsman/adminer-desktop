@@ -112,6 +112,7 @@ return [
 	'mcp.agent_not_running' => 'Adminer Desktop nebeží, alebo je v jeho nastaveniach vypnutý prístup agentov k databáze. Otvorte aplikáciu, prihláste sa a zapnite ho v Nastavenia > Prístup AI, potom sa opýtajte znovu — ďalšie volanie prejde bez nového pripojenia.',
 	'mcp.agent_window_closed' => 'Adminer Desktop prestal odpovedať — okno bolo pravdepodobne zatvorené. Otvorte ho znovu a opýtajte sa znovu; nie je potrebné nič znovu pripájať.',
 	'mcp.agent_timed_out' => 'Adminer Desktop neodpovedal do minúty, a tak bolo volanie vzdané. Ak išlo o zápis, mohol sa aj tak vykonať — pred ďalším spustením to overte.',
+	'mcp.agent_statement_too_long' => 'Príkaz bežal dlhšie ako {n} sekúnd, a tak ho databáza zastavila a nič z neho nezostalo. Zúžte ho (WHERE, LIMIT, index), alebo požiadajte používateľa, aby ho spustil v okne Adminer Desktop, kde žiadny limit nie je.',
 	'mcp.agent_session_expired' => 'Relácia Adminer Desktopu vypršala. Prihláste sa v aplikácii znovu k databáze a potom sa opýtajte znovu.',
 	'mcp.agent_not_connected' => 'Adminer Desktop nie je pripojený k databáze. Prihláste sa v aplikácii znovu.',
 	'mcp.agent_note_committed' => 'Zápisy sú povolené: všetko, čo tento príkaz zmenil, bolo potvrdené.',
