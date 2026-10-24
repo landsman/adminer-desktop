@@ -60,6 +60,12 @@ Feature: The window without a title bar
     When I show the sidebar
     Then the sidebar shows
 
+  Scenario: Hidden by its icon, the sidebar's show icon covers nothing, and nothing covers it
+    When I open the "users" table
+    And I hide the sidebar
+    Then the sidebar is hidden
+    And the sidebar's toggle overlaps nothing
+
   Scenario: On a phone-sized window the toolbar still fits, beside the burger, and the drawer is filled
     When the window is 390 pixels wide
     And I open the "users" table

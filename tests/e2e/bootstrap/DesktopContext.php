@@ -3004,6 +3004,37 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** No control or text of the page within the toggle's box, and the toggle the one hit at its
+	 * centre — a sticky header or the gear drawn over it would take the click. */
+	#[Then('the sidebar\'s toggle overlaps nothing')]
+	public function toggleOverlapsNothing(): void
+	{
+		$overlap = $this->page->evaluate(
+			// language=JavaScript
+			"() => {
+				const toggle = document.querySelector('#ad-sidebar-toggle');
+				const t = toggle.getBoundingClientRect();
+				const hit = document.elementFromPoint(t.left + t.width / 2, t.top + t.height / 2);
+				if (!toggle.contains(hit)) {
+					return ['covered by ' + (hit?.id || hit?.className || hit?.tagName)];
+				}
+				const hasText = (el) => [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+				return [...document.querySelectorAll('body *')]
+					.filter((el) => !toggle.contains(el) && !el.contains(toggle))
+					.filter((el) => el.matches('a, button, input, select, textarea, img, svg') || hasText(el))
+					.filter((el) => el.checkVisibility({ visibilityProperty: true, opacityProperty: true }))
+					.filter((el) => {
+						const r = el.getBoundingClientRect();
+						return r.width > 0 && r.height > 0 && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top;
+					})
+					.map((el) => el.id || el.className || el.tagName);
+			}",
+		);
+		if ($overlap !== []) {
+			throw new RuntimeException('the sidebar\'s toggle overlaps: ' . json_encode($overlap));
+		}
+	}
+
 	#[When('I press the mouse on the empty toolbar')]
 	public function pressEmptyToolbar(): void
 	{
