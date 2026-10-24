@@ -80,7 +80,9 @@ class Handshake {
 	}
 
 	/** What mcp.php reads back. A handshake from before the gate, still carrying cookies, has no
-	* token and reads as none: the next page the window loads writes the new one.
+	* token and reads as none: the next page the window loads writes the new one. An empty url or
+	* token reads as none too, as it does in the Go bridge (launcher/mcpbridge): the gate would
+	* refuse it, and "expired" would send the agent after the wrong cause.
 	* @return array{url:string,token:string,target:string}|null null when absent or unusable
 	*/
 	function read(): ?array {
@@ -92,7 +94,7 @@ class Handshake {
 			return null;
 		}
 		$data = json_decode($raw, true);
-		if (!is_array($data) || !is_string($data['url'] ?? null) || !is_string($data['token'] ?? null)) {
+		if (!is_array($data) || !is_string($data['url'] ?? null) || !is_string($data['token'] ?? null) || $data['url'] === '' || $data['token'] === '') {
 			return null;
 		}
 		$target = isset($data['target']) && is_string($data['target']) ? $data['target'] : '';

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -31,6 +32,31 @@ func handshake(t *testing.T, dir, url string) {
 	body := fmt.Sprintf(`{"url":%q,"token":"tok","target":""}`, url)
 	if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// reply is a test server's answer; a write that fails would leave the bridge with a short body
+// and the test asserting on something the server never meant to say.
+func reply(t *testing.T, w io.Writer, body string) {
+	t.Helper()
+	if _, err := io.WriteString(w, body); err != nil {
+		t.Error(err)
+	}
+}
+
+func readBody(t *testing.T, r *http.Request) string {
+	t.Helper()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	return string(body)
+}
+
+func closeOrFail(t *testing.T, c io.Closer) {
+	t.Helper()
+	if err := c.Close(); err != nil {
+		t.Error(err)
 	}
 }
 
@@ -135,6 +161,38 @@ func TestUnavailableCatalogueFollowsSettings(t *testing.T) {
 	}
 }
 
+// The app reads these with PHP's (bool), so a hand-edited 1 or "1" means on there and must here.
+func TestSettingsReadAsPHPDoes(t *testing.T) {
+	for _, tc := range []struct {
+		value any
+		on    bool
+	}{
+		{true, true}, {false, false}, {nil, false},
+		{1, true}, {0, false}, {0.5, true},
+		{"1", true}, {"0", false}, {"", false}, {"false", true}, {" 0", true},
+		{[]any{}, false}, {[]any{0}, true}, {map[string]any{}, false},
+	} {
+		dir := t.TempDir()
+		settings(t, dir, map[string]any{"mcp_write": tc.value})
+		if write, _ := bridge(t, dir).settings(); write != tc.on {
+			t.Errorf("mcp_write %#v read as %v, PHP reads %v", tc.value, write, tc.on)
+		}
+	}
+}
+
+// A handshake with no token cannot get past the gate, so it reads as none, as it does in PHP.
+func TestEmptyTokenIsNoHandshake(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(`{"url":"http://127.0.0.1:1/","token":""}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result := decode(t, bridge(t, dir).Exchange(callTool()))["result"].(map[string]any)
+	said := result["content"].([]any)[0].(map[string]any)["text"].(string)
+	if !strings.Contains(said, "AI access") {
+		t.Errorf("an empty token was not read as no handshake: %s", said)
+	}
+}
+
 func findTool(t *testing.T, result map[string]any, name string) map[string]any {
 	t.Helper()
 	for _, raw := range result["tools"].([]any) {
@@ -199,7 +257,7 @@ func TestWindowClosed(t *testing.T) {
 // HTML back means the session expired, and the agent is told rather than handed markup to guess at.
 func TestHTMLMeansExpiredSession(t *testing.T) {
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `<!doctype html><title>Login</title>`)
+		reply(t, w, `<!doctype html><title>Login</title>`)
 	}))
 	defer app.Close()
 	dir := t.TempDir()
@@ -228,7 +286,7 @@ func TestEmptyAnswerForwardsNothing(t *testing.T) {
 func TestJSONAnswerIsUnchanged(t *testing.T) {
 	const answer = `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, answer)
+		reply(t, w, answer)
 	}))
 	defer app.Close()
 	dir := t.TempDir()
@@ -244,10 +302,8 @@ func TestPostsToTheHandshake(t *testing.T) {
 	var uri, auth, body string
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uri, auth = r.URL.RequestURI(), r.Header.Get("Authorization")
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
-		body = buf.String()
-		fmt.Fprint(w, `{}`)
+		body = readBody(t, r)
+		reply(t, w, `{}`)
 	}))
 	defer app.Close()
 	dir := t.TempDir()
@@ -272,10 +328,8 @@ func TestPostsToTheHandshake(t *testing.T) {
 // run() pumps a stream: blank lines skipped, one answer per request, silence stays silent.
 func TestStreamPumping(t *testing.T) {
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
-		if strings.Contains(buf.String(), `"id"`) {
-			fmt.Fprint(w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
+		if strings.Contains(readBody(t, r), `"id"`) {
+			reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
 		}
 	}))
 	defer app.Close()
@@ -293,7 +347,7 @@ func TestStreamPumping(t *testing.T) {
 
 // A quiet spell on a socket stdin is not the client letting go. The launcher's bridge reads a
 // socket as readily as a pipe, and nothing in this package sets a read deadline — the PHP one
-// dropped after default_socket_timeout until PR #183.
+// dropped after default_socket_timeout until https://github.com/landsman/adminer-desktop/pull/183.
 //
 // Seconds from MCP_BRIDGE_QUIET_SECONDS (default 1); the issue asks for 90 s once by hand.
 func TestQuietStdinSurvives(t *testing.T) {
@@ -302,14 +356,14 @@ func TestQuietStdinSurvives(t *testing.T) {
 		quiet = time.Duration(seconds) * time.Second
 	}
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"jsonrpc":"2.0","id":7,"result":{}}`)
+		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{}}`)
 	}))
 	defer app.Close()
 	dir := t.TempDir()
 	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
 
 	agent, bridgeSide := net.Pipe()
-	defer agent.Close()
+	t.Cleanup(func() { closeOrFail(t, agent) }) // a second Close of a net.Pipe end is a no-op
 	out := new(syncBuffer)
 	done := make(chan error, 1)
 	go func() { done <- bridge(t, dir).Run(bridgeSide, out) }()
@@ -323,7 +377,7 @@ func TestQuietStdinSurvives(t *testing.T) {
 		t.Fatal(err) // the bridge closed its end: it gave up during the quiet spell
 	}
 	waitFor(t, out, 2)
-	agent.Close()
+	closeOrFail(t, agent)
 	if err := <-done; err != nil {
 		t.Fatalf("the bridge ended with %v after a quiet spell", err)
 	}
@@ -374,7 +428,7 @@ func TestLocale(t *testing.T) {
 func TestFindsTheDataDirFromTheEnvironment(t *testing.T) {
 	dir := t.TempDir()
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
+		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
 	}))
 	defer app.Close()
 	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")

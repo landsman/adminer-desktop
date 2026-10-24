@@ -61,6 +61,9 @@ func resolve() (php string, root string, err error) {
 // child; it forwards to the running window over HTTP (launcher/mcpbridge), so a spawn costs one
 // process rather than a launcher and a php-cli.
 func serveMCP() error {
+	// Write errors on a closed stdout come back as EPIPE, so the reason below gets logged; Go's
+	// default for fd 1 is to die of SIGPIPE before it can be.
+	signal.Ignore(syscall.SIGPIPE)
 	bridge := mcpbridge.New()
 	done := make(chan error, 1)
 	go func() { done <- bridge.Run(os.Stdin, os.Stdout) }()

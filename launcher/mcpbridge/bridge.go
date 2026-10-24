@@ -29,6 +29,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/landsman/adminer-desktop/launcher/datadir"
 )
 
 // generated is cli/mcp-bridge.php's output: Server::PROTOCOL, Server::INSTRUCTIONS, the four
@@ -68,7 +70,7 @@ func mustLoad() generated {
 
 // How long one call may wait for the window before it is reported as closed. The stdio side has
 // no timeout: a client that goes quiet has not let go, and a socket stdin once dropped the server
-// after a minute (the bug PR #183 fixed). This one bounds the HTTP hop only.
+// after a minute (the bug https://github.com/landsman/adminer-desktop/pull/183 fixed). This one bounds the HTTP hop only.
 const callTimeout = 60 * time.Second
 
 // Bridge reads one JSON-RPC message, answers it from PHP's own definitions when the app is
@@ -79,16 +81,14 @@ type Bridge struct {
 	locale string
 }
 
-// New is the bridge an agent spawns: the data dir the launcher passed in ADMINER_DESKTOP_DATA,
-// or the same os.UserConfigDir() home the launcher would have used. The fallback matters because
-// an agent starts this as a bare child with no environment of ours, and without it the bridge
-// reports the app as not running while it is open in front of you.
+// New is the bridge an agent spawns: the data dir in ADMINER_DESKTOP_DATA when one is set (the
+// e2e scenarios set it), or the launcher's own. The fallback matters because an agent starts this
+// as a bare child with no environment of ours, and without it the bridge reports the app as not
+// running while it is open in front of you.
 func New() *Bridge {
 	dir := os.Getenv("ADMINER_DESKTOP_DATA")
 	if dir == "" {
-		if base, err := os.UserConfigDir(); err == nil {
-			dir = filepath.Join(base, "Adminer Desktop")
-		}
+		dir, _ = datadir.Path() // no config dir at all: "" reads as "not running", which it is not far from
 	}
 	return NewIn(dir)
 }
@@ -192,9 +192,9 @@ func (b *Bridge) unavailable(message rpcMessage, text string) *string {
 		return message.result(`{}`)
 	case "server/discover":
 		// Not a modern answer, on purpose: this server speaks the 2025-11-25 handshake era and the
-		// app behind it answers the same way. A dual-era client reads -32601 as "legacy" and falls
-		// back to initialize, which is exactly what it does once the app is up. Advertising a
-		// version here that the app does not implement would be the bug.
+		// app behind it answers the same way (Desktop\Mcp\Server). A dual-era client reads -32601
+		// as "legacy" and falls back to initialize, which is exactly what it does once the app is
+		// up. Advertising a version here that the app does not implement would be the bug.
 		return message.error(-32601, b.say("mcp.agent_unknown_method")+": server/discover")
 	default:
 		// tools/call and anything else: an error the model can read and repeat to the user.
@@ -208,30 +208,51 @@ func (b *Bridge) unavailable(message rpcMessage, text string) *string {
 // the app was closed are the ones it still trusts once the app is up — with writes on, a promise
 // that everything is rolled back.
 func (b *Bridge) catalogue() json.RawMessage {
+	write, whole := b.settings()
 	key := "00"
-	if b.setting("mcp_whole_values") {
+	if whole {
 		key = "1" + key[1:]
 	}
-	if b.setting("mcp_write") {
+	if write {
 		key = key[:1] + "1"
 	}
 	return data.Catalogue[key]
 }
 
-func (b *Bridge) setting(name string) bool {
+// settings reads settings.json once, so both values come from the same version of the file.
+func (b *Bridge) settings() (write, whole bool) {
 	if b.dir == "" {
-		return false
+		return false, false
 	}
 	raw, err := os.ReadFile(filepath.Join(b.dir, "settings.json"))
 	if err != nil {
-		return false
+		return false, false
 	}
 	var settings map[string]any
 	if json.Unmarshal(raw, &settings) != nil {
-		return false
+		return false, false
 	}
-	on, _ := settings[name].(bool)
-	return on
+	return phpBool(settings["mcp_write"]), phpBool(settings["mcp_whole_values"])
+}
+
+// phpBool is PHP's (bool) over a decoded JSON value, which is how the app itself reads these
+// (Desktop\Mcp\Endpoint). Anything else and a hand-edited `"mcp_write": 1` would be described
+// offline as rolled back while the app commits it.
+func phpBool(v any) bool {
+	switch v := v.(type) {
+	case bool:
+		return v
+	case float64:
+		return v != 0
+	case string:
+		return v != "" && v != "0"
+	case []any:
+		return len(v) > 0
+	case map[string]any:
+		return len(v) > 0 // json_decode(..., true) makes an object an array, and {} an empty one
+	default:
+		return false // null
+	}
 }
 
 // say is a plugin sentence in the app's language. An untranslated id degrades to English, as it
@@ -284,9 +305,8 @@ func (b *Bridge) post(url, body, token string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	defer resp.Body.Close() //nolint:errcheck // read-only, closing cannot fail meaningfully
 	answer, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if err = errors.Join(err, resp.Body.Close()); err != nil {
 		return "", false
 	}
 	return string(answer), true

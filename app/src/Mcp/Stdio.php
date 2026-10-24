@@ -134,6 +134,12 @@ class Stdio {
 			]),
 			'tools/list' => $this->result($id, ['tools' => $this->catalogue()]),
 			'ping' => $this->result($id, new \stdClass()),
+			// What Server answers once the app is up: a dual-era client reads -32601 as "legacy" and
+			// falls back to initialize. A tool result here would read as a discover that succeeded.
+			'server/discover' => (string) json_encode(['jsonrpc' => '2.0', 'id' => $id, 'error' => [
+				'code' => -32601,
+				'message' => Strings::t('mcp.agent_unknown_method') . ': server/discover',
+			]]),
 			// tools/call and anything else: an error the model can read and repeat to the user.
 			default => $this->result($id, [
 				'content' => [['type' => 'text', 'text' => $message]],
