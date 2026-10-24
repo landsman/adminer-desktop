@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/landsman/adminer-desktop/launcher/datadir"
 )
 
 // dataDir holds everything that must outlive a run: the remembered app choice, and the
@@ -15,11 +17,10 @@ import (
 // an NSUserDefaults implementation: once three platforms are in play, one portable file
 // is less total code than one native store per OS.
 func dataDir() (string, error) {
-	base, err := os.UserConfigDir()
+	dir, err := datadir.Path()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(base, "Adminer Desktop")
 	// 0700, because this directory holds the key that decrypts saved database passwords.
 	return dir, os.MkdirAll(dir, 0o700)
 }

@@ -1,6 +1,8 @@
 package mcpgate
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -144,4 +146,70 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 		}
 	}
 	t.Error("a report written to the socket never reached the gate")
+}
+
+// The bridge's own way in: the socket in the gate's private directory, under the TCP address's
+// name, which a quit app's port cannot be taken over to fake.
+func TestAnswersOverTheCallSocket(t *testing.T) {
+	g, seen := gate(t)
+	report(g, session)
+	go g.Serve()
+	client := &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", g.calls.Addr().String())
+		},
+	}}
+	req, err := http.NewRequest("POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err = errors.Join(err, resp.Body.Close()); err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 200 || string(body) != `{"ok":true}` || len(*seen) != 1 {
+		t.Errorf("over the socket: %d %q, frankenphp saw %q", resp.StatusCode, body, *seen)
+	}
+}
+
+// When the bridge gives up, so does the call to frankenphp, rather than a statement running on
+// with nobody left to hear how it ended.
+func TestGivingUpReachesFrankenphp(t *testing.T) {
+	cancelled := make(chan struct{})
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// A Go server notices a closed connection only once the body is read, as PHP has by then.
+		if _, err := io.ReadAll(r.Body); err != nil {
+			t.Error(err)
+		}
+		select {
+		case <-r.Context().Done():
+			close(cancelled)
+		case <-time.After(3 * time.Second):
+		}
+	}))
+	t.Cleanup(upstream.Close)
+	g, err := New(upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(g.Close)
+	report(g, session)
+	ctx, cancel := context.WithCancel(context.Background())
+	r := httptest.NewRequest("POST", "/adminer.php?mcp=1", strings.NewReader(`{}`)).WithContext(ctx)
+	r.Host = g.ln.Addr().String()
+	r.Header.Set("Authorization", "Bearer "+g.token)
+	go g.ServeHTTP(httptest.NewRecorder(), r)
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	select {
+	case <-cancelled:
+	case <-time.After(2 * time.Second):
+		t.Error("frankenphp kept the call after the bridge gave up")
+	}
 }

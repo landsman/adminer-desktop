@@ -12,7 +12,7 @@ use Desktop\I18n\Strings;
 * library here because there is nothing to a library: the transport is the HTTP request we are
 * already inside, and the framing is json_decode.
 *
-* The agent reaches this over stdio through mcp.php and the launcher's gate, which adds the
+* The agent reaches this over stdio through the launcher's -mcp bridge (or mcp.php) and its gate, which adds the
 * window's session (launcher/mcpgate) — so by the time dispatch() runs, Adminer has connected as
 * the logged-in user and Tools can simply ask. If the session was missing or stale, this code
 * never runs at all: Adminer answers the login page instead, which is exactly the failure we want.
@@ -77,7 +77,7 @@ class Server {
 		try {
 			return match ($method) {
 				'initialize' => $this->result($id, [
-					'protocolVersion' => $this->negotiate($params),
+					'protocolVersion' => self::negotiate($params),
 					'capabilities' => ['tools' => new \stdClass()],
 					'serverInfo' => ['name' => 'adminer-desktop', 'version' => \Adminer\VERSION],
 					'instructions' => self::INSTRUCTIONS,
@@ -106,9 +106,12 @@ class Server {
 	* the client's version back unconditionally would be the tempting bug — it reads as
 	* agreeable and promises whatever that revision added.
 	*
+	* Static so the bridge can answer the same with no app behind it (Stdio::unavailable(), and
+	* launcher/mcpbridge negotiate()).
+	*
 	* @param array<string,mixed> $params
 	*/
-	private function negotiate(array $params): string {
+	static function negotiate(array $params): string {
 		$asked = is_string($params['protocolVersion'] ?? null) ? $params['protocolVersion'] : '';
 		return ($asked !== '' && $asked < self::PROTOCOL) ? $asked : self::PROTOCOL;
 	}
@@ -176,7 +179,7 @@ class Server {
 				'description' => ($write
 					? 'Run a SQL statement and return its rows. Writes are allowed in Adminer Desktop\'s settings, so whatever the statement changes is committed — except on a connection whose environment is prod, where it is rolled back; rolled_back in the answer says which.'
 					: 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data.')
-					. ' Results are capped at 200 rows. ' . $cells,
+					. ' Results are capped at 200 rows. On PostgreSQL, MySQL and MariaDB a statement that runs longer than ' . Tools::STATEMENT_SECONDS . ' seconds is stopped by the database; run anything longer in the Adminer Desktop window, which has no limit. ' . $cells,
 				'inputSchema' => $schema(
 					['sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'], 'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.']] + array_diff_key($rows, ['limit' => 0]),
 					['sql'],

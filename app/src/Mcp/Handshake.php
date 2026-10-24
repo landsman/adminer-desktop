@@ -57,8 +57,10 @@ class Handshake {
 	* @param string $target which connection this points at, for the settings panel to show —
 	*                       the agent follows wherever the window last was, and that is worth
 	*                       being able to see rather than infer
+	* @param string $socket the gate's unix socket, which the bridge posts to instead of the url's
+	*                       port: a port a quit app leaves behind can be bound by anyone
 	*/
-	function write(string $url, string $token, string $target = ''): void {
+	function write(string $url, string $token, string $target = '', string $socket = ''): void {
 		if ($this->file === null) {
 			return;
 		}
@@ -66,22 +68,34 @@ class Handshake {
 		if (!is_dir($dir)) {
 			@mkdir($dir, 0700, true);
 		}
-		$payload = json_encode(['url' => $url, 'token' => $token, 'target' => $target], JSON_PRETTY_PRINT);
+		$payload = json_encode(['url' => $url, 'token' => $token, 'target' => $target, 'socket' => $socket], JSON_PRETTY_PRINT);
 		if ($payload === false) {
 			return;
 		}
 		// Same temp-then-rename as UserSettings: the shim may read while we write, and a
-		// half-written handshake reads as a corrupt one rather than an old one.
-		$tmp = $this->file . '.' . getmypid() . '.tmp';
-		if (@file_put_contents($tmp, $payload) !== false) {
-			@chmod($tmp, 0600); // the gate's token: no other account gets to use it
-			@rename($tmp, $this->file);
+		// half-written handshake reads as a corrupt one rather than an old one. A random name, not
+		// the pid: every frankenphp thread shares one, and two writes would share the temp file.
+		$tmp = $this->file . '.' . bin2hex(random_bytes(6)) . '.tmp';
+		if (@file_put_contents($tmp, $payload) === false) {
+			return;
+		}
+		@chmod($tmp, 0600); // the gate's token: no other account gets to use it
+		// Windows refuses to replace a file another process has open, and the bridge opens this
+		// one on every message; a moment later it has let go.
+		for ($try = 0; !@rename($tmp, $this->file); $try++) {
+			if ($try === 5) {
+				@unlink($tmp);
+				return;
+			}
+			usleep(20_000);
 		}
 	}
 
 	/** What mcp.php reads back. A handshake from before the gate, still carrying cookies, has no
-	* token and reads as none: the next page the window loads writes the new one.
-	* @return array{url:string,token:string,target:string}|null null when absent or unusable
+	* token and reads as none: the next page the window loads writes the new one. An empty url or
+	* token reads as none too, as it does in the Go bridge (launcher/mcpbridge): the gate would
+	* refuse it, and "expired" would send the agent after the wrong cause.
+	* @return array{url:string,token:string,target:string,socket:string}|null null when absent or unusable
 	*/
 	function read(): ?array {
 		if ($this->file === null || !is_file($this->file)) {
@@ -92,11 +106,23 @@ class Handshake {
 			return null;
 		}
 		$data = json_decode($raw, true);
-		if (!is_array($data) || !is_string($data['url'] ?? null) || !is_string($data['token'] ?? null)) {
+		if (!is_array($data) || !is_string($data['url'] ?? null) || !is_string($data['token'] ?? null) || $data['url'] === '' || $data['token'] === '') {
+			return null;
+		}
+		// Only ever the gate, on this machine: a url anywhere else would hand the token and the
+		// agent's SQL to whoever is there, and the answer back to the agent as ours.
+		if (!self::isLoopback($data['url'])) {
 			return null;
 		}
 		$target = isset($data['target']) && is_string($data['target']) ? $data['target'] : '';
-		return ['url' => $data['url'], 'token' => $data['token'], 'target' => $target];
+		$socket = isset($data['socket']) && is_string($data['socket']) ? $data['socket'] : '';
+		return ['url' => $data['url'], 'token' => $data['token'], 'target' => $target, 'socket' => $socket];
+	}
+
+	/** http on 127.0.0.1, which is all the launcher's gate ever listens on. */
+	static function isLoopback(string $url): bool {
+		$parts = parse_url($url);
+		return is_array($parts) && ($parts['scheme'] ?? '') === 'http' && ($parts['host'] ?? '') === '127.0.0.1';
 	}
 
 	/** Drop the handshake — nothing may reach the database through it after this.

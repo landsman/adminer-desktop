@@ -5,6 +5,7 @@ namespace Desktop\Mcp;
 
 use Desktop\Connections\Connection;
 use Desktop\Connections\Connections;
+use Desktop\Env;
 use Desktop\I18n\Strings;
 
 /** What an agent may actually do to the database, and the limits it does it under.
@@ -48,6 +49,15 @@ class Tools {
 
 	/** Rows returned before we stop and say there were more. */
 	private const int MAX_ROWS = 200;
+
+	/** How long one agent statement may run before the database itself stops it.
+	*
+	* Under the 50 s a call to another connection waits (Endpoint::forward()) and the bridge's 60 s
+	* (launcher/mcpbridge), so the statement is gone by the time the agent is told the call gave
+	* up. Without it a query ran on after that, a write included: the bridge hanging up does not
+	* reach a statement PHP is already waiting on.
+	*/
+	public const int STATEMENT_SECONDS = 45;
 
 	/** The drivers whose query() honours SqlDb::$untrusted (drivers/pgsql.inc.php). */
 	private const array UNTRUSTED_DRIVERS = ['pgsql'];
@@ -293,6 +303,7 @@ class Tools {
 		// only a warning and its COMMIT commits ours. Elsewhere it changes nothing and ours stays —
 		// mysqli runs one statement per query() regardless.
 		$guarded = !$this->write && in_array(\Adminer\DRIVER, self::UNTRUSTED_DRIVERS, true);
+		$this->limitTime();
 		\Adminer\SqlDb::$untrusted = $guarded;
 		$began = !$guarded && (bool) $driver->begin();
 		try {
@@ -301,6 +312,11 @@ class Tools {
 				// No result set: either it failed, or it was a statement that returns nothing.
 				// Both are worth saying out loud rather than answering with zero rows.
 				$error = (string) ($connection->error ?? '');
+				if (preg_match(self::TIMED_OUT, $error)) {
+					// Said as ours, with what to do: the database's own words do not say there is a
+					// limit, nor that the window has none.
+					throw new McpError(str_replace('{n}', (string) self::statementSeconds(), Strings::t('mcp.agent_statement_too_long')) . " ($error)");
+				}
 				throw new McpError($error !== '' ? $error : Strings::t('mcp.agent_no_result'));
 			}
 			$rows = [];
@@ -350,4 +366,35 @@ class Tools {
 			}
 		}
 	}
+
+	/** Have the database stop this request's statements after STATEMENT_SECONDS.
+	*
+	* Per session, not per transaction: on postgres the guard opens its own transaction per query,
+	* where a SET LOCAL of ours would not reach. The session is this request's alone — adminer
+	* connects per request — so the user's own queries in the window are not limited. MySQL's
+	* max_execution_time covers SELECT only; MariaDB's max_statement_time covers every statement.
+	* Other drivers have no such setting and run unlimited, as before.
+	*/
+	private function limitTime(): void {
+		$connection = \Adminer\connection();
+		$seconds = self::statementSeconds();
+		$set = match (true) {
+			\Adminer\DRIVER === 'pgsql' => "SET statement_timeout = '{$seconds}s'",
+			\Adminer\DRIVER === 'server' && $connection->flavor === 'maria' => "SET SESSION max_statement_time = $seconds",
+			\Adminer\DRIVER === 'server' => 'SET SESSION max_execution_time = ' . ($seconds * 1000),
+			default => null,
+		};
+		if ($set !== null) {
+			$connection->query($set);
+		}
+	}
+
+	/** STATEMENT_SECONDS, or the e2e fixture's shorter one. */
+	static function statementSeconds(): int {
+		return (int) Env::McpStatementSeconds->get() ?: self::STATEMENT_SECONDS;
+	}
+
+	/** Each database's words for "stopped by the limit limitTime() set": postgres, MySQL (3024)
+	* and MariaDB (1969). */
+	private const string TIMED_OUT = '~statement timeout|maximum statement execution time exceeded|max_statement_time exceeded~i';
 }

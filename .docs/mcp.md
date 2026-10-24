@@ -26,8 +26,7 @@ codex   mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
 gemini  mcp add adminer-desktop -- "<the path the settings tab shows>" -mcp
 ```
 
-Point the agent at the app itself. There is no PHP to install and no interpreter to find: the
-launcher ships its own and resolves it.
+- Point the agent at the app itself: `-mcp` is a small bridge built into the launcher, with no PHP to install and nothing to find.
 
 Register it once. The port the app listens on changes every start, but the agent re-reads it per
 message, so it keeps working across restarts without touching the config again.
@@ -169,8 +168,8 @@ pointer rather than just declining to honour it.
 ## What is stored, and where
 
 While the feature is on and you are logged in, the app keeps a small `mcp.json` beside your
-settings (mode 600) holding the address of the app's MCP gate, a token for it, and which
-connection the window is on. That file is how the agent finds the window.
+settings (mode 600) holding the address of the app's MCP gate, the socket it is reached on, a
+token for it, and which connection the window is on. That file is how the agent finds the window.
 
 **Nothing in it unlocks a password, and the session never leaves the app.** Adminer keeps your
 database passwords in its session, encrypted with a key in a cookie — so that cookie and the
@@ -180,3 +179,7 @@ call that comes through the gate; the token opens the MCP endpoint and no other 
 window or log out and the access goes with it.
 
 The gate is the launcher's, so served without it (`make serve`) there is no MCP at all.
+
+- **Calls go over a socket only your account can open**, in a private folder the app makes at start, not over the port the file names. A port outlives a quit app and anyone can bind it next; a stale `mcp.json` then reaches nothing.
+- **Only a loopback address is followed.** An `mcp.json` naming anywhere but `127.0.0.1` reads as no handshake.
+- **An agent's statement stops after 45 s**, in the database itself (PostgreSQL `statement_timeout`, MySQL `max_execution_time` for SELECT, MariaDB `max_statement_time`), so nothing keeps running once the agent has been told the call gave up. Other drivers have no such limit.

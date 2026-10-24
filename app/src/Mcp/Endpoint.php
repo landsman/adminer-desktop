@@ -88,7 +88,7 @@ class Endpoint {
 			$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
 			if ($url !== null && $token !== false && $token !== '') {
 				$this->report($this->cookie(), self::at($url));
-				$this->handshake->write($url, $token, $this->target());
+				$this->handshake->write($url, $token, $this->target(), (string) Env::McpSocket->get());
 			}
 			return null;
 		}
@@ -307,7 +307,7 @@ class Endpoint {
 	* window's, and the session is right here in this request's cookies. Adminer released the
 	* session's lock before any hook ran (auth.inc.php, stop_session()), so the second request does
 	* not wait on this one. It does need a free PHP thread, so the timeout stays under the bridge's
-	* 60 s (Stdio::post()): a call stuck behind busy threads reaches the agent as this error.
+	* 60 s (Stdio::post(), and callTimeout in launcher/mcpbridge): a call stuck behind busy threads reaches the agent as this error.
 	*
 	* @throws McpError
 	*/

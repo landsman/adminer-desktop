@@ -2,7 +2,8 @@ Feature: The stdio bridge when there is no app behind it
   What the end-to-end scenarios cannot provoke on demand — the app not running, the window closed
   mid-session, an expired login. Each is a message an agent has to be able to act on, and each is
   one line away from being silence or a page of HTML instead. No app and no database here: the
-  transport is a closure and the handshake is a temporary directory.
+  bridge is spawned as an agent spawns it, the app is an HTTP stub, and the handshake is a
+  temporary directory.
 
   Scenario: It finds the data dir with no environment of ours
     Then the bridge finds the data dir with no environment of ours
@@ -17,10 +18,20 @@ Feature: The stdio bridge when there is no app behind it
     When a client calls a tool through the bridge
     Then the call is a tool error saying "AI access"
 
+  Scenario: An older client is met at its version, as the app would meet it
+    Given the app is not running
+    When a client at "2025-06-18" initializes through the bridge
+    Then it is met at "2025-06-18"
+
   Scenario: Described offline as the settings say, since a client keeps the list it got at connect
     Given the app is not running, with writes allowed in its settings
     When a client lists the tools through the bridge
     Then the description of "execute_query" mentions "is committed"
+
+  Scenario: A probe for a newer protocol is answered as the app answers it
+    Given the app is not running
+    When a client probes for a newer protocol through the bridge
+    Then it is told the method is unknown, as the app would say
 
   Scenario: A notification with no handshake is answered with silence
     Given the app is not running
@@ -36,6 +47,25 @@ Feature: The stdio bridge when there is no app behind it
     Given the app answers with "nothing"
     When a notification arrives through the bridge
     Then nothing is sent back
+
+  Scenario: A request that gets an empty answer is told so, rather than left waiting
+    Given the app answers with "nothing"
+    When a client calls a tool through the bridge
+    Then the answer says "stopped answering"
+
+  Scenario: An error status is not passed off as an answer, JSON or not
+    Given the app answers with "a json error page"
+    When a client calls a tool through the bridge
+    Then the answer says "stopped answering"
+
+  Scenario: A BOM or whitespace around the answer does not make it a login page
+    Given the app answers with "a json answer behind a BOM"
+    Then it is forwarded unchanged
+
+  Scenario: A handshake that points off this machine is not followed
+    Given the handshake points off this machine
+    When a client calls a tool through the bridge
+    Then the call is a tool error saying "AI access"
 
   Scenario: HTML back means the session expired, and the agent is told so
     Given the app answers with "a login page"
