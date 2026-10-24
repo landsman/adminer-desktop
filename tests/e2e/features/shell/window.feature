@@ -75,3 +75,9 @@ Feature: The window without a title bar
     Then the toolbar's controls are drawn as in a window with a title bar
     When I press the mouse on the empty toolbar
     Then the window was asked to move 0 times
+
+  Scenario: In full screen every control is on screen, none cut off or covered
+    Given the window is full screen
+    And the window is 1512 by 982 pixels
+    When I open the "users" table
+    Then the "sidebar, tables, settings gear, toolbar, search, path bar" are on screen

@@ -2914,6 +2914,40 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Drawn, inside the viewport and not covered: what sits at each one's centre is that control. */
+	#[Then('the :controls are on screen')]
+	public function controlsOnScreen(string $controls): void
+	{
+		$selectors = [
+			'sidebar' => '#foot',
+			'tables' => '#tables li:first-child',
+			'settings gear' => '#desktop-gear',
+			'toolbar' => '#breadcrumb .ad-toolbar',
+			'search' => '#breadcrumb .ad-toolbar-search',
+			'path bar' => '#ad-pathbar',
+		];
+		foreach (array_map('trim', explode(',', $controls)) as $name) {
+			$off = $this->page->evaluate(
+				// language=JavaScript
+				"(selector) => {
+					const el = document.querySelector(selector);
+					if (!el) { return 'missing'; }
+					if (!el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) { return 'hidden'; }
+					const r = el.getBoundingClientRect();
+					if (r.width < 1 || r.height < 1 || r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) {
+						return 'outside the window: ' + JSON.stringify(r);
+					}
+					const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+					return el.contains(hit) ? '' : 'covered by ' + (hit?.id || hit?.className || hit?.tagName);
+				}",
+				$selectors[$name] ?? throw new RuntimeException("no selector for \"$name\""),
+			);
+			if ($off !== '') {
+				throw new RuntimeException("the $name is not on screen: $off");
+			}
+		}
+	}
+
 	#[When('I open the sidebar\'s drawer')]
 	public function openDrawer(): void
 	{
