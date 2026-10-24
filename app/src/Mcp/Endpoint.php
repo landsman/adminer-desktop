@@ -88,7 +88,7 @@ class Endpoint {
 			$url = $gate !== false && $gate !== '' ? $this->url(['HTTP_HOST' => $gate] + $_SERVER, $connected, \Adminer\ME) : null;
 			if ($url !== null && $token !== false && $token !== '') {
 				$this->report($this->cookie(), self::at($url));
-				$this->handshake->write($url, $token, $this->target());
+				$this->handshake->write($url, $token, $this->target(), (string) Env::McpSocket->get());
 			}
 			return null;
 		}

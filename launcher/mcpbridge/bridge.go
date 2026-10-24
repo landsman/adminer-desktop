@@ -25,10 +25,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/landsman/adminer-desktop/launcher/datadir"
@@ -80,8 +83,7 @@ const callTimeout = 60 * time.Second
 // Bridge reads one JSON-RPC message, answers it from PHP's own definitions when the app is
 // unreachable, and forwards it to the gate otherwise.
 type Bridge struct {
-	dir    string // where mcp.json and settings.json live; "" when the app has no durable home
-	client *http.Client
+	dir    string        // where mcp.json and settings.json live; "" when the app has no durable home
 	idle   time.Duration // callTimeout, shorter in a test
 	locale string
 }
@@ -102,7 +104,6 @@ func New() *Bridge {
 func NewIn(dir string) *Bridge {
 	return &Bridge{
 		dir:    dir,
-		client: &http.Client{},
 		idle:   callTimeout,
 		locale: locale(),
 	}
@@ -124,17 +125,46 @@ func locale() string {
 // Run pumps messages until stdin closes. Blank lines are skipped, one answer goes out per
 // request, and a notification gets none — JSON-RPC answers silence with silence.
 func (b *Bridge) Run(in io.Reader, out io.Writer) error {
+	// Messages are answered as they finish, not in turn: a ping, or the notification that
+	// cancels a call, must not wait in the pipe behind a slow query, or a client checking the
+	// server is alive gives up on it. JSON-RPC matches answers by id, so the order is free.
+	var (
+		writing  sync.Mutex
+		inFlight sync.WaitGroup
+		failed   error
+	)
+	slots := make(chan struct{}, maxInFlight)
 	reader := bufio.NewReader(in)
 	for {
 		line, err := reader.ReadString('\n')
+		writing.Lock()
+		gone := failed
+		writing.Unlock()
+		if gone != nil {
+			inFlight.Wait()
+			return gone // stdout is closed: nobody is left to answer
+		}
 		if trimmed := strings.TrimSpace(line); trimmed != "" {
-			if answer := b.Exchange(trimmed); answer != nil {
-				if _, writeErr := fmt.Fprintln(out, *answer); writeErr != nil {
-					return writeErr
+			slots <- struct{}{}
+			inFlight.Add(1)
+			go func() {
+				defer func() { <-slots; inFlight.Done() }()
+				if answer := b.Exchange(trimmed); answer != nil {
+					writing.Lock()
+					defer writing.Unlock()
+					if _, writeErr := fmt.Fprintln(out, *answer); writeErr != nil && failed == nil {
+						failed = writeErr
+					}
 				}
-			}
+			}()
 		}
 		if err != nil {
+			inFlight.Wait() // stdin closing is the client letting go, not a reason to drop answers
+			writing.Lock()
+			defer writing.Unlock()
+			if failed != nil {
+				return failed
+			}
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -142,6 +172,10 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 		}
 	}
 }
+
+// How many messages may be in flight at once. frankenphp has a handful of threads, and an agent
+// that floods the pipe should queue here rather than take every one the window needs.
+const maxInFlight = 4
 
 // Exchange handles one message and returns what to write back, or nil when there is nothing to
 // say. Nil covers two cases that must not be confused: a JSON-RPC notification, which the
@@ -154,15 +188,32 @@ func (b *Bridge) Exchange(line string) *string {
 	if !ok {
 		return b.unavailable(message, b.say("mcp.agent_not_running"))
 	}
-	body, ok := b.post(call.url, line, call.token)
-	if !ok {
+	status, body, err := b.post(call, line)
+	if errors.Is(err, errTimedOut) {
+		return b.unavailable(message, b.say("mcp.agent_timed_out"))
+	}
+	if err != nil {
 		return b.unavailable(message, b.say("mcp.agent_window_closed"))
 	}
-	if body == "" {
-		return nil // the app answered 204: a notification, and nothing to forward
+	// Adminer redirects to its login page when the session behind the handshake has expired, and
+	// the gate answers 403 once it has no session to lend: say that, whatever the body. Any other
+	// error is not the app's answer either, however much it looks like JSON.
+	if (status >= 300 && status < 400) || status == http.StatusUnauthorized || status == http.StatusForbidden {
+		return b.unavailable(message, b.say("mcp.agent_session_expired"))
 	}
-	// Adminer answers HTML when the session behind the handshake has expired. Say that, rather
-	// than handing the agent a page of markup to guess at.
+	if status < 200 || status >= 300 {
+		return b.unavailable(message, b.say("mcp.agent_window_closed"))
+	}
+	// A BOM or a stray newline is not a different answer, and a newline would end the line stdio
+	// frames each message by.
+	body = strings.TrimSpace(strings.TrimPrefix(body, "\uFEFF"))
+	if body == "" {
+		// Silence answers a notification (the app's 204), and unavailable() keeps it silent. A
+		// request owed an answer that got none — PHP died, the gate had nothing to say — is told
+		// so, or the agent waits on its id for good.
+		return b.unavailable(message, b.say("mcp.agent_window_closed"))
+	}
+	// A login page served as 200 is an expired session too, rather than markup to guess at.
 	if body[0] != '{' && body[0] != '[' {
 		return b.unavailable(message, b.say("mcp.agent_session_expired"))
 	}
@@ -274,13 +325,14 @@ func (b *Bridge) say(id string) string {
 }
 
 type call struct {
-	url   string
-	token string
+	url    string
+	token  string
+	socket string // the gate's unix socket; "" in a handshake from before it had one
 }
 
 // handshake is where the window can be reached, written while the feature is on and a connected
-// request is being served. Absent, unreadable or pre-token all read as "nothing to reach", which
-// is what the agent is told.
+// request is being served. Absent, unreadable, pre-token or pointing anywhere but this machine all
+// read as "nothing to reach", which is what the agent is told.
 func (b *Bridge) handshake() (call, bool) {
 	if b.dir == "" {
 		return call{}, false
@@ -290,36 +342,71 @@ func (b *Bridge) handshake() (call, bool) {
 		return call{}, false
 	}
 	var c struct {
-		URL   string `json:"url"`
-		Token string `json:"token"`
+		URL    string `json:"url"`
+		Token  string `json:"token"`
+		Socket string `json:"socket"`
 	}
-	if json.Unmarshal(raw, &c) != nil || c.URL == "" || c.Token == "" {
+	if json.Unmarshal(raw, &c) != nil || c.URL == "" || c.Token == "" || !loopback(c.URL) {
 		return call{}, false
 	}
-	return call{url: c.URL, token: c.Token}, true
+	return call{url: c.URL, token: c.Token, socket: c.Socket}, true
 }
 
+// loopback is Desktop\Mcp\Handshake::isLoopback(): http on 127.0.0.1, all the gate listens on.
+// A url anywhere else would hand the token and the agent's SQL to whoever is there.
+func loopback(raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && u.Scheme == "http" && u.Hostname() == "127.0.0.1"
+}
+
+var errTimedOut = errors.New("the window was silent for the whole timeout")
+
 // post sends one message to the launcher's gate, with its token. The gate adds the session.
-func (b *Bridge) post(url, body, token string) (string, bool) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	idle := time.AfterFunc(b.idle, cancel)
+//
+// Over the gate's unix socket when the handshake names one: a quit app leaves its port behind
+// for anyone to bind, and whoever did would get the token and the SQL, and could answer. The
+// socket sits in the gate's 0700 directory, and once the app is gone it refuses. No proxy and no
+// redirect followed: the gate is the only place this goes, and Go would carry the token along to
+// a redirect on the same host.
+func (b *Bridge) post(c call, body string) (int, string, error) {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+	idle := time.AfterFunc(b.idle, func() { cancel(errTimedOut) })
 	defer idle.Stop()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointAt(url), strings.NewReader(body))
+	transport := &http.Transport{DisableKeepAlives: true}
+	if c.socket != "" {
+		transport.DialContext = func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", c.socket)
+		}
+	}
+	client := &http.Client{
+		Transport:     transport,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointAt(c.url), strings.NewReader(body))
 	if err != nil {
-		return "", false
+		return 0, "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := b.client.Do(req)
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	resp, err := client.Do(req)
 	if err != nil {
-		return "", false
+		return 0, "", timedOutOr(ctx, err)
 	}
 	answer, err := io.ReadAll(idleReader{resp.Body, idle, b.idle})
 	if err = errors.Join(err, resp.Body.Close()); err != nil {
-		return "", false
+		return 0, "", timedOutOr(ctx, err)
 	}
-	return string(answer), true
+	return resp.StatusCode, string(answer), nil
+}
+
+// timedOutOr says which failure it was: the idle timer giving up, or the window not there.
+func timedOutOr(ctx context.Context, err error) error {
+	if errors.Is(context.Cause(ctx), errTimedOut) {
+		return errTimedOut
+	}
+	return err
 }
 
 // idleReader pushes the deadline back on every read that brought something.

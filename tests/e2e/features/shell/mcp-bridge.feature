@@ -48,6 +48,25 @@ Feature: The stdio bridge when there is no app behind it
     When a notification arrives through the bridge
     Then nothing is sent back
 
+  Scenario: A request that gets an empty answer is told so, rather than left waiting
+    Given the app answers with "nothing"
+    When a client calls a tool through the bridge
+    Then the answer says "stopped answering"
+
+  Scenario: An error status is not passed off as an answer, JSON or not
+    Given the app answers with "a json error page"
+    When a client calls a tool through the bridge
+    Then the answer says "stopped answering"
+
+  Scenario: A BOM or whitespace around the answer does not make it a login page
+    Given the app answers with "a json answer behind a BOM"
+    Then it is forwarded unchanged
+
+  Scenario: A handshake that points off this machine is not followed
+    Given the handshake points off this machine
+    When a client calls a tool through the bridge
+    Then the call is a tool error saying "AI access"
+
   Scenario: HTML back means the session expired, and the agent is told so
     Given the app answers with "a login page"
     When a client calls a tool through the bridge

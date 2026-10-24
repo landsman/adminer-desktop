@@ -14,7 +14,7 @@ declare(strict_types=1);
 * for it rather than guess.
 *
 * Modes: app (JSON for a request, empty for a notification — what Adminer does), json, nothing,
-* login.
+* login, padded (the JSON behind a BOM and around whitespace), error (JSON with a 502).
 */
 
 [, $port, $mode, $record] = $argv;
@@ -31,7 +31,8 @@ function answer(string $mode, string $body): ?string
 {
 	return match ($mode) {
 		'app' => str_contains($body, '"id"') ? '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}' : null,
-		'json' => '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}',
+		'json', 'error' => '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}',
+		'padded' => "\xEF\xBB\xBF \n" . '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}' . "\n",
 		'login' => '<!doctype html><title>Login</title>',
 		'nothing' => null,
 		default => throw new RuntimeException("no such mode: $mode"),
@@ -57,6 +58,7 @@ while (($client = @stream_socket_accept($server, -1)) !== false) {
 	$answer = answer($mode, $body);
 	$payload = $answer ?? '';
 	$type = $mode === 'login' ? 'text/html' : 'application/json';
-	fwrite($client, "HTTP/1.1 200 OK\r\nContent-Type: $type\r\nContent-Length: " . strlen($payload) . "\r\nConnection: close\r\n\r\n$payload");
+	$status = $mode === 'error' ? '502 Bad Gateway' : '200 OK';
+	fwrite($client, "HTTP/1.1 $status\r\nContent-Type: $type\r\nContent-Length: " . strlen($payload) . "\r\nConnection: close\r\n\r\n$payload");
 	fclose($client);
 }

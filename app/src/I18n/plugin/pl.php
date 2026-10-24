@@ -111,6 +111,7 @@ return [
 	// nie — zob. Desktop\I18n\Strings.
 	'mcp.agent_not_running' => 'Adminer Desktop nie działa albo dostęp agentów do bazy jest wyłączony w jego ustawieniach. Otwórz aplikację, zaloguj się i włącz go w Ustawienia > Dostęp AI, a potem zapytaj ponownie — następne wywołanie przejdzie bez ponownego łączenia.',
 	'mcp.agent_window_closed' => 'Adminer Desktop przestał odpowiadać — okno zostało prawdopodobnie zamknięte. Otwórz je ponownie i zapytaj jeszcze raz; nie trzeba niczego łączyć ponownie.',
+	'mcp.agent_timed_out' => 'Adminer Desktop nie odpowiedział w ciągu minuty, więc wywołanie zostało przerwane. Jeśli był to zapis, mógł mimo to zostać wykonany — sprawdź to, zanim uruchomisz go ponownie.',
 	'mcp.agent_session_expired' => 'Sesja Adminer Desktop wygasła. Zaloguj się w aplikacji do bazy ponownie, a potem zapytaj jeszcze raz.',
 	'mcp.agent_not_connected' => 'Adminer Desktop nie jest połączony z bazą danych. Zaloguj się ponownie w aplikacji.',
 	'mcp.agent_note_committed' => 'Zapisy są włączone: wszystko, co zmieniła ta instrukcja, zostało zatwierdzone.',

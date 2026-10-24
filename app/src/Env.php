@@ -27,6 +27,9 @@ enum Env: string {
 	/** host:port of the launcher's MCP gate (launcher/mcpgate), where the handshake sends an agent.
 	* Unset without the launcher, and then there is no MCP: nothing holds the session to lend. */
 	case McpGate = 'ADMINER_DESKTOP_MCP_GATE';
+	/** The unix socket the bridge posts to, in the gate's 0700 directory: unlike the port, no
+	* other process can take it over once the app has quit. McpGate still names the Host. */
+	case McpSocket = 'ADMINER_DESKTOP_MCP_SOCKET';
 	/** The token the gate asks the bridge for. Opens the MCP endpoint and nothing else, so it may
 	* sit in mcp.json; it keeps out a web page posting to loopback, which cannot read that file. */
 	case McpToken = 'ADMINER_DESKTOP_MCP_TOKEN';

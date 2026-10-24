@@ -190,6 +190,11 @@ class McpContext implements Context
 		if (!str_contains($url, 'db=' . E2E_DATABASE)) {
 			throw new RuntimeException("the handshake url lost the connection: $url");
 		}
+		// The bridge posts to the socket, which a quit app's port cannot be taken over to fake.
+		$socket = (string) ($this->readHandshake()['socket'] ?? '');
+		if ($socket === '' || filetype($socket) !== 'socket') {
+			throw new RuntimeException('the handshake names no gate socket: ' . json_encode($socket));
+		}
 	}
 
 	/** A web page can post to loopback too; it cannot read mcp.json, so it has no token. And the
@@ -250,8 +255,9 @@ class McpContext implements Context
 		$raw = (string) @file_get_contents($path);
 		$keys = array_keys((array) json_decode($raw, true));
 		sort($keys);
-		if ($keys !== ['target', 'token', 'url']) {
-			throw new RuntimeException('the handshake holds more than url, token and target: ' . json_encode($keys));
+		// The socket is a path, and only opens the gate the token already opens.
+		if ($keys !== ['socket', 'target', 'token', 'url']) {
+			throw new RuntimeException('the handshake holds more than url, socket, token and target: ' . json_encode($keys));
 		}
 		foreach (['adminer_sid', 'adminer_key', 'adminer_permanent'] as $name) {
 			$value = rawurldecode($this->cookies[$name] ?? '');
@@ -740,12 +746,28 @@ class McpContext implements Context
 	#[Given('the app answers with :what')]
 	public function appAnswersWith(string $what): void
 	{
-		$modes = ['nothing' => 'nothing', 'a login page' => 'login', 'a json answer' => 'json'];
+		$modes = [
+			'nothing' => 'nothing',
+			'a login page' => 'login',
+			'a json answer' => 'json',
+			'a json answer behind a BOM' => 'padded',
+			'a json error page' => 'error',
+		];
 		if (!isset($modes[$what])) {
 			throw new RuntimeException("no such answer to stub: $what");
 		}
 		$this->handshake = new Handshake($this->scratch());
 		$this->handshake->write($this->appStub($modes[$what]), 'tok');
+		$this->bridge = $this->bridgeUnderTest();
+	}
+
+	/** A handshake that names somewhere other than this machine: whoever is there would get the
+	 * token and the SQL, and answer as us. */
+	#[Given('the handshake points off this machine')]
+	public function handshakeOffMachine(): void
+	{
+		$this->handshake = new Handshake($this->scratch());
+		$this->handshake->write('http://example.com/adminer.php?pgsql=x&db=demo&', 'tok');
 		$this->bridge = $this->bridgeUnderTest();
 	}
 

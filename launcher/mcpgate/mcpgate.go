@@ -9,6 +9,11 @@
 // token. The gate sends each call to that endpoint with the cookies added. The token opens the
 // MCP endpoint and nothing else; the cookies stay in this process's memory.
 //
+// The bridge reaches the gate over a second unix socket beside the reports one, and the TCP
+// address only names it. A port outlives the app: after a quit, whatever binds it next would get
+// every message an agent sends, token and SQL included, and could answer them. A socket in this
+// 0700 directory cannot be taken over by another account, and once the app is gone it refuses.
+//
 // A socket and not an inherited descriptor: frankenphp is a thread-safe PHP build, which resolves
 // symlinks in every path it opens, so on Linux /dev/fd/3 (a link into /proc) never opens, and
 // php://fd is CLI-only. Anyone who can connect can send a report but never read one back, and a
@@ -24,6 +29,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -38,7 +44,8 @@ import (
 type Gate struct {
 	upstream string // frankenphp, http://127.0.0.1:port
 	token    string
-	ln       net.Listener // where the bridge posts
+	ln       net.Listener // the address the bridge names in the Host header, and posts to without a socket
+	calls    net.Listener // where the bridge posts, a unix socket only this account can reach
 	reports  net.Listener // where PHP says which session to lend
 	dir      string       // the reports socket's private directory
 
@@ -63,20 +70,24 @@ func New(upstream string) (*Gate, error) {
 		os.RemoveAll(dir) //nolint:errcheck // giving up anyway
 		return nil, err
 	}
+	calls, err := net.Listen("unix", filepath.Join(dir, "call.sock"))
+	if err != nil {
+		return nil, errors.Join(err, reports.Close(), os.RemoveAll(dir))
+	}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		reports.Close()   //nolint:errcheck
-		os.RemoveAll(dir) //nolint:errcheck
-		return nil, err
+		return nil, errors.Join(err, calls.Close(), reports.Close(), os.RemoveAll(dir))
 	}
-	return &Gate{upstream: upstream, token: hex.EncodeToString(b), ln: ln, reports: reports, dir: dir}, nil
+	return &Gate{upstream: upstream, token: hex.EncodeToString(b), ln: ln, calls: calls, reports: reports, dir: dir}, nil
 }
 
-// Env is what PHP needs to point the handshake here: the address, the token the bridge must
-// show, and the socket to report the session on. None of it unlocks a password.
+// Env is what PHP needs to point the handshake here: the address, the socket the bridge posts
+// to, the token it must show, and the socket to report the session on. None of it unlocks a
+// password.
 func (g *Gate) Env() []string {
 	return []string{
 		"ADMINER_DESKTOP_MCP_GATE=" + g.ln.Addr().String(),
+		"ADMINER_DESKTOP_MCP_SOCKET=" + g.calls.Addr().String(),
 		"ADMINER_DESKTOP_MCP_TOKEN=" + g.token,
 		"ADMINER_DESKTOP_MCP_REPORT=" + g.reports.Addr().String(),
 	}
@@ -93,14 +104,17 @@ func (g *Gate) Serve() {
 			go g.listen(c)
 		}
 	}()
-	http.Serve(g.ln, g) //nolint:errcheck // ends with Close
+	// Both end with Close, which is the only error either returns.
+	done := make(chan error, 2)
+	go func() { done <- http.Serve(g.calls, g) }()
+	go func() { done <- http.Serve(g.ln, g) }()
+	<-done
 }
 
 // Close stops both listeners and removes the socket's directory.
 func (g *Gate) Close() {
-	g.ln.Close()        //nolint:errcheck // shutting down
-	g.reports.Close()   //nolint:errcheck
-	os.RemoveAll(g.dir) //nolint:errcheck
+	// Shutting down: a listener that will not close has nothing left to serve either.
+	_ = errors.Join(g.ln.Close(), g.calls.Close(), g.reports.Close(), os.RemoveAll(g.dir))
 }
 
 // listen takes one JSON line per report, {"cookie": "...", "endpoint": "http://…?…&mcp=1"}; empty
@@ -143,7 +157,9 @@ func (g *Gate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The endpoint PHP reported, never the path the call asked for. Adminer answers some pages
 	// before the hook that answers ?mcp=1 runs (?download= streams a column and exits), so any
 	// other path would be adminer with the window's session behind it.
-	req, err := http.NewRequest(http.MethodPost, g.upstream+endpoint, r.Body)
+	// Bound to the bridge's request: when it gives up, so does the call to frankenphp, rather
+	// than a statement running on with nobody left to hear how it ended.
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, g.upstream+endpoint, r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return

@@ -18,20 +18,18 @@ use Desktop\UserSettings;
 * Per message, not once at startup, because the agent may have spawned us before the app was
 * running and will certainly outlive a restart of it.
 *
-* The transport is injectable so the loop can be tested without a server: everything
-* interesting here is the mapping from a failed request to something an agent can act on, and
-* that is precisely the part an end-to-end check cannot provoke on demand.
+* The installed app runs the Go copy of this (launcher/mcpbridge); this one is the baseline the
+* e2e suite holds it to, so the two answer alike.
 */
 class Stdio {
+	/** What post() returns when the window went quiet for the whole timeout, as opposed to not
+	* answering at all: a write may have run, and the agent has to be told before it retries. */
+	private const string TIMED_OUT = 'timed out';
+
 	private Handshake $handshake;
 
-	/** @var callable(string,string,string):(string|false) */
-	private $send;
-
-	/** @param (callable(string,string,string):(string|false))|null $send url, body, token */
-	function __construct(?Handshake $handshake = null, ?callable $send = null) {
+	function __construct(?Handshake $handshake = null) {
 		$this->handshake = $handshake ?? new Handshake();
-		$this->send = $send ?? [$this, 'post'];
 	}
 
 	/** Pump messages until stdin closes.
@@ -75,16 +73,33 @@ class Stdio {
 		if ($config === null) {
 			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_not_running'));
 		}
-		$body = ($this->send)(Endpoint::at($config['url']), $line, $config['token']);
-
-		if ($body === false) {
+		$reply = $this->post(Endpoint::at($config['url']), $line, $config['token'], $config['socket']);
+		if ($reply === self::TIMED_OUT) {
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_timed_out'));
+		}
+		if ($reply === null) {
 			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_window_closed'));
 		}
-		if ($body === '') {
-			return null; // the app answered 204: a notification, and nothing to forward
+		[$status, $body] = $reply;
+		// Adminer redirects to its login page when the session behind the handshake has expired,
+		// and the gate answers 403 once it has no session to lend: say that, whatever the body.
+		// Any other error is not the app's answer either, however much it looks like JSON.
+		if (($status >= 300 && $status < 400) || $status === 401 || $status === 403) {
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_session_expired'));
 		}
-		// Adminer answers HTML when the session behind the handshake has expired. Say that,
-		// rather than handing the agent a page of markup to guess at.
+		if ($status < 200 || $status >= 300) {
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_window_closed'));
+		}
+		// A BOM or a stray newline is not a different answer, and a newline would end the line
+		// stdio frames each message by.
+		$body = trim((string) preg_replace('~^\xEF\xBB\xBF~', '', $body));
+		if ($body === '') {
+			// Silence answers a notification (the app's 204), and unavailable() keeps it silent. A
+			// request owed an answer that got none — PHP died, the gate had nothing to say — is
+			// told so, or the agent waits on its id for good.
+			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_window_closed'));
+		}
+		// A login page served as 200 is an expired session too, rather than markup to guess at.
 		if ($body[0] !== '{' && $body[0] !== '[') {
 			return $this->unavailable($id, $method, $params, Strings::t('mcp.agent_session_expired'));
 		}
@@ -93,17 +108,36 @@ class Stdio {
 
 	/** POST one message to the launcher's gate, with its token. The gate adds the session.
 	*
-	* @return string|false
+	* Over the gate's unix socket when the handshake names one: a quit app leaves its port behind
+	* for anyone to bind, and whoever did would get the token and the SQL, and could answer. curl
+	* rather than PHP's http wrapper, which cannot reach a socket. The timeout is idle, not total,
+	* as Go's is: a large result still arriving at a minute has not timed out. No proxy, whatever
+	* the environment says, and no redirect followed: the gate is the only place this goes.
+	*
+	* @return array{int,string}|string|null the status and body; TIMED_OUT; null when unreachable
 	*/
-	private function post(string $url, string $body, string $token) {
-		$context = stream_context_create(['http' => [
-			'method' => 'POST',
-			'header' => ['Content-Type: application/json', "Authorization: Bearer $token"],
-			'content' => $body,
-			'timeout' => 60,
-			'ignore_errors' => true, // read the body of a 4xx/5xx rather than turning it into false
-		]]);
-		return @file_get_contents($url, false, $context);
+	private function post(string $url, string $body, string $token, string $socket): array|string|null {
+		$curl = curl_init($url);
+		curl_setopt_array($curl, [
+			CURLOPT_POST => true,
+			CURLOPT_POSTFIELDS => $body,
+			// Expect: empty, or curl holds a body over 1 KiB back for a 100 Continue first.
+			CURLOPT_HTTPHEADER => ['Content-Type: application/json', "Authorization: Bearer $token", 'Expect:'],
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => false,
+			CURLOPT_PROXY => '',
+			CURLOPT_CONNECTTIMEOUT => 60,
+			CURLOPT_LOW_SPEED_LIMIT => 1,
+			CURLOPT_LOW_SPEED_TIME => 60,
+		]);
+		if ($socket !== '') {
+			curl_setopt($curl, CURLOPT_UNIX_SOCKET_PATH, $socket);
+		}
+		$answer = curl_exec($curl);
+		if (!is_string($answer)) {
+			return curl_errno($curl) === CURLE_OPERATION_TIMEDOUT ? self::TIMED_OUT : null;
+		}
+		return [(int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE), $answer];
 	}
 
 	/** Answer when the app cannot be reached, without failing the connection.

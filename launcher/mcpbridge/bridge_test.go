@@ -256,6 +256,158 @@ func TestWindowClosed(t *testing.T) {
 	}
 }
 
+// said is the text of a tool-error answer.
+func said(t *testing.T, answer *string) string {
+	t.Helper()
+	result := decode(t, answer)["result"].(map[string]any)
+	return result["content"].([]any)[0].(map[string]any)["text"].(string)
+}
+
+// app answers every call with one status and body.
+func app(t *testing.T, status int, body string) string {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(status)
+		reply(t, w, body)
+	}))
+	t.Cleanup(server.Close)
+	return server.URL + "/adminer.php?pgsql=x"
+}
+
+// A request owed an answer that got an empty one — PHP died, the gate had nothing to say — is
+// told so, or the agent waits on its id for good. A notification still gets silence.
+func TestEmptyAnswerToARequestIsReported(t *testing.T) {
+	dir := t.TempDir()
+	handshake(t, dir, app(t, http.StatusOK, ""))
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "stopped answering") {
+		t.Errorf("an empty answer to a request: %s", got)
+	}
+	if got := bridge(t, dir).Exchange(notification()); got != nil {
+		t.Errorf("a notification was answered with %s", *got)
+	}
+}
+
+// An error status is not passed off as the app's answer, whatever its body looks like.
+func TestErrorStatusIsNotAnAnswer(t *testing.T) {
+	dir := t.TempDir()
+	handshake(t, dir, app(t, http.StatusBadGateway, `{"jsonrpc":"2.0","id":3,"result":{"forged":true}}`))
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "stopped answering") {
+		t.Errorf("a 502 with JSON: %s", got)
+	}
+	handshake(t, dir, app(t, http.StatusForbidden, `{}`))
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "expired") {
+		t.Errorf("the gate's 403: %s", got)
+	}
+}
+
+// A BOM or whitespace around an answer does not make it a login page, nor a second line.
+func TestBOMIsNotALoginPage(t *testing.T) {
+	const answer = `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`
+	dir := t.TempDir()
+	handshake(t, dir, app(t, http.StatusOK, "\uFEFF \n"+answer+"\n"))
+	if got := bridge(t, dir).Exchange(listTools()); got == nil || *got != answer {
+		t.Errorf("a padded answer came back as %v", got)
+	}
+}
+
+// Only ever the gate, on this machine: anywhere else would get the token and the SQL.
+func TestOffMachineHandshakeIsNotFollowed(t *testing.T) {
+	for _, url := range []string{"http://example.com/adminer.php?pgsql=x", "https://127.0.0.1:1/", "http://localhost.evil:1/"} {
+		dir := t.TempDir()
+		handshake(t, dir, url)
+		if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "AI access") {
+			t.Errorf("%s was followed: %s", url, got)
+		}
+	}
+}
+
+// With a socket in the handshake the call goes there and nowhere else: a quit app's port can be
+// bound by anyone, its socket cannot.
+func TestPostsOverTheSocket(t *testing.T) {
+	short, err := os.MkdirTemp("", "mb") // a unix socket path has to stay under ~100 bytes
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeOrFail(t, closerFunc(func() error { return os.RemoveAll(short) })) })
+	socket := filepath.Join(short, "call.sock")
+	ln, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := &httptest.Server{Listener: ln, Config: &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reply(t, w, `{"jsonrpc":"2.0","id":7,"result":{"via":"socket"}}`)
+	})}}
+	server.Start()
+	stranger := app(t, http.StatusOK, `{"jsonrpc":"2.0","id":7,"result":{"via":"port"}}`)
+
+	dir := t.TempDir()
+	write := func(socket string) {
+		body := fmt.Sprintf(`{"url":%q,"token":"tok","socket":%q}`, stranger, socket)
+		if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(socket)
+	if got := bridge(t, dir).Exchange(listTools()); got == nil || !strings.Contains(*got, "socket") {
+		t.Errorf("the call did not go over the socket: %v", got)
+	}
+	server.Close() // the app quit: its socket refuses, and the port is someone else's now
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "stopped answering") {
+		t.Errorf("a dead socket fell back to the port: %s", got)
+	}
+}
+
+type closerFunc func() error
+
+func (f closerFunc) Close() error { return f() }
+
+// A redirect is not followed: Go would carry the token to another port on the same host.
+func TestRedirectIsNotFollowed(t *testing.T) {
+	reached := false
+	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reached = true
+		reply(t, w, `{}`)
+	}))
+	defer elsewhere.Close()
+	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, elsewhere.URL, http.StatusTemporaryRedirect)
+	}))
+	defer redirect.Close()
+	dir := t.TempDir()
+	handshake(t, dir, redirect.URL+"/adminer.php?pgsql=x")
+	if got := said(t, bridge(t, dir).Exchange(callTool())); !strings.Contains(got, "expired") {
+		t.Errorf("a redirect: %s", got)
+	}
+	if reached {
+		t.Error("the redirect was followed, token and all")
+	}
+}
+
+// A ping is answered while a slow call is still running, not after it.
+func TestPingIsNotHeldBehindASlowCall(t *testing.T) {
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := readBody(t, r)
+		if strings.Contains(body, "tools/call") {
+			time.Sleep(300 * time.Millisecond)
+			reply(t, w, `{"jsonrpc":"2.0","id":3,"result":{}}`)
+			return
+		}
+		reply(t, w, `{"jsonrpc":"2.0","id":4,"result":{}}`)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	out := new(bytes.Buffer)
+	input := callTool() + "\n" + `{"jsonrpc":"2.0","id":4,"method":"ping"}` + "\n"
+	if err := bridge(t, dir).Run(strings.NewReader(input), out); err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) != 2 || !strings.Contains(lines[0], `"id":4`) {
+		t.Errorf("the ping waited behind the call: %q", lines)
+	}
+}
+
 // HTML back means the session expired, and the agent is told rather than handed markup to guess at.
 func TestHTMLMeansExpiredSession(t *testing.T) {
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -502,8 +654,8 @@ func TestSlowBodyIsNotAClosedWindow(t *testing.T) {
 	defer silent.Close()
 	handshake(t, dir, silent.URL+"/adminer.php?pgsql=x")
 	result := decode(t, b.Exchange(callTool()))["result"].(map[string]any)
-	if said := result["content"].([]any)[0].(map[string]any)["text"].(string); !strings.Contains(said, "stopped answering") {
-		t.Errorf("a silent window was not reported closed: %s", said)
+	if said := result["content"].([]any)[0].(map[string]any)["text"].(string); !strings.Contains(said, "may still have been applied") {
+		t.Errorf("a silent window was not reported as timed out, with a write possibly applied: %s", said)
 	}
 }
 
@@ -515,7 +667,7 @@ func TestGeneratedDataIsComplete(t *testing.T) {
 			t.Errorf("no catalogue for %s", key)
 		}
 	}
-	for _, id := range []string{"mcp.agent_not_running", "mcp.agent_window_closed", "mcp.agent_session_expired", "mcp.agent_unknown_method"} {
+	for _, id := range []string{"mcp.agent_not_running", "mcp.agent_window_closed", "mcp.agent_session_expired", "mcp.agent_unknown_method", "mcp.agent_timed_out"} {
 		if data.Sentences["en"][id] == "" {
 			t.Errorf("no English text for %s", id)
 		}
