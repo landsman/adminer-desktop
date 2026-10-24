@@ -71,7 +71,7 @@ locally before a push rather than being iterated against in Actions.
 
 ```make
 ADMINER_VERSION    = 6.1.1
-FRANKENPHP_VERSION = 1.12.6
+FRANKENPHP_VERSION = 1.13.3
 ```
 
 `adminer.php`, `editor.php` (compiled from its sources), 49 plugins and 28 designs all come from
