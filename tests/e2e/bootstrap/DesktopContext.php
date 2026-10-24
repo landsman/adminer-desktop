@@ -3152,6 +3152,19 @@ class DesktopContext implements Context
 		)->first()->dispatchEvent('mousedown');
 	}
 
+	/** The sidebar is a drawer there, so nothing holds the bar off the edge. */
+	#[Then('the path bar starts at the window\'s edge')]
+	public function pathBarAtEdge(): void
+	{
+		$left = $this->page->evaluate(
+			// language=JavaScript
+			"() => document.querySelector('#ad-pathbar').getBoundingClientRect().left",
+		);
+		if ($left > 1) {
+			throw new RuntimeException("the path bar starts {$left}px in");
+		}
+	}
+
 	/** Finder's path bar, along the window's foot: the steps there, each a link but the last, and
 	 * the content panel ending where the bar begins, so nothing of the page is under it. */
 	#[Then('the path bar reads :path, its steps leading back')]

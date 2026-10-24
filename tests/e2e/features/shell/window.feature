@@ -70,6 +70,7 @@ Feature: The window without a title bar
     When the window is 390 pixels wide
     And I open the "users" table
     Then the toolbar's controls fit beside the path
+    And the path bar starts at the window's edge
     When I open the sidebar's drawer
     Then the drawer is filled, not see-through
     When I open the list of tables

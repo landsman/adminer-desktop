@@ -263,7 +263,7 @@
 }
 
 @media (max-width: 800px) {
-	.ad-frameless {
+	.ad-frameless body {
 		--ad-pathbar-left: 0px;
 	}
 }
