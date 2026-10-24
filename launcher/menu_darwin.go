@@ -55,6 +55,23 @@ func installFrameless(w webview.WebView) {
 	w.Init(`document.documentElement.classList.add("ad-frameless");`)
 }
 
+// Set by onTerminate; AppKit calls it from inside terminate:, then exits the process.
+var onQuit func()
+
+//export goAppWillTerminate
+func goAppWillTerminate() {
+	if onQuit != nil {
+		onQuit()
+	}
+}
+
+// onTerminate runs cleanup when the app quits from the menu, the Dock or a logout. Those exit
+// the process without returning from the run loop, so a defer never sees them.
+func onTerminate(cleanup func()) {
+	onQuit = cleanup
+	C.watchTermination()
+}
+
 // moveToBuiltinScreen puts the window on the laptop's own display, for -dev.
 func moveToBuiltinScreen(window unsafe.Pointer) bool {
 	return C.moveToBuiltinScreen(window) == 1

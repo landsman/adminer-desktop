@@ -51,6 +51,9 @@ func describeTitlebarHit(window unsafe.Pointer) string { return "(darwin only)" 
 // Windows and Linux keep their scrollbars on screen natively; the theme only hides them on macOS.
 func installScrollerStyle(w webview.WebView) {}
 
+// Closing the window returns from the run loop off macOS, so the defers already clean up.
+func onTerminate(cleanup func()) {}
+
 // The window manager places the window; -dev leaves it to it.
 func moveToBuiltinScreen(window unsafe.Pointer) bool { return false }
 

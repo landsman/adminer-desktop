@@ -2,6 +2,8 @@
 // its preamble into several translation units and an @implementation there ends up
 // duplicated at link time.
 void installMenu(const char *version, const char *adminerVersion, const char *frankenphpVersion);
+// Calls goAppWillTerminate when the app quits through terminate:, which never returns to Go.
+void watchTermination(void);
 
 
 // JavaScript alert/confirm/prompt, which webview's own delegate leaves unimplemented.

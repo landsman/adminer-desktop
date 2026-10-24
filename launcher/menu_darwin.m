@@ -8,6 +8,7 @@ void goMenuLogs(void);
 void goMenuAdminerSite(void);
 void goMenuRepo(void);
 void goMenuIssues(void);
+void goAppWillTerminate(void);
 
 static NSString *aboutVersion = nil;
 static NSString *aboutCredits = nil;
@@ -54,6 +55,13 @@ static void addItem(NSMenu *menu, NSString *title, SEL action, NSString *key, id
 	NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:action keyEquivalent:key];
 	[item setTarget:target];
 	[menu addItem:item];
+}
+
+// Quit (Cmd+Q, the Dock, logout) exits inside -[NSApp terminate:], so the run loop never returns
+// and the launcher's deferred cleanup never runs. The notification is the last moment to run it.
+void watchTermination(void) {
+	[[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationWillTerminateNotification
+		object:nil queue:nil usingBlock:^(NSNotification *n) { goAppWillTerminate(); }];
 }
 
 void installMenu(const char *version, const char *adminerVersion, const char *frankenphpVersion) {

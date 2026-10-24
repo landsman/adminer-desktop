@@ -54,8 +54,9 @@ semgrep — run through Docker rather than being skipped.
 ## Things that will bite
 
 **A quit app can leave its server running.** The launcher stops frankenphp when its run loop
-returns or on Ctrl-C, and on macOS Cmd+Q never returns (AppKit exits the process), nor does a
-`kill` or a crash: the server stays, reparented to init, holding its port. `make kill-orphans`
+returns, on Ctrl-C, and on a macOS quit (Cmd+Q exits inside AppKit, so `onTerminate` hooks
+`NSApplicationWillTerminateNotification`). A `kill -9` or a crash runs none of them: the server
+stays, reparented to init, holding its port. `make kill-orphans`
 stops every such server, the installed app's too, and the SessionEnd hook in
 `.claude/settings.json` runs it after each agent session.
 
