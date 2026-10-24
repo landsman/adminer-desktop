@@ -1,4 +1,4 @@
-Upstream: (pull request not opened yet) - delete this patch once a release with it is pinned.
+Upstream: https://github.com/vrana/adminer/pull/1368 - delete this patch once a release with it is pinned.
 
 diff --git a/adminer/drivers/mysql.inc.php b/adminer/drivers/mysql.inc.php
 index 66d4444..8134a47 100644
