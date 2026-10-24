@@ -339,11 +339,12 @@ func main() {
 	// An agent's MCP calls borrow the window's session through the gate, which keeps it in this
 	// process's memory instead of a file the agent could read (launcher/mcpgate). Not on Windows:
 	// the MCP bridge does not cover Windows yet.
+	closeGate := func() {}
 	if runtime.GOOS != "windows" {
 		if gate, err := mcpgate.New("http://" + addr); err != nil {
 			log.Print("mcp gate: ", err)
 		} else {
-			defer gate.Close()
+			closeGate = gate.Close
 			srv.Env = append(srv.Env, gate.Env()...)
 			go gate.Serve()
 		}
@@ -355,8 +356,9 @@ func main() {
 	if err := srv.Start(); err != nil {
 		log.Fatal(err)
 	}
-	stop := func() { stopProcessGroup(srv.Process) }
+	stop := func() { stopProcessGroup(srv.Process); closeGate() }
 	defer stop()
+	onTerminate(stop)
 
 	// A kill(2) from the OS must not leak the server either.
 	sigs := make(chan os.Signal, 1)
