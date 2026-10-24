@@ -13,12 +13,10 @@ use Behat\Step\Then;
 use Behat\Step\When;
 use Desktop\Mcp\Handshake;
 use Desktop\Mcp\RequestLog;
-use Desktop\Mcp\Stdio;
 use Desktop\Mcp\Tools;
 use Desktop\UserSettings;
 use RuntimeException;
 use Symfony\Component\Process\Process;
-use Throwable;
 
 /** The steps the MCP features are written in.
  *
@@ -26,9 +24,11 @@ use Throwable;
  * process, so the scenarios log in with curl and drive the endpoint exactly as an agent would —
  * over the wire for the endpoint, over stdin and stdout for the bridge.
  *
- * The bridge, the recorded URL and the request log need no app at all: those scenarios build the
- * class with a transport of their own, which is the only way to provoke a closed window or a
- * midnight boundary on demand.
+ * The bridge, the recorded URL and the request log need no app at all: the bridge scenarios spawn
+ * Bridge — PHP's, or the Go one when ADMINER_DESKTOP_MCP_BRIDGE names it — and point it at an
+ * HTTP stub that answers a login page or an empty body on demand, which is the only way to
+ * provoke a closed window or a midnight boundary. The rest talk to the real app through the
+ * same bridge, so switching the variable changes the implementation under every MCP scenario.
  */
 class McpContext implements Context
 {
@@ -47,9 +47,14 @@ class McpContext implements Context
 	/** @var array<string, mixed>|null what the tool put in it, decoded again out of its text */
 	private ?array $payload = null;
 
-	private ?Stdio $bridge = null;
+	private ?Bridge $bridge = null;
 
 	private ?Handshake $handshake = null;
+
+	/** The app the bridge forwards to, when a scenario needs one that answers oddly. */
+	private ?Process $app = null;
+
+	private string $appRecord = '';
 
 	/** @var array{url:string, body:string, token:string}|null what the bridge posted */
 	private ?array $posted = null;
@@ -154,6 +159,10 @@ class McpContext implements Context
 	#[AfterScenario]
 	public function restoreReader(): void
 	{
+		$this->bridge?->close();
+		$this->bridge = null;
+		$this->app?->stop();
+		$this->app = null;
 		if ($this->readerBroken) {
 			$this->readerBroken = false;
 			e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_READER . " PASSWORD '" . $this->fix['driver']['password'] . "'");
@@ -619,26 +628,21 @@ class McpContext implements Context
 		}
 	}
 
-	/** The shim as an agent runs it: a bare child process, over its stdin and stdout. */
+	/** The bridge as an agent runs it: a bare child process, over its stdin and stdout. */
 	#[When('an agent runs :sql through the stdio bridge')]
 	public function throughTheStdioBridge(string $sql): void
 	{
-		$shim = new Process(
-			[$this->fix['root'] . '/bin/frankenphp', 'php-cli', $this->fix['app'] . '/mcp.php'],
-			null,
-			['ADMINER_DESKTOP_DATA' => $this->fix['data']],
-		);
-		$shim->setInput(implode("\n", [
+		$bridge = new Bridge($this->fix['root'], new Handshake((string) $this->fix['data']));
+		$this->raw = $bridge->pump(implode("\n", [
 			(string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize', 'params' => []]),
 			(string) json_encode(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/call', 'params' => [
 				'name' => 'execute_query',
 				'arguments' => ['sql' => $sql],
 			]]),
 		]) . "\n");
-		$shim->run();
-		$this->raw = $shim->getOutput() . $shim->getErrorOutput();
+		$bridge->close();
 		$this->payload = null;
-		foreach (explode("\n", trim($shim->getOutput())) as $line) {
+		foreach (explode("\n", trim($this->raw)) as $line) {
 			$message = (array) json_decode($line, true);
 			if (($message['id'] ?? null) === 2) {
 				$this->payload = (array) json_decode((string) ($message['result']['content'][0]['text'] ?? ''), true);
@@ -673,17 +677,36 @@ class McpContext implements Context
 	#[Then('the bridge finds the data dir with no environment of ours')]
 	public function bridgeFindsDataDir(): void
 	{
-		$was = getenv('ADMINER_DESKTOP_DATA');
-		putenv('ADMINER_DESKTOP_DATA');
-		$found = (new Handshake())->path();
-		if ($was !== false) {
-			putenv("ADMINER_DESKTOP_DATA=$was");
+		if ($this->goBridge() === null) {
+			$was = getenv('ADMINER_DESKTOP_DATA');
+			putenv('ADMINER_DESKTOP_DATA');
+			$found = (new Handshake())->path();
+			if ($was !== false) {
+				putenv("ADMINER_DESKTOP_DATA=$was");
+			}
+			if ($found === null) {
+				throw new RuntimeException('with no ADMINER_DESKTOP_DATA the bridge finds no data dir at all');
+			}
+			if (!str_ends_with($found, 'Adminer Desktop/mcp.json')) {
+				throw new RuntimeException("the fallback data dir is not the launcher's: $found");
+			}
+			return;
 		}
-		if ($found === null) {
-			throw new RuntimeException('with no ADMINER_DESKTOP_DATA the bridge finds no data dir at all');
-		}
-		if (!str_ends_with($found, 'Adminer Desktop/mcp.json')) {
-			throw new RuntimeException("the fallback data dir is not the launcher's: $found");
+
+		// The Go bridge: prove it by using it. A handshake in the platform's own home, reached with
+		// no ADMINER_DESKTOP_DATA — the stub answers, so nothing but that handshake could have.
+		$home = $this->scratch();
+		$dir = $this->platformHome($home);
+		@mkdir($dir, 0700, true);
+		file_put_contents($dir . '/mcp.json', (string) json_encode(['url' => $this->appStub('json'), 'token' => 'tok']));
+		$this->bridge = new Bridge($this->fix['root'], new Handshake($dir), [
+			'ADMINER_DESKTOP_DATA' => null,
+			'HOME' => $home,
+			'XDG_CONFIG_HOME' => null,
+		]);
+		$this->raw = $this->bridge->exchange($this->request());
+		if ($this->raw !== '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}') {
+			throw new RuntimeException('with no ADMINER_DESKTOP_DATA the bridge did not find the handshake: ' . (string) $this->raw);
 		}
 	}
 
@@ -692,7 +715,7 @@ class McpContext implements Context
 	{
 		$this->handshake = new Handshake($this->scratch());
 		$this->handshake->clear();
-		$this->bridge = new Stdio($this->handshake, fn (): bool => false);
+		$this->bridge = $this->bridgeUnderTest();
 	}
 
 	/** The bridge reads the settings beside the handshake, as it does from the app's data dir. */
@@ -708,24 +731,21 @@ class McpContext implements Context
 	{
 		$this->handshake = new Handshake($this->scratch());
 		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
-		$this->bridge = new Stdio($this->handshake, fn (): bool => false);
+		$this->bridge = $this->bridgeUnderTest();
 	}
 
+	/** A real HTTP answer, because a canned string in-process proves nothing about what the bridge
+	 * does with a login page or an empty body once the transport has been through it. */
 	#[Given('the app answers with :what')]
 	public function appAnswersWith(string $what): void
 	{
-		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
-		$answers = [
-			'nothing' => '',
-			'a login page' => '<!doctype html><title>Login</title>',
-			'a json answer' => '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}',
-		];
-		if (!isset($answers[$what])) {
+		$modes = ['nothing' => 'nothing', 'a login page' => 'login', 'a json answer' => 'json'];
+		if (!isset($modes[$what])) {
 			throw new RuntimeException("no such answer to stub: $what");
 		}
-		$this->raw = $answers[$what];
-		$this->bridge = new Stdio($this->handshake, fn (): string => $answers[$what]);
+		$this->handshake = new Handshake($this->scratch());
+		$this->handshake->write($this->appStub($modes[$what]), 'tok');
+		$this->bridge = $this->bridgeUnderTest();
 	}
 
 	#[When('a client initializes through the bridge')]
@@ -832,15 +852,15 @@ class McpContext implements Context
 	public function bridgeIsAskedForAnything(): void
 	{
 		$this->handshake = new Handshake($this->scratch());
-		$this->handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
-		$seen = null;
-		$spy = new Stdio($this->handshake, function (string $url, string $body, string $token) use (&$seen): string {
-			$seen = ['url' => $url, 'body' => $body, 'token' => $token];
-			return '{}';
-		});
-		$spy->exchange($this->request());
-		/** @var array{url:string, body:string, token:string}|null $seen */
-		$this->posted = $seen;
+		$this->handshake->write($this->appStub('json'), 'tok');
+		$this->bridge = $this->bridgeUnderTest();
+		$this->bridge->exchange($this->request());
+		$recorded = $this->recorded();
+		$this->posted = [
+			'url' => $recorded['uri'],
+			'body' => $recorded['body'],
+			'token' => (string) preg_replace('~^Bearer ~', '', $recorded['authorization']),
+		];
 	}
 
 	#[Then('it posts to the connected url with mcp=1, showing the gate its token')]
@@ -867,19 +887,12 @@ class McpContext implements Context
 	#[Then('the bridge answers each request once and every notification never')]
 	public function bridgePumpsTheStream(): void
 	{
-		$handshake = new Handshake($this->scratch());
-		$handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
-		$answer = '{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}';
-		$in = fopen('php://memory', 'r+');
-		fwrite($in, $this->request() . "\n\n"
+		$this->handshake = new Handshake($this->scratch());
+		$this->handshake->write($this->appStub('app'), 'tok');
+		$this->bridge = $this->bridgeUnderTest();
+		$written = $this->bridge->pump($this->request() . "\n\n"
 			. (string) json_encode(['jsonrpc' => '2.0', 'method' => 'notifications/initialized']) . "\n"
 			. $this->request() . "\n");
-		rewind($in);
-		$out = fopen('php://memory', 'r+');
-		(new Stdio($handshake, fn (string $url, string $body): string
-			=> isset(((array) json_decode($body, true))['id']) ? $answer : ''))->run($in, $out);
-		rewind($out);
-		$written = (string) stream_get_contents($out);
 		if (substr_count($written, '"result"') !== 2 || substr_count($written, "\n") !== 2) {
 			throw new RuntimeException("the stream was answered as: $written");
 		}
@@ -890,23 +903,72 @@ class McpContext implements Context
 	#[Then('the bridge outlives a quiet socket and answers what comes after')]
 	public function bridgeOutlivesQuietSocket(): void
 	{
-		$handshake = new Handshake($this->scratch());
-		$handshake->write('http://127.0.0.1:1/adminer.php?pgsql=x&db=demo&', 'tok');
-		$request = var_export($this->request() . "\n", true);
-		$agent = proc_open(
-			[$this->fix['root'] . '/bin/frankenphp', 'php-cli', '-r', "echo $request; flush(); usleep(500000); echo $request;"],
-			[1 => ['socket']],
-			$pipes,
-		);
-		stream_set_timeout($pipes[1], 0, 100000);
-		$out = fopen('php://memory', 'r+');
-		(new Stdio($handshake, fn (): string => '{"jsonrpc":"2.0","id":7,"result":{}}'))->run($pipes[1], $out);
-		proc_close($agent);
-		rewind($out);
-		$written = (string) stream_get_contents($out);
+		$this->handshake = new Handshake($this->scratch());
+		$this->handshake->write($this->appStub('json'), 'tok');
+		$this->bridge = $this->bridgeUnderTest();
+		$written = $this->bridge->pumpQuiet($this->request());
 		if (substr_count($written, '"result"') !== 2) {
 			throw new RuntimeException("the bridge stopped at the first quiet spell, having answered: $written");
 		}
+	}
+
+	/** The app under test, answering one canned body per POST and recording what it was sent. */
+	private function appStub(string $mode): string
+	{
+		$dir = $this->scratch();
+		$this->appRecord = $dir . '/requests.jsonl';
+		$port = e2e_free_port(56000);
+		$process = new Process([
+			$this->fix['root'] . '/bin/frankenphp',
+			'php-cli',
+			dirname(__DIR__) . '/harness/mcp-app.php',
+			(string) $port,
+			$mode,
+			$this->appRecord,
+		]);
+		$process->start();
+		$process->waitUntil(fn (string $type, string $output): bool => str_contains($output, 'listening'));
+		$this->app = $process;
+		return 'http://127.0.0.1:' . $port . '/adminer.php?pgsql=x&db=demo&';
+	}
+
+	/** @return array{uri:string, authorization:string, body:string} the last request the stub got */
+	private function recorded(): array
+	{
+		$lines = file($this->appRecord, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+		$last = end($lines);
+		$decoded = $last === false ? null : json_decode($last, true);
+		if (!is_array($decoded)) {
+			throw new RuntimeException('the app was not asked anything');
+		}
+		return [
+			'uri' => (string) ($decoded['uri'] ?? ''),
+			'authorization' => (string) ($decoded['authorization'] ?? ''),
+			'body' => (string) ($decoded['body'] ?? ''),
+		];
+	}
+
+	private function bridgeUnderTest(): Bridge
+	{
+		$handshake = $this->handshake;
+		if ($handshake === null) {
+			throw new RuntimeException('no handshake to give the bridge');
+		}
+		return new Bridge($this->fix['root'], $handshake);
+	}
+
+	private function goBridge(): ?string
+	{
+		$binary = getenv('ADMINER_DESKTOP_MCP_BRIDGE');
+		return $binary === false || $binary === '' ? null : $binary;
+	}
+
+	/** Where os.UserConfigDir() points with this HOME, which differs on macOS. */
+	private function platformHome(string $home): string
+	{
+		return PHP_OS_FAMILY === 'Darwin'
+			? $home . '/Library/Application Support/Adminer Desktop'
+			: $home . '/.config/Adminer Desktop';
 	}
 
 	// ── the recorded url ─────────────────────────────────────────────────────────────────────
@@ -1156,8 +1218,12 @@ class McpContext implements Context
 	 */
 	private function rpc(array $message): array
 	{
-		$bridge = new Stdio(new Handshake((string) $this->fix['data']));
-		return (array) json_decode((string) $bridge->exchange((string) json_encode(['jsonrpc' => '2.0'] + $message)), true);
+		$bridge = new Bridge($this->fix['root'], new Handshake((string) $this->fix['data']));
+		try {
+			return (array) json_decode((string) $bridge->exchange((string) json_encode(['jsonrpc' => '2.0'] + $message)), true);
+		} finally {
+			$bridge->close();
+		}
 	}
 
 	private function request(): string
@@ -1218,12 +1284,15 @@ class McpContext implements Context
 		$dir = sys_get_temp_dir() . '/adminer-desktop-mcp-' . getmypid() . '-' . ++$nth;
 		@mkdir($dir, 0700, true);
 		register_shutdown_function(static function () use ($dir): void {
-			try {
-				array_map('unlink', (array) glob("$dir/*"));
-				@rmdir($dir);
-			} catch (Throwable $e) {
-				// a leftover temp directory is not worth failing a run over
-			}
+			$remove = static function (string $path) use (&$remove): void {
+				if (is_dir($path) && !is_link($path)) {
+					array_map($remove, (array) glob("$path/*"));
+					@rmdir($path);
+					return;
+				}
+				@unlink($path);
+			};
+			$remove($dir);
 		});
 		return $dir;
 	}

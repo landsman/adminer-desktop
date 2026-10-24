@@ -1,0 +1,400 @@
+package mcpbridge
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+)
+
+// The scenarios tests/e2e/features/shell/mcp-bridge.feature describes, against this package with
+// no PHP: the app is a test server, the handshake is a temporary directory, and the transport is
+// what the feature cannot provoke on demand — a closed window, an expired session, no app at all.
+
+func bridge(t *testing.T, dir string) *Bridge {
+	t.Helper()
+	return NewIn(dir)
+}
+
+// handshake points the bridge at a server, in the shape Desktop\Mcp\Handshake writes.
+func handshake(t *testing.T, dir, url string) {
+	t.Helper()
+	body := fmt.Sprintf(`{"url":%q,"token":"tok","target":""}`, url)
+	if err := os.WriteFile(filepath.Join(dir, "mcp.json"), []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func settings(t *testing.T, dir string, values map[string]any) {
+	t.Helper()
+	body, err := json.Marshal(values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "settings.json"), body, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func initialize() string {
+	return `{"jsonrpc":"2.0","id":1,"method":"initialize"}`
+}
+
+func listTools() string {
+	return `{"jsonrpc":"2.0","id":7,"method":"tools/list"}`
+}
+
+func callTool() string {
+	return `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_tables"}}`
+}
+
+func notification() string {
+	return `{"jsonrpc":"2.0","method":"notifications/initialized"}`
+}
+
+func decode(t *testing.T, answer *string) map[string]any {
+	t.Helper()
+	if answer == nil {
+		t.Fatal("the bridge said nothing")
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal([]byte(*answer), &decoded); err != nil {
+		t.Fatalf("not JSON: %q: %v", *answer, err)
+	}
+	return decoded
+}
+
+// With no handshake the connection still comes up, carrying the reason.
+func TestUnavailableInitializeSucceeds(t *testing.T) {
+	b := bridge(t, t.TempDir())
+	answer := decode(t, b.Exchange(initialize()))
+	if answer["result"] == nil {
+		t.Fatalf("initialize failed while the app was unavailable: %v", answer)
+	}
+	result := answer["result"].(map[string]any)
+	if result["protocolVersion"] != data.ProtocolVersion {
+		t.Errorf("protocolVersion = %v, want %s", result["protocolVersion"], data.ProtocolVersion)
+	}
+	if !strings.Contains(result["instructions"].(string), "write a bridge of your own") {
+		t.Errorf("initialize does not say to stay on these tools: %v", result["instructions"])
+	}
+	info := result["serverInfo"].(map[string]any)
+	if info["version"] != "offline" {
+		t.Errorf("serverInfo.version = %v, want offline", info["version"])
+	}
+}
+
+// Every answer is one line: MCP's stdio framing is newline-delimited, and a pretty-printed
+// catalogue once put the newlines of the generated JSON into the tools/list answer. A client read
+// `{"tools":[` and saw an empty list.
+func TestAnswersAreOneLine(t *testing.T) {
+	b := bridge(t, t.TempDir())
+	for _, message := range []string{initialize(), listTools(), callTool(), `{"jsonrpc":"2.0","id":9,"method":"server/discover"}`} {
+		answer := b.Exchange(message)
+		if answer == nil {
+			t.Fatalf("%s got no answer", message)
+		}
+		if strings.Contains(*answer, "\n") {
+			t.Errorf("%s was answered over %d lines", message, strings.Count(*answer, "\n")+1)
+		}
+	}
+}
+
+// The list is the real one, in the order PHP advertises it.
+func TestUnavailableCatalogue(t *testing.T) {
+	b := bridge(t, t.TempDir())
+	result := decode(t, b.Exchange(listTools()))["result"].(map[string]any)
+	var names []string
+	for _, raw := range result["tools"].([]any) {
+		names = append(names, raw.(map[string]any)["name"].(string))
+	}
+	want := "list_connections,current_connection,list_databases,list_tables,describe_table,preview_table_data,execute_query"
+	if strings.Join(names, ",") != want {
+		t.Errorf("tools = %v, want %s", names, want)
+	}
+}
+
+// Described offline as the settings say, since a client keeps the list it got at connect.
+func TestUnavailableCatalogueFollowsSettings(t *testing.T) {
+	dir := t.TempDir()
+	settings(t, dir, map[string]any{"mcp": true, "mcp_write": true})
+	b := bridge(t, dir)
+	result := decode(t, b.Exchange(listTools()))["result"].(map[string]any)
+	query := findTool(t, result, "execute_query")
+	if !strings.Contains(query["description"].(string), "is committed") {
+		t.Errorf("execute_query offline does not mention committed writes: %v", query["description"])
+	}
+}
+
+func findTool(t *testing.T, result map[string]any, name string) map[string]any {
+	t.Helper()
+	for _, raw := range result["tools"].([]any) {
+		tool := raw.(map[string]any)
+		if tool["name"] == name {
+			return tool
+		}
+	}
+	t.Fatalf("no %s in the catalogue", name)
+	return nil
+}
+
+// The explanation belongs where a client renders it: a tool result, not a transport error.
+func TestUnavailableCallIsAToolError(t *testing.T) {
+	b := bridge(t, t.TempDir())
+	result := decode(t, b.Exchange(callTool()))["result"].(map[string]any)
+	if result["isError"] != true {
+		t.Fatalf("a call while unavailable was not a tool error: %v", result)
+	}
+	said := result["content"].([]any)[0].(map[string]any)["text"].(string)
+	if !strings.Contains(said, "AI access") {
+		t.Errorf("the tool error does not say where to switch it on: %s", said)
+	}
+}
+
+// JSON-RPC answers a notification with silence; an error here is a protocol violation.
+func TestNotificationIsSilent(t *testing.T) {
+	b := bridge(t, t.TempDir())
+	if answer := b.Exchange(notification()); answer != nil {
+		t.Errorf("a notification was answered with %q", *answer)
+	}
+	if answer := b.Exchange(``); answer != nil {
+		t.Errorf("a blank line was answered with %q", *answer)
+	}
+}
+
+// A legacy server answers a modern probe with an implementation-defined error, and the client
+// then falls back to initialize. A DiscoverResult here would promise an era the app does not speak.
+func TestDiscoverAnswersLegacy(t *testing.T) {
+	b := bridge(t, t.TempDir())
+	answer := decode(t, b.Exchange(`{"jsonrpc":"2.0","id":1,"method":"server/discover"}`))
+	err, ok := answer["error"].(map[string]any)
+	if !ok || err["code"] != float64(-32601) {
+		t.Fatalf("server/discover was not answered -32601: %v", answer)
+	}
+}
+
+// The window closed between the handshake and the call.
+func TestWindowClosed(t *testing.T) {
+	dir := t.TempDir()
+	dead := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	url := dead.URL + "/adminer.php?pgsql=x"
+	dead.Close()
+	handshake(t, dir, url)
+	result := decode(t, bridge(t, dir).Exchange(callTool()))["result"].(map[string]any)
+	said := result["content"].([]any)[0].(map[string]any)["text"].(string)
+	if !strings.Contains(said, "stopped answering") {
+		t.Errorf("a closed window does not say so: %s", said)
+	}
+}
+
+// HTML back means the session expired, and the agent is told rather than handed markup to guess at.
+func TestHTMLMeansExpiredSession(t *testing.T) {
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `<!doctype html><title>Login</title>`)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	result := decode(t, bridge(t, dir).Exchange(callTool()))["result"].(map[string]any)
+	said := result["content"].([]any)[0].(map[string]any)["text"].(string)
+	if !strings.Contains(said, "expired") {
+		t.Errorf("a login page does not read as an expired session: %s", said)
+	}
+}
+
+// An empty answer is a notification the app answered with 204: nothing to forward.
+func TestEmptyAnswerForwardsNothing(t *testing.T) {
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	if answer := bridge(t, dir).Exchange(notification()); answer != nil {
+		t.Errorf("an empty answer was forwarded as %q", *answer)
+	}
+}
+
+// A JSON answer is forwarded exactly as the server said it.
+func TestJSONAnswerIsUnchanged(t *testing.T) {
+	const answer = `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, answer)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	got := bridge(t, dir).Exchange(listTools())
+	if got == nil || *got != answer {
+		t.Errorf("the bridge reshaped what the server said: %v", got)
+	}
+}
+
+// It posts where the handshake says, with mcp=1 and the token, and the message unchanged.
+func TestPostsToTheHandshake(t *testing.T) {
+	var uri, auth, body string
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		uri, auth = r.URL.RequestURI(), r.Header.Get("Authorization")
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+		body = buf.String()
+		fmt.Fprint(w, `{}`)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x&db=demo&")
+	bridge(t, dir).Exchange(listTools())
+	for _, needle := range []string{"mcp=1", "db=demo"} {
+		if !strings.Contains(uri, needle) {
+			t.Errorf("posted to %q, with no %s", uri, needle)
+		}
+	}
+	if strings.Contains(uri, "&&") {
+		t.Errorf("posted to %q, with an empty query pair", uri)
+	}
+	if body != listTools() {
+		t.Errorf("the bridge changed the message on the way through: %q", body)
+	}
+	if auth != "Bearer tok" {
+		t.Errorf("the gate was shown %q, not its token", auth)
+	}
+}
+
+// run() pumps a stream: blank lines skipped, one answer per request, silence stays silent.
+func TestStreamPumping(t *testing.T) {
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+		if strings.Contains(buf.String(), `"id"`) {
+			fmt.Fprint(w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
+		}
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	input := listTools() + "\n\n" + notification() + "\n" + listTools() + "\n"
+	out := new(bytes.Buffer)
+	if err := bridge(t, dir).Run(strings.NewReader(input), out); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(out.String(), `"result"`) != 2 || strings.Count(out.String(), "\n") != 2 {
+		t.Errorf("the stream was answered as: %q", out.String())
+	}
+}
+
+// A quiet spell on a socket stdin is not the client letting go. The launcher's bridge reads a
+// socket as readily as a pipe, and nothing in this package sets a read deadline — the PHP one
+// dropped after default_socket_timeout until PR #183.
+//
+// Seconds from MCP_BRIDGE_QUIET_SECONDS (default 1); the issue asks for 90 s once by hand.
+func TestQuietStdinSurvives(t *testing.T) {
+	quiet := time.Second
+	if seconds, err := strconv.Atoi(os.Getenv("MCP_BRIDGE_QUIET_SECONDS")); err == nil && seconds > 0 {
+		quiet = time.Duration(seconds) * time.Second
+	}
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"jsonrpc":"2.0","id":7,"result":{}}`)
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+
+	agent, bridgeSide := net.Pipe()
+	defer agent.Close()
+	out := new(syncBuffer)
+	done := make(chan error, 1)
+	go func() { done <- bridge(t, dir).Run(bridgeSide, out) }()
+
+	if _, err := agent.Write([]byte(listTools() + "\n")); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, out, 1)
+	time.Sleep(quiet)
+	if _, err := agent.Write([]byte(listTools() + "\n")); err != nil {
+		t.Fatal(err) // the bridge closed its end: it gave up during the quiet spell
+	}
+	waitFor(t, out, 2)
+	agent.Close()
+	if err := <-done; err != nil {
+		t.Fatalf("the bridge ended with %v after a quiet spell", err)
+	}
+}
+
+// syncBuffer is what Run writes to from its own goroutine; the test reads it while the bridge
+// works, which is a plain bytes.Buffer only if the race detector is not looking.
+type syncBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (s *syncBuffer) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *syncBuffer) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.String()
+}
+
+func waitFor(t *testing.T, out *syncBuffer, answers int) {
+	t.Helper()
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		if strings.Count(out.String(), `"result"`) >= answers {
+			return
+		}
+	}
+	t.Fatalf("waited for %d answers, got %q", answers, out.String())
+}
+
+// The offline sentences are translated as the app is, not English whatever the locale.
+func TestLocale(t *testing.T) {
+	t.Setenv("LANG", "cs_CZ.UTF-8")
+	b := NewIn(t.TempDir())
+	result := decode(t, b.Exchange(callTool()))["result"].(map[string]any)
+	said := result["content"].([]any)[0].(map[string]any)["text"].(string)
+	if !strings.Contains(said, "neběží") {
+		t.Errorf("LANG=cs_CZ.UTF-8 did not answer in Czech: %s", said)
+	}
+}
+
+// The data dir is the launcher's: ADMINER_DESKTOP_DATA when it is passed, else the same
+// os.UserConfigDir() home. An agent starts the bridge with no environment of ours.
+func TestFindsTheDataDirFromTheEnvironment(t *testing.T) {
+	dir := t.TempDir()
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}`)
+	}))
+	defer app.Close()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	t.Setenv("ADMINER_DESKTOP_DATA", dir)
+	if got := New().Exchange(listTools()); got == nil || !strings.Contains(*got, `"tools"`) {
+		t.Errorf("the bridge did not use ADMINER_DESKTOP_DATA: %v", got)
+	}
+}
+
+// Every sentence the bridge can say exists in English, and the catalogue has all four settings
+// combinations: a generator that missed one would otherwise fail only at runtime.
+func TestGeneratedDataIsComplete(t *testing.T) {
+	for _, key := range []string{"00", "01", "10", "11"} {
+		if _, ok := data.Catalogue[key]; !ok {
+			t.Errorf("no catalogue for %s", key)
+		}
+	}
+	for _, id := range []string{"mcp.agent_not_running", "mcp.agent_window_closed", "mcp.agent_session_expired", "mcp.agent_unknown_method"} {
+		if data.Sentences["en"][id] == "" {
+			t.Errorf("no English text for %s", id)
+		}
+	}
+}

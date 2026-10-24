@@ -20,6 +20,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/landsman/adminer-desktop/launcher/mcpbridge"
 	"github.com/landsman/adminer-desktop/launcher/mcpgate"
 	webview "github.com/webview/webview_go"
 )
@@ -55,50 +56,34 @@ func resolve() (php string, root string, err error) {
 
 // serveMCP runs the stdio bridge an agent talks to, and nothing else -- no window, no server.
 //
-// It exists so registering the app with an agent is one path instead of two: we already know
-// where frankenphp and app/ are, and the agent should not have to. It also passes the data
-// directory in, which is where the bridge finds the handshake naming the running window.
-func serveMCP(php, root string) error {
-	cmd := exec.Command(php, "php-cli", filepath.Join(root, "mcp.php"))
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	cmd.Env = os.Environ()
-	if dir, err := dataDir(); err == nil {
-		cmd.Env = append(cmd.Env, "ADMINER_DESKTOP_DATA="+dir)
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	// Caught rather than left to kill us, so the reason gets written down and PHP is stopped too
-	// instead of left reading a stdin nobody writes to. Stopped with SIGTERM whatever arrived:
-	// frankenphp's php-cli ignores SIGINT, which is what a client sends first, and waiting on it
-	// would hold us until the client's SIGKILL.
+// It exists so registering the app with an agent is one path instead of two: the agent is
+// pointed at this executable and has no PHP to find. The bridge itself is Go and starts no
+// child; it forwards to the running window over HTTP (launcher/mcpbridge), so a spawn costs one
+// process rather than a launcher and a php-cli.
+func serveMCP() error {
+	bridge := mcpbridge.New()
+	done := make(chan error, 1)
+	go func() { done <- bridge.Run(os.Stdin, os.Stdout) }()
+
+	// Caught rather than left to kill us, so the reason gets written down: clients log nothing
+	// when a server goes away, and a closed stdin, a kill and a crash all look like a server
+	// that is simply gone.
 	got := make(chan os.Signal, 1)
 	signal.Notify(got, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
-	first := make(chan os.Signal, 1)
-	go func() {
-		for s := range got {
-			select {
-			case first <- s:
-			default:
-			}
-			_ = cmd.Process.Signal(syscall.SIGTERM)
-		}
-	}()
-	err := cmd.Wait()
-	signal.Stop(got)
-	close(got)
-	// Without a signal, PHP returned because stdin closed: the client let go.
-	why := "the client closed stdin"
+	defer signal.Stop(got)
 	select {
-	case s := <-first:
-		why = "the client sent " + s.String()
-	default:
+	case s := <-got:
+		logBridgeExit("the client sent " + s.String())
+		return nil
+	case err := <-done:
 		if err != nil {
-			why = "php " + err.Error()
+			logBridgeExit("the bridge " + err.Error())
+			return err
 		}
+		// Without a signal, the bridge returned because stdin closed: the client let go.
+		logBridgeExit("the client closed stdin")
+		return nil
 	}
-	logBridgeExit(why)
-	return err
 }
 
 // logBridgeExit says why the bridge stopped, on stderr and in the day's MCP log. Clients log
@@ -269,17 +254,19 @@ func main() {
 	mcp := flag.Bool("mcp", false, "serve MCP over stdio for an agent, and exit (no window)")
 	flag.Parse()
 
-	php, root, err := resolve()
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Before the banner below, and before any window: this mode owns stdout, and a stray line
-	// on it corrupts the agent's JSON-RPC stream.
+	// Before the banner below, and before any window: this mode owns stdout, and a stray line on
+	// it corrupts the agent's JSON-RPC stream. It needs no frankenphp and no app/, so it runs
+	// before resolve() — registering the app must not depend on a bundle being intact.
 	if *mcp {
-		if err := serveMCP(php, root); err != nil {
+		if err := serveMCP(); err != nil {
 			os.Exit(1)
 		}
 		return
+	}
+
+	php, root, err := resolve()
+	if err != nil {
+		log.Fatal(err)
 	}
 	port, err := freePort()
 	if err != nil {

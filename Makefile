@@ -285,7 +285,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js lint + formatting)
+qa: bin/frankenphp$(EXE) app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, js lint + formatting)
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
@@ -296,8 +296,8 @@ qa: bin/frankenphp$(EXE) app/vendor i18n  ## Run every static check (php, go, js
 	@gofmt -l . | grep . && { echo "gofmt: files above need formatting"; exit 1; } || echo "gofmt ok"
 	go vet ./...
 	@# The MCP gate decides what reaches the window's session, so its refusals are tested here,
-	@# with no server. The only Go package with tests; ./... would only rebuild the cgo launcher.
-	go test ./launcher/mcpgate/
+	@# with no server; the bridge's offline answers and forwarding likewise (launcher/mcpbridge).
+	go test ./launcher/mcpgate/ ./launcher/mcpbridge/
 	@# Every darwin-only function needs a non-darwin definition, or the build breaks on
 	@# linux and windows only -- a CI round trip away rather than a compile away. That is
 	@# either a shared stub in menu_other.go, or a platform split (a real *_linux.go and a
@@ -339,6 +339,9 @@ check: fetch app/vendor  ## Boot the app, assert before-login behaviour (prefill
 # failed on in tests/e2e/artifacts/, which the workflow uploads.
 e2e: fetch app/vendor  ## Every scenario, against both drivers (needs docker)
 	mise run e2e
+	@# The bridge scenarios a second time, through the Go bridge. Nothing else in the suite changes
+	@# hands, so this is the whole of what the rewrite touched.
+	mise run e2e-bridge-go
 
 # The same, in a browser you can watch: this is how a scenario is written, and how a failing one
 # is understood. `make e2e-visual SUITE=mysql` or `ARGS='--name "Sorting"'` narrows it down.
@@ -377,11 +380,18 @@ endif
 i18n: bin/frankenphp$(EXE) app/vendor  ## Generate the native-shell translations from app/src/I18n/Locale/*.php
 	./bin/frankenphp$(EXE) php-cli cli/i18n.php
 
+# The MCP bridge's copy of what PHP owns — the tool catalogue for both settings, the offline
+# sentences per locale — so the Go bridge describes tools from Server::catalogue() rather than a
+# hand copy. Gitignored and rebuilt before every build, like the native-shell translations; the
+# PHP source is the committed definition.
+mcp-bridge-data: bin/frankenphp$(EXE) app/vendor  ## Generate the Go MCP bridge's catalogue and sentences from PHP
+	./bin/frankenphp$(EXE) php-cli cli/mcp-bridge.php
+
 # Which strings each locale is still missing. Exits non-zero if any are, so CI can gate on it.
 i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)
 	@./bin/frankenphp$(EXE) php-cli cli/i18n.php check
 
-build: fetch i18n  ## Build the launcher binary
+build: fetch i18n mcp-bridge-data  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
 # NSLocalizedString reads the .lproj folders beside an unbundled binary as it does a bundle's
 # Resources: without them `make run` showed the menu's keys (menu.edit) for its titles.
