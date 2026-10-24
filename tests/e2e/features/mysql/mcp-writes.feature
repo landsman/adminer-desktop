@@ -10,4 +10,5 @@ Feature: An agent's statement on MySQL that returns no rows
   Scenario: With writes off, a write runs and is rolled back, and says so
     When an agent runs the query "INSERT INTO users (name) VALUES ('mcp-mysql-rolled-back')"
     Then it is answered with 1 affected row, not as an error
+    And the answer says it was rolled back
     And no row named "mcp-mysql-rolled-back" survived

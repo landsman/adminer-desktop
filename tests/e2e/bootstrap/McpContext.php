@@ -622,6 +622,16 @@ class McpContext implements Context
 		}
 	}
 
+	/** With writes off the statement ran and was undone, and the agent has to be told which: a
+	 * row count alone reads as a write that stayed. */
+	#[Then('the answer says it was rolled back')]
+	public function answerSaysRolledBack(): void
+	{
+		if (($this->payload['rolled_back'] ?? null) !== true || !str_contains((string) ($this->payload['note'] ?? ''), 'rolled back')) {
+			throw new RuntimeException('the answer does not say the write was rolled back: ' . json_encode($this->payload));
+		}
+	}
+
 	#[Then('the answer no longer claims a rollback')]
 	public function answerDoesNotClaimRollback(): void
 	{
