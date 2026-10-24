@@ -112,7 +112,7 @@ return [
 	'mcp.agent_not_running' => 'Adminer Desktop nu rulează sau accesul agenților la bază este dezactivat în setările sale. Deschideți aplicația, autentificați-vă și activați-l din Setări > Acces AI, apoi întrebați din nou — următorul apel trece fără reconectare.',
 	'mcp.agent_window_closed' => 'Adminer Desktop a încetat să răspundă — fereastra a fost probabil închisă. Deschideți-o din nou și întrebați din nou; nu trebuie reconectat nimic.',
 	'mcp.agent_timed_out' => 'Adminer Desktop nu a răspuns timp de un minut, așa că apelul a fost abandonat. Dacă a fost o scriere, este posibil să fi fost aplicată totuși — verificați înainte de a o rula din nou.',
-	'mcp.agent_statement_too_long' => 'Instrucțiunea a rulat mai mult de {n} secunde, așa că baza de date a oprit-o și nu s-a păstrat nimic din ea. Restrângeți-o (un WHERE, un LIMIT, un index) sau cereți utilizatorului să o ruleze în fereastra Adminer Desktop, unde nu există limită.',
+	'mcp.agent_statement_too_long' => 'Instrucțiunea a rulat mai mult de {n} secunde, așa că baza de date a oprit-o; într-un tabel tranzacțional nu s-a păstrat nicio modificare a ei. Restrângeți-o (un WHERE, un LIMIT, un index) sau cereți utilizatorului să o ruleze în fereastra Adminer Desktop, unde nu există limită.',
 	'mcp.agent_session_expired' => 'Sesiunea Adminer Desktop a expirat. Autentificați-vă din nou la baza de date în aplicație, apoi întrebați din nou.',
 	'mcp.agent_not_connected' => 'Adminer Desktop nu este conectat la nicio bază de date. Autentificați-vă din nou în aplicație.',
 	'mcp.agent_note_committed' => 'Scrierile sunt permise: tot ce a modificat această instrucțiune a fost confirmat.',

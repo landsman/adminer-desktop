@@ -69,6 +69,9 @@ class McpContext implements Context
 	/** Whether the scenario changed the reader's password, so it is put back for the next one. */
 	private bool $readerBroken = false;
 
+	/** Whether the scenario gave the agent's role a statement limit, so it is taken off again. */
+	private bool $agentLimited = false;
+
 	public function __construct(string $driver)
 	{
 		$this->driver = $driver;
@@ -157,6 +160,15 @@ class McpContext implements Context
 		e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_READER . " PASSWORD 'changed'");
 	}
 
+	/** A limit the DBA set for the login: ours must not loosen it. The role's setting applies to a
+	 * new session, which is every request. */
+	#[Given('the agent\'s login already stops statements after :seconds seconds')]
+	public function agentLoginIsLimited(int $seconds): void
+	{
+		$this->agentLimited = true;
+		e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_AGENT . " SET statement_timeout = '{$seconds}s'");
+	}
+
 	#[AfterScenario]
 	public function restoreReader(): void
 	{
@@ -164,6 +176,10 @@ class McpContext implements Context
 		$this->bridge = null;
 		$this->app?->stop();
 		$this->app = null;
+		if ($this->agentLimited) {
+			$this->agentLimited = false;
+			e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_AGENT . ' RESET statement_timeout');
+		}
 		if ($this->readerBroken) {
 			$this->readerBroken = false;
 			e2e_sql((array) $this->fix['driver'], 'ALTER ROLE ' . E2E_READER . " PASSWORD '" . $this->fix['driver']['password'] . "'");

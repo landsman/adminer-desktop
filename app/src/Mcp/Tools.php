@@ -303,7 +303,7 @@ class Tools {
 		// only a warning and its COMMIT commits ours. Elsewhere it changes nothing and ours stays —
 		// mysqli runs one statement per query() regardless.
 		$guarded = !$this->write && in_array(\Adminer\DRIVER, self::UNTRUSTED_DRIVERS, true);
-		$this->limitTime();
+		$restore = $this->limitTime();
 		\Adminer\SqlDb::$untrusted = $guarded;
 		$began = !$guarded && (bool) $driver->begin();
 		try {
@@ -312,10 +312,10 @@ class Tools {
 				// No result set: either it failed, or it was a statement that returns nothing.
 				// Both are worth saying out loud rather than answering with zero rows.
 				$error = (string) ($connection->error ?? '');
-				if (preg_match(self::TIMED_OUT, $error)) {
+				if ($this->limit > 0 && $this->timedOut($error)) {
 					// Said as ours, with what to do: the database's own words do not say there is a
 					// limit, nor that the window has none.
-					throw new McpError(str_replace('{n}', (string) self::statementSeconds(), Strings::t('mcp.agent_statement_too_long')) . " ($error)");
+					throw new McpError(str_replace('{n}', (string) $this->limit, Strings::t('mcp.agent_statement_too_long')) . " ($error)");
 				}
 				throw new McpError($error !== '' ? $error : Strings::t('mcp.agent_no_result'));
 			}
@@ -364,29 +364,49 @@ class Tools {
 					$driver->rollback();
 				}
 			}
+			if ($restore !== null) {
+				\Adminer\connection()->query($restore);
+			}
 		}
 	}
 
-	/** Have the database stop this request's statements after STATEMENT_SECONDS.
+	/** Have the database stop this request's statements after STATEMENT_SECONDS, unless it already
+	* stops them sooner.
 	*
 	* Per session, not per transaction: on postgres the guard opens its own transaction per query,
-	* where a SET LOCAL of ours would not reach. The session is this request's alone — adminer
-	* connects per request — so the user's own queries in the window are not limited. MySQL's
-	* max_execution_time covers SELECT only; MariaDB's max_statement_time covers every statement.
-	* Other drivers have no such setting and run unlimited, as before.
+	* where a SET LOCAL of ours would not reach. A stricter limit already on the session — a role
+	* given `statement_timeout = '5s'` — is kept rather than loosened, and the old value goes back
+	* afterwards (restoreTime()), so a pooler that hands this connection on hands it on as it was.
+	* MySQL's max_execution_time covers SELECT only; MariaDB's max_statement_time covers every
+	* statement. Other drivers have no such setting and run unlimited, as before.
+	*
+	* Not a boundary: the agent's own SQL can SET it back. It is there so a query nobody is waiting
+	* for any more does not run on; what the agent may do is the login's to say.
+	*
+	* @return string|null the statement that puts the session back, or null when nothing changed
 	*/
-	private function limitTime(): void {
+	private function limitTime(): ?string {
 		$connection = \Adminer\connection();
-		$seconds = self::statementSeconds();
-		$set = match (true) {
-			\Adminer\DRIVER === 'pgsql' => "SET statement_timeout = '{$seconds}s'",
-			\Adminer\DRIVER === 'server' && $connection->flavor === 'maria' => "SET SESSION max_statement_time = $seconds",
-			\Adminer\DRIVER === 'server' => 'SET SESSION max_execution_time = ' . ($seconds * 1000),
-			default => null,
+		$ours = self::statementSeconds();
+		[$read, $set, $scale] = match (true) {
+			\Adminer\DRIVER === 'pgsql' => ["SELECT setting FROM pg_settings WHERE name = 'statement_timeout'", 'SET statement_timeout = ', 1000],
+			\Adminer\DRIVER === 'server' && $connection->flavor === 'maria' => ['SELECT @@SESSION.max_statement_time', 'SET SESSION max_statement_time = ', 1],
+			\Adminer\DRIVER === 'server' => ['SELECT @@SESSION.max_execution_time', 'SET SESSION max_execution_time = ', 1000],
+			default => [null, null, 1],
 		};
-		if ($set !== null) {
-			$connection->query($set);
+		if ($read === null) {
+			$this->limit = 0;
+			return null;
 		}
+		// 0 is "no limit" in all three; the unit is milliseconds, MariaDB's seconds.
+		$current = (float) \Adminer\get_val($read);
+		if ($current > 0 && $current <= $ours * $scale) {
+			$this->limit = (int) ceil($current / $scale);
+			return null;
+		}
+		$this->limit = $ours;
+		$connection->query($set . ($ours * $scale));
+		return $set . $current;
 	}
 
 	/** STATEMENT_SECONDS, or the e2e fixture's shorter one. */
@@ -394,7 +414,16 @@ class Tools {
 		return (int) Env::McpStatementSeconds->get() ?: self::STATEMENT_SECONDS;
 	}
 
-	/** Each database's words for "stopped by the limit limitTime() set": postgres, MySQL (3024)
-	* and MariaDB (1969). */
-	private const string TIMED_OUT = '~statement timeout|maximum statement execution time exceeded|max_statement_time exceeded~i';
+	/** The limit limitTime() left in force, in seconds, for the message that names it. */
+	private int $limit = 0;
+
+	/** Whether a failed statement was stopped by that limit. By MySQL's and MariaDB's error codes
+	* (3024, 1969), which do not depend on the server's language; postgres' text, which does, so
+	* a server in another language falls through to its own words. */
+	private function timedOut(string $error): bool {
+		if (\Adminer\DRIVER === 'server') {
+			return in_array((int) (\Adminer\connection()->errno ?? 0), [3024, 1969], true);
+		}
+		return \Adminer\DRIVER === 'pgsql' && str_contains($error, 'canceling statement due to statement timeout');
+	}
 }

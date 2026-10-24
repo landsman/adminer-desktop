@@ -179,7 +179,7 @@ class Server {
 				'description' => ($write
 					? 'Run a SQL statement and return its rows. Writes are allowed in Adminer Desktop\'s settings, so whatever the statement changes is committed — except on a connection whose environment is prod, where it is rolled back; rolled_back in the answer says which.'
 					: 'Run a read-only SQL query and return its rows. Runs inside a transaction that is always rolled back, so anything that writes has no effect — do not use it to modify data.')
-					. ' Results are capped at 200 rows. On PostgreSQL, MySQL and MariaDB a statement that runs longer than ' . Tools::STATEMENT_SECONDS . ' seconds is stopped by the database; run anything longer in the Adminer Desktop window, which has no limit. ' . $cells,
+					. ' Results are capped at 200 rows. A statement that runs longer than ' . Tools::STATEMENT_SECONDS . ' seconds is stopped by the database on PostgreSQL and MariaDB, and a SELECT on MySQL; run anything longer in the Adminer Desktop window, which has no limit. ' . $cells,
 				'inputSchema' => $schema(
 					['sql' => ['type' => 'string', 'description' => 'A single SQL statement, in the dialect of the connected driver.'], 'limit' => ['type' => 'integer', 'description' => 'Rows to return, capped at 200.']] + array_diff_key($rows, ['limit' => 0]),
 					['sql'],
