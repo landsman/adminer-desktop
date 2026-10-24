@@ -921,7 +921,7 @@ class McpContext implements Context
 	}
 
 	/** A socket stdin, as Claude Code spawns its servers with, quiet for longer than its read
-	 * timeout: shortened here from default_socket_timeout's 60 s so the scenario stays fast. */
+	 * timeout: Bridge::pumpQuiet() cuts PHP's to 1 s so the scenario stays fast. */
 	#[Then('the bridge outlives a quiet socket and answers what comes after')]
 	public function bridgeOutlivesQuietSocket(): void
 	{

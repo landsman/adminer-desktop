@@ -66,24 +66,34 @@ final class Bridge
 		return $out;
 	}
 
-	/** The same message sent twice, with a quiet spell between, over a socket stdin — as Claude
-	 * Code hands its servers one. Nothing may time out while it is quiet. */
+	/** The same message sent twice over a socket stdin, as Claude Code hands its servers one, with
+	 * a quiet spell between that outlasts the read timeout. PHP's is default_socket_timeout, cut
+	 * to 1 s for this child alone so the spell can outlast it quickly; php-cli takes no -d, so it
+	 * goes in through PHP_INI_SCAN_DIR. The Go bridge reads no ini and has no timeout to cut.
+	 */
 	function pumpQuiet(string $line): string
 	{
+		$ini = sys_get_temp_dir() . '/adminer-desktop-quiet-' . getmypid();
+		@mkdir($ini, 0700, true);
+		file_put_contents("$ini/quiet.ini", "default_socket_timeout=1\n");
+		$env = $this->environment();
+		$env['PHP_INI_SCAN_DIR'] = $ini;
 		$pipes = [];
-		$process = proc_open($this->command(), [0 => ['socket'], 1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'a']], $pipes, null, $this->environment());
+		$process = proc_open($this->command(), [0 => ['socket'], 1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'a']], $pipes, null, $env);
 		if (!is_resource($process)) {
 			throw new RuntimeException('could not start the bridge');
 		}
 		fwrite($pipes[0], $line . "\n");
 		fflush($pipes[0]);
-		usleep(500_000);
+		usleep(2_000_000);
 		fwrite($pipes[0], $line . "\n");
 		fflush($pipes[0]);
 		fclose($pipes[0]);
 		$out = (string) stream_get_contents($pipes[1]);
 		fclose($pipes[1]);
 		proc_close($process);
+		@unlink("$ini/quiet.ini");
+		@rmdir($ini);
 		return $out;
 	}
 
