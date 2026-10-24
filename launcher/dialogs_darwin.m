@@ -262,9 +262,15 @@ int installFramelessTitlebar(void *nsWindow) {
 	[page setFrame:[material bounds]];
 	[page setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	[material addSubview:page];
+	// Full screen keeps the toolbar's band on screen, opaque over the page that runs up under it:
+	// it hid the content's toolbar row and the sidebar's header. Only the lights needed it.
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	[center addObserverForName:NSWindowWillEnterFullScreenNotification object:window queue:nil
+		usingBlock:^(NSNotification *n) { [[window toolbar] setVisible:NO]; }];
 	[center addObserverForName:NSWindowDidEnterFullScreenNotification object:window queue:nil
 		usingBlock:^(NSNotification *n) { goFullscreenChanged(1); }];
+	[center addObserverForName:NSWindowWillExitFullScreenNotification object:window queue:nil
+		usingBlock:^(NSNotification *n) { [[window toolbar] setVisible:YES]; }];
 	[center addObserverForName:NSWindowDidExitFullScreenNotification object:window queue:nil
 		usingBlock:^(NSNotification *n) { goFullscreenChanged(0); }];
 	return 1;
