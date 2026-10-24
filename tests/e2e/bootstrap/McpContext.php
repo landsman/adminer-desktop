@@ -1082,19 +1082,28 @@ class McpContext implements Context
 	}
 
 	/** Falling through would reach the server and crash on a null driver, and answering HTML would
-	 * leave the agent parsing a login page.
+	 * leave the agent parsing a login page. A JSON-RPC error would fail initialize, which a client
+	 * shows as a dead server: so the handshake and the tool list answer as ever, and a call says
+	 * what to do.
 	 */
 	#[Then('a request on a stale handshake is told to log in again')]
 	public function staleHandshakeIsAnswered(): void
 	{
-		$answer = (new \Desktop\Mcp\Endpoint(new UserSettings(null)))
-			->answer('{"jsonrpc":"2.0","id":1,"method":"tools/list"}', false);
-		$decoded = (array) json_decode((string) $answer, true);
-		if (($decoded['error']['code'] ?? null) !== -32000) {
-			throw new RuntimeException('a stale handshake was not answered with a json-rpc error: ' . json_encode($answer));
+		$endpoint = new \Desktop\Mcp\Endpoint(new UserSettings(null));
+		$initialize = (array) json_decode((string) $endpoint->answer('{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}', false), true);
+		if (!isset($initialize['result']['protocolVersion'])) {
+			throw new RuntimeException('initialize failed on a stale handshake: ' . json_encode($initialize));
 		}
-		if (!str_contains((string) ($decoded['error']['message'] ?? ''), 'Log in again')) {
-			throw new RuntimeException('the message does not say what to do: ' . json_encode($answer));
+		$list = (array) json_decode((string) $endpoint->answer('{"jsonrpc":"2.0","id":2,"method":"tools/list"}', false), true);
+		if (($list['result']['tools'] ?? []) === []) {
+			throw new RuntimeException('a stale handshake offered no tools: ' . json_encode($list));
+		}
+		$call = (array) json_decode((string) $endpoint->answer('{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_tables"}}', false), true);
+		if (($call['result']['isError'] ?? null) !== true || !str_contains((string) ($call['result']['content'][0]['text'] ?? ''), 'Log in again')) {
+			throw new RuntimeException('a call on a stale handshake does not say to log in again: ' . json_encode($call));
+		}
+		if ($endpoint->answer('{"jsonrpc":"2.0","method":"tools/call","params":{"name":"list_tables"}}', false) !== null) {
+			throw new RuntimeException('a notification on a stale handshake was answered');
 		}
 	}
 

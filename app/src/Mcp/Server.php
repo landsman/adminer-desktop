@@ -79,7 +79,8 @@ class Server {
 				'initialize' => $this->result($id, [
 					'protocolVersion' => self::negotiate($params),
 					'capabilities' => ['tools' => new \stdClass()],
-					'serverInfo' => ['name' => 'adminer-desktop', 'version' => \Adminer\VERSION],
+					// Defined wherever adminer has loaded; a check that drives Endpoint alone has not.
+					'serverInfo' => ['name' => 'adminer-desktop', 'version' => defined('Adminer\\VERSION') ? \Adminer\VERSION : 'unknown'],
 					'instructions' => self::INSTRUCTIONS,
 				]),
 				'tools/list' => $this->result($id, ['tools' => self::catalogue($this->whole, $this->write)]),
