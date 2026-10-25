@@ -29,7 +29,7 @@ the page and nowhere else. `make logs` or the Open Logs menu item opens the fold
 
 **Every query adminer sent is in Tracy's SQL panel**, under `-debug` in a checkout: dibi's own
 panel (a dev dependency), fed by the `afterQuery` hook that `patches/adminer-after-query.patch`
-adds — `Desktop\QueryLog`. No EXPLAIN, and no source link: the drivers live in one compiled file.
+adds — `Desktop\Debug\QueryLog`. No EXPLAIN, and no source link: the drivers live in one compiled file.
 
 **What the api did is in `<data dir>/log/api.log`**, under `-debug` only: `app/api.php`
 writes the action, the status and what was posted, one line per request. Tracy's bar cannot
@@ -133,7 +133,7 @@ registers every `Adminer*` class as a plugin — so it stays at the doc root as
 `require`s `vendor/autoload.php` to turn the loader on. And the two bare entries that don't
 boot adminer — `api.php`, `Settings/Theme/screenshot.php` — each `require`
 `vendor/autoload.php` themselves. What used to be free functions is now methods
-(`Env::DataDir->get()`, `Latte::engine()`, `Debug::enable()`), so there are no function files
+(`Env::DataDir->get()`, `Latte::engine()`, `Debug\Tracy::enable()`), so there are no function files
 to special-case — PSR-4 covers everything.
 
 ## The Adminer Desktop theme
@@ -220,7 +220,7 @@ app/src/                     the Desktop\ namespace, PSR-4: everything we wrote
 app/src/Api/                 one class per action; ResizePreference stores a dragged width
 app/src/Files.php            Desktop\Files - recursive file finding
 app/src/Latte.php            Desktop\Latte::engine() - the engine every *.latte is rendered by
-app/src/Debug.php            Desktop\Debug::enable() - Tracy, and only under -debug
+app/src/Debug/               Tracy and its bar panels, only under -debug; Tracy::enable() turns it on
 app/src/Settings/Dialog.php  the settings dialog shell (settings-dialog.latte)
 app/src/Settings/Theme/      designs, previews, the screenshot endpoint
 app/src/Settings/Theme/designs/adminer-desktop/   our default theme (@import components)

@@ -1,15 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
+use Desktop\UserSettings;
 use Tracy\IBarPanel;
 
 /** Tracy bar panel that prints the user's persistent settings file — its path and current
 * values — so the stored preferences are one click away while debugging, instead of a hunt
 * through the data dir for settings.json.
 *
-* Built only in Debug::enable() under -debug, and autoloaded on demand — so implementing a
+* Built only in Tracy::enable() under -debug, and autoloaded on demand — so implementing a
 * Tracy interface here never pulls Tracy onto a production request: nothing outside -debug
 * references this class, so the loader never reaches it.
 */

@@ -25,7 +25,7 @@ require_once __DIR__ . "/vendor/autoload.php";
 // is a 204 nobody looks at — a beacon fired as the page is being torn down — but its logger
 // is: a fatal in a handler reaches the log with the source and the values instead of
 // vanishing into a failed request, and the line below records what every action did.
-Desktop\Debug::enable();
+Desktop\Debug\Tracy::enable();
 // And no bar: there is no page here to put one on, and Tracy would otherwise append its
 // markup to every answer that is allowed a body — 10 kB of it onto a 400 nobody renders.
 Tracy\Debugger::$showBar = false;

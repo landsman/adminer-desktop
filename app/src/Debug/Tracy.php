@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
+use Desktop\Env;
+use Desktop\UserSettings;
 use Tracy\Debugger;
 
 /** Turn Tracy on when the app was started with -debug.
@@ -14,7 +16,7 @@ use Tracy\Debugger;
 * Never outside -debug, for the same reason the web inspector is not: it would hand that
 * to anything that can reach the page.
 */
-class Debug {
+class Tracy {
 	static function enable(): void {
 		if (!Env::Debug->get()) {
 			return;
@@ -25,6 +27,8 @@ class Debug {
 			@mkdir($log, 0700, true);
 		}
 		Debugger::enable(Debugger::Development, $log);
+
+		Debugger::getBar()->addPanel(new ResourcesPanel());
 
 		// A bar panel that prints the user's persistent settings file, so the stored preferences
 		// are one click away while debugging — both classes autoload, so the panel is built here

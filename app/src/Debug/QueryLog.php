@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
 use Dibi\Bridges\Tracy\Panel;
 use Dibi\Connection;
@@ -22,7 +22,7 @@ use Tracy\IBarPanel;
 * user's fire before it runs (sqlCommandQuery) or after (selectQuery, messageQuery), so the
 * queries are only turned into events when the bar renders, user ones first.
 *
-* Built only by Debug::plugins() under -debug, and dibi is a dev dependency, so a release
+* Built only by Tracy::plugins() under -debug, and dibi is a dev dependency, so a release
 * has neither.
 */
 class QueryLog extends \Adminer\Plugin implements IBarPanel {
@@ -71,7 +71,7 @@ class QueryLog extends \Adminer\Plugin implements IBarPanel {
 	function getPanel(): ?string {
 		$panel = $this->panel->getPanel();
 		return $panel === null ? null : '<style>
-			#tracy-debug [id^="tracy-debug-panel-Desktop-QueryLog"]:not(.tracy-panel-resized) {
+			#tracy-debug [id^="tracy-debug-panel-Desktop-Debug-QueryLog"]:not(.tracy-panel-resized) {
 				max-width: calc(100vw - 20px);
 				max-height: calc(100vh - 60px);
 			}
