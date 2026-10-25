@@ -46,11 +46,18 @@ if (login) {
 	// The focus follows Login to Cancel, so Enter stops the wait rather than sending it twice.
 	login.addEventListener("submit", () => button?.focus());
 	const dialog = document.querySelector("#ad-new-connection-dialog");
-	dialog?.addEventListener("close", cancel);
 
 	// While it waits, Cancel and the × are the only ways out: Escape and a click outside do
 	// nothing, and the × asks first (#ad-connect-stop).
 	const waiting = () => login.classList.contains("ad-waiting");
+	// Closed while still waiting, which neither way out leaves it: Chromium ignores
+	// preventDefault() on a second Escape (modal.js). Reopened, and the login waits on.
+	dialog?.addEventListener("close", () => {
+		if (waiting()) {
+			dialog.showModal();
+			button?.focus();
+		}
+	});
 	dialog?.addEventListener("cancel", (event) => {
 		if (waiting()) {
 			event.preventDefault();
@@ -77,6 +84,7 @@ if (login) {
 		});
 	stop?.querySelector("[data-stop]")?.addEventListener("click", () => {
 		stop.close();
+		cancel();
 		dialog.close();
 	});
 }
