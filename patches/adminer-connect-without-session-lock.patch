@@ -1,4 +1,4 @@
-Upstream: (to be opened) - delete this patch once a release with it is pinned.
+Upstream: https://github.com/vrana/adminer/pull/1369 - delete this patch once a release with it is pinned.
 
 --- a/adminer/include/auth.inc.php
 +++ b/adminer/include/auth.inc.php
