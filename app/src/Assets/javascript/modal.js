@@ -19,6 +19,10 @@
 	const opened = new WeakMap();
 	// Dialogs whose changes the user agreed to throw away, so their close goes through.
 	const discarded = new WeakSet();
+	// The button a pointer opened each dialog with. WebKit rings a focus set by script as if the
+	// keyboard had moved it, so the gear came back from a click still ringed; .ad-pointer-focus
+	// hides that ring until the focus leaves it. A key press (detail 0) keeps its ring.
+	const pointerOpened = new WeakMap();
 
 	const formOf = (dialog) =>
 		dialog.querySelector("form") ?? dialog.closest("form");
@@ -97,6 +101,17 @@
 			if (changed(dialog)) {
 				show(dialog);
 				ask(dialog);
+				return;
+			}
+			const opener = pointerOpened.get(dialog);
+			pointerOpened.delete(dialog);
+			if (opener) {
+				opener.classList.add("ad-pointer-focus");
+				opener.addEventListener(
+					"blur",
+					() => opener.classList.remove("ad-pointer-focus"),
+					{ once: true },
+				);
 			}
 		});
 		// A post that saves is the one way out that does not ask.
@@ -123,7 +138,11 @@
 			// WebKit on macOS does not focus a button it clicks, so the dialog had nothing to hand the
 			// focus back to when it closed.
 			opener.focus();
-			open(document.getElementById(opener.dataset.dialog));
+			const dialog = document.getElementById(opener.dataset.dialog);
+			if (event.detail > 0) {
+				pointerOpened.set(dialog, opener);
+			}
+			open(dialog);
 			return;
 		}
 		const closer = event.target.closest?.("[data-close]");

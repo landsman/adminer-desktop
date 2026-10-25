@@ -141,6 +141,7 @@ return [
 	'shortcuts.group_app' => 'Aplicație',
 	'shortcuts.group_forms' => 'Formulare și SQL',
 	'shortcuts.help' => 'Afișează această listă',
+	'shortcuts.settings' => 'Deschide setările',
 	'shortcuts.reload' => 'Reîncarcă pagina',
 	'shortcuts.close' => 'Închide un dialog sau un meniu',
 	'shortcuts.adminer' => 'Comută la Adminer',

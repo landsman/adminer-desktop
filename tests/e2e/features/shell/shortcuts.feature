@@ -20,6 +20,13 @@ Feature: The keyboard shortcuts tab
     When I press Escape
     Then the settings dialog is closed
 
+  Scenario: Cmd/Ctrl+, opens settings, and the gear's tooltip says so
+    When I open the "users" table
+    And I point at the gear
+    Then a tooltip says "Settings" with the settings shortcut
+    When I press the "ControlOrMeta+Comma" key
+    Then the settings dialog is open
+
   Scenario: ? in a field types a question mark
     When I open the edit form for "users" row 1
     And I press "?" in the first field

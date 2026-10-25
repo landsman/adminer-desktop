@@ -80,6 +80,7 @@ Feature: The settings dialog
     When I click the close button
     Then the settings dialog is closed
     And the focus is back on the gear
+    And the gear shows no focus ring
 
   Scenario: A reload after saving does not bring the dialog back
     When I save the settings

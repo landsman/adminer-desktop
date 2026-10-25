@@ -141,6 +141,7 @@ return [
 	'shortcuts.group_app' => 'Aplikácia',
 	'shortcuts.group_forms' => 'Formuláre a SQL',
 	'shortcuts.help' => 'Zobraziť tento zoznam',
+	'shortcuts.settings' => 'Otvoriť nastavenia',
 	'shortcuts.reload' => 'Znova načítať stránku',
 	'shortcuts.close' => 'Zavrieť dialóg alebo menu',
 	'shortcuts.adminer' => 'Prepnúť na Adminer',
