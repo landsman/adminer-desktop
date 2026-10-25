@@ -84,6 +84,38 @@
 	border-inline-start: 0;
 }
 
+/* Where the content starts: past the sidebar, or at the window's edge with the sidebar hidden or
+   folded into a drawer. Everything that follows that edge — the sidebar sliding out, the path bar,
+   the toolbar's buttons, the title after them, the scrollbars (scrollers.js, off #content's size)
+   — is worked out from this one value, so no state is handled in one copy and missed in another.
+   Registered, so the slide is this one transition and the rest ride on it; on <body>, where the
+   sidebar's width is known (tokens.css). Not while the width is dragged, or it eased every pixel
+   and the edge trailed the pointer (drag-width.js). */
+@property --ad-content-left {
+	syntax: "<length>";
+	inherits: true;
+	initial-value: 0px;
+}
+
+.ad-frameless body {
+	--ad-content-left: calc(var(--ad-sidebar-width) + 2 * var(--ad-gutter));
+	transition: --ad-content-left 0.2s ease;
+}
+
+.ad-frameless .ad-sidebar-hidden {
+	--ad-content-left: 0px;
+}
+
+.ad-frameless.ad-dragging body {
+	transition: none;
+}
+
+@media (max-width: 800px) {
+	.ad-frameless body {
+		--ad-content-left: 0px;
+	}
+}
+
 /* The content's header row is the window's toolbar: as tall as the lights' band, so what is in
    it is centred on their line, and in Mail's look — a frosted fill the page shows through as it
    scrolls under, back and forward, the object you are on as its title, the page's actions and the
@@ -204,18 +236,9 @@
    a database, a schema's folder, a table), small grey text, a hairline over it and the content's
    own fill. Each step but the last is a link (before-paint/header.js builds it). The content panel
    stops above it, so nothing on the page — adminer's own sticky row of actions included — slides
-   under it. It starts where the content does: past the sidebar, or at the edge with the sidebar
-   hidden or folded into a drawer. On <body>, where the sidebar's width is known (tokens.css). */
+   under it. It starts where the content does (--ad-content-left, above). */
 .ad-frameless {
 	--ad-pathbar-h: 26px;
-}
-
-.ad-frameless body {
-	--ad-pathbar-left: calc(var(--ad-sidebar-width) + 2 * var(--ad-gutter));
-}
-
-.ad-frameless .ad-sidebar-hidden {
-	--ad-pathbar-left: 0px;
 }
 
 .ad-frameless .ad-has-pathbar #content {
@@ -224,7 +247,7 @@
 
 #ad-pathbar {
 	position: fixed;
-	inset: auto 0 0 var(--ad-pathbar-left);
+	inset: auto 0 0 var(--ad-content-left);
 	z-index: 5;
 	display: flex;
 	align-items: center;
@@ -238,7 +261,6 @@
 	background: var(--ad-panel);
 	color: color-mix(in srgb, var(--fg) 72%, transparent);
 	font-size: 12px;
-	transition: left 0.2s ease;
 }
 
 #ad-pathbar .ad-pathbar-step {
@@ -295,12 +317,6 @@
 	content: "›";
 	font-size: 13px;
 	line-height: 1;
-}
-
-@media (max-width: 800px) {
-	.ad-frameless body {
-		--ad-pathbar-left: 0px;
-	}
 }
 
 /* The toolbar's controls (before-paint/header.js puts them there): the page's own actions as one
@@ -616,11 +632,6 @@
    instead, the list read as stopping short. The gear and the toggle are fixed (below), so they stay
    over it. The settings dialog lives in #menu too, but in the top layer, which the mask does not
    reach. */
-.ad-frameless #foot {
-	transition:
-		margin-inline-start 0.2s ease,
-		visibility 0.2s;
-}
 
 .ad-frameless #menu {
 	padding-top: var(--ad-menu-top);
@@ -770,6 +781,18 @@
 		--ad-tool-after-lights: calc(var(--ad-lights-end) + 16px);
 	}
 
+	/* The toggle's place, the gear after it: at the sidebar's end, the inset off it, and pushed
+	   along by that edge as it slides, never past the lights — so hidden they sit beside them, in
+	   the order they keep at the end, and a narrow sidebar cannot put them over the lights. On
+	   <body>, where the edge is. */
+	.ad-frameless body {
+		--ad-tools-left: max(
+			var(--ad-tool-after-lights),
+			var(--ad-content-left) - var(--ad-tool-inset) - 2 * var(--ad-tool) -
+				var(--ad-tool-gap)
+		);
+	}
+
 	.ad-frameless #ad-sidebar-toggle,
 	.ad-frameless body:not(:has(input[name="auth[username]"])) #desktop-gear {
 		position: fixed;
@@ -788,7 +811,7 @@
 		backdrop-filter: var(--ad-glass-filter);
 		box-shadow: var(--ad-glass-shadow);
 		color: color-mix(in srgb, var(--fg) 70%, transparent);
-		/* Not their position: they jump to their place, at once, rather than glide after it. */
+		/* Not their position: that rides on --ad-content-left's own slide. */
 		transition:
 			background-color 0.15s,
 			scale 0.25s var(--ad-glass-spring);
@@ -804,17 +827,22 @@
 		color: var(--fg);
 	}
 
-	/* At the sidebar's end, the inset off it: the toggle, then the gear, the order they keep beside
-	   the lights once the sidebar is hidden, so neither changes places. */
 	.ad-frameless #ad-sidebar-toggle {
-		left: calc(
-			var(--ad-sidebar-width) - var(--ad-tool-inset) - 2 * var(--ad-tool) -
-				var(--ad-tool-gap)
-		);
+		left: var(--ad-tools-left);
 	}
 
 	.ad-frameless #desktop-gear {
-		left: calc(var(--ad-sidebar-width) - var(--ad-tool-inset) - var(--ad-tool));
+		left: calc(var(--ad-tools-left) + var(--ad-tool) + var(--ad-tool-gap));
+	}
+
+	/* The title starts as far past the buttons as they are past the lights, once they are over the
+	   content; while they sit on the sidebar, at the panel's own padding. */
+	.ad-frameless #content #breadcrumb {
+		padding-inline-start: max(
+			var(--ad-panel-pad),
+			var(--ad-tools-left) + 2 * var(--ad-tool) + var(--ad-tool-gap) + 16px -
+				var(--ad-content-left)
+		);
 	}
 
 	.ad-frameless #ad-sidebar-toggle::before {
@@ -829,38 +857,18 @@
 	}
 
 	/* Hidden, the sidebar slides out past the window's edge rather than vanishing, so the content
-	   grows into its room; the drag handle goes with it. */
+	   grows into its room; the drag handle goes with it. Out of reach once it is out, which is the
+	   slide's length. */
+	.ad-frameless #foot {
+		margin-inline-start: calc(var(--ad-content-left) - var(--ad-sidebar-width));
+		transition: visibility 0.2s;
+	}
+
 	.ad-frameless .ad-sidebar-hidden #foot {
-		margin-inline-start: calc(-1 * var(--ad-sidebar-width));
 		visibility: hidden;
 	}
 
 	.ad-frameless .ad-sidebar-hidden #ad-sidebar-resizer {
 		display: none;
 	}
-
-	.ad-frameless .ad-sidebar-hidden #ad-sidebar-toggle {
-		left: var(--ad-tool-after-lights);
-	}
-
-	/* The gear follows the toggle; left at the sidebar's end it sat on the toolbar's title. */
-	.ad-frameless .ad-sidebar-hidden #desktop-gear {
-		left: calc(
-			var(--ad-tool-after-lights) + var(--ad-tool) + var(--ad-tool-gap)
-		);
-	}
-
-	/* The path starts as far past the buttons as they are past the lights. */
-	.ad-frameless .ad-sidebar-hidden #content #breadcrumb {
-		padding-inline-start: calc(
-			var(--ad-tool-after-lights) + 2 * var(--ad-tool) + var(--ad-tool-gap) +
-				16px
-		);
-	}
-}
-
-/* Their transitions are for the sidebar sliding in and out: during a drag of its width they eased
-   every pixel of it, so the path bar trailed the pointer (drag-width.js). */
-.ad-frameless.ad-dragging :is(#ad-pathbar, #foot) {
-	transition: none;
 }
