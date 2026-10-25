@@ -11,7 +11,7 @@ gh auth login                       # once per machine: make verify reads franke
 make install
 ```
 
-The toolchain via mise (node, go, composer and npm deps, the Chromium the browser checks
+The toolchain via mise (node, go, composer and npm deps, the WebKit the browser checks
 drive), plus the pinned Adminer and frankenphp downloads. On Linux it also runs
 `make linux-deps` — the one step that needs apt, for the GTK/WebKit dev headers the webview
 links against.

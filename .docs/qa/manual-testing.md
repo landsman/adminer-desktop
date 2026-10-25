@@ -1,8 +1,8 @@
 # Manual testing
 
 Some behaviour lives in the native shell — the Save dialog, the download, the progress
-window — not in the page. `make e2e` drives Chromium through Playwright, so it never touches
-WKWebView / WebKitGTK / WebView2 and cannot see any of it; `curl` sees only the HTTP response,
+window — not in the page. `make e2e` drives Playwright's own WebKit, so it never touches the
+launcher's WKWebView / WebKitGTK / WebView2 and cannot see any of it; `curl` sees only the HTTP response,
 which was never the part that broke. So these get checked by hand, per platform, from a real
 build (`make run`).
 

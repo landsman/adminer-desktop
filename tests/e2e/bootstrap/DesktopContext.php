@@ -1345,7 +1345,8 @@ class DesktopContext implements Context
 	#[When('I tab into the settings dialog')]
 	public function tabIntoSettings(): void
 	{
-		$this->page->keyboard()->press('Tab');
+		// WebKit on macOS tabs through text fields alone, as Safari does; Option+Tab reaches the rest.
+		$this->page->keyboard()->press(PHP_OS_FAMILY === 'Darwin' ? 'Alt+Tab' : 'Tab');
 	}
 
 	/** The radio itself is hidden, so the ring is its label's — and it must be there for the keyboard. */
@@ -2800,8 +2801,8 @@ class DesktopContext implements Context
 	// ── the window without a title bar (macOS) ───────────────────────────────────────────────
 
 	/** What the macOS launcher does to every page (installFrameless): the bindings it adds and
-	 * the class it sets before anything paints. Stubs here, as Chromium has no launcher; a press
-	 * that would move the window is counted instead. Chromium runs an init script before the
+	 * the class it sets before anything paints. Stubs here, as Playwright's browser has no launcher; a press
+	 * that would move the window is counted instead. Playwright runs an init script before the
 	 * parser has made <html>, so the class goes on the moment it does: waiting for readystatechange
 	 * marked it after the page had parsed, and before-paint/header.js, which reads it, never saw it.
 	 */
@@ -2814,7 +2815,7 @@ class DesktopContext implements Context
 			window.adDragWindow = () => { window.adDrags++; };
 			window.adTitlebarDoubleClick = () => {};
 			// The sidebar is see-through there, onto the system material the launcher puts behind the
-			// page; Chromium has none, so the sidebar colour stands in, or axe reads its text on white.
+			// page; Playwright has none, so the sidebar colour stands in, or axe reads its text on white.
 			const mark = () => {
 				document.documentElement.classList.add("ad-frameless");
 				document.documentElement.style.background = "var(--ad-menu-bg)";

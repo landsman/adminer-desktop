@@ -382,7 +382,7 @@ function e2e_browser(): BrowserInterface
 		// both sides default to 30, so a step that ran out of time raced the answer against our own
 		// giving up on it.
 		$client = PlaywrightFactory::create(new PlaywrightConfig(timeoutMs: 60000));
-		$browser = $client->chromium()->withHeadless(!$headed)->withSlowMo($headed ? 300 : 0)->launch();
+		$browser = $client->webkit()->withHeadless(!$headed)->withSlowMo($headed ? 300 : 0)->launch();
 		register_shutdown_function(function () use (&$client): void {
 			$client->close();
 		});

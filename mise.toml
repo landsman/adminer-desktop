@@ -25,12 +25,12 @@ go = "1.26.5"
 gh = "2"
 
 [tasks.install]
-description = "Fetch composer, install PHP + JS deps, and the Chromium e2e browser"
+description = "Fetch composer, install PHP + JS deps, and the WebKit e2e browser"
 run = [
 	# First, because it is the one thing here a download cannot fix: mise installs gh, but
 	# only you can log it in, and `gh attestation verify` reads the attestation over the API
 	# — so an installed-but-logged-out gh fails `make verify` just as a missing one would.
-	# Checked before the minutes spent on composer, npm and Chromium rather than after.
+	# Checked before the minutes spent on composer, npm and WebKit rather than after.
 	"gh auth status >/dev/null 2>&1 || { echo 'gh is installed but not authenticated. Run `gh auth login` — make verify needs it to check the frankenphp build provenance.'; exit 1; }",
 	# composer and its version pin live in the Makefile, because qa and the packaged app
 	# need vendor/ too — this would otherwise be the second place to bump it.
@@ -42,9 +42,10 @@ run = [
 	# `npm install <pkg>` or by dependabot, never as a side effect of setting up.
 	"npm ci --no-audit --no-fund",
 	# Set up the Playwright server without --browsers (which pulls chromium, firefox and
-	# webkit), then install only chromium — the sole engine the e2e drives (Playwright::chromium).
+	# webkit), then install only webkit — the sole engine the e2e drives (Playwright::webkit), and
+	# the one the macOS and Linux windows render with.
 	"./bin/frankenphp php-cli app/vendor/bin/playwright-install",
-	"cd app/vendor/playwright-php/playwright/bin && npx --no-install playwright install chromium",
+	"cd app/vendor/playwright-php/playwright/bin && npx --no-install playwright install webkit",
 ]
 
 [tasks.format]
