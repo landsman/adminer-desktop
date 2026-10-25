@@ -2440,7 +2440,9 @@ class DesktopContext implements Context
 				sessionStorage.removeItem("e2e-busy-turned");
 				const watch = setInterval(() => {
 					const busy = document.querySelector("#ad-busy:popover-open");
-					if (busy && getComputedStyle(busy).opacity === "1"
+					// Past its fade-in, asked of the animation: on a page navigating away, Playwright\'s WebKit
+					// keeps the computed opacity at the first frame, though the app\'s window shows it.
+					if (busy && !busy.getAnimations().some((a) => a.animationName === "ad-appear" && a.playState !== "finished")
 						&& busy.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running")) {
 						sessionStorage.setItem("e2e-busy-turned", "1");
 						clearInterval(watch);
