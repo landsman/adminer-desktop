@@ -1,0 +1,14 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"options": {
+		"denyWarnings": true,
+		// Type-checks the page scripts against adminer.d.ts (tsconfig.json): a window.adminer
+		// member used or set without its line there fails.
+		"typeAware": true,
+		"typeCheck": true
+	},
+	"rules": {
+		// Needs strictNullChecks, which is off (tsconfig.json), and says so once per file.
+		"typescript/no-useless-default-assignment": "off"
+	}
+}
