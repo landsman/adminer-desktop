@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format": "oxfmt 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}'",
-    "lint": "oxfmt --check 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}' && oxlint app/src/Assets/javascript"
+    "format": "oxfmt --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}'",
+    "lint": "oxfmt --check --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}' && oxlint app/src/Assets/javascript"
   },
   "devDependencies": {
     "axe-core": "4.14.0",
