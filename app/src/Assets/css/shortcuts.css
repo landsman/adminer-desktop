@@ -31,5 +31,5 @@
 	/* Not the theme's monospace: ⌘ and ⇧ come out tiny in it. The system font draws them the
 	   size the mac menu bar does. */
 	font-family: system-ui;
-	font-size: 0.85em;
+	font-size: 1.1em;
 }
