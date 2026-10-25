@@ -75,6 +75,12 @@
 	const place = (panel) => {
 		const rect = panel.getBoundingClientRect();
 		const [ty, tx] = thumbsOf(panel);
+		// A hidden sidebar's bar goes with it, at once: in <body>, it stayed behind over the content.
+		if (panel.matches(".ad-sidebar-hidden #menu")) {
+			ty.hidden = true;
+			tx.hidden = true;
+			return;
+		}
 		const [thick, inset] = size();
 		const axes = [
 			[
@@ -218,6 +224,24 @@
 			}
 		}
 	}
+
+	// The sidebar's toggle (window-chrome.js) sets a class and slides the sidebar: no scroll and no
+	// resize says so. Hidden, place() takes its bar away; shown, the bar comes back once it is in.
+	new MutationObserver(() => {
+		for (const panel of thumbs.keys()) {
+			place(panel);
+		}
+	}).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+	document.querySelector("#foot")?.addEventListener("transitionend", () => {
+		const menu = document.querySelector("#menu");
+		if (
+			menu &&
+			thumbs.has(menu) &&
+			thumbs.get(menu)[0].classList.contains("ad-shown")
+		) {
+			place(menu);
+		}
+	});
 
 	// A resize moves the panels' edges, and the thumbs with them, while they are on screen.
 	addEventListener("resize", () => {
