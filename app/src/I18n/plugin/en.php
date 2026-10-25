@@ -43,6 +43,10 @@ return [
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
 	'connections.cancel' => 'Cancel',
+	'connections.stop_title' => 'Stop connecting?',
+	'connections.stop_text' => 'The server has not answered yet. What you typed stays in the form.',
+	'connections.keep_waiting' => 'Keep waiting',
+	'connections.stop' => 'Stop',
 	// Atop the editor that opens on the first page a new connection lands on.
 	'connections.added' => 'Connected. Name it, so it is easy to tell apart from the others.',
 	'connections.empty' => 'No saved connections yet.',

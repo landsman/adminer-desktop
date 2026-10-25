@@ -42,6 +42,25 @@ Feature: Saved connections
     And the login stops waiting, with what I typed still in it
     And the next page in the session answers straight away
 
+  Scenario: A login that waits stays open on a click outside
+    When I log in to a server that does not answer
+    And I click outside the modal
+    And I cancel the login
+    Then the login stops waiting, with what I typed still in it
+
+  Scenario: Closing a login that waits asks first, and stops it
+    When I log in to a server that does not answer
+    And I close the login that waits, and answer "Stop"
+    Then the login stops waiting, and the modal is closed
+    And the next page in the session answers straight away
+
+  Scenario: Keep waiting leaves a login that waits as it was
+    When I log in to a server that does not answer
+    And I close the login that waits, and answer "Keep waiting"
+    And I cancel the login
+    Then Keep waiting had left the login waiting in the modal
+    And the login stops waiting, with what I typed still in it
+
   Scenario: A Cancel before the login is sent keeps it from going out
     Then a Cancel before the login is sent keeps it from being sent
 

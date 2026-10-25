@@ -358,6 +358,13 @@ body:has(#ad-connections) #logins {
 	pointer-events: none;
 }
 
+/* Busy over the whole window, the backdrops included, which inherit nothing; Cancel, the × and
+   the answers to #ad-connect-stop keep their pointer, being buttons. */
+html:has(.ad-waiting),
+.ad-waiting .ad-modal::backdrop {
+	cursor: progress;
+}
+
 .ad-confirm-dialog {
 	width: 28em;
 }

@@ -32,6 +32,10 @@ return [
 	// Saved connections.
 	'connections.new' => 'Nové pripojenie',
 	'connections.cancel' => 'Zrušiť',
+	'connections.stop_title' => 'Prestať sa pripájať?',
+	'connections.stop_text' => 'Server zatiaľ neodpovedal. Čo ste vyplnili, vo formulári zostane.',
+	'connections.keep_waiting' => 'Čakať ďalej',
+	'connections.stop' => 'Prestať',
 	'connections.added' => 'Pripojené. Pomenujte ho, aby ste ho ľahko rozoznali od ostatných.',
 	'connections.empty' => 'Zatiaľ žiadne uložené pripojenia.',
 	'connections.edit' => 'Upraviť',

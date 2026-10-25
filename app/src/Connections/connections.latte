@@ -50,6 +50,16 @@
 	{* Cancel stands in for Login while the login waits on the server (connections.js). *}
 	{block footer}{$submit|noescape}<button type="button" class="ad-connect-cancel">{\Desktop\Assets\Icon::Spinner->html()|noescape} {$desktop->t('connections.cancel')}</button>{/block}
 {/embed}
+{* What the × asks while the login waits: Escape and a click outside are refused then
+	(connections.js), so it is the one way out besides Cancel. Keep waiting is the safe answer. *}
+{embed '../Assets/modal.latte', id: 'ad-connect-stop', class: 'ad-confirm-dialog', form: false, labelledBy: 'ad-connect-stop-title'}
+	{block header}<h2 id="ad-connect-stop-title">{$desktop->t('connections.stop_title')}</h2>{/block}
+	{block body}{$desktop->t('connections.stop_text')}{/block}
+	{block footer}
+		<button type="button" data-close autofocus>{$desktop->t('connections.keep_waiting')}</button>
+		<button type="button" class="ad-primary" data-stop>{$desktop->t('connections.stop')}</button>
+	{/block}
+{/embed}
 {* Opened on load — see Connections::loginPage(). An attribute the script reads rather than an
 	inline script, which the CSP would want a nonce for. *}
 <span n:if="$adding" hidden data-open-dialog="ad-new-connection-dialog"></span>

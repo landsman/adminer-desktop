@@ -32,6 +32,10 @@ return [
 	// Saved connections.
 	'connections.new' => 'Nowe połączenie',
 	'connections.cancel' => 'Anuluj',
+	'connections.stop_title' => 'Przerwać łączenie?',
+	'connections.stop_text' => 'Serwer jeszcze nie odpowiedział. To, co wpisano, zostanie w formularzu.',
+	'connections.keep_waiting' => 'Czekaj dalej',
+	'connections.stop' => 'Przerwij',
 	'connections.added' => 'Połączono. Nazwa pozwoli łatwo odróżnić to połączenie od pozostałych.',
 	'connections.empty' => 'Brak zapisanych połączeń.',
 	'connections.edit' => 'Edytuj',

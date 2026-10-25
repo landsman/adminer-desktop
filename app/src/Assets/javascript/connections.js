@@ -30,7 +30,7 @@ if (permanent) {
 const login = document.querySelector('[name="auth[driver]"]')?.form;
 
 // A server that never answers keeps the login waiting until the connection times out, minutes on
-// some networks. The wait shows in the modal (busy.js), and Cancel, or closing the modal, stops it:
+// some networks. The wait shows in the modal (busy.js), and Cancel, or the × once asked, stops it:
 // window.stop() drops the request, and the server, no longer holding the session for it
 // (patches/adminer-connect-without-session-lock.patch), serves the next one straight away.
 if (login) {
@@ -45,9 +45,48 @@ if (login) {
 	button?.addEventListener("click", cancel);
 	// The focus follows Login to Cancel, so Enter stops the wait rather than sending it twice.
 	login.addEventListener("submit", () => button?.focus());
-	document
-		.querySelector("#ad-new-connection-dialog")
-		?.addEventListener("close", cancel);
+	const dialog = document.querySelector("#ad-new-connection-dialog");
+
+	// While it waits, Cancel and the × are the only ways out: Escape and a click outside do
+	// nothing, and the × asks first (#ad-connect-stop).
+	const waiting = () => login.classList.contains("ad-waiting");
+	// Closed while still waiting, which neither way out leaves it: Chromium ignores
+	// preventDefault() on a second Escape (modal.js). Reopened, and the login waits on.
+	dialog?.addEventListener("close", () => {
+		if (waiting()) {
+			dialog.showModal();
+			button?.focus();
+		}
+	});
+	dialog?.addEventListener("cancel", (event) => {
+		if (waiting()) {
+			event.preventDefault();
+		}
+	});
+	// Captured, so modal.js's fallback for a webview without closedby never sees the click.
+	dialog?.addEventListener(
+		"click",
+		(event) => {
+			if (waiting() && event.target === dialog) {
+				event.stopImmediatePropagation();
+			}
+		},
+		true,
+	);
+	const stop = document.querySelector("#ad-connect-stop");
+	dialog
+		?.querySelector(".ad-modal-close")
+		?.addEventListener("click", (event) => {
+			if (waiting() && stop) {
+				event.stopPropagation();
+				stop.showModal();
+			}
+		});
+	stop?.querySelector("[data-stop]")?.addEventListener("click", () => {
+		stop.close();
+		cancel();
+		dialog.close();
+	});
 }
 
 // A login that failed comes back as this page with the modal open again on its fields, and
