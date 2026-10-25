@@ -147,6 +147,15 @@ class AdminerDesktop extends Adminer\Plugin {
 		return true;
 	}
 
+	/** Count failed logins per app instance, not per IP. Adminer keeps them in one file in the
+	* system temp dir keyed by the client's address, and every instance on this machine — the
+	* installed app, a checkout, each e2e run — is 127.0.0.1, so an e2e run's wrong passwords
+	* locked the real app out for half an hour. The data dir is what tells instances apart.
+	*/
+	function bruteForceKey(): string {
+		return $_SERVER["REMOTE_ADDR"] . ' ' . Env::DataDir->get();
+	}
+
 	/**
 	* @param bool $create
 	* @return string
