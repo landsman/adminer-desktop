@@ -34,7 +34,8 @@ before `table-columns.js`. These so far:
   document, adminer's highlighting re-applied and the url corrected. With a url it asks for
   that one (a sort link); without, for whatever the options form currently says, so changing a
   field first is how you apply it. Anything that goes wrong falls back to what the browser
-  would have done unaided, and the answer says which happened.
+  would have done unaided, and the answer says which happened: `null` when the indicator's
+  Stop dropped it (a `desktop-stop` event from busy.js).
 
 Put here only what closes a gap between the WebView and a real browser — app behaviour.
 Database features belong in an Adminer plugin, and styling in `app/styles/`.

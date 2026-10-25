@@ -33,6 +33,9 @@ Feature: The activity indicator while a database, a table, a schema or a query l
   Scenario: Paging or sorting shows it until the rows are in
     Then fetching the rows shows the activity indicator until they are in
 
+  Scenario: Stop drops a fetch of the rows, and they stay as they were
+    Then stopping the fetch of the rows leaves them, and the url, as they were
+
   Scenario: Switching the schema shows it
     Then switching the schema shows the activity indicator
 

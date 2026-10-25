@@ -1906,6 +1906,37 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Stop pressed in the same task as the fetch, so it is still in flight: the answer, had it
+	 * come, would have swapped the rows and moved the url, and a failure would have reloaded. */
+	#[Then('stopping the fetch of the rows leaves them, and the url, as they were')]
+	public function refreshStopped(): void
+	{
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'async () => {
+				window.e2eStayed = true;
+				const rows = document.querySelector("#table tbody");
+				const url = location.href;
+				const swapped = window.desktopRefresh();
+				document.querySelector("#ad-busy .ad-busy-stop").click();
+				return {
+					swapped: await swapped,
+					rows: document.querySelector("#table tbody") === rows,
+					url: location.href === url,
+					busy: document.querySelector("#ad-busy").matches(":popover-open"),
+				};
+			}',
+		);
+		usleep(500_000);
+		$stayed = $this->page->evaluate(
+			// language=JavaScript
+			'() => window.e2eStayed === true',
+		);
+		if ($state !== ['swapped' => null, 'rows' => true, 'url' => true, 'busy' => false] || !$stayed) {
+			throw new RuntimeException('a stopped fetch of the rows: ' . json_encode($state) . ($stayed ? '' : ', and the page reloaded'));
+		}
+	}
+
 	/** Another schema picked in adminer's menu, which sends its form on change. */
 	#[Then('switching the schema shows the activity indicator')]
 	public function schemaShowsIndicator(): void

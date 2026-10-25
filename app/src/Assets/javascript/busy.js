@@ -20,9 +20,11 @@
 	// Stop, or Escape, drops the wait as a browser's Stop does: a saved connection whose server
 	// never answers otherwise turns until the connection times out. The server is not held up by it,
 	// adminer lets the session go before it connects (patches/adminer-connect-without-session-lock.patch).
+	// desktop-stop reaches what window.stop() does not: rows fetched in place (refresh.js).
 	const stop = () => {
 		window.stop();
 		window.desktopBusy(false);
+		dispatchEvent(new Event("desktop-stop"));
 	};
 	indicator?.querySelector(".ad-busy-stop")?.addEventListener("click", stop);
 	addEventListener("keydown", (event) => {
