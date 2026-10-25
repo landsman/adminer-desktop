@@ -110,6 +110,10 @@ if curl -s "$BASE/adminer.php" | grep -q 'id="desktop-panel-themes"'; then
 fi
 curl -s "$BASE/adminer.php?desktop_settings_panels=1" | grep -q 'id="desktop-panel-plugins"' || {
 	echo "FAIL: the settings panels did not answer their own request"; exit 1; }
+# The save marker comes with the panels, so a Save whose panels never loaded stores nothing.
+if curl -s "$BASE/adminer.php" | grep -q "name='desktop_settings'"; then
+	echo "FAIL: the page carries the save marker without the panels it belongs to"; exit 1
+fi
 echo "ok: the settings panels load on their own request"
 
 # The enabled set is stored in settings.json, so the file is the state.

@@ -14,8 +14,8 @@
 	the × ask before throwing edits away (javascript/modal.js). Focus lands on the dialog itself
 	rather than on the checked tab, so opening it with the mouse does not ring the tab. *}
 {embed '../Assets/modal.latte', id: 'desktop-settings', lightDismiss: false, guard: true, focusSelf: true, labelledBy: 'desktop-settings-title'}
+	{* desktop_settings, which tells handlePost() this is a save, comes with the panels. *}
 	{block hidden}
-		{input_hidden('desktop_settings', 1)|noescape}
 		{input_token()|noescape}
 	{/block}
 

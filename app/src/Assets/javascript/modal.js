@@ -49,11 +49,27 @@
 		}
 	}
 
-	async function open(dialog) {
+	// An element with data-src is filled from that URL before the dialog shows, so the guard's
+	// snapshot sees its fields. On a failure its [data-load-failed] message shows instead.
+	function open(dialog) {
 		if (!dialog || dialog.open) {
 			return;
 		}
-		await load(dialog);
+		const slot = dialog.querySelector("[data-src]");
+		if (!slot) {
+			reveal(dialog);
+			return;
+		}
+		load(slot).then(
+			() => reveal(dialog),
+			() => {
+				slot.querySelector("[data-load-failed]")?.removeAttribute("hidden");
+				reveal(dialog);
+			},
+		);
+	}
+
+	function reveal(dialog) {
 		// Opened by a second click while the first was still loading.
 		if (dialog.open) {
 			return;
@@ -63,16 +79,10 @@
 		opened.set(dialog, fields(dialog));
 	}
 
-	// An element with data-src is filled from that URL on the first open, before the dialog shows —
-	// so the guard's snapshot sees its fields. Once, kept for every open after; ad-loaded tells the
-	// scripts that bind into it. On a failure its [data-load-failed] message shows instead, and the
-	// next open tries again.
+	// Once, kept for every open after; ad-loaded tells the scripts that bind into it. A failed load
+	// is forgotten, so the next open tries again.
 	const loading = new WeakMap();
-	function load(dialog) {
-		const slot = dialog.querySelector("[data-src]");
-		if (!slot) {
-			return;
-		}
+	function load(slot) {
 		if (!loading.has(slot)) {
 			const done = fetch(slot.dataset.src)
 				.then((response) => {
@@ -86,9 +96,9 @@
 					slot.removeAttribute("data-src");
 					slot.dispatchEvent(new Event("ad-loaded", { bubbles: true }));
 				})
-				.catch(() => {
-					slot.querySelector("[data-load-failed]")?.removeAttribute("hidden");
+				.catch((error) => {
 					loading.delete(slot);
+					throw error;
 				});
 			loading.set(slot, done);
 		}
