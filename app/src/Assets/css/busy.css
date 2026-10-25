@@ -21,6 +21,24 @@
 	box-shadow: 0 4px 24px rgb(0 0 0 / 20%);
 	pointer-events: none;
 	animation: ad-appear 0.45s;
+	/* The UA's auto would clip Stop, which hangs below. */
+	overflow: visible;
+}
+
+/* Below the box rather than in it, so the box keeps its size while Stop is still transparent: it
+   comes in 3 s into the wait (66% of the animation), when a quick answer would have been here. */
+#ad-busy .ad-busy-stop {
+	position: absolute;
+	top: calc(100% + 10px);
+	left: 50%;
+	translate: -50%;
+	font-size: 0.875rem;
+	line-height: normal;
+	white-space: nowrap;
+	/* Clickable while still transparent too: an animated pointer-events: none stays none in WebKit
+	   once the page is navigating, so Stop never took a click. */
+	pointer-events: auto;
+	animation: ad-appear 4.5s;
 }
 
 /* A SQL command prints each query as it starts it and the result once it is done, so the query with

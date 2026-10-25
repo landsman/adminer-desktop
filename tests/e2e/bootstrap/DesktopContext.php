@@ -55,6 +55,8 @@ class DesktopContext implements Context
 	private array $typed = [];
 	/** @var array{x?: float, y?: float, closeX?: float, closeY?: float} where Login was, which Cancel takes over while the login waits, and the × */
 	private array $login = [];
+	/** @var array{x?: float, y?: float} where the indicator's Stop comes in */
+	private array $stop = [];
 
 	private bool $hidSidebar = false;
 
@@ -1904,6 +1906,37 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Stop pressed in the same task as the fetch, so it is still in flight: the answer, had it
+	 * come, would have swapped the rows and moved the url, and a failure would have reloaded. */
+	#[Then('stopping the fetch of the rows leaves them, and the url, as they were')]
+	public function refreshStopped(): void
+	{
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'async () => {
+				window.e2eStayed = true;
+				const rows = document.querySelector("#table tbody");
+				const url = location.href;
+				const swapped = window.desktopRefresh();
+				document.querySelector("#ad-busy .ad-busy-stop").click();
+				return {
+					swapped: await swapped,
+					rows: document.querySelector("#table tbody") === rows,
+					url: location.href === url,
+					busy: document.querySelector("#ad-busy").matches(":popover-open"),
+				};
+			}',
+		);
+		usleep(500_000);
+		$stayed = $this->page->evaluate(
+			// language=JavaScript
+			'() => window.e2eStayed === true',
+		);
+		if ($state !== ['swapped' => null, 'rows' => true, 'url' => true, 'busy' => false] || !$stayed) {
+			throw new RuntimeException('a stopped fetch of the rows: ' . json_encode($state) . ($stayed ? '' : ', and the page reloaded'));
+		}
+	}
+
 	/** Another schema picked in adminer's menu, which sends its form on change. */
 	#[Then('switching the schema shows the activity indicator')]
 	public function schemaShowsIndicator(): void
@@ -2638,7 +2671,8 @@ class DesktopContext implements Context
 	 * once Cancel turns in Login's place, under a busy cursor: polled from the test instead, a page already navigating away was missed on a
 	 * CI runner now and then, the wait then ran into the answer, and the step timed out.
 	 */
-	private function submitLogin(string $server, string $password): void
+	/** @param bool $underIndicator waited out under the page's indicator, as a card's click is, rather than in the modal */
+	private function submitLogin(string $server, string $password, bool $underIndicator = false): void
 	{
 		$this->page->goto((string) $this->fix['base']);
 		$this->page->locator(
@@ -2665,6 +2699,24 @@ class DesktopContext implements Context
 				return { x: box.right - 8, y: box.top + box.height / 2, closeX: close.x + close.width / 2, closeY: close.y + close.height / 2 };
 			}',
 		);
+		if ($underIndicator) {
+			// Stop's place, read by showing the indicator a moment: nothing can be read while the login is pending.
+			$this->stop = (array) $this->page->evaluate(
+				// language=JavaScript
+				'() => {
+					document.querySelector(\'[name="auth[driver]"]\').form.removeAttribute("data-busy-here");
+					// Shut, as there is no modal over a card: an open one leaves the indicator inert. Unguarded
+					// first, or the guard reopens it to ask about what was typed (modal.js).
+					const dialog = document.querySelector("#ad-new-connection-dialog");
+					dialog.removeAttribute("data-guard");
+					dialog.close();
+					window.desktopBusy();
+					const box = document.querySelector("#ad-busy .ad-busy-stop").getBoundingClientRect();
+					window.desktopBusy(false);
+					return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+				}',
+			);
+		}
 		$this->page->evaluate(
 			// language=JavaScript
 			'() => {
@@ -2694,6 +2746,33 @@ class DesktopContext implements Context
 				document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit();
 			}',
 		);
+	}
+
+	#[When('I log in to a server that does not answer, under the activity indicator')]
+	public function logInToSlowServerUnderIndicator(): void
+	{
+		$this->submitLogin(e2e_slow_server(8), 'any', underIndicator: true);
+	}
+
+	/** 3.5 s in: past the 3 s Stop takes to come in, well before the 8 s server answers.
+	 * A bare mouse click, as with Cancel in the modal. */
+	#[When('I stop the wait')]
+	public function stopWait(): void
+	{
+		usleep(3_500_000);
+		$this->page->mouse()->click((float) $this->stop['x'], (float) $this->stop['y']);
+	}
+
+	#[Then('the page stops waiting where it was')]
+	public function pageStopped(): void
+	{
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => ({ samePage: window.e2eSubmitted === true, busy: document.querySelector("#ad-busy").matches(":popover-open") })',
+		);
+		if ($state !== ['samePage' => true, 'busy' => false]) {
+			throw new RuntimeException('after Stop: ' . json_encode($state));
+		}
 	}
 
 	private function assertFocus(string $id): void

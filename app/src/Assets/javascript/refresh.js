@@ -16,7 +16,8 @@
  * own adminerHighlighter hook, the way its selectLoadMore() does when it appends a page.
  *
  * Anything that goes wrong falls back to submitting the form, which is adminer's own way and
- * always works. The answer says which happened: true if the rows were swapped in place.
+ * always works. The answer says which happened: true if the rows were swapped in place, null if
+ * the indicator's Stop dropped the request, and the rows on screen stay.
  */
 
 window.desktopRefresh = async (href) => {
@@ -36,8 +37,11 @@ window.desktopRefresh = async (href) => {
 		href ?? `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
 	// Left up on a failure, which falls back to loading the page.
 	window.desktopBusy();
+	const stopped = new AbortController();
+	const stop = () => stopped.abort();
+	addEventListener("desktop-stop", stop);
 	try {
-		const answer = await fetch(url);
+		const answer = await fetch(url, { signal: stopped.signal });
 		const page = new DOMParser().parseFromString(
 			await answer.text(),
 			"text/html",
@@ -56,7 +60,10 @@ window.desktopRefresh = async (href) => {
 		window.desktopBusy(false);
 		return true;
 	} catch {
-		// Whatever went wrong, do what the browser would have done unaided: follow the link, or
+		if (stopped.signal.aborted) {
+			return null;
+		}
+		// Whatever else went wrong, do what the browser would have done unaided: follow the link, or
 		// press Select. Both work, and neither leaves the page showing something that is no
 		// longer true.
 		if (href) {
@@ -65,5 +72,7 @@ window.desktopRefresh = async (href) => {
 			form.requestSubmit();
 		}
 		return false;
+	} finally {
+		removeEventListener("desktop-stop", stop);
 	}
 };

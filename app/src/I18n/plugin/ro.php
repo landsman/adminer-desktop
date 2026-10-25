@@ -28,6 +28,7 @@ return [
 	'js.select_filter.none' => 'Nicio potrivire',
 
 	'busy.loading' => 'Se încarcă…',
+	'busy.stop' => 'Oprește',
 
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',

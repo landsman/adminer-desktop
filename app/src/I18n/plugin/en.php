@@ -37,8 +37,9 @@ return [
 	'js.select_filter.none' => 'Nothing matches',
 
 	// What a screen reader announces for the activity indicator over a page waiting on the
-	// server (src/Assets/busy.latte).
+	// server (src/Assets/busy.latte), and the button on it that stops the wait.
 	'busy.loading' => 'Loading…',
+	'busy.stop' => 'Stop',
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',

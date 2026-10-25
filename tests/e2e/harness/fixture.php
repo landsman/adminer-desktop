@@ -244,23 +244,26 @@ function e2e_fixture(): array
 /** A database server that answers late and then hangs up (slow-server.php), started on first use
  * and stopped with the run: where a scenario logs in to wait, and then to fail.
  *
+ * 3 s a connect by default: at 1 s the wait ended before a CI runner saw the indicator past its
+ * 0.45 s fade-in, and the step timed out.
+ *
+ * @param int $seconds how long it holds a connect, one server for each
  * @return string its address, for the login form's server field
  */
-function e2e_slow_server(): string
+function e2e_slow_server(int $seconds = 3): string
 {
-	static $server = null, $address = '';
-	if (!$server) {
+	/** @var array<int, string> $addresses */
+	static $addresses = [];
+	if (!isset($addresses[$seconds])) {
 		$port = e2e_free_port(55999);
-		// 3 s a connect, so a login waits ~6 s (postgres asks twice): at 1 s the 2 s wait ended
-		// before a CI runner saw the indicator past its 0.45 s fade-in, and the step timed out.
-		$server = new Process([dirname(__DIR__, 3) . '/bin/frankenphp', 'php-cli', __DIR__ . '/slow-server.php', (string) $port, '3']);
+		$server = new Process([dirname(__DIR__, 3) . '/bin/frankenphp', 'php-cli', __DIR__ . '/slow-server.php', (string) $port, (string) $seconds]);
 		$server->start();
 		// Listening, not merely started: a login sent before would be refused, not kept waiting.
 		$server->waitUntil(fn (string $type, string $output): bool => str_contains($output, 'listening'));
 		register_shutdown_function(fn () => $server->stop());
-		$address = "127.0.0.1:$port";
+		$addresses[$seconds] = "127.0.0.1:$port";
 	}
-	return $address;
+	return $addresses[$seconds];
 }
 
 function e2e_free_port(int $port): int

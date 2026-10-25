@@ -150,10 +150,16 @@ if (pagerGrid && pagerBox) {
 
 	/* --- Moving between them ----------------------------------------------------------- */
 
+	let shown = at === "last" ? last : current;
 	const goTo = async (page) => {
 		render(page); // the pager moves at once; the rows follow when the answer arrives
-		if (!(await window.desktopRefresh(urlOf(page)))) {
-			return; // it fell back to a real navigation; this page is on its way out
+		const swapped = await window.desktopRefresh(urlOf(page));
+		// Stopped, so the rows on screen are still the page before. false fell back to a real
+		// navigation, and this page is on its way out.
+		if (swapped === null) {
+			render(shown);
+		} else if (swapped) {
+			shown = page;
 		}
 	};
 
@@ -166,5 +172,5 @@ if (pagerGrid && pagerBox) {
 	});
 	pages.addEventListener("change", () => goTo(Number(pages.value)));
 
-	render(at === "last" ? last : current);
+	render(shown);
 }
