@@ -1,6 +1,6 @@
 ---
 name: page-scripts
-description: Write, change or debug a page script under app/src/Assets/javascript/ — the plain deferred scripts that make adminer behave like an app inside the WebView. Use when adding a .js there or in before-paint/, sharing a helper between scripts (window.adminer.page), calling or adding a launcher binding (window.adminer.native, bindNative), declaring either in the JSDoc typedefs in api.js, showing a translated string from JavaScript, posting to app/api.php, waiting on the busy indicator, or when a script binds to the wrong element, never runs, or works in a browser but not in the app.
+description: Write, change or debug a page script under app/src/Assets/javascript/ — the plain deferred scripts that make adminer behave like an app inside the WebView. Use when adding a .js there or in before-paint/, sharing a helper between scripts (window.adminer.page), calling or adding a launcher binding (window.adminer.native, bindNative), declaring either in adminer.d.ts, a TS error from oxlint --type-check, showing a translated string from JavaScript, posting to app/api.php, waiting on the busy indicator, or when a script binds to the wrong element, never runs, or works in a browser but not in the app.
 ---
 
 # Page scripts
@@ -24,11 +24,14 @@ all; read it before adding a helper that may exist. The rules:
    `launcher/main.go` — never a bare `w.Bind()`, which can only write `window[name]`. It exists
    only in the app, never in a browser or the e2e, so reach it with `?.`
    (`window.adminer.native?.setBackground(…)`). A page script never adds to it.
-6. **Declare it in JSDoc first.** Every member of either half is a `@property` on the
-   `AdminerPage` or `AdminerNative` typedef at the top of `api.js`, with its signature and the
-   file that defines it — that list is what the IDE completes and checks names against. Mark
-   one that is not always set as optional (`[search]`), and add a line to the README's list.
-   A function a file offers gets a JSDoc block saying what it does and what it returns.
+6. **Declare it in `adminer.d.ts` first.** Every member of either half is a line on the
+   `AdminerPage` or `AdminerNative` interface there, with its signature, a one-line doc comment
+   and the file that defines it. `make qa` type-checks every script against it (`tsconfig.json`,
+   `oxlint --type-aware --type-check`), so a typo, a wrong argument or a member set without its
+   line fails the build. Mark one that is not always set optional (`search?(): void`), add it to
+   the README's list, and give the function a JSDoc block. The DOM is deliberately loose
+   (`loose-dom.d.ts`) and `strictNullChecks` is off, so a missing `?.` on `native` is not
+   caught — that one is on you. A promise you do not wait for is `void`ed.
 7. **Text through `window.adminer.page.lang(id, fallback)`.** Add `js.<id>` to the plugin
    catalogue in `app/src/I18n/plugin/`, every language. It passes through sprintf, so a
    placeholder is `{n}`, never `%d`.

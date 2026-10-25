@@ -27,9 +27,11 @@ to it, never replaces it.
 each binding there. It exists only in the app, never in a plain browser or the e2e — reach it
 with `?.`. A page script never adds to it.
 
-Both are declared once, as JSDoc typedefs at the top of `api.js` (`AdminerPage`,
-`AdminerNative`). A new member is a `@property` there first, so the IDE completes it and flags a
-name nobody declared. In Web Inspector, `window.adminer` shows what is actually there.
+Both are declared in `adminer.d.ts` (`AdminerPage`, `AdminerNative`), and `make qa` type-checks
+every script against it (`tsconfig.json`, `oxlint --type-check`): a member used or set without a
+line there fails the build. A new one is a line there first. `loose-dom.d.ts` keeps the check to
+that — it switches off TypeScript's opinion of what a `querySelector` returns. In Web Inspector,
+`window.adminer` shows what is actually there.
 
 What `window.adminer.page` holds so far:
 
