@@ -35,6 +35,8 @@ class Tools {
 	/** Whether a statement that writes is kept. Off unless the user said otherwise. */
 	private bool $write;
 
+	private ?string $database = null;
+
 	/** Whether every value comes back whole, as if each call asked for whole_values. */
 	private bool $whole;
 
@@ -134,10 +136,7 @@ class Tools {
 	* @return array<string,string>
 	*/
 	function connection(): array {
-		$database = \Adminer\DB;
-		if ($database === '' && isset(self::CURRENT_DATABASE[\Adminer\DRIVER])) {
-			$database = (string) \Adminer\get_val(self::CURRENT_DATABASE[\Adminer\DRIVER]);
-		}
+		$database = $this->database();
 		return [
 			'id' => $this->connections?->current()?->key() ?? '',
 			'driver' => \Adminer\DRIVER,
@@ -148,7 +147,7 @@ class Tools {
 
 	/** Where a call ran, for the _meta of its answer: the bridge copies it into the record of what
 	* an agent did (launcher/mcpbridge record.go), and with a call free to name another connection
-	* or database, the window's would be the wrong answer. Not connection(): that asks the server.
+	* or database, the window's would be the wrong answer.
 	*
 	* @return array{connection:string,connection_name:string,database:string}
 	*/
@@ -157,8 +156,21 @@ class Tools {
 		return [
 			'connection' => $current?->key() ?? '',
 			'connection_name' => $current?->title() ?? '',
-			'database' => defined('Adminer\DB') ? \Adminer\DB : '',
+			'database' => defined('Adminer\DB') ? $this->database() : '',
 		];
+	}
+
+	/** The database queries run in. With none in the URL, postgres connects to `postgres` and MS SQL
+	* to the login's default, so ask rather than answer empty. Asked once per request.
+	*/
+	private function database(): string {
+		if ($this->database === null) {
+			$this->database = \Adminer\DB;
+			if ($this->database === '' && isset(self::CURRENT_DATABASE[\Adminer\DRIVER])) {
+				$this->database = (string) \Adminer\get_val(self::CURRENT_DATABASE[\Adminer\DRIVER]);
+			}
+		}
+		return $this->database;
 	}
 
 	/** Every saved connection, the way the start screen lists them, with the id the other tools

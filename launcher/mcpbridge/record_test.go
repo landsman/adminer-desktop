@@ -2,7 +2,9 @@ package mcpbridge
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -149,4 +151,37 @@ func stringOf(t *testing.T, v any) string {
 		t.Fatal(err)
 	}
 	return string(b)
+}
+
+// A call still running when the bridge is stopped is recorded before it returns, not lost with
+// the process.
+func TestStoppedCallIsRecorded(t *testing.T) {
+	asked := make(chan struct{})
+	app := serve(t, http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		readBody(t, r) // or the server never notices the client leave
+		close(asked)
+		<-r.Context().Done()
+	}))
+	defer app.Close()
+	dir := t.TempDir()
+	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
+	b := bridge(t, dir)
+	b.logs = t.TempDir()
+	pr, pw := io.Pipe()
+	defer closeOrFail(t, pw)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- b.RunUntil(ctx, pr, new(bytes.Buffer)) }()
+	if _, err := io.WriteString(pw, callTool()+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	<-asked
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := os.ReadFile(filepath.Join(b.logs, "mcp-"+time.Now().UTC().Format(time.DateOnly)+".log"))
+	if !strings.Contains(string(raw), `"status":"cancelled"`) {
+		t.Errorf("the stopped call is not in the log: %q", raw)
+	}
 }

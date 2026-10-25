@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -66,8 +67,10 @@ func serveMCP() error {
 	signal.Ignore(syscall.SIGPIPE)
 	logs, _ := logDir() // "" writes no record, and the bridge still works
 	bridge := mcpbridge.New(logs)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	done := make(chan error, 1)
-	go func() { done <- bridge.Run(os.Stdin, os.Stdout) }()
+	go func() { done <- bridge.RunUntil(ctx, os.Stdin, os.Stdout) }()
 
 	// Caught rather than left to kill us, so the reason gets written down: clients log nothing
 	// when a server goes away, and a closed stdin, a kill and a crash all look like a server
@@ -77,6 +80,13 @@ func serveMCP() error {
 	defer signal.Stop(got)
 	select {
 	case s := <-got:
+		// Cancel what is in flight, so each call is recorded before we go. Bounded: a notification
+		// cannot be cancelled and may sit out the bridge's idle timeout.
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+		}
 		logBridgeExit("the client sent " + s.String())
 		return nil
 	case err := <-done:

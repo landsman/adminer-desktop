@@ -128,6 +128,12 @@ func locale() string {
 // Run pumps messages until stdin closes. Blank lines are skipped, one answer goes out per
 // request, and a notification gets none — JSON-RPC answers silence with silence.
 func (b *Bridge) Run(in io.Reader, out io.Writer) error {
+	return b.RunUntil(context.Background(), in, out)
+}
+
+// RunUntil is Run, ended early by ctx: the calls still in flight are cancelled and recorded as
+// such before it returns, so a signal does not take them out of the log with the process.
+func (b *Bridge) RunUntil(ctx context.Context, in io.Reader, out io.Writer) error {
 	// Messages are answered as they finish, not in turn, and stdin is read on whatever is in
 	// flight: a ping, or the notification that cancels a call, must never wait in the pipe behind
 	// a slow query, or a client checking the server is alive gives up on it. JSON-RPC matches
@@ -173,6 +179,8 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 	}
 	for {
 		select {
+		case <-ctx.Done():
+			return stop()
 		case <-gone:
 			return stop() // stdout is closed: nobody is left to answer
 		case err := <-ended:
