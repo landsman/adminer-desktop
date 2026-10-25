@@ -315,8 +315,8 @@ qa: bin/frankenphp$(EXE) app/vendor i18n mcp-bridge-data  ## Run every static ch
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
@@ -419,7 +419,11 @@ editor: build  ## Run in editor mode
 # Turns on Safari's Web Inspector against the app's page: Develop > this machine >
 # Adminer Desktop. There is no console in the app otherwise, which is how a confirm()
 # that never fired stayed invisible for as long as it did.
-debug: build  ## Run with Safari's Web Inspector attached
+#
+# Brings up the e2e's seeded mysql beside it, so there is a database to point it at; no
+# docker skips it rather than refusing to debug.
+debug: build  ## Run with Safari's Web Inspector attached, and a seeded mysql (docker)
+	@./cli/demo-mysql.sh $(DEMO_MYSQL) || echo "no mysql: docker is not running"
 	./build.noindex/adminer-desktop$(EXE) -debug
 
 # The app in dev mode against seeded demo data, for clicking around by hand. Brings up
@@ -430,14 +434,14 @@ debug: build  ## Run with Safari's Web Inspector attached
 # vendor/ because dev serves app/ and Latte renders from it. The seed drops and recreates,
 # so re-running just refreshes the data.
 # The postgres one is shared with the e2e (tests/e2e/harness/fixture.php names it), so `make demo`
-# and a run reuse each other's database rather than each leaving one behind. DEMO_MYSQL is only
-# ever started by the e2e; it is named here so `down` and `destroy` can clean up after it.
+# and a run reuse each other's database rather than each leaving one behind. DEMO_MYSQL is shared
+# the same way, with the e2e and `make debug`.
 DEMO_PG = adminer-demo-pg
 DEMO_MYSQL = adminer-demo-mysql
 
 demo: build app/vendor  ## Run against seeded demo data, opened logged in (needs docker)
 	@docker start $(DEMO_PG) >/dev/null 2>&1 || docker run -d --name $(DEMO_PG) \
-		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 55432:5432 postgres:18-alpine >/dev/null
+		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 127.0.0.1:55432:5432 postgres:18-alpine >/dev/null
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
 	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed/pgsql.sql >/dev/null
 	@echo "demo data ready on 127.0.0.1:55432 (postgres / demo / demo)"
