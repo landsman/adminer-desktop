@@ -71,10 +71,22 @@ class AdminerDesktop extends Adminer\Plugin {
 	* page, so writing a JSON body and exiting leaves nothing half-rendered behind. The work is
 	* in Desktop\Mcp\Endpoint; this stays a map of what is hooked.
 	*
+	* Also the page listing every call an agent made, for the same reason: nothing has been printed
+	* yet, and adminer has no hook for a page of our own (Desktop\Mcp\Calls\CallsPage).
+	*
 	* @return null always: this hook has no opinion for other plugins, and the MCP path exits
 	*/
 	function headers(): ?string {
-		return (new Mcp\Endpoint($this->userSettings, connections: $this->connections))->serve();
+		if (Mcp\Calls\CallsPage::drawing()) {
+			return null; // page_header() calls this hook again while the page draws itself
+		}
+		(new Mcp\Endpoint($this->userSettings, connections: $this->connections))->serve();
+		// Signed in only: the server answers anyone on this machine, and the log is the owner's.
+		// Signed out, adminer goes on to its login page.
+		if (isset($_GET["mcp_calls"]) && Adminer\driver() !== null) {
+			(new Mcp\Calls\CallsPage($this))->serve();
+		}
+		return null;
 	}
 
 	/** The catalogue, so adminer-plugins.php can hand adminer the enabled plugins.

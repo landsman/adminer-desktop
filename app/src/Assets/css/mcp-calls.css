@@ -1,0 +1,63 @@
+/* The page of every MCP call an agent made (Mcp/Calls/calls-page.latte). Adminer's own table
+ * (.odds) does the grid; this only adds the filters, the one-line summary and the modal. */
+
+.ad-mcp-calls-note {
+	color: var(--ad-fg-quiet);
+}
+
+/* A row of links, the current one bold: they are filters, and a link per value is all one needs. */
+.ad-mcp-calls-filter {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3em 1em;
+}
+
+.ad-mcp-calls-filter [aria-current] {
+	font-weight: 600;
+	color: var(--fg);
+}
+
+/* Full width, so the summary takes what the other columns leave. */
+.ad-mcp-calls {
+	width: 100%;
+}
+
+.ad-mcp-calls td {
+	white-space: nowrap;
+}
+
+/* The SQL on one line, cut where the window ends; the whole of it is in the title and the modal.
+ * max-width: 0 is what lets a table cell shrink below its content. */
+.ad-mcp-calls .ad-mcp-calls-summary {
+	max-width: 0;
+	width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-family: monospace;
+}
+
+.ad-mcp-call-failed {
+	color: var(--ad-danger);
+}
+
+.ad-mcp-call {
+	width: min(60em, 90vw);
+}
+
+.ad-mcp-call-facts {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.3em 1em;
+	margin: 0 0 1em;
+}
+
+.ad-mcp-call-facts dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ad-mcp-call pre {
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}

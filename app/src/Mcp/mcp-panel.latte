@@ -16,7 +16,8 @@
 	array $commands,
 	array $status,
 	?string $lastUsed,
-	?string $target
+	?string $target,
+	string $calls
 }
 <p>
 	<input type="checkbox" name="mcp" value="1" id="desktop-mcp" n:attr="checked: $enabled">
@@ -24,6 +25,11 @@
 </p>
 
 <p class="ad-mcp-note">{$desktop->t('mcp.description')}</p>
+
+{* Outside the part hidden while it is off: the record outlives the switch, and checking what an
+	agent did is as worth doing after turning it off as before. A page rather than a tab here: the
+	dialog is too narrow for a grid. *}
+<p class="ad-mcp-note"><a href="{$calls}">{$desktop->t('mcp.calls_open')}</a></p>
 
 {* Everything below the switch is about an access that is currently switched off, so with the
 	box unticked it is a page of instructions for something that cannot happen. Hidden by CSS
