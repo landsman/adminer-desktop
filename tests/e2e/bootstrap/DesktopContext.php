@@ -53,6 +53,8 @@ class DesktopContext implements Context
 
 	/** @var array<string, string> what the last login typed, which a failed one gives back */
 	private array $typed = [];
+	/** @var array{x?: float, y?: float} where Login was, which Cancel takes over while the login waits */
+	private array $login = [];
 
 	private bool $hidSidebar = false;
 
@@ -1502,21 +1504,23 @@ class DesktopContext implements Context
 		$this->nameIt($name, $env, $color);
 	}
 
-	/** Both ways in show it, read in the same task as the submit and the click, before busy.js sends
-	 * either on. The form is then kept from leaving by a listener on the document added after
-	 * busy.js's; the card is let go, and its page waited for.
+	/** Both ways in show a wait, read in the same task as the submit and the click, before busy.js
+	 * sends either on: the form its own, in the modal, the card the indicator. The form is then kept
+	 * from leaving by a listener on the document added after busy.js's; the card is let go, and its
+	 * page waited for.
 	 */
-	#[Then('logging in, from the form or a card, shows the activity indicator')]
+	#[Then('logging in waits in the modal from the form, and under the activity indicator from a card')]
 	public function connectingShowsIndicator(): void
 	{
 		$shown = $this->page->evaluate(
 			// language=JavaScript
 			'() => {
 				const shown = () => document.querySelector("#ad-busy")?.matches(":popover-open") ?? false;
+				const form = document.querySelector(\'[name="auth[driver]"]\').form;
 				document.addEventListener("submit", (event) => event.preventDefault());
-				document.querySelector(\'[name="auth[driver]"]\').form.requestSubmit();
-				const byForm = shown();
-				window.desktopBusy(false);
+				form.requestSubmit();
+				const byForm = form.classList.contains("ad-waiting") && !shown();
+				form.classList.remove("ad-waiting");
 				window.e2eLeaving = true;
 				document.querySelector(".ad-card-link").click();
 				return { byForm, byCard: shown() };
@@ -1548,15 +1552,104 @@ class DesktopContext implements Context
 		$this->submitLogin(e2e_slow_server(), 'any');
 	}
 
-	/** Shown, past its fade-in, and turning, while the page still waits on the login: as the
-	 * page it left saw it (submitLogin()), so it holds whether this reads that page or the answer. */
-	#[Then('the activity indicator turns while it waits')]
-	public function indicatorTurns(): void
+	/** Cancel in Login's place, turning, while the page still waits on the login: as the page it
+	 * left saw it (submitLogin()), so it holds whether this reads that page or the answer. */
+	#[Then('the login waits in the modal, with Cancel turning in place of Login')]
+	#[Then('the login waited in the modal, with Cancel turning in place of Login')]
+	public function loginWaitsInModal(): void
 	{
 		$this->page->waitForFunction(
 			// language=JavaScript
-			'() => sessionStorage.getItem("e2e-busy-turned") === "1"',
+			'() => sessionStorage.getItem("e2e-login-waited") === "1"',
 		);
+	}
+
+	/** A bare mouse click where Login was, a moment after it was sent: while a navigation is
+	 * pending, Playwright's click(), evaluate() and waitForFunction() all wait for it to end, so
+	 * they could only ever land after the login has. Cancel is right-aligned in the footer as Login
+	 * was, so a point just inside Login's right edge is on it. */
+	#[When('I cancel the login')]
+	public function cancelLogin(): void
+	{
+		usleep(1_000_000);
+		$this->page->mouse()->click((float) $this->login['x'], (float) $this->login['y']);
+	}
+
+	/** Cancel in the same task as Login, before busy.js sends the form two frames later. A wrong
+	 * password answers at once, so a login that still went out would have replaced the page well
+	 * within the second waited for. */
+	#[Then('a Cancel before the login is sent keeps it from being sent')]
+	public function cancelBeforeSent(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-new-connection',
+		)->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[password]"]',
+		)->fill('not-the-password');
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				window.e2eCancelled = true;
+				const form = document.querySelector(\'[name="auth[driver]"]\').form;
+				form.requestSubmit();
+				form.querySelector(".ad-connect-cancel").click();
+			}',
+		);
+		usleep(1_000_000);
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => ({ samePage: window.e2eCancelled === true, waiting: document.querySelector(".ad-waiting") !== null })',
+		);
+		if ($state !== ['samePage' => true, 'waiting' => false]) {
+			throw new RuntimeException('a login cancelled before it was sent: ' . json_encode($state));
+		}
+	}
+
+	/** Still the page the login was sent from (submitLogin() marked it), and Login back. */
+	#[Then('the login stops waiting, with what I typed still in it')]
+	public function loginStopped(): void
+	{
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const dialog = document.querySelector("#ad-new-connection-dialog");
+				return {
+					samePage: window.e2eSubmitted === true,
+					waiting: dialog.closest("form").classList.contains("ad-waiting"),
+					login: dialog.querySelector(\'input[type="submit"]\').checkVisibility(),
+					typed: Object.fromEntries(["server", "username", "password"].map((name) =>
+						[name, dialog.querySelector(`[name="auth[${name}]"]`).value])),
+				};
+			}',
+		);
+		$expected = ['samePage' => true, 'waiting' => false, 'login' => true, 'typed' => $this->typed];
+		if ($state !== $expected) {
+			throw new RuntimeException('after Cancel the modal is ' . json_encode($state));
+		}
+	}
+
+	/** The cancelled connect may still be stuck on the server; the next request in this session
+	 * must not wait for it. Fetched rather than navigated to, so the page stays the one that was
+	 * cancelled and the step can also say no answer to the login arrived in the meantime. The
+	 * slow server holds a connect 3 s and Cancel comes 1 s in: a session still locked answers in
+	 * ~2 s, a released one in tens of milliseconds. */
+	#[Then('the next page in the session answers straight away')]
+	public function nextPageAnswers(): void
+	{
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'async () => {
+				const started = performance.now();
+				const response = await fetch(location.href);
+				return { ok: response.ok, ms: performance.now() - started, samePage: window.e2eSubmitted === true };
+			}',
+		);
+		if (!$state['ok'] || $state['ms'] > 1000 || !$state['samePage']) {
+			throw new RuntimeException('the next page after Cancel: ' . json_encode($state));
+		}
 	}
 
 	/** A double-click, which goes straight to the rows (table-nav.js); read in the same task, as
@@ -2435,8 +2528,8 @@ class DesktopContext implements Context
 	/** Fill the new connection as this driver's user and send it, marking the page it leaves
 	 * (window.e2eSubmitted) so a step can tell the answer from the form.
 	 *
-	 * The page it leaves also watches its own indicator, on a timer, and notes in sessionStorage
-	 * once it turns: polled from the test instead, a page already navigating away was missed on a
+	 * The page it leaves also watches its own wait, on a timer, and notes in sessionStorage
+	 * once Cancel turns in Login's place: polled from the test instead, a page already navigating away was missed on a
 	 * CI runner now and then, the wait then ran into the answer, and the step timed out.
 	 */
 	private function submitLogin(string $server, string $password): void
@@ -2458,17 +2551,24 @@ class DesktopContext implements Context
 				"input[name=\"auth[$name]\"]",
 			)->fill($value);
 		}
+		$this->login = (array) $this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const box = document.querySelector(\'#ad-new-connection-dialog input[type="submit"]\').getBoundingClientRect();
+				return { x: box.right - 8, y: box.top + box.height / 2 };
+			}',
+		);
 		$this->page->evaluate(
 			// language=JavaScript
 			'() => {
-				sessionStorage.removeItem("e2e-busy-turned");
+				sessionStorage.removeItem("e2e-login-waited");
+				const dialog = document.querySelector("#ad-new-connection-dialog");
 				const watch = setInterval(() => {
-					const busy = document.querySelector("#ad-busy:popover-open");
-					// Past its fade-in, asked of the animation: on a page navigating away, Playwright\'s WebKit
-					// keeps the computed opacity at the first frame, though the app\'s window shows it.
-					if (busy && !busy.getAnimations().some((a) => a.animationName === "ad-appear" && a.playState !== "finished")
-						&& busy.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running")) {
-						sessionStorage.setItem("e2e-busy-turned", "1");
+					const cancel = dialog.querySelector(".ad-connect-cancel");
+					if (cancel.checkVisibility() && !dialog.querySelector(\'input[type="submit"]\').checkVisibility()
+						&& !document.querySelector("#ad-busy:popover-open")
+						&& cancel.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running")) {
+						sessionStorage.setItem("e2e-login-waited", "1");
 						clearInterval(watch);
 					}
 				}, 50);

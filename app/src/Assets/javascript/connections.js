@@ -29,6 +29,27 @@ if (permanent) {
 
 const login = document.querySelector('[name="auth[driver]"]')?.form;
 
+// A server that never answers keeps the login waiting until the connection times out, minutes on
+// some networks. The wait shows in the modal (busy.js), and Cancel, or closing the modal, stops it:
+// window.stop() drops the request, and the server, no longer holding the session for it
+// (patches/adminer-connect-without-session-lock.patch), serves the next one straight away.
+if (login) {
+	login.setAttribute("data-busy-here", "");
+	const cancel = () => {
+		if (login.classList.contains("ad-waiting")) {
+			window.stop();
+			login.classList.remove("ad-waiting");
+		}
+	};
+	const button = login.querySelector(".ad-connect-cancel");
+	button?.addEventListener("click", cancel);
+	// The focus follows Login to Cancel, so Enter stops the wait rather than sending it twice.
+	login.addEventListener("submit", () => button?.focus());
+	document
+		.querySelector("#ad-new-connection-dialog")
+		?.addEventListener("close", cancel);
+}
+
 // A login that failed comes back as this page with the modal open again on its fields, and
 // adminer's error at the top of the page, behind it: moved into the modal, where it is read beside
 // them. The password comes back too, which adminer never prints: kept in this tab for the one

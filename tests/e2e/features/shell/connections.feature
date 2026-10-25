@@ -18,7 +18,7 @@ Feature: Saved connections
     When I ask for a new connection
     Then the login form is shown
     And Permanent login is ticked
-    And logging in, from the form or a card, shows the activity indicator
+    And logging in waits in the modal from the form, and under the activity indicator from a card
 
   Scenario: Without a title bar the version and the gear are still at the foot
     Given the window has no title bar
@@ -30,10 +30,20 @@ Feature: Saved connections
     When I log in with the password "not-the-password"
     Then the new connection says why, with what I typed still in it
 
-  Scenario: A login that waits shows the activity indicator, then says why it failed
+  Scenario: A login that waits shows it in the modal, then says why it failed
     When I log in to a server that does not answer
-    Then the activity indicator turns while it waits
+    Then the login waits in the modal, with Cancel turning in place of Login
     And the new connection says why, with what I typed still in it
+
+  Scenario: A login that waits can be cancelled, and leaves nothing waiting behind it
+    When I log in to a server that does not answer
+    And I cancel the login
+    Then the login waited in the modal, with Cancel turning in place of Login
+    And the login stops waiting, with what I typed still in it
+    And the next page in the session answers straight away
+
+  Scenario: A Cancel before the login is sent keeps it from going out
+    Then a Cancel before the login is sent keeps it from being sent
 
   Scenario: A name, an environment and a colour stick, and follow you in
     When I label the connection "Fixture" as "prod" in "purple"

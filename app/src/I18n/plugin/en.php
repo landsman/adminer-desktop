@@ -42,6 +42,7 @@ return [
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
+	'connections.cancel' => 'Cancel',
 	// Atop the editor that opens on the first page a new connection lands on.
 	'connections.added' => 'Connected. Name it, so it is easy to tell apart from the others.',
 	'connections.empty' => 'No saved connections yet.',

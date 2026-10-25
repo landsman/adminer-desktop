@@ -17,6 +17,13 @@
 
 	window.desktopBusy = (on = true) => indicator?.togglePopover(on);
 
+	// A form with data-busy-here shows its own wait, by the ad-waiting class, in place of the
+	// indicator over the page: the login, whose modal offers a Cancel meanwhile (connections.js).
+	const waitOn = (form, on = true) =>
+		form.hasAttribute("data-busy-here")
+			? form.classList.toggle("ad-waiting", on)
+			: window.desktopBusy(on);
+
 	// Two frames: the first draws the indicator, the second starts once that frame is out.
 	const afterPaint = (then) =>
 		requestAnimationFrame(() => requestAnimationFrame(then));
@@ -70,8 +77,15 @@
 			if (!resent.has(form) && leavesBy(form, event.submitter)) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
-				window.desktopBusy();
+				waitOn(form);
 				afterPaint(() => {
+					// Cancelled in the meantime: the wait it shows is already gone.
+					if (
+						form.hasAttribute("data-busy-here") &&
+						!form.classList.contains("ad-waiting")
+					) {
+						return;
+					}
 					resent.add(form);
 					form.requestSubmit(event.submitter);
 				});
@@ -88,7 +102,7 @@
 			event.defaultPrevented &&
 			form.method === "post"
 		) {
-			window.desktopBusy(false);
+			waitOn(form, false);
 		}
 	});
 
@@ -122,6 +136,9 @@
 	addEventListener("pageshow", (event) => {
 		if (event.persisted) {
 			window.desktopBusy(false);
+			for (const form of document.querySelectorAll(".ad-waiting")) {
+				form.classList.remove("ad-waiting");
+			}
 		}
 	});
 }

@@ -21,7 +21,8 @@ waits are listed that way.
 |---|---|---|
 | A link in the content followed | a connection's card; the lists of databases and of tables; Select data | nothing: busy.js takes every one, but a download and an anchor on the same page |
 | A link elsewhere followed | the sidebar's tables on a gallery design | `data-busy` on it or on an element around it |
-| A form in the content sent, GET or POST | logging in; a SQL command; Select over a table's rows | nothing: busy.js takes every one ahead of adminer's own handler, but an export saved to a file |
+| A form in the content sent, GET or POST | a SQL command; Select over a table's rows | nothing: busy.js takes every one ahead of adminer's own handler, but an export saved to a file |
+| A form with `data-busy-here` sent | logging in | its own `ad-waiting` class instead: the login modal turns Login into a Cancel (`connections.js`) |
 | A form elsewhere sent | none yet | `data-busy` on it or on an element around it |
 | A script setting `location` | the sidebar's tables on our design (`table-nav.js`); the search | `window.desktopGo(href)` in its place |
 | Adminer's `form.submit()` on `#dbs` | the database and schema menus | a change listener in busy.js |
