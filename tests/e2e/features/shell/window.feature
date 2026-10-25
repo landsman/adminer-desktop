@@ -65,6 +65,12 @@ Feature: The window without a title bar
     And I hide the sidebar
     Then the sidebar is hidden
     And the sidebar's toggle overlaps nothing
+    And the settings gear overlaps nothing
+
+  Scenario: With no gutter between the panels, the sidebar's handle still takes a drag
+    When I open the "users" table
+    And I drag the sidebar handle 120 pixels right
+    Then the sidebar is at least 90 pixels wider
 
   Scenario: On a phone-sized window the toolbar still fits, beside the burger, and the drawer is filled
     When the window is 390 pixels wide

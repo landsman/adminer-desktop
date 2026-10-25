@@ -798,10 +798,18 @@
 		left: var(--ad-tool-after-lights);
 	}
 
-	/* The path starts as far past the button as the button is past the lights. */
+	/* The gear follows the toggle; left at the sidebar's end it sat on the toolbar's title. */
+	.ad-frameless .ad-sidebar-hidden #desktop-gear {
+		left: calc(
+			var(--ad-tool-after-lights) + var(--ad-tool) + var(--ad-tool-gap)
+		);
+	}
+
+	/* The path starts as far past the buttons as they are past the lights. */
 	.ad-frameless .ad-sidebar-hidden #content #breadcrumb {
 		padding-inline-start: calc(
-			var(--ad-tool-after-lights) + var(--ad-tool) + 16px
+			var(--ad-tool-after-lights) + 2 * var(--ad-tool) + var(--ad-tool-gap) +
+				16px
 		);
 	}
 }

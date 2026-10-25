@@ -184,35 +184,16 @@ if (headers.length) {
 		const grip = document.createElement("div");
 		grip.className = "ad-column-grip";
 		th.append(grip);
-
-		// The table's own onclick is adminer's tableClick, which walks up from whatever was
-		// clicked to the row it is in and ticks that row's checkbox — on the header row, that is
-		// "select every row". A drag ends in a click on the grip like any other press, so the
-		// click stops here rather than reaching the table. dblclick too: it is bound as well, and
-		// two quick drags of the same edge are otherwise one.
-		for (const bubbling of ["click", "dblclick"]) {
-			grip.addEventListener(bubbling, (event) => event.stopPropagation());
-		}
-
-		let startX = 0;
-		let startWidth = 0;
-		grip.addEventListener("pointerdown", (event) => {
-			pinColumns();
-			startX = event.clientX;
-			startWidth = th.getBoundingClientRect().width;
-			grip.setPointerCapture(event.pointerId);
-			// The header is a sort link and the rows are selectable; this is neither.
-			event.preventDefault();
-		});
-		grip.addEventListener("pointermove", (event) => {
-			if (grip.hasPointerCapture(event.pointerId)) {
-				setWidth(th, startWidth + event.clientX - startX);
-			}
-		});
-		grip.addEventListener("pointerup", (event) => {
-			grip.releasePointerCapture(event.pointerId);
-			rememberWidth(th, th.getBoundingClientRect().width);
-			askForEnoughText(th);
+		window.desktopDragWidth(grip, {
+			grab: () => {
+				pinColumns();
+				return th.getBoundingClientRect().width;
+			},
+			set: (width) => setWidth(th, width),
+			done: () => {
+				rememberWidth(th, th.getBoundingClientRect().width);
+				askForEnoughText(th);
+			},
 		});
 	};
 

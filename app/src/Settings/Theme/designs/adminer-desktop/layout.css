@@ -70,6 +70,10 @@ body {
    add no net width or the content jumps aside on every load: the negative margins take back
    its own 5px and the second gap it opens in the row, centring it in the gap that was there. */
 #ad-sidebar-resizer {
+	/* Over the panels its margins overlap: both are positioned, so with no gutter between them
+	   (window.css) they painted over it whole and it never got the press. */
+	position: relative;
+	z-index: 1;
 	flex: 0 0 5px;
 	margin: 0 calc((5px + var(--ad-gutter)) / -2);
 	cursor: col-resize;
