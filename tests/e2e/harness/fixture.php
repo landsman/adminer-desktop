@@ -89,7 +89,7 @@ function e2e_database(array $driver): string
 		$run = new Process(array_merge(
 			['docker', 'run', '-d', '--name', $name],
 			array_merge(...array_map(fn (string $env): array => ['-e', $env], (array) $driver['env'])),
-			['-p', "{$driver['hostPort']}:{$driver['port']}", (string) $driver['image']],
+			['-p', "127.0.0.1:{$driver['hostPort']}:{$driver['port']}", (string) $driver['image']],
 		));
 		$run->run();
 		if (!$run->isSuccessful()) {

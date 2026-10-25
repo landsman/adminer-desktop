@@ -441,7 +441,7 @@ DEMO_MYSQL = adminer-demo-mysql
 
 demo: build app/vendor  ## Run against seeded demo data, opened logged in (needs docker)
 	@docker start $(DEMO_PG) >/dev/null 2>&1 || docker run -d --name $(DEMO_PG) \
-		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 55432:5432 postgres:18-alpine >/dev/null
+		-e POSTGRES_PASSWORD=demo -e POSTGRES_DB=demo -p 127.0.0.1:55432:5432 postgres:18-alpine >/dev/null
 	@echo "waiting for postgres ..." && until docker exec $(DEMO_PG) pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
 	@docker exec -i $(DEMO_PG) psql -U postgres -d demo -v ON_ERROR_STOP=1 < tests/e2e/seed/pgsql.sql >/dev/null
 	@echo "demo data ready on 127.0.0.1:55432 (postgres / demo / demo)"
