@@ -93,6 +93,7 @@ class Server {
 			return $this->result($id, [
 				'content' => [['type' => 'text', 'text' => $e->getMessage()]],
 				'isError' => true,
+				'_meta' => self::meta($this->tools->where() + ['refused' => $e->refused]),
 			]);
 		} catch (\Throwable $e) {
 			return $this->error($id, -32603, $e->getMessage());
@@ -220,13 +221,30 @@ class Server {
 			default => throw new McpError(Strings::t('mcp.agent_unknown_tool') . ": $name"),
 		};
 
+		// A write that writes off or a Prod connection undid. ponytail: a write with RETURNING
+		// answers rows and no affected_rows, so it is not counted; parse the SQL if that matters.
+		$refused = $name === 'execute_query' && $payload['rolled_back'] && ($payload['affected_rows'] ?? 0) > 0;
+
 		// JSON in a text block: every MCP client renders it, and the model reads structured data
 		// better than a table drawn in spaces. Throwing, because json_encode()'s false cast to
 		// a string is an empty answer the agent cannot tell from no rows.
-		return ['content' => [[
-			'type' => 'text',
-			'text' => json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-		]]];
+		return [
+			'content' => [[
+				'type' => 'text',
+				'text' => json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+			]],
+			'_meta' => self::meta($this->tools->where() + ['refused' => $refused]),
+		];
+	}
+
+	/** Where a tool call ran and whether it was refused, under our own key: MCP allows `_meta` in a
+	* result and clients ignore it, and the bridge copies it into the record (launcher/mcpbridge).
+	*
+	* @param array<string,mixed> $call
+	* @return array<string,mixed>
+	*/
+	private static function meta(array $call): array {
+		return ['adminer-desktop/call' => $call];
 	}
 
 	private function required(string $value, string $name): string {

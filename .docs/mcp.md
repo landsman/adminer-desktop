@@ -135,21 +135,15 @@ checked, and on MySQL 8 a privilege held only through a granted role is not seen
 
 ## Seeing what the agent did
 
-Every request is logged — one line per call, with the time, the method, the tool and what was
-asked (the SQL for a query, the table for anything else). The **Open Logs** menu item opens the
-folder it sits in; the file is `mcp-YYYY-MM-DD.log`.
+- Every message the agent sends is logged by the bridge it spawned, one JSON object per line, in `mcp-YYYY-MM-DD.log`. **Open Logs** opens the folder.
+- Each line has the time, the `status`, `duration_ms`, the method and tool, the connection and database the call ran on, the error text when there was one, and the whole request.
+- `status` is `ok`, `error` (the tool answered with an error), `refused` (a write undone because writes are off or the connection is Prod, or a login that reaches too far), `timeout`, `window closed`, `not running`, `session expired` or `cancelled`. The last five never reached the app.
+- `bridge-exit` is the process the agent started stopping, and why: *the client closed stdin* or *the client sent …* is the agent letting go.
+- Lines from before this format are tab-separated: time, method, tool, what was asked.
 
+```json
+{"time":"2026-08-03T14:22:11.402Z","status":"ok","duration_ms":38,"method":"tools/call","tool":"execute_query","connection":"pgsql|db.example.com|app","connection_name":"Shop","database":"shop","request":{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"execute_query","arguments":{"sql":"SELECT id, email FROM users LIMIT 20"}}}}
 ```
-2026-08-03T14:22:07Z	tools/call	list_tables
-2026-08-03T14:22:11Z	tools/call	execute_query	SELECT id, email FROM users LIMIT 20
-2026-08-03T14:22:19Z	tools/call	list_tables	[pgsql|db.example.com|app shop]
-2026-08-03T14:40:02Z	bridge-exit		the client sent interrupt
-```
-
-A call on another connection or database carries it in brackets. `bridge-exit` is the process the
-agent started stopping, and why: *the client closed stdin* or *the client sent …* is the agent
-letting go, which it does not log itself — a server that is just gone otherwise looks like one
-that crashed.
 
 A file per day, so today's cannot grow without bound and yesterday's is left exactly as it was.
 Files older than two weeks are removed on the next write, so a machine left running does not

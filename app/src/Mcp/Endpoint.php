@@ -38,10 +38,9 @@ class Endpoint {
 	private Handshake $handshake;
 	private Server $server;
 	private Activity $activity;
-	private RequestLog $log;
 	private ?Connections $connections;
 
-	/** The ?mcp= value of a call passed on from another request, which has logged it already.
+	/** The ?mcp= value of a call passed on from another request, which has counted it already.
 	* Anyone may set it, and that is fine: the gate sends an agent only to ?mcp=1, and a caller
 	* reaching this server directly with the window's cookies holds the whole session anyway. */
 	private const string FORWARDED = 'forwarded';
@@ -49,7 +48,7 @@ class Endpoint {
 	/** The JSON-RPC code of an answer from a request adminer could not connect. */
 	private const int NOT_CONNECTED = -32000;
 
-	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?RequestLog $log = null, ?Connections $connections = null) {
+	function __construct(UserSettings $settings, ?Handshake $handshake = null, ?Server $server = null, ?Activity $activity = null, ?Connections $connections = null) {
 		$this->settings = $settings;
 		$this->handshake = $handshake ?? new Handshake();
 		$this->connections = $connections;
@@ -62,7 +61,6 @@ class Endpoint {
 		// may name, and states the Prod exception in words.
 		$this->server = $server ?? new Server(new Tools($write, $whole, $connections), $allowed, $whole);
 		$this->activity = $activity ?? new Activity();
-		$this->log = $log ?? new RequestLog();
 	}
 
 	/** The hook body. Returns null so the hook has no opinion for other plugins; the MCP path
@@ -94,13 +92,10 @@ class Endpoint {
 		}
 		header("Content-Type: application/json");
 		$input = (string) file_get_contents("php://input");
-		// Before answering, so a call that goes on to fail still shows up: "something asked me
-		// this and it broke" is exactly as worth seeing as a call that worked.
-		$now = time();
+		// Before answering, so a call that goes on to fail still counts. What it was and how it went
+		// is the bridge's record (launcher/mcpbridge record.go): it sees the calls that never get here.
 		if ($_GET["mcp"] !== self::FORWARDED) {
-			[$method, $tool, $detail] = $this->describe($input);
-			$this->activity->record($method, $now);
-			$this->log->append($method, $tool, $detail, $now);
+			$this->activity->record($this->method($input), time());
 		}
 		$answer = $this->answer($input, $connected);
 		// header(), not http_response_code(): a POST with no form fields — a JSON body — is what
@@ -191,35 +186,14 @@ class Endpoint {
 		return \Adminer\DB;
 	}
 
-	/** The JSON-RPC method a request is asking for, for the record of what an agent did.
+	/** The JSON-RPC method a request is asking for, for when an agent last called.
 	*
 	* Its own tiny parse rather than reaching into Server: this runs whether or not we are
 	* connected, and a malformed body still counts as an agent having called.
 	*/
-	/** @return array{0:string,1:string,2:string} method, tool, and the argument worth logging */
-	private function describe(string $input): array {
+	private function method(string $input): string {
 		$message = json_decode($input, true);
-		if (!is_array($message)) {
-			// Still a call, and a malformed one is worth seeing in the log rather than dropping.
-			return ['unknown', '', ''];
-		}
-		$method = isset($message['method']) && is_string($message['method']) ? $message['method'] : 'unknown';
-		$params = is_array($message['params'] ?? null) ? $message['params'] : [];
-		$tool = isset($params['name']) && is_string($params['name']) ? $params['name'] : '';
-		$args = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
-		// The SQL for a query, the table for everything else: what was asked, never what came
-		// back. Results are the database's contents, and a plaintext copy of those beside it
-		// would be a worse leak than the access being recorded.
-		$detail = '';
-		foreach (['sql', 'table'] as $key) {
-			if (isset($args[$key]) && is_string($args[$key])) {
-				$detail = $args[$key];
-				break;
-			}
-		}
-		// And where, when the call named somewhere other than the window.
-		$where = trim(implode(' ', array_filter([$args['connection'] ?? '', $args['database'] ?? ''], 'is_string')));
-		return [$method, $tool, $where !== '' ? "[$where] $detail" : $detail];
+		return is_array($message) && is_string($message['method'] ?? null) ? $message['method'] : 'unknown';
 	}
 
 	/** The body to answer an MCP request with, or null for 204.

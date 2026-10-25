@@ -146,6 +146,21 @@ class Tools {
 		] + (\Adminer\DB === '' ? ['note' => Strings::t('mcp.agent_note_no_database')] : []);
 	}
 
+	/** Where a call ran, for the _meta of its answer: the bridge copies it into the record of what
+	* an agent did (launcher/mcpbridge record.go), and with a call free to name another connection
+	* or database, the window's would be the wrong answer. Not connection(): that asks the server.
+	*
+	* @return array{connection:string,connection_name:string,database:string}
+	*/
+	function where(): array {
+		$current = $this->connections?->current();
+		return [
+			'connection' => $current?->key() ?? '',
+			'connection_name' => $current?->title() ?? '',
+			'database' => defined('Adminer\DB') ? \Adminer\DB : '',
+		];
+	}
+
 	/** Every saved connection, the way the start screen lists them, with the id the other tools
 	* take as `connection`. Signed-out ones too, so the agent can say which one to sign in to
 	* rather than that it does not exist. `databases` is the ones opened before; list_databases
@@ -202,7 +217,7 @@ class Tools {
 			default => [],
 		};
 		if ($found !== []) {
-			throw new McpError(Strings::t('mcp.agent_overprivileged') . ': ' . implode(', ', $found));
+			throw new McpError(Strings::t('mcp.agent_overprivileged') . ': ' . implode(', ', $found), refused: true);
 		}
 	}
 

@@ -64,7 +64,8 @@ func serveMCP() error {
 	// Write errors on a closed stdout come back as EPIPE, so the reason below gets logged; Go's
 	// default for fd 1 is to die of SIGPIPE before it can be.
 	signal.Ignore(syscall.SIGPIPE)
-	bridge := mcpbridge.New()
+	logs, _ := logDir() // "" writes no record, and the bridge still works
+	bridge := mcpbridge.New(logs)
 	done := make(chan error, 1)
 	go func() { done <- bridge.Run(os.Stdin, os.Stdout) }()
 
@@ -94,16 +95,8 @@ func serveMCP() error {
 // a server that is simply gone.
 func logBridgeExit(why string) {
 	fmt.Fprintln(os.Stderr, "adminer-desktop -mcp stopped: "+why)
-	dir, err := logDir()
-	if err != nil {
-		return
-	}
-	// The format Desktop\Mcp\RequestLog writes: time, method, tool, detail, a tab between.
-	now := time.Now().UTC()
-	path := filepath.Join(dir, "mcp-"+now.Format(time.DateOnly)+".log")
-	if f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600); err == nil {
-		fmt.Fprintf(f, "%s\tbridge-exit\t\t%s\n", now.Format(time.RFC3339), why) //nolint:errcheck // best effort on the way out
-		f.Close()                                                                //nolint:errcheck
+	if dir, err := logDir(); err == nil {
+		mcpbridge.LogExit(dir, why)
 	}
 }
 

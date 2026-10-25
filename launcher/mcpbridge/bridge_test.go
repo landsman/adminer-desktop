@@ -750,7 +750,7 @@ func TestFindsTheLaunchersDataDir(t *testing.T) {
 	}))
 	defer app.Close()
 	handshake(t, dir, app.URL+"/adminer.php?pgsql=x")
-	if got := New().Exchange(listTools()); got == nil || *got != `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}` {
+	if got := New("").Exchange(listTools()); got == nil || *got != `{"jsonrpc":"2.0","id":7,"result":{"tools":[]}}` {
 		t.Errorf("the bridge did not use the launcher's data dir: %v", got)
 	}
 }
