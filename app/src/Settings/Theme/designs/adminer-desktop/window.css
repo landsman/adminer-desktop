@@ -38,6 +38,32 @@
 		inset 0 0 0 1px light-dark(rgb(255 255 255 / 40%), rgb(255 255 255 / 10%)),
 		0 0 0 0.5px light-dark(rgb(0 0 0 / 12%), rgb(0 0 0 / 40%)),
 		0 2px 10px rgb(0 0 0 / 8%);
+	/* What hovering lays on a control: Mail's grey disc behind the one under the pointer. */
+	--ad-glass-hover: light-dark(rgb(0 0 0 / 7%), rgb(255 255 255 / 12%));
+	/* Overshoots a touch on the way out, so a press swells and settles as macOS 26's glass does. */
+	--ad-glass-spring: cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+/* Held down, the one control under the pointer grows — in a group the segment, not the capsule.
+   Scale, not transform, so the gear's own transform stays. */
+@media (prefers-reduced-motion: no-preference) {
+	.ad-frameless
+		:is(.ad-history button, .ad-toolbar-actions a, .ad-toolbar-sort) {
+		transition:
+			scale 0.25s var(--ad-glass-spring),
+			background-color 0.15s;
+	}
+
+	.ad-frameless
+		:is(
+			.ad-history button:not(:disabled),
+			.ad-toolbar-actions a,
+			.ad-toolbar-sort,
+			#ad-sidebar-toggle,
+			#desktop-gear
+		):active {
+		scale: 1.1;
+	}
 }
 
 /* Not on the login page, whose one column stays a card on the window's surface. */
@@ -164,6 +190,7 @@
 }
 
 .ad-frameless #content #breadcrumb .ad-history button:hover:not(:disabled) {
+	background-color: var(--ad-glass-hover);
 	color: var(--fg);
 }
 
@@ -315,10 +342,12 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	height: 100%;
+	/* Short of the capsule's height, so the hover's disc sits inside it with a rim of glass round it. */
+	height: calc(100% - 6px);
 	/* Not adminer's 20px after each link (.links a in default.css), which spaced the segments apart. */
 	margin: 0;
 	padding: 0 10px;
+	border-radius: 15px;
 	color: color-mix(in srgb, var(--fg) 85%, transparent);
 	text-decoration: none;
 }
@@ -332,6 +361,7 @@
 }
 
 .ad-frameless #breadcrumb .ad-toolbar-actions a:hover {
+	background-color: var(--ad-glass-hover);
 	color: var(--fg);
 	text-decoration: none;
 }
@@ -442,7 +472,8 @@
 
 .ad-frameless .ad-toolbar-sort:hover,
 .ad-frameless .ad-toolbar-sort[aria-expanded="true"] {
-	background: var(--ad-glass-bg);
+	background: linear-gradient(var(--ad-glass-hover), var(--ad-glass-hover))
+		var(--ad-glass-bg);
 	color: var(--fg);
 }
 
@@ -758,12 +789,18 @@
 		box-shadow: var(--ad-glass-shadow);
 		color: color-mix(in srgb, var(--fg) 70%, transparent);
 		/* Not their position: they jump to their place, at once, rather than glide after it. */
-		transition: background-color 0.15s;
+		transition:
+			background-color 0.15s,
+			scale 0.25s var(--ad-glass-spring);
 	}
 
+	/* The gear's qualifier repeated, or its rule above outweighs this one and the hover never shows. */
 	.ad-frameless #ad-sidebar-toggle:hover,
-	.ad-frameless #desktop-gear:hover {
-		background: var(--bg);
+	.ad-frameless
+		body:not(:has(input[name="auth[username]"]))
+		#desktop-gear:hover {
+		background: linear-gradient(var(--ad-glass-hover), var(--ad-glass-hover))
+			var(--ad-glass-bg);
 		color: var(--fg);
 	}
 
