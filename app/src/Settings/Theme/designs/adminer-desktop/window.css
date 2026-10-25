@@ -66,12 +66,20 @@
 .ad-frameless #content #breadcrumb {
 	height: var(--ad-titlebar-h);
 	margin-bottom: 0.25rem;
+	/* The search ends Mail's inset off the window's edge, as the sidebar's rows do off theirs. */
+	padding-inline-end: var(--ad-side-inset);
 	border-bottom: 1px solid transparent;
 	transition: border-color 0.2s ease;
 	background: color-mix(in srgb, var(--ad-panel) 60%, transparent);
 	-webkit-backdrop-filter: saturate(1.8) blur(20px);
 	backdrop-filter: saturate(1.8) blur(20px);
 	font-size: 13px;
+}
+
+/* What adminer sticks to the panel's top (a table's header row, a long query's message) sticks
+   under the toolbar instead: at 0 it went behind it, the rows showing through its frosted fill. */
+.ad-frameless #content :is(thead, #ajaxstatus.sticky) {
+	top: var(--ad-titlebar-h);
 }
 
 .ad-frameless:is(.ad-content-scrolled, .ad-window-inactive)
@@ -813,41 +821,6 @@
 		);
 	}
 }
-
-/* Legacy scrollbars (a mouse plugged in: the launcher's ad-legacy-scrollers), drawn as Mail draws
-   them under no title bar: the track starts below the toolbar's band rather than at the window's
-   top edge, and the thumb is a rounded bar inset in it, not WebKit's square grey slab. The
-   overlay ones are scrollers.js's, and keep the same clear band. */
-.ad-frameless.ad-legacy-scrollers :is(#menu, #content)::-webkit-scrollbar {
-	width: 16px;
-	height: 16px;
-	background: transparent;
-}
-
-.ad-frameless.ad-legacy-scrollers
-	:is(#menu, #content)::-webkit-scrollbar-track:vertical {
-	margin-top: var(--ad-titlebar-h);
-}
-
-.ad-frameless.ad-legacy-scrollers
-	:is(#menu, #content)::-webkit-scrollbar-thumb {
-	min-height: 32px;
-	/* A 9px bar in a 16px track, Mail's. */
-	border: 3.5px solid transparent;
-	border-radius: 8px;
-	background: color-mix(in srgb, var(--fg) 34%, transparent) padding-box;
-}
-
-.ad-frameless.ad-legacy-scrollers
-	:is(#menu, #content)::-webkit-scrollbar-thumb:hover {
-	background-color: color-mix(in srgb, var(--fg) 50%, transparent);
-}
-
-.ad-frameless.ad-legacy-scrollers
-	:is(#menu, #content)::-webkit-scrollbar-corner {
-	background: transparent;
-}
-
 /* Their transitions are for the sidebar sliding in and out: during a drag of its width they eased
    every pixel of it, so the path bar trailed the pointer (drag-width.js). */
 .ad-frameless.ad-dragging :is(#ad-pathbar, #foot) {

@@ -211,8 +211,8 @@ body.theme-dark .icon {
  * Only while the system draws overlay scrollbars. With a mouse plugged in, or System Settings set
  * to Always, macOS draws legacy ones that stay on screen, and so does every native app — Mail
  * included; the launcher says which (ad-legacy-scrollers on <html>, installScrollerStyle), and then
- * WebKit's own are left as they are, the panels' too. A plain browser is never told, and keeps
- * the overlay behaviour. */
+ * WebKit's own are left as they are, except the panels' (below). A plain browser is never told,
+ * and keeps the overlay behaviour. */
 :root:not(.ad-legacy-scrollers) .os-mac * {
 	scrollbar-width: thin;
 	scrollbar-color: transparent transparent;
@@ -223,10 +223,11 @@ body.theme-dark .icon {
 }
 
 /* Even transparent, that bar keeps its width, so every rule in the two panels stopped one
-   scrollbar short of the right edge. The panels scroll by trackpad and wheel, as macOS's own
-   overlay scrollbars do when hidden; the scrollers inside them keep theirs. */
-:root:not(.ad-legacy-scrollers) .os-mac #menu,
-:root:not(.ad-legacy-scrollers) .os-mac #content {
+   scrollbar short of the right edge. A legacy one takes the same column, and the toolbar's
+   hairline and search stopped short of it. So the panels' bars are scrollers.js's in both modes;
+   the scrollers inside them keep theirs. */
+.os-mac #menu,
+.os-mac #content {
 	scrollbar-width: none;
 }
 
@@ -249,6 +250,14 @@ body.theme-dark .icon {
 	opacity: 1;
 	pointer-events: auto;
 	transition-duration: 0.1s;
+}
+
+/* Legacy: Mail's 9px bar, always there (scrollers.js keeps it shown), in the grey WebKit's had. */
+.ad-legacy-scrollers .ad-thumb {
+	width: 9px;
+	height: 9px;
+	border-radius: 5px;
+	background: color-mix(in srgb, var(--fg) 34%, transparent);
 }
 
 .ad-thumb:hover,
