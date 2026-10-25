@@ -31,6 +31,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',
+	'connections.switch' => 'Schimbă conexiunea',
 	'connections.cancel' => 'Anulează',
 	'connections.added' => 'Conectat. Dă-i un nume, ca s-o deosebești ușor de celelalte.',
 	'connections.empty' => 'Încă nu există conexiuni salvate.',

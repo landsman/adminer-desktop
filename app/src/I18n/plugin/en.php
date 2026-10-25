@@ -42,6 +42,8 @@ return [
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
+	// The badge atop the sidebar, which leads back to the saved connections (connection-badge.latte).
+	'connections.switch' => 'Change connection',
 	'connections.cancel' => 'Cancel',
 	// Atop the editor that opens on the first page a new connection lands on.
 	'connections.added' => 'Connected. Name it, so it is easy to tell apart from the others.',

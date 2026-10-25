@@ -31,6 +31,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Nové pripojenie',
+	'connections.switch' => 'Zmeniť pripojenie',
 	'connections.cancel' => 'Zrušiť',
 	'connections.added' => 'Pripojené. Pomenujte ho, aby ste ho ľahko rozoznali od ostatných.',
 	'connections.empty' => 'Zatiaľ žiadne uložené pripojenia.',
