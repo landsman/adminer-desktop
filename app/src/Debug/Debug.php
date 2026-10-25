@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
+use Desktop\Env;
+use Desktop\UserSettings;
 use Tracy\Debugger;
 
 /** Turn Tracy on when the app was started with -debug.

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
 use Tracy\IBarPanel;
 

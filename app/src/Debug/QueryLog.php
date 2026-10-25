@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
 use Dibi\Bridges\Tracy\Panel;
 use Dibi\Connection;
@@ -71,7 +71,7 @@ class QueryLog extends \Adminer\Plugin implements IBarPanel {
 	function getPanel(): ?string {
 		$panel = $this->panel->getPanel();
 		return $panel === null ? null : '<style>
-			#tracy-debug [id^="tracy-debug-panel-Desktop-QueryLog"]:not(.tracy-panel-resized) {
+			#tracy-debug [id^="tracy-debug-panel-Desktop-Debug-QueryLog"]:not(.tracy-panel-resized) {
 				max-width: calc(100vw - 20px);
 				max-height: calc(100vh - 60px);
 			}

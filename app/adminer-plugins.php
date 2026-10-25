@@ -10,7 +10,7 @@ declare(strict_types=1);
 // in anything below still lands on Tracy's screen rather than a blank page. Debug::enable()
 // does nothing unless the app was started with -debug.
 require_once __DIR__ . "/vendor/autoload.php";
-Desktop\Debug::enable();
+Desktop\Debug\Debug::enable();
 
 // Ours, always on — it is app behaviour, not an optional plugin. Global namespace and named
 // Adminer*, so it is not part of the Desktop\ PSR-4 tree; required, not autoloaded.
@@ -32,4 +32,4 @@ $desktop->handlePost();
 // handlePost() first: ticking a plugin and seeing it take effect on the same request is the
 // whole point of saving before this line rather than after it. The debug ones first: the SQL
 // panel only notes the queries a hook reports and abstains, so no plugin can skip it.
-return array_merge(Desktop\Debug::plugins(), [$desktop], $desktop->plugins()->instances());
+return array_merge(Desktop\Debug\Debug::plugins(), [$desktop], $desktop->plugins()->instances());

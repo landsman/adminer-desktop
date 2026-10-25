@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop;
+namespace Desktop\Debug;
 
+use Desktop\UserSettings;
 use Tracy\IBarPanel;
 
 /** Tracy bar panel that prints the user's persistent settings file — its path and current
