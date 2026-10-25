@@ -140,8 +140,8 @@ func LogExit(logs, why string) {
 }
 
 // append writes one line with one O_APPEND write, which several bridges and concurrent calls
-// cannot interleave, and prunes what is past keepDays. Rotation is the filename: a new day names
-// a new file, and yesterday's is left exactly as it was.
+// cannot interleave, and prunes what is past keepDays once a day. Rotation is the filename: a new
+// day names a new file, and yesterday's is left exactly as it was.
 func (b *Bridge) append(l line, at time.Time) {
 	if b.logs == "" {
 		return
@@ -159,7 +159,9 @@ func (b *Bridge) append(l line, at time.Time) {
 	}
 	f.Write(buf.Bytes()) //nolint:errcheck // a record that cannot be written must not fail the call
 	f.Close()            //nolint:errcheck
-	prune(b.logs, at)
+	if day := at.UTC().Format(time.DateOnly); b.pruned.Swap(day) != day {
+		prune(b.logs, at)
+	}
 }
 
 var dayFile = regexp.MustCompile(`^mcp-(\d{4}-\d{2}-\d{2})\.log$`)

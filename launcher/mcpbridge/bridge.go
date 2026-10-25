@@ -32,6 +32,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/landsman/adminer-desktop/launcher/datadir"
@@ -85,6 +86,7 @@ const callTimeout = 60 * time.Second
 type Bridge struct {
 	dir    string        // where mcp.json and settings.json live; "" when the app has no durable home
 	logs   string        // where the day's mcp-YYYY-MM-DD.log goes; "" writes none
+	pruned atomic.Value  // the UTC day prune() last ran for, so it runs once a day, not per call
 	idle   time.Duration // callTimeout, shorter in a test
 	locale string
 }
