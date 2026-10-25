@@ -3135,7 +3135,15 @@ class DesktopContext implements Context
 		$this->page->addInitScript(
 			// language=JavaScript
 			'window.adDrags = 0;
-			window.adminer = { native: { dragWindow: () => { window.adDrags++; }, titlebarDoubleClick: () => {} } };
+			// All of AdminerNative (api.js), not only the two used here: a script calls the rest
+			// without a ?. once native is there.
+			window.adminer = { native: {
+				loaderShown() {},
+				setBackground() {},
+				setAppearance() {},
+				dragWindow: () => { window.adDrags++; },
+				titlebarDoubleClick() {},
+			} };
 			// The sidebar is see-through there, onto the system material the launcher puts behind the
 			// page; Playwright has none, so the sidebar colour stands in, or axe reads its text on white.
 			const mark = () => {
