@@ -36,7 +36,7 @@ help:  ## Show this help
 
 ##@ Setup
 
-# mise owns the dev toolchain (node, go, composer + npm deps, the Chromium e2e browser) —
+# mise owns the dev toolchain (node, go, composer + npm deps, the WebKit e2e browser) —
 # one entry point so its version pins stay in one place. On Linux the webview also needs
 # GTK/WebKit dev headers, which are a distro package rather than a mise tool, so install
 # runs linux-deps there too. Toolchain first, then `fetch` for the downloads (adminer +

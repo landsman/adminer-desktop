@@ -777,7 +777,12 @@ class DesktopContext implements Context
 
 	// ── resizing a field, and the sidebar ────────────────────────────────────────────────────
 
-	/** The field's own native resize grip, in its bottom-right corner. */
+	/** The field's own native resize grip, in its bottom-right corner.
+	 *
+	 * Playwright's WebKit on Linux has the grip but does not resize the field when the mouse drags
+	 * it, so there the step does the browser's part — the width — between a real press and a real
+	 * release, and edit-field-width.js, which listens to those, is tested whole. The grip itself is
+	 * tested where it works: WebKit on macOS. */
 	#[When('I drag the first field :pixels pixels wider')]
 	public function dragFirstField(int $pixels): void
 	{
@@ -785,7 +790,26 @@ class DesktopContext implements Context
 		if (count((array) $this->before['widths']) < 2) {
 			throw new RuntimeException('the edit form has fewer than two visible fields to resize');
 		}
-		$this->drag((array) $this->before['grip'], $pixels);
+		$grip = (array) $this->before['grip'];
+		if (PHP_OS_FAMILY !== 'Linux') {
+			$this->drag($grip, $pixels);
+		} else {
+			$mouse = $this->page->mouse();
+			$mouse->move((float) $grip['x'], (float) $grip['y']);
+			$mouse->down();
+			$this->page->evaluate(
+				// language=JavaScript
+				'(by) => {
+					// The field fields() measured first: a JSON column shows its JUSH <pre>, not the textarea.
+					const field = [...document.querySelectorAll("#form > table.layout textarea, #form > table.layout pre.jush")]
+						.find((el) => el.offsetWidth > 0);
+					field.style.width = `${field.offsetWidth + by}px`;
+				}',
+				$pixels,
+			);
+			$mouse->move((float) $grip['x'] + $pixels, (float) $grip['y'], ['steps' => 10]);
+			$mouse->up();
+		}
 		$this->after = $this->fields();
 	}
 
@@ -1345,7 +1369,8 @@ class DesktopContext implements Context
 	#[When('I tab into the settings dialog')]
 	public function tabIntoSettings(): void
 	{
-		$this->page->keyboard()->press('Tab');
+		// WebKit on macOS tabs through text fields alone, as Safari does; Option+Tab reaches the rest.
+		$this->page->keyboard()->press(PHP_OS_FAMILY === 'Darwin' ? 'Alt+Tab' : 'Tab');
 	}
 
 	/** The radio itself is hidden, so the ring is its label's — and it must be there for the keyboard. */
@@ -2439,7 +2464,9 @@ class DesktopContext implements Context
 				sessionStorage.removeItem("e2e-busy-turned");
 				const watch = setInterval(() => {
 					const busy = document.querySelector("#ad-busy:popover-open");
-					if (busy && getComputedStyle(busy).opacity === "1"
+					// Past its fade-in, asked of the animation: on a page navigating away, Playwright\'s WebKit
+					// keeps the computed opacity at the first frame, though the app\'s window shows it.
+					if (busy && !busy.getAnimations().some((a) => a.animationName === "ad-appear" && a.playState !== "finished")
 						&& busy.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running")) {
 						sessionStorage.setItem("e2e-busy-turned", "1");
 						clearInterval(watch);
@@ -2800,8 +2827,8 @@ class DesktopContext implements Context
 	// ── the window without a title bar (macOS) ───────────────────────────────────────────────
 
 	/** What the macOS launcher does to every page (installFrameless): the bindings it adds and
-	 * the class it sets before anything paints. Stubs here, as Chromium has no launcher; a press
-	 * that would move the window is counted instead. Chromium runs an init script before the
+	 * the class it sets before anything paints. Stubs here, as Playwright's browser has no launcher; a press
+	 * that would move the window is counted instead. Playwright runs an init script before the
 	 * parser has made <html>, so the class goes on the moment it does: waiting for readystatechange
 	 * marked it after the page had parsed, and before-paint/header.js, which reads it, never saw it.
 	 */
@@ -2814,7 +2841,7 @@ class DesktopContext implements Context
 			window.adDragWindow = () => { window.adDrags++; };
 			window.adTitlebarDoubleClick = () => {};
 			// The sidebar is see-through there, onto the system material the launcher puts behind the
-			// page; Chromium has none, so the sidebar colour stands in, or axe reads its text on white.
+			// page; Playwright has none, so the sidebar colour stands in, or axe reads its text on white.
 			const mark = () => {
 				document.documentElement.classList.add("ad-frameless");
 				document.documentElement.style.background = "var(--ad-menu-bg)";
@@ -3260,6 +3287,35 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Grey on the dark sidebar, where axe under WebKit finds no background and compares with white.
+	 * #777 is under 4.5:1 on both, so axe reports it, and measured again against the sidebar it is
+	 * still low: it has to fail. (Dark text there axe cannot catch at all, as on white it reads.) */
+	#[When('the sidebar carries text too faint to read')]
+	public function lowContrastInSidebar(): void
+	{
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const text = document.createElement("p");
+				text.id = "ad-low-contrast";
+				text.textContent = "Too faint to read";
+				text.style.color = "#777777";
+				document.querySelector("#tables").before(text);
+			}',
+		);
+	}
+
+	#[Then('axe finds the low contrast in our own chrome')]
+	public function axeFindsLowContrast(): void
+	{
+		foreach ($this->axe() as $violation) {
+			if ($violation['ours'] && $violation['id'] === 'color-contrast' && preg_grep('/ad-low-contrast/', $violation['nodes'])) {
+				return;
+			}
+		}
+		throw new RuntimeException('axe let #ad-low-contrast through');
+	}
+
 	/** @return list<array{id: string, impact: string, help: string, ours: bool, nodes: list<string>}> */
 	private function axe(): array
 	{
@@ -3276,12 +3332,50 @@ class DesktopContext implements Context
 				const upstream = '#filter-field';
 				const ours = '#foot, #breadcrumb, #ad-sidebar-toggle, #ad-sidebar-resizer, #desktop-gear, dialog, .ad-toolbar, .ad-login, .ad-connections, .ad-versions, #table td > a.edit';
 				const result = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } });
+				// The text's contrast against what is really behind it: the first opaque background at its
+				// centre, as elementsFromPoint stacks it. A fill drawn as a gradient counts by its top layer's
+				// first colour (#foot draws its own so, layout.css). Under none, the canvas, in the scheme in
+				// use: the islands' sidebar is see-through onto it, which is what axe takes for white.
+				const luminance = (rgb) => {
+					const [r, g, b] = rgb.map((c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+					return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				};
+				const behind = (el) => {
+					const box = el.getBoundingClientRect();
+					for (const layer of document.elementsFromPoint(box.x + box.width / 2, box.y + box.height / 2)) {
+						const style = getComputedStyle(layer);
+						for (const paint of [style.backgroundColor, style.backgroundImage.match(/gradient\\((rgba?\\([^)]*\\))/)?.[1]]) {
+							const [r, g, b, a = 1] = (paint?.match(/[\\d.]+/g) ?? []).map(Number);
+							if (paint && a === 1) {
+								return [r, g, b];
+							}
+						}
+					}
+					const canvas = document.createElement('div');
+					canvas.style.background = 'Canvas';
+					document.body.append(canvas);
+					const color = getComputedStyle(canvas).backgroundColor.match(/[\\d.]+/g).map(Number);
+					canvas.remove();
+					return color.slice(0, 3);
+				};
+				const contrast = (hex, rgb) => {
+					const fg = luminance(hex.match(/[\\da-f]{2}/gi).map((c) => parseInt(c, 16)));
+					const bg = luminance(rgb);
+					return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+				};
 				const out = [];
 				for (const v of result.violations) {
 					const split = { true: [], false: [] };
 					for (const node of v.nodes) {
 						const el = document.querySelector(node.target[0]);
-						split[!!el?.closest(ours) && !el.matches(upstream)].push(node.target.join(' ') + (node.any[0]?.message ? ' — ' + node.any[0].message : ''));
+						// No element found behind the text, so axe compared it with white: under WebKit it misses
+						// the sidebar's own fill (#menu, there in the computed stack), and read light text in the
+						// dark scheme on white. Measured again against what is behind it, and printed with the
+						// upstream findings only when that passes; text that is low on its real background fails.
+						const data = node.any[0]?.data;
+						const real = v.id === 'color-contrast' && !node.any[0]?.relatedNodes?.length && el && data?.fgColor ? behind(el) : null;
+						const unmeasured = !!real && contrast(data.fgColor, real) >= Number.parseFloat(data.expectedContrastRatio);
+						split[!!el?.closest(ours) && !el.matches(upstream) && !unmeasured].push(node.target.join(' ') + (unmeasured ? ' (no background found)' : '') + (node.any[0]?.message ? ' — ' + node.any[0].message : ''));
 					}
 					for (const side of [true, false]) {
 						if (split[side].length) {

@@ -26,3 +26,11 @@ Feature: Accessibility of our own chrome
       | dark   | the settings are at their defaults |
       | light  | the window has no title bar    |
       | dark   | the window has no title bar    |
+
+  Scenario: Text too faint for the dark sidebar still fails, though axe finds no background there under WebKit
+    Given the browser is in the dark scheme
+    And the settings are at their defaults
+    And I am logged in
+    When I open the "users" table
+    And the sidebar carries text too faint to read
+    Then axe finds the low contrast in our own chrome

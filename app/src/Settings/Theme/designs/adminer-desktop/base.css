@@ -88,7 +88,7 @@ kbd,
 /* Links. */
 a,
 a:visited {
-	color: var(--ad-accent);
+	color: var(--ad-accent-text);
 }
 
 a:link:hover,

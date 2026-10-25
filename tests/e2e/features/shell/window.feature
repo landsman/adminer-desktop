@@ -1,7 +1,7 @@
 Feature: The window without a title bar
   On macOS the launcher draws no title bar (installFrameless): the page runs to the window's top,
   the traffic lights sit over the sidebar, and the content's header row is the window's toolbar,
-  as in Mail. Chromium has no launcher, so "the window has no title bar" stands in for what it
+  as in Mail. Playwright's browser has no launcher, so "the window has no title bar" stands in for what it
   adds to every page.
 
   Background:

@@ -120,6 +120,9 @@
 	document.addEventListener("click", (event) => {
 		const opener = event.target.closest?.("[data-dialog]");
 		if (opener) {
+			// WebKit on macOS does not focus a button it clicks, so the dialog had nothing to hand the
+			// focus back to when it closed.
+			opener.focus();
 			open(document.getElementById(opener.dataset.dialog));
 			return;
 		}

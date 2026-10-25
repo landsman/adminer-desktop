@@ -34,7 +34,7 @@
    current one. */
 #logins a,
 #tables a {
-	color: light-dark(var(--ad-accent), var(--fg));
+	color: light-dark(var(--ad-accent-text), var(--fg));
 }
 
 #tables span {
@@ -103,7 +103,7 @@
 }
 
 #menu .active {
-	color: var(--ad-accent);
+	color: var(--ad-accent-text);
 }
 
 /* The actions under the database picker are icons (AdminerDesktop::menuActions()): a row of
@@ -156,14 +156,14 @@
 }
 
 #breadcrumb a:hover {
-	color: var(--ad-accent);
+	color: var(--ad-accent-text);
 	text-decoration: underline;
 	text-underline-offset: 0.2em;
 }
 
 #logout {
 	background: transparent;
-	color: var(--ad-accent);
+	color: var(--ad-accent-text);
 	border: 1px solid var(--ad-border-strong);
 	font-weight: 500;
 	font-size: 0.85em;

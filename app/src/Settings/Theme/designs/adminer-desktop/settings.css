@@ -13,7 +13,7 @@
 #desktop-tabs input:checked + label,
 .ad-subtabs input:checked + label {
 	border-bottom-color: var(--ad-accent);
-	color: var(--ad-accent);
+	color: var(--ad-accent-text);
 }
 
 /* Save is deliberately NOT accented here any more. The base sheet makes it green and Reset red,
