@@ -64,6 +64,12 @@ stays, reparented to init, holding its port. `make kill-orphans`
 stops every such server, the installed app's too, and the SessionEnd hook in
 `.claude/settings.json` runs it after each agent session.
 
+**A fast resize shows the page lagging the window edge, and that is WKWebView.** It paints in
+its own process, out of step with AppKit's live resize — frankenphp takes no part in painting,
+and Tauri has the same open (tauri-apps/tauri#14288). It cannot be fixed, only hidden:
+`clearWebViewBackground` turns the webview's background off so the unpainted strip shows the
+page's colour instead of white. Keep that call, and keep relayout cheap.
+
 **Anything named `Adminer*` becomes a plugin.** Adminer instantiates every declared class
 whose name starts with `Adminer` and registers it (`include/plugins.inc.php:33`). Helper
 classes live in the `Desktop\` namespace for that reason.
