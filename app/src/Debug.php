@@ -26,11 +26,12 @@ class Debug {
 		}
 		Debugger::enable(Debugger::Development, $log);
 
+		Debugger::getBar()->addPanel(new MemoryPanel());
+
 		// A bar panel that prints the user's persistent settings file, so the stored preferences
 		// are one click away while debugging — both classes autoload, so the panel is built here
 		// before adminer boots without pulling their files in by hand.
 		Debugger::getBar()->addPanel(new SettingsPanel(new UserSettings()));
-		Debugger::getBar()->addPanel(new MemoryPanel());
 
 		// Enabling Tracy replaces adminer's own error handler, and with it the two things
 		// include/errors.inc.php deliberately turns off: E_DEPRECATED (it targets older PHP
