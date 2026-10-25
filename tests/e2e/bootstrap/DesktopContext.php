@@ -1917,7 +1917,7 @@ class DesktopContext implements Context
 				window.e2eStayed = true;
 				const rows = document.querySelector("#table tbody");
 				const url = location.href;
-				const swapped = window.desktopRefresh();
+				const swapped = window.adminer.page.refresh();
 				document.querySelector("#ad-busy .ad-busy-stop").click();
 				return {
 					swapped: await swapped,
@@ -2710,9 +2710,9 @@ class DesktopContext implements Context
 					const dialog = document.querySelector("#ad-new-connection-dialog");
 					dialog.removeAttribute("data-guard");
 					dialog.close();
-					window.desktopBusy();
+					window.adminer.page.busy();
 					const box = document.querySelector("#ad-busy .ad-busy-stop").getBoundingClientRect();
-					window.desktopBusy(false);
+					window.adminer.page.busy(false);
 					return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 				}',
 			);

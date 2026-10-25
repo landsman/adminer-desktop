@@ -23,7 +23,7 @@
 	// desktop-stop reaches what window.stop() does not: rows fetched in place (refresh.js).
 	const stop = () => {
 		window.stop();
-		window.desktopBusy(false);
+		window.adminer.page.busy(false);
 		dispatchEvent(new Event("desktop-stop"));
 	};
 	indicator?.querySelector(".ad-busy-stop")?.addEventListener("click", stop);

@@ -25,8 +25,9 @@ interface AdminerPage {
 	busy(on?: boolean): void;
 	/** Navigate, with the indicator up (busy.js). */
 	go(href: string): void;
-	/** A select page's rows, in place; false when it fell back to a full load (refresh.js). */
-	refresh(href?: string): Promise<boolean>;
+	/** A select page's rows, in place; false when it fell back to a full load, null when stopped
+	 * (refresh.js). */
+	refresh(href?: string): Promise<boolean | null>;
 	/** Open a modal.latte dialog by id (modal.js). */
 	openDialog(id: string): void;
 	/** A brief confirmation (toast.js). */

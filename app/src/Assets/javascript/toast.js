@@ -1,7 +1,8 @@
 // A brief message that confirms something happened and then gets out of the way.
 //
 // Exposed as window.adminer.page.toast so any of our scripts can call it without a module
-// system — the page loads plain files, and the alternative is every caller reimplementing the same div.
+// system — the page loads plain files, and the alternative is every caller reimplementing the
+// same div.
 //
 // Deliberately not an alert(): these confirm an action the user just took, so they must not
 // need dismissing. Anything the user has to acknowledge is an error, and errors belong in the
