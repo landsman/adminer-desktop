@@ -32,6 +32,10 @@ return [
 	// Saved connections.
 	'connections.new' => 'Conexiune nouă',
 	'connections.cancel' => 'Anulează',
+	'connections.stop_title' => 'Oprești conectarea?',
+	'connections.stop_text' => 'Serverul nu a răspuns încă. Ce ai completat rămâne în formular.',
+	'connections.keep_waiting' => 'Mai aștept',
+	'connections.stop' => 'Oprește',
 	'connections.added' => 'Conectat. Dă-i un nume, ca s-o deosebești ușor de celelalte.',
 	'connections.empty' => 'Încă nu există conexiuni salvate.',
 	'connections.edit' => 'Editează',

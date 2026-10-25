@@ -53,7 +53,7 @@ class DesktopContext implements Context
 
 	/** @var array<string, string> what the last login typed, which a failed one gives back */
 	private array $typed = [];
-	/** @var array{x?: float, y?: float} where Login was, which Cancel takes over while the login waits */
+	/** @var array{x?: float, y?: float, closeX?: float, closeY?: float} where Login was, which Cancel takes over while the login waits, and the × */
 	private array $login = [];
 
 	private bool $hidSidebar = false;
@@ -1575,6 +1575,45 @@ class DesktopContext implements Context
 		$this->page->mouse()->click((float) $this->login['x'], (float) $this->login['y']);
 	}
 
+	/** On the backdrop, half a second in: as with Cancel, a bare mouse click, since anything else
+	 * would wait for the login to end. */
+	#[When('I click outside the modal')]
+	public function clickOutsideModal(): void
+	{
+		usleep(500_000);
+		$this->page->mouse()->click(5.0, 5.0);
+	}
+
+	/** The ×, then Stop: the question's focus starts on Keep waiting, so Tab and Enter answer it,
+	 * where a click would need its place, which no evaluate() can read while the login is pending. */
+	#[When('I close the login that waits, and say to stop it')]
+	public function closeAndStopLogin(): void
+	{
+		usleep(1_000_000);
+		$this->page->mouse()->click((float) $this->login['closeX'], (float) $this->login['closeY']);
+		usleep(300_000);
+		// WebKit on macOS tabs to a button only with Alt.
+		$this->page->keyboard()->press(PHP_OS_FAMILY === 'Darwin' ? 'Alt+Tab' : 'Tab');
+		$this->page->keyboard()->press('Enter');
+	}
+
+	/** Still the page the login was sent from, with both modals closed. */
+	#[Then('the login stops waiting, and the modal is closed')]
+	public function loginStoppedClosed(): void
+	{
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => ({
+				samePage: window.e2eSubmitted === true,
+				waiting: document.querySelector(".ad-waiting") !== null,
+				open: document.querySelector("dialog[open]") !== null,
+			})',
+		);
+		if ($state !== ['samePage' => true, 'waiting' => false, 'open' => false]) {
+			throw new RuntimeException('after the × and Stop: ' . json_encode($state));
+		}
+	}
+
 	/** Cancel in the same task as Login, before busy.js sends the form two frames later. A wrong
 	 * password answers at once, so a login that still went out would have replaced the page well
 	 * within the second waited for. */
@@ -1608,7 +1647,7 @@ class DesktopContext implements Context
 		}
 	}
 
-	/** Still the page the login was sent from (submitLogin() marked it), and Login back. */
+	/** Still the page the login was sent from (submitLogin() marked it), the modal open, and Login back. */
 	#[Then('the login stops waiting, with what I typed still in it')]
 	public function loginStopped(): void
 	{
@@ -1618,6 +1657,7 @@ class DesktopContext implements Context
 				const dialog = document.querySelector("#ad-new-connection-dialog");
 				return {
 					samePage: window.e2eSubmitted === true,
+					open: dialog.open,
 					waiting: dialog.closest("form").classList.contains("ad-waiting"),
 					login: dialog.querySelector(\'input[type="submit"]\').checkVisibility(),
 					typed: Object.fromEntries(["server", "username", "password"].map((name) =>
@@ -1625,7 +1665,7 @@ class DesktopContext implements Context
 				};
 			}',
 		);
-		$expected = ['samePage' => true, 'waiting' => false, 'login' => true, 'typed' => $this->typed];
+		$expected = ['samePage' => true, 'open' => true, 'waiting' => false, 'login' => true, 'typed' => $this->typed];
 		if ($state !== $expected) {
 			throw new RuntimeException('after Cancel the modal is ' . json_encode($state));
 		}
@@ -2529,7 +2569,7 @@ class DesktopContext implements Context
 	 * (window.e2eSubmitted) so a step can tell the answer from the form.
 	 *
 	 * The page it leaves also watches its own wait, on a timer, and notes in sessionStorage
-	 * once Cancel turns in Login's place: polled from the test instead, a page already navigating away was missed on a
+	 * once Cancel turns in Login's place, under a busy cursor: polled from the test instead, a page already navigating away was missed on a
 	 * CI runner now and then, the wait then ran into the answer, and the step timed out.
 	 */
 	private function submitLogin(string $server, string $password): void
@@ -2555,7 +2595,8 @@ class DesktopContext implements Context
 			// language=JavaScript
 			'() => {
 				const box = document.querySelector(\'#ad-new-connection-dialog input[type="submit"]\').getBoundingClientRect();
-				return { x: box.right - 8, y: box.top + box.height / 2 };
+				const close = document.querySelector("#ad-new-connection-dialog .ad-modal-close").getBoundingClientRect();
+				return { x: box.right - 8, y: box.top + box.height / 2, closeX: close.x + close.width / 2, closeY: close.y + close.height / 2 };
 			}',
 		);
 		$this->page->evaluate(
@@ -2567,6 +2608,7 @@ class DesktopContext implements Context
 					const cancel = dialog.querySelector(".ad-connect-cancel");
 					if (cancel.checkVisibility() && !dialog.querySelector(\'input[type="submit"]\').checkVisibility()
 						&& !document.querySelector("#ad-busy:popover-open")
+						&& getComputedStyle(document.documentElement).cursor === "progress"
 						&& cancel.querySelector(".ad-icon-spinner").getAnimations().some((a) => a.animationName === "ad-spin" && a.playState === "running")) {
 						sessionStorage.setItem("e2e-login-waited", "1");
 						clearInterval(watch);
