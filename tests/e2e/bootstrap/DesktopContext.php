@@ -3263,6 +3263,35 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** Grey on the dark sidebar, where axe under WebKit finds no background and compares with white.
+	 * #777 is under 4.5:1 on both, so axe reports it, and measured again against the sidebar it is
+	 * still low: it has to fail. (Dark text there axe cannot catch at all, as on white it reads.) */
+	#[When('the sidebar carries text too faint to read')]
+	public function lowContrastInSidebar(): void
+	{
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				const text = document.createElement("p");
+				text.id = "ad-low-contrast";
+				text.textContent = "Too faint to read";
+				text.style.color = "#777777";
+				document.querySelector("#tables").before(text);
+			}',
+		);
+	}
+
+	#[Then('axe finds the low contrast in our own chrome')]
+	public function axeFindsLowContrast(): void
+	{
+		foreach ($this->axe() as $violation) {
+			if ($violation['ours'] && $violation['id'] === 'color-contrast' && preg_grep('/ad-low-contrast/', $violation['nodes'])) {
+				return;
+			}
+		}
+		throw new RuntimeException('axe let #ad-low-contrast through');
+	}
+
 	/** @return list<array{id: string, impact: string, help: string, ours: bool, nodes: list<string>}> */
 	private function axe(): array
 	{
@@ -3279,6 +3308,37 @@ class DesktopContext implements Context
 				const upstream = '#filter-field';
 				const ours = '#foot, #breadcrumb, #ad-sidebar-toggle, #ad-sidebar-resizer, #desktop-gear, dialog, .ad-toolbar, .ad-login, .ad-connections, .ad-versions, #table td > a.edit';
 				const result = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } });
+				// The text's contrast against what is really behind it: the first opaque background at its
+				// centre, as elementsFromPoint stacks it. A fill drawn as a gradient counts by its top layer's
+				// first colour (#foot draws its own so, layout.css). Under none, the canvas, in the scheme in
+				// use: the islands' sidebar is see-through onto it, which is what axe takes for white.
+				const luminance = (rgb) => {
+					const [r, g, b] = rgb.map((c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+					return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				};
+				const behind = (el) => {
+					const box = el.getBoundingClientRect();
+					for (const layer of document.elementsFromPoint(box.x + box.width / 2, box.y + box.height / 2)) {
+						const style = getComputedStyle(layer);
+						for (const paint of [style.backgroundColor, style.backgroundImage.match(/gradient\\((rgba?\\([^)]*\\))/)?.[1]]) {
+							const [r, g, b, a = 1] = (paint?.match(/[\\d.]+/g) ?? []).map(Number);
+							if (paint && a === 1) {
+								return [r, g, b];
+							}
+						}
+					}
+					const canvas = document.createElement('div');
+					canvas.style.background = 'Canvas';
+					document.body.append(canvas);
+					const color = getComputedStyle(canvas).backgroundColor.match(/[\\d.]+/g).map(Number);
+					canvas.remove();
+					return color.slice(0, 3);
+				};
+				const contrast = (hex, rgb) => {
+					const fg = luminance(hex.match(/[\\da-f]{2}/gi).map((c) => parseInt(c, 16)));
+					const bg = luminance(rgb);
+					return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+				};
 				const out = [];
 				for (const v of result.violations) {
 					const split = { true: [], false: [] };
@@ -3286,8 +3346,11 @@ class DesktopContext implements Context
 						const el = document.querySelector(node.target[0]);
 						// No element found behind the text, so axe compared it with white: under WebKit it misses
 						// the sidebar's own fill (#menu, there in the computed stack), and read light text in the
-						// dark scheme on white. Printed with the upstream findings, not failed.
-						const unmeasured = v.id === 'color-contrast' && !node.any[0]?.relatedNodes?.length;
+						// dark scheme on white. Measured again against what is behind it, and printed with the
+						// upstream findings only when that passes; text that is low on its real background fails.
+						const data = node.any[0]?.data;
+						const real = v.id === 'color-contrast' && !node.any[0]?.relatedNodes?.length && el && data?.fgColor ? behind(el) : null;
+						const unmeasured = !!real && contrast(data.fgColor, real) >= Number.parseFloat(data.expectedContrastRatio);
 						split[!!el?.closest(ours) && !el.matches(upstream) && !unmeasured].push(node.target.join(' ') + (unmeasured ? ' (no background found)' : '') + (node.any[0]?.message ? ' — ' + node.any[0].message : ''));
 					}
 					for (const side of [true, false]) {
