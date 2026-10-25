@@ -135,7 +135,9 @@
 	}
 
 	document.addEventListener("click", (event) => {
-		const opener = event.target.closest?.("[data-dialog]");
+		const opener = /** @type {Element} */ (event.target).closest?.(
+			"[data-dialog]",
+		);
 		if (opener) {
 			// WebKit on macOS does not focus a button it clicks, so the dialog had nothing to hand the
 			// focus back to when it closed.
@@ -147,7 +149,9 @@
 			open(dialog);
 			return;
 		}
-		const closer = event.target.closest?.("[data-close]");
+		const closer = /** @type {Element} */ (event.target).closest?.(
+			"[data-close]",
+		);
 		const dialog = closer?.closest("dialog");
 		if (dialog === discard) {
 			asking = null;

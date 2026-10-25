@@ -164,7 +164,9 @@ if (pagerGrid && pagerBox) {
 	};
 
 	pagerBox.addEventListener("click", (event) => {
-		const step = event.target.closest("a.ad-page-step");
+		const step = /** @type {Element} */ (event.target).closest(
+			"a.ad-page-step",
+		);
 		if (step) {
 			event.preventDefault();
 			void goTo(pageOf(step.href));

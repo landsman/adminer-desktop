@@ -1,12 +1,10 @@
-// ponytail: what a querySelector or an event hands back is typed as a bare Element or
-// EventTarget, so reading .value or .close() off one is an error TypeScript cannot know is
-// right. These two lines switch that off, which leaves the check to what it is for: every
-// window.adminer member declared in adminer.d.ts. To type the DOM as well, delete this file and
-// narrow each lookup (`/** @type {HTMLInputElement} */`) until `make qa` passes.
+// ponytail: what a querySelector hands back is typed as a bare Element, so reading .value or
+// .close() off one is an error TypeScript cannot know is right. This switches that off, which
+// leaves the check to what it is for: every window.adminer member declared in adminer.d.ts.
+// Element only — never EventTarget, which Window extends: loosening that let any window.<name>
+// through, an undeclared one included. To type the DOM as well, delete this and narrow each
+// lookup (`/** @type {HTMLInputElement} */`) until `make qa` passes.
 interface Element {
-	[name: string]: any;
-}
-interface EventTarget {
 	[name: string]: any;
 }
 

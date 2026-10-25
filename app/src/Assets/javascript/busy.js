@@ -55,7 +55,9 @@
 	document.addEventListener(
 		"change",
 		(event) => {
-			const form = event.target.closest?.("#dbs")?.closest("form");
+			const form = /** @type {Element} */ (event.target)
+				.closest?.("#dbs")
+				?.closest("form");
 			if (form) {
 				event.stopPropagation();
 				window.adminer.page.busy();
@@ -89,7 +91,7 @@
 	document.addEventListener(
 		"submit",
 		(event) => {
-			const form = event.target;
+			const form = /** @type {HTMLFormElement} */ (event.target);
 			if (!resent.has(form) && leavesBy(form, event.submitter)) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
@@ -112,7 +114,7 @@
 	// A POST a handler stopped the second time round stays on this page. A stopped GET does not:
 	// that is adminer sending it.
 	document.addEventListener("submit", (event) => {
-		const form = event.target;
+		const form = /** @type {HTMLFormElement} */ (event.target);
 		if (
 			resent.delete(form) &&
 			event.defaultPrevented &&
@@ -133,7 +135,7 @@
 				link.pathname + link.search === location.pathname + location.search
 			));
 	document.addEventListener("click", (event) => {
-		const link = event.target.closest?.("a[href]");
+		const link = /** @type {Element} */ (event.target).closest?.("a[href]");
 		// A modified click, or a link to another window, leaves this page where it is.
 		if (
 			link &&

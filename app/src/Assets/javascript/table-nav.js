@@ -19,7 +19,7 @@ let pendingNav = null;
  * @returns {HTMLAnchorElement | null}
  */
 function tableName(e) {
-	return e.target.closest("#tables li a:not(.select)");
+	return /** @type {Element} */ (e.target).closest("#tables li a:not(.select)");
 }
 
 /** @param {MouseEvent} e */

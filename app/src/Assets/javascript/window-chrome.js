@@ -42,7 +42,7 @@
 
 	if (window.adminer.native?.dragWindow) {
 		document.addEventListener("mousedown", (event) => {
-			const target = event.target;
+			const target = /** @type {Element} */ (event.target);
 			if (
 				event.button !== 0 ||
 				// Full screen has no title bar to stand in for, and a dialog's backdrop closes it.

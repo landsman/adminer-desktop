@@ -33,11 +33,11 @@
 	mark(focused);
 
 	addEventListener("pointerdown", (event) => {
-		remember(Boolean(event.target.closest?.("#foot")));
+		remember(Boolean(/** @type {Element} */ (event.target).closest?.("#foot")));
 	});
 	// The keyboard moves the focus too: Tab into the sidebar marks it, out of it unmarks it.
 	addEventListener("focusin", (event) => {
-		remember(Boolean(event.target.closest?.("#foot")));
+		remember(Boolean(/** @type {Element} */ (event.target).closest?.("#foot")));
 	});
 	addEventListener("blur", () => mark(false));
 	addEventListener("focus", () => mark(focused));

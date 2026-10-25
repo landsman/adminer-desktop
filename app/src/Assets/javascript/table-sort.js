@@ -17,7 +17,7 @@ const head = document.querySelector("#table thead");
 
 if (head) {
 	head.addEventListener("click", (event) => {
-		const link = event.target.closest("a");
+		const link = /** @type {Element} */ (event.target).closest("a");
 		// order[0]= is what a sort asks for, url-encoded in the href adminer prints.
 		if (!link?.search.includes("order")) {
 			return;
