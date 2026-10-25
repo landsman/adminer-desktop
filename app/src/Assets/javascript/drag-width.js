@@ -22,6 +22,8 @@ window.desktopDragWidth = (edge, { grab, set, done }) => {
 		edge.setPointerCapture(event.pointerId);
 		// Stop the drag selecting the text the pointer sweeps over.
 		document.body.style.userSelect = "none";
+		// What eases into place when the sidebar hides follows the pointer instead (window.css).
+		document.documentElement.classList.add("ad-dragging");
 		event.preventDefault();
 	});
 	edge.addEventListener("pointermove", (event) => {
@@ -32,6 +34,7 @@ window.desktopDragWidth = (edge, { grab, set, done }) => {
 	// The capture ends on release and on a cancelled drag alike, so the selection always comes back.
 	edge.addEventListener("lostpointercapture", () => {
 		document.body.style.userSelect = "";
+		document.documentElement.classList.remove("ad-dragging");
 		done();
 	});
 };
