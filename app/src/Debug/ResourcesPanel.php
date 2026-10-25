@@ -15,10 +15,13 @@ use Tracy\IBarPanel;
 * Built only in Debug::enable(), under -debug.
 */
 class ResourcesPanel implements IBarPanel {
-	/** The tab: what the server and the launcher hold together. */
+	/** The tab: what the server and the launcher hold together, or ? when either is unknown —
+	* a sum missing one of them would read as the whole.
+	*/
 	function getTab(): string {
-		$total = array_sum(array_filter($this->processes()));
-		return '<span title="Memory: frankenphp + launcher, resident">&#128190; ' . self::size($total) . '</span>';
+		$readings = $this->processes();
+		$total = in_array(null, $readings, true) ? '?' : self::size(array_sum($readings));
+		return '<span title="Memory: frankenphp + launcher, resident">&#128190; ' . $total . '</span>';
 	}
 
 	function getPanel(): string {
@@ -35,13 +38,20 @@ class ResourcesPanel implements IBarPanel {
 	* @return array<string, ?int>
 	*/
 	private function processes(): array {
+		$server = (int) getmypid();
+		// ponytail: Windows has neither posix_getppid() nor ps, so both read unknown there;
+		// tasklist /FI "PID eq n" gives the server's working set if that is ever wanted.
+		$launcher = function_exists('posix_getppid') ? posix_getppid() : null;
 		return [
-			'frankenphp (pid ' . getmypid() . ')' => self::rss((int) getmypid()),
-			'launcher (pid ' . posix_getppid() . ')' => self::rss(posix_getppid()),
+			"frankenphp (pid $server)" => self::rss($server),
+			'launcher (pid ' . ($launcher ?? '?') . ')' => $launcher === null ? null : self::rss($launcher),
 		];
 	}
 
 	private static function rss(int $pid): ?int {
+		if (PHP_OS_FAMILY === 'Windows') {
+			return null;
+		}
 		$kb = trim((string) shell_exec('ps -o rss= -p ' . $pid));
 		return ctype_digit($kb) ? (int) $kb * 1024 : null;
 	}
