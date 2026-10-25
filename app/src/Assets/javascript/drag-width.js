@@ -29,8 +29,8 @@ window.desktopDragWidth = (edge, { grab, set, done }) => {
 			set(startWidth + event.clientX - startX);
 		}
 	});
-	edge.addEventListener("pointerup", (event) => {
-		edge.releasePointerCapture(event.pointerId);
+	// The capture ends on release and on a cancelled drag alike, so the selection always comes back.
+	edge.addEventListener("lostpointercapture", () => {
 		document.body.style.userSelect = "";
 		done();
 	});
