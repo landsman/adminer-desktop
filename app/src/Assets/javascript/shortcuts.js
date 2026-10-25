@@ -40,7 +40,9 @@ function helpShortcut(e) {
 		e.metaKey ||
 		e.ctrlKey ||
 		e.altKey ||
-		e.target.closest?.("input, textarea, select, [contenteditable]") ||
+		/** @type {Element} */ (e.target).closest?.(
+			"input, textarea, select, [contenteditable]",
+		) ||
 		document.querySelector("dialog[open]")
 	) {
 		return;
@@ -74,7 +76,7 @@ function settingsShortcut(e) {
 		return;
 	}
 	e.preventDefault();
-	window.desktopOpenDialog?.("desktop-settings");
+	window.adminer.page.openDialog("desktop-settings");
 }
 
 addEventListener("keydown", settingsShortcut);
