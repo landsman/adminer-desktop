@@ -42,6 +42,9 @@ Feature: Saved connections
     And the login stops waiting, with what I typed still in it
     And the next page in the session answers straight away
 
+  Scenario: A Cancel before the login is sent keeps it from going out
+    Then a Cancel before the login is sent keeps it from being sent
+
   Scenario: A name, an environment and a colour stick, and follow you in
     When I label the connection "Fixture" as "prod" in "purple"
     Then the card reads "Fixture" with a "PROD" tag

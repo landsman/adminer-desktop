@@ -79,6 +79,13 @@
 				event.stopImmediatePropagation();
 				waitOn(form);
 				afterPaint(() => {
+					// Cancelled in the meantime: the wait it shows is already gone.
+					if (
+						form.hasAttribute("data-busy-here") &&
+						!form.classList.contains("ad-waiting")
+					) {
+						return;
+					}
 					resent.add(form);
 					form.requestSubmit(event.submitter);
 				});

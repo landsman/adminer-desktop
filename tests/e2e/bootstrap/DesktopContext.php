@@ -1575,6 +1575,39 @@ class DesktopContext implements Context
 		$this->page->mouse()->click((float) $this->login['x'], (float) $this->login['y']);
 	}
 
+	/** Cancel in the same task as Login, before busy.js sends the form two frames later. A wrong
+	 * password answers at once, so a login that still went out would have replaced the page well
+	 * within the second waited for. */
+	#[Then('a Cancel before the login is sent keeps it from being sent')]
+	public function cancelBeforeSent(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#ad-new-connection',
+		)->click();
+		$this->page->locator(
+			// language=JQuery-CSS
+			'input[name="auth[password]"]',
+		)->fill('not-the-password');
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => {
+				window.e2eCancelled = true;
+				const form = document.querySelector(\'[name="auth[driver]"]\').form;
+				form.requestSubmit();
+				form.querySelector(".ad-connect-cancel").click();
+			}',
+		);
+		usleep(1_000_000);
+		$state = $this->page->evaluate(
+			// language=JavaScript
+			'() => ({ samePage: window.e2eCancelled === true, waiting: document.querySelector(".ad-waiting") !== null })',
+		);
+		if ($state !== ['samePage' => true, 'waiting' => false]) {
+			throw new RuntimeException('a login cancelled before it was sent: ' . json_encode($state));
+		}
+	}
+
 	/** Still the page the login was sent from (submitLogin() marked it), and Login back. */
 	#[Then('the login stops waiting, with what I typed still in it')]
 	public function loginStopped(): void
