@@ -17,18 +17,23 @@ class CallLog {
 		$this->dir = $dir !== null && $dir !== '' ? $dir : null;
 	}
 
-	/** Every call, newest first.
+	/** Every call, newest first, each without its request (Call::light()): read a line at a time,
+	* so two weeks of large requests are never in memory at once.
 	*
 	* @return list<Call>
 	*/
 	function all(): array {
 		$calls = [];
 		foreach ($this->files() as $day => $file) {
-			foreach ((array) file($file, FILE_IGNORE_NEW_LINES) as $i => $line) {
-				$call = self::parse((string) $line, $day . ':' . ($i + 1));
+			$handle = @fopen($file, 'r');
+			for ($i = 1; $handle !== false && ($line = fgets($handle)) !== false; $i++) {
+				$call = self::parse(rtrim($line, "\r\n"), "$day:$i");
 				if ($call !== null) {
-					$calls[] = $call;
+					$calls[] = $call->light();
 				}
+			}
+			if ($handle !== false) {
+				fclose($handle);
 			}
 		}
 		// ponytail: sorted by the time each line carries, as a string — ISO times in UTC sort as

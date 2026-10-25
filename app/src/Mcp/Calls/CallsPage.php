@@ -30,7 +30,7 @@ class CallsPage {
 	}
 
 	/** Draw the page and end the request. */
-	function serve(bool $connected): never {
+	function serve(): never {
 		self::$drawing = true;
 		$status = CallStatus::tryFrom((string) ($_GET["mcp_status"] ?? ''));
 		$connection = (string) ($_GET["mcp_connection"] ?? '');
@@ -57,7 +57,7 @@ class CallsPage {
 			"open" => $open,
 			"url" => fn(array $params): string => self::url($_GET, ['mcp_calls' => ''] + $params),
 		]);
-		\Adminer\page_footer($connected ? "" : "auth");
+		\Adminer\page_footer();
 		exit;
 	}
 

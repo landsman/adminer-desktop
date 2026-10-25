@@ -50,6 +50,14 @@ final readonly class Call {
 		return $this->request !== null ? (string) json_encode($this->request, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $this->detail;
 	}
 
+	/** This call without its request, for the grid: the request can be any size, and the grid shows
+	* one line of it. The modal reads the whole one again (CallLog::find()).
+	*/
+	function light(): self {
+		return new self($this->id, $this->time, $this->status, $this->method, $this->tool, $this->durationMs, $this->connection,
+			$this->connectionName, $this->database, $this->error, detail: mb_substr($this->summary(), 0, 300));
+	}
+
 	/** @return array<mixed> */
 	private function arguments(): array {
 		$arguments = $this->request['params']['arguments'] ?? null;

@@ -81,8 +81,10 @@ class AdminerDesktop extends Adminer\Plugin {
 			return null; // page_header() calls this hook again while the page draws itself
 		}
 		(new Mcp\Endpoint($this->userSettings, connections: $this->connections))->serve();
-		if (isset($_GET["mcp_calls"])) {
-			(new Mcp\Calls\CallsPage($this))->serve(Adminer\driver() !== null);
+		// Signed in only: the server answers anyone on this machine, and the log is the owner's.
+		// Signed out, adminer goes on to its login page.
+		if (isset($_GET["mcp_calls"]) && Adminer\driver() !== null) {
+			(new Mcp\Calls\CallsPage($this))->serve();
 		}
 		return null;
 	}
