@@ -749,9 +749,8 @@
 		backdrop-filter: var(--ad-glass-filter);
 		box-shadow: var(--ad-glass-shadow);
 		color: color-mix(in srgb, var(--fg) 70%, transparent);
-		transition:
-			left 0.2s ease,
-			background-color 0.15s;
+		/* Not their position: they jump to their place, at once, rather than glide after it. */
+		transition: background-color 0.15s;
 	}
 
 	.ad-frameless #ad-sidebar-toggle:hover,
@@ -760,16 +759,17 @@
 		color: var(--fg);
 	}
 
-	/* At the sidebar's end, the inset off it, the gear just before. */
+	/* At the sidebar's end, the inset off it: the toggle, then the gear, the order they keep beside
+	   the lights once the sidebar is hidden, so neither changes places. */
 	.ad-frameless #ad-sidebar-toggle {
-		left: calc(var(--ad-sidebar-width) - var(--ad-tool-inset) - var(--ad-tool));
-	}
-
-	.ad-frameless #desktop-gear {
 		left: calc(
 			var(--ad-sidebar-width) - var(--ad-tool-inset) - 2 * var(--ad-tool) -
 				var(--ad-tool-gap)
 		);
+	}
+
+	.ad-frameless #desktop-gear {
+		left: calc(var(--ad-sidebar-width) - var(--ad-tool-inset) - var(--ad-tool));
 	}
 
 	.ad-frameless #ad-sidebar-toggle::before {
@@ -798,10 +798,18 @@
 		left: var(--ad-tool-after-lights);
 	}
 
-	/* The path starts as far past the button as the button is past the lights. */
+	/* The gear follows the toggle; left at the sidebar's end it sat on the toolbar's title. */
+	.ad-frameless .ad-sidebar-hidden #desktop-gear {
+		left: calc(
+			var(--ad-tool-after-lights) + var(--ad-tool) + var(--ad-tool-gap)
+		);
+	}
+
+	/* The path starts as far past the buttons as they are past the lights. */
 	.ad-frameless .ad-sidebar-hidden #content #breadcrumb {
 		padding-inline-start: calc(
-			var(--ad-tool-after-lights) + var(--ad-tool) + 16px
+			var(--ad-tool-after-lights) + 2 * var(--ad-tool) + var(--ad-tool-gap) +
+				16px
 		);
 	}
 }
@@ -838,4 +846,10 @@
 .ad-frameless.ad-legacy-scrollers
 	:is(#menu, #content)::-webkit-scrollbar-corner {
 	background: transparent;
+}
+
+/* Their transitions are for the sidebar sliding in and out: during a drag of its width they eased
+   every pixel of it, so the path bar trailed the pointer (drag-width.js). */
+.ad-frameless.ad-dragging :is(#ad-pathbar, #foot) {
+	transition: none;
 }

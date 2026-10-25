@@ -3043,10 +3043,22 @@ class DesktopContext implements Context
 	#[Then('the sidebar\'s toggle overlaps nothing')]
 	public function toggleOverlapsNothing(): void
 	{
+		$this->overlapsNothing('#ad-sidebar-toggle');
+	}
+
+	/** Left at the sidebar's end once the sidebar was hidden, the gear sat on the toolbar's title. */
+	#[Then('the settings gear overlaps nothing')]
+	public function gearOverlapsNothing(): void
+	{
+		$this->overlapsNothing('#desktop-gear');
+	}
+
+	private function overlapsNothing(string $selector): void
+	{
 		$overlap = $this->page->evaluate(
 			// language=JavaScript
-			"() => {
-				const toggle = document.querySelector('#ad-sidebar-toggle');
+			"(selector) => {
+				const toggle = document.querySelector(selector);
 				const t = toggle.getBoundingClientRect();
 				const hit = document.elementFromPoint(t.left + t.width / 2, t.top + t.height / 2);
 				if (!toggle.contains(hit)) {
@@ -3063,9 +3075,10 @@ class DesktopContext implements Context
 					})
 					.map((el) => el.id || el.className || el.tagName);
 			}",
+			$selector,
 		);
 		if ($overlap !== []) {
-			throw new RuntimeException('the sidebar\'s toggle overlaps: ' . json_encode($overlap));
+			throw new RuntimeException("$selector overlaps: " . json_encode($overlap));
 		}
 	}
 

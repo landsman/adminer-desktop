@@ -57,26 +57,7 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	handle.setAttribute("aria-valuenow", String(clamp(Math.round(width()))));
 	content.before(handle);
 
-	let startX = 0;
-	let startWidth = 0;
-	handle.addEventListener("pointerdown", (e) => {
-		startX = e.clientX;
-		startWidth = width();
-		handle.setPointerCapture(e.pointerId);
-		// Stop the drag selecting the sidebar's text as the pointer sweeps over it.
-		document.body.style.userSelect = "none";
-		e.preventDefault();
-	});
-	handle.addEventListener("pointermove", (e) => {
-		if (handle.hasPointerCapture(e.pointerId)) {
-			apply(startWidth + (e.clientX - startX));
-		}
-	});
-	handle.addEventListener("pointerup", (e) => {
-		handle.releasePointerCapture(e.pointerId);
-		document.body.style.userSelect = "";
-		persist();
-	});
+	window.desktopDragWidth(handle, { grab: width, set: apply, done: persist });
 
 	// Keyboard: the WAI-ARIA splitter pattern — arrows nudge the width, and it saves once on
 	// release rather than on every repeat.
