@@ -30,7 +30,7 @@ class Shortcuts {
 	private function groups(): array {
 		return [
 			'shortcuts.group_app' => [
-				['shortcuts.help', [['?']], null],
+				['shortcuts.help', [[Key::Shift, '?']], null],
 				['shortcuts.search', [[[Key::Shift], [Key::Shift]]], null],
 				['shortcuts.reload', [[Key::Mod, 'R'], ['F5']], null],
 				['shortcuts.close', [[Key::Escape]], null],
