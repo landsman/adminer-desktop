@@ -155,6 +155,7 @@ return [
 	'shortcuts.group_app' => 'App',
 	'shortcuts.group_forms' => 'Forms and SQL',
 	'shortcuts.help' => 'Show this list',
+	'shortcuts.settings' => 'Open the settings',
 	'shortcuts.reload' => 'Reload the page',
 	'shortcuts.close' => 'Close a dialog or a menu',
 	'shortcuts.adminer' => 'Switch to Adminer',

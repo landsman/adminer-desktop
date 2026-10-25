@@ -141,6 +141,7 @@ return [
 	'shortcuts.group_app' => 'App',
 	'shortcuts.group_forms' => 'Formulare und SQL',
 	'shortcuts.help' => 'Diese Liste anzeigen',
+	'shortcuts.settings' => 'Einstellungen öffnen',
 	'shortcuts.reload' => 'Seite neu laden',
 	'shortcuts.close' => 'Dialog oder Menü schließen',
 	'shortcuts.adminer' => 'Zu Adminer wechseln',

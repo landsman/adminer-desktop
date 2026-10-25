@@ -56,3 +56,25 @@ function helpShortcut(e) {
 }
 
 addEventListener("keydown", helpShortcut);
+
+/**
+ * Open settings on Cmd/Ctrl+, — where every mac app keeps them. Unlike ? it is no character, so
+ * it works from a field too; not over another dialog.
+ *
+ * @param {KeyboardEvent} e
+ */
+function settingsShortcut(e) {
+	if (
+		e.key !== "," ||
+		!(e.metaKey || e.ctrlKey) ||
+		e.altKey ||
+		e.shiftKey ||
+		document.querySelector("dialog[open]")
+	) {
+		return;
+	}
+	e.preventDefault();
+	window.desktopOpenDialog?.("desktop-settings");
+}
+
+addEventListener("keydown", settingsShortcut);

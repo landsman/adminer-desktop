@@ -1412,6 +1412,42 @@ class DesktopContext implements Context
 		}
 	}
 
+	#[Then('the settings dialog is open')]
+	public function settingsOpen(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.querySelector("#desktop-settings").open',
+		);
+	}
+
+	#[When('I point at the gear')]
+	public function pointAtGear(): void
+	{
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#desktop-gear',
+		)->hover();
+	}
+
+	#[Then('a tooltip says :text with the settings shortcut')]
+	public function tooltipWithShortcut(string $text): void
+	{
+		$keys = PHP_OS_FAMILY === 'Darwin' ? '⌘,' : 'Ctrl+,';
+		$tip = $this->page->locator(
+			// language=JQuery-CSS
+			'#ad-tooltip:not([hidden])',
+		);
+		$tip->waitFor(['timeout' => 800]);
+		$kbd = $tip->locator(
+			// language=JQuery-CSS
+			'kbd',
+		);
+		if (trim($tip->textContent() ?? '') !== "$text $keys" || $kbd->count() !== 1 || $kbd->textContent() !== $keys) {
+			throw new RuntimeException("the tooltip says '{$tip->textContent()}'");
+		}
+	}
+
 	#[Then('the settings dialog is closed')]
 	public function settingsClosed(): void
 	{

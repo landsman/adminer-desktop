@@ -27,6 +27,12 @@
 			host.appendChild(tip);
 		}
 		tip.textContent = text;
+		// data-shortcut: the keys that do the same, as a key cap after the label (the gear's ⌘,).
+		if (owner.dataset.shortcut) {
+			const kbd = document.createElement("kbd");
+			kbd.textContent = owner.dataset.shortcut;
+			tip.append(" ", kbd);
+		}
 		if (typeof tip.showPopover === "function") {
 			tip.setAttribute("popover", "manual");
 			try {

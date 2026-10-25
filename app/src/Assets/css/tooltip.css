@@ -20,6 +20,19 @@
 	pointer-events: none;
 }
 
+/* A shortcut beside the label, a key cap drawn in the tooltip's own inverted colours. System font
+   for the same reason as the shortcuts tab: ⌘ comes out tiny in monospace. */
+#ad-tooltip kbd {
+	margin-left: 0.4em;
+	padding: 0 0.35em;
+	border: 1px solid color-mix(in srgb, var(--bg) 35%, transparent);
+	border-radius: var(--ad-radius-sm);
+	background: none;
+	color: inherit;
+	font-family: system-ui;
+	font-size: 1em;
+}
+
 #ad-tooltip[hidden] {
 	display: none;
 }

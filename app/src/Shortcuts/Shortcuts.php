@@ -14,6 +14,9 @@ use Desktop\Os;
 * finds it.
 */
 class Shortcuts {
+	/** Opens the settings dialog: ⌘, is where every mac app keeps its settings. */
+	const array SETTINGS = [Key::Mod, ','];
+
 	private \AdminerDesktop $desktop;
 	private Os $os;
 
@@ -31,6 +34,7 @@ class Shortcuts {
 		return [
 			'shortcuts.group_app' => [
 				['shortcuts.help', [[Key::Shift, '?']], null],
+				['shortcuts.settings', [self::SETTINGS], null],
 				['shortcuts.search', [[[Key::Shift], [Key::Shift]]], null],
 				['shortcuts.reload', [[Key::Mod, 'R'], ['F5']], null],
 				['shortcuts.close', [[Key::Escape]], null],
@@ -82,6 +86,11 @@ class Shortcuts {
 	*/
 	static function sequence(array $presses, Os $os): string {
 		return implode($os === Os::Mac ? '' : ' ', array_map(fn($keys) => self::write($keys, $os), $presses));
+	}
+
+	/** The settings shortcut in this platform's notation, for the gear's tooltip. */
+	function settings(): string {
+		return self::write(self::SETTINGS, $this->os);
 	}
 
 	function panel(): void {
