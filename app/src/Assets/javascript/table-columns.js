@@ -144,7 +144,7 @@ if (headers.length) {
 			lengthField.value = String(fits);
 			// The query has to run again for the longer values, but nobody asked for a new page:
 			// refresh.js swaps the rows in where they are, highlighting and all.
-			window.adminer.page.refresh();
+			void window.adminer.page.refresh();
 		}
 	};
 

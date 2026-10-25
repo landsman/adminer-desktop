@@ -24,7 +24,9 @@ window.adminer.page.refresh = async (href) => {
 	// The results table, and the form the query's options live in — the select page has both,
 	// and a page without the rows has nothing to refresh.
 	const table = document.querySelector("#table");
-	const form = document.querySelector("#form");
+	const form = /** @type {HTMLFormElement | null} */ (
+		document.querySelector("#form")
+	);
 	const body = table?.tBodies[0];
 	if (!body || (!form && !href)) {
 		return false;
@@ -34,7 +36,8 @@ window.adminer.page.refresh = async (href) => {
 	// different order. Otherwise the request a submit would make: the form's own fields, as
 	// adminer's GET expects them.
 	const url =
-		href ?? `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
+		href ??
+		`${location.pathname}?${new URLSearchParams(/** @type {any} */ (new FormData(form)))}`;
 	// Left up on a failure, which falls back to loading the page.
 	window.adminer.page.busy();
 	const stopped = new AbortController();

@@ -1,38 +1,5 @@
-/**
- * window.adminer: one name for everything the page and the app share, in two halves.
- *
- * - page: what our page scripts (and, for demo, PHP) offer each other. Plain scripts, not
- *   modules, so what one file gives another goes here, and the giver sorts earlier by name.
- * - native: what the launcher binds (bindNative in launcher/main.go). Only in the app, never in
- *   a plain browser or the e2e, so it is always reached with ?.
- *
- * The typedefs below are the list of both. A member nobody declared is flagged by the IDE, so a
- * new one is a line here first — and the README's list says what it is for.
- *
- * @typedef {object} AdminerPage
- * @property {{resize: string, sidebar: string}} api Our api.php actions (below).
- * @property {(id: string, fallback: string) => string} lang A string of ours, translated (below).
- * @property {(on?: boolean) => void} busy Show or hide the activity indicator (busy.js).
- * @property {(href: string) => void} go Navigate, with the indicator up (busy.js).
- * @property {(href?: string) => Promise<boolean>} refresh A select page's rows, in place (refresh.js).
- * @property {(id: string) => void} openDialog Open a modal.latte dialog by id (modal.js).
- * @property {(message: string) => void} toast A brief confirmation (toast.js).
- * @property {() => void} [search] Open the table search (search.js).
- * @property {() => void} [reopenSettings] Keep settings open across the next load (settings-dialog.js).
- * @property {(edge: HTMLElement, how: {grab: () => number, set: (width: number) => void, done: (width: number) => void}) => void} dragWidth
- *   Drag an edge to a width (drag-width.js).
- * @property {string} [demo] The `make demo` connection, set by AdminerDesktop::head().
- *
- * @typedef {object} AdminerNative
- * @property {() => void} loaderShown The loader has parsed: show the window (loading.html).
- * @property {(css: string) => void} setBackground The page's colour, for a resize's unpainted strip.
- * @property {(mode: "light" | "dark" | "auto") => void} setAppearance What the sidebar's material is drawn in.
- * @property {() => void} [dragWindow] Move the window from a press on the toolbar band (macOS, frameless).
- * @property {() => void} [titlebarDoubleClick] Zoom or minimise, as the system setting says (macOS, frameless).
- *
- * @type {{page: AdminerPage, native?: AdminerNative}}
- */
-window.adminer ??= /** @type {any} */ ({});
+// window.adminer and both its halves are declared in adminer.d.ts.
+window.adminer ??= /** @type {Window["adminer"]} */ ({});
 
 /**
  * The app's own API actions the page talks to, gathered in one place — so what is in use is

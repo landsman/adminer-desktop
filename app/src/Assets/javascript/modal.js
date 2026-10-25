@@ -28,7 +28,9 @@
 		dialog.querySelector("form") ?? dialog.closest("form");
 	const fields = (dialog) => {
 		const form = formOf(dialog);
-		return form ? new URLSearchParams(new FormData(form)).toString() : "";
+		return form
+			? new URLSearchParams(/** @type {any} */ (new FormData(form))).toString()
+			: "";
 	};
 	const changed = (dialog) =>
 		dialog.hasAttribute("data-guard") &&

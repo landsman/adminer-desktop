@@ -38,7 +38,9 @@ const OPEN_KEY = "ad-settings-open";
 // using it. One shot, consumed on read, set through window.adminer.page.reopenSettings below.
 const REOPEN_KEY = "ad-settings-reopen";
 const reloaded =
-	performance.getEntriesByType("navigation")[0]?.type === "reload";
+	/** @type {PerformanceNavigationTiming | undefined} */ (
+		performance.getEntriesByType("navigation")[0]
+	)?.type === "reload";
 
 if (gear && dialog) {
 	const tabs = document.querySelector("#desktop-tabs");
