@@ -69,6 +69,14 @@ html {
 	/* Ours. */
 	--ad-accent: light-dark(#4b5bd4, #808ef6);
 	--ad-accent-fg: light-dark(#ffffff, #12131a);
+	/* The accent as text: no lighter than oklch 0.52 on the light side and no darker than 0.72 on
+	   the dark, which holds 4.5:1 on either panel. macOS's blue (#007aff) read 3.78:1 on the light
+	   sidebar; a yellow or a graphite accent would be further off. Icons, the selected row and the
+	   buttons keep the accent as it is. */
+	--ad-accent-text: light-dark(
+		oklch(from var(--ad-accent) min(l, 0.52) c h),
+		oklch(from var(--ad-accent) max(l, 0.72) c h)
+	);
 	/* A form's buttons; the accent unless a platform says otherwise (the macOS block above). */
 	--ad-button: var(--ad-accent);
 	--ad-button-fg: var(--ad-accent-fg);

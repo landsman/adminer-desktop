@@ -3284,7 +3284,11 @@ class DesktopContext implements Context
 					const split = { true: [], false: [] };
 					for (const node of v.nodes) {
 						const el = document.querySelector(node.target[0]);
-						split[!!el?.closest(ours) && !el.matches(upstream)].push(node.target.join(' ') + (node.any[0]?.message ? ' — ' + node.any[0].message : ''));
+						// No element found behind the text, so axe compared it with white: under WebKit it misses
+						// the sidebar's own fill (#menu, there in the computed stack), and read light text in the
+						// dark scheme on white. Printed with the upstream findings, not failed.
+						const unmeasured = v.id === 'color-contrast' && !node.any[0]?.relatedNodes?.length;
+						split[!!el?.closest(ours) && !el.matches(upstream) && !unmeasured].push(node.target.join(' ') + (unmeasured ? ' (no background found)' : '') + (node.any[0]?.message ? ' — ' + node.any[0].message : ''));
 					}
 					for (const side of [true, false]) {
 						if (split[side].length) {
