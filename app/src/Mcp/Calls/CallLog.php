@@ -60,25 +60,27 @@ class CallLog {
 		if (trim($line) === '') {
 			return null;
 		}
-		$json = json_decode($line, true);
-		if (!is_array($json)) {
+		// Objects, not arrays: an empty {} in the request would otherwise be shown as [].
+		$json = json_decode($line);
+		if (!$json instanceof \stdClass) {
 			$fields = explode("\t", $line);
 			return new Call($id, $fields[0], CallStatus::Unknown, $fields[1] ?? '', $fields[2] ?? '', detail: $fields[3] ?? '');
 		}
-		$string = fn(string $key): string => is_string($json[$key] ?? null) ? $json[$key] : '';
+		$string = fn(string $key): string => is_string($json->$key ?? null) ? $json->$key : '';
+		$request = $json->request ?? null;
 		return new Call(
 			$id,
 			$string('time'),
 			CallStatus::tryFrom($string('status')) ?? CallStatus::Unknown,
 			$string('method'),
 			$string('tool'),
-			is_int($json['duration_ms'] ?? null) ? $json['duration_ms'] : null,
+			is_int($json->duration_ms ?? null) ? $json->duration_ms : null,
 			$string('connection'),
 			$string('connection_name'),
 			$string('database'),
 			$string('error'),
-			is_array($json['request'] ?? null) ? $json['request'] : null,
-			is_string($json['request'] ?? null) ? $json['request'] : '', // a line that was not JSON
+			is_object($request) || is_array($request) ? $request : null,
+			is_string($request) ? $request : '', // a line that was not JSON
 		);
 	}
 

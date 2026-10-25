@@ -20,8 +20,8 @@ final readonly class Call {
 		public string $database = '',
 		/** What the agent was told went wrong. */
 		public string $error = '',
-		/** @var array<mixed>|null the whole JSON-RPC request; null on an old line */
-		public ?array $request = null,
+		/** @var \stdClass|array<mixed>|null the whole JSON-RPC request, decoded as objects; null on an old line */
+		public \stdClass|array|null $request = null,
 		/** An old tab-separated line's detail: the SQL or the table, cut to 500 bytes. */
 		public string $detail = '',
 	) {
@@ -60,7 +60,7 @@ final readonly class Call {
 
 	/** @return array<mixed> */
 	private function arguments(): array {
-		$arguments = $this->request['params']['arguments'] ?? null;
-		return is_array($arguments) ? $arguments : [];
+		$arguments = is_object($this->request) ? $this->request->params->arguments ?? null : null;
+		return $arguments instanceof \stdClass ? (array) $arguments : [];
 	}
 }
