@@ -10,7 +10,7 @@ use Tracy\IBarPanel;
 * values — so the stored preferences are one click away while debugging, instead of a hunt
 * through the data dir for settings.json.
 *
-* Built only in Debug::enable() under -debug, and autoloaded on demand — so implementing a
+* Built only in Tracy::enable() under -debug, and autoloaded on demand — so implementing a
 * Tracy interface here never pulls Tracy onto a production request: nothing outside -debug
 * references this class, so the loader never reaches it.
 */

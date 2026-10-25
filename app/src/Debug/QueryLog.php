@@ -22,7 +22,7 @@ use Tracy\IBarPanel;
 * user's fire before it runs (sqlCommandQuery) or after (selectQuery, messageQuery), so the
 * queries are only turned into events when the bar renders, user ones first.
 *
-* Built only by Debug::plugins() under -debug, and dibi is a dev dependency, so a release
+* Built only by Tracy::plugins() under -debug, and dibi is a dev dependency, so a release
 * has neither.
 */
 class QueryLog extends \Adminer\Plugin implements IBarPanel {

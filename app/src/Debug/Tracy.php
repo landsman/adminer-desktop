@@ -16,7 +16,7 @@ use Tracy\Debugger;
 * Never outside -debug, for the same reason the web inspector is not: it would hand that
 * to anything that can reach the page.
 */
-class Debug {
+class Tracy {
 	static function enable(): void {
 		if (!Env::Debug->get()) {
 			return;

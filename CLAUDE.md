@@ -133,7 +133,7 @@ registers every `Adminer*` class as a plugin — so it stays at the doc root as
 `require`s `vendor/autoload.php` to turn the loader on. And the two bare entries that don't
 boot adminer — `api.php`, `Settings/Theme/screenshot.php` — each `require`
 `vendor/autoload.php` themselves. What used to be free functions is now methods
-(`Env::DataDir->get()`, `Latte::engine()`, `Debug::enable()`), so there are no function files
+(`Env::DataDir->get()`, `Latte::engine()`, `Debug\Tracy::enable()`), so there are no function files
 to special-case — PSR-4 covers everything.
 
 ## The Adminer Desktop theme
@@ -220,7 +220,7 @@ app/src/                     the Desktop\ namespace, PSR-4: everything we wrote
 app/src/Api/                 one class per action; ResizePreference stores a dragged width
 app/src/Files.php            Desktop\Files - recursive file finding
 app/src/Latte.php            Desktop\Latte::engine() - the engine every *.latte is rendered by
-app/src/Debug/               Tracy and its bar panels, only under -debug; Debug::enable() turns it on
+app/src/Debug/               Tracy and its bar panels, only under -debug; Tracy::enable() turns it on
 app/src/Settings/Dialog.php  the settings dialog shell (settings-dialog.latte)
 app/src/Settings/Theme/      designs, previews, the screenshot endpoint
 app/src/Settings/Theme/designs/adminer-desktop/   our default theme (@import components)

@@ -12,7 +12,7 @@ use Tracy\IBarPanel;
 * graph. The WebKit processes are not in it: they are XPC children of launchd, so nothing
 * ties them to this app's pid — Safari's Web Inspector, Timelines → Memory, has the page's.
 *
-* Built only in Debug::enable(), under -debug.
+* Built only in Tracy::enable(), under -debug.
 */
 class ResourcesPanel implements IBarPanel {
 	/** The tab: what the server and the launcher hold together, or ? when either is unknown —
