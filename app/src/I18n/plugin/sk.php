@@ -18,6 +18,7 @@ return [
 	'modal.close' => 'Zavrieť',
 	'settings.reset' => 'Obnoviť predvolené',
 	'settings.reset_confirm' => 'Obnoviť všetky nastavenia na predvolené? Vzhľad, pluginy aj šírky, ktoré ste si upravili, sa zabudnú. Jazyk a uložené servery Admineru zostanú.',
+	'settings.load_failed' => 'Nastavenia sa nepodarilo načítať.',
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.

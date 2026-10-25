@@ -18,6 +18,7 @@ return [
 	'modal.close' => 'Închide',
 	'settings.reset' => 'Resetează la implicit',
 	'settings.reset_confirm' => 'Resetați toate setările la valorile implicite? Aspectul, pluginurile și lățimile modificate de dumneavoastră se pierd. Limba și serverele salvate în Adminer rămân.',
+	'settings.load_failed' => 'Setările nu au putut fi încărcate.',
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.

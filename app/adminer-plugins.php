@@ -28,6 +28,7 @@ require_once __DIR__ . "/AdminerDesktop.php";
 // plugin can offer runs too late for one or the other.
 $desktop = new AdminerDesktop();
 $desktop->handlePost();
+$desktop->dialog()->panels();
 
 // handlePost() first: ticking a plugin and seeing it take effect on the same request is the
 // whole point of saving before this line rather than after it. The debug ones first: the SQL

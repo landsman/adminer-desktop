@@ -18,6 +18,7 @@ return [
 	'modal.close' => 'Zamknij',
 	'settings.reset' => 'Przywróć domyślne',
 	'settings.reset_confirm' => 'Przywrócić wszystkie ustawienia do domyślnych? Wygląd, wtyczki i zmienione przez Ciebie szerokości zostaną zapomniane. Język i zapisane serwery Adminera pozostaną.',
+	'settings.load_failed' => 'Nie udało się wczytać ustawień.',
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.

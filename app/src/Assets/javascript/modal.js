@@ -9,6 +9,8 @@
  *   preventDefault() on a second Escape with no click between, and can skip `cancel` right after
  *   the click that opened the dialog — on `close` it is reopened and asked instead, its fields
  *   intact, since closing a dialog does not reset its form.
+ * - An element with data-src inside a dialog is fetched on its first open: content the page
+ *   would otherwise render on every load for a dialog it rarely opens (the settings panels).
  */
 
 // In a block of its own: these files are classic scripts sharing one global scope, and a
@@ -47,13 +49,60 @@
 		}
 	}
 
+	// An element with data-src is filled from that URL before the dialog shows, so the guard's
+	// snapshot sees its fields. On a failure its [data-load-failed] message shows instead.
 	function open(dialog) {
 		if (!dialog || dialog.open) {
+			return;
+		}
+		const slot = dialog.querySelector("[data-src]");
+		if (!slot) {
+			reveal(dialog);
+			return;
+		}
+		load(slot).then(
+			() => reveal(dialog),
+			() => {
+				slot.querySelector("[data-load-failed]")?.removeAttribute("hidden");
+				reveal(dialog);
+			},
+		);
+	}
+
+	function reveal(dialog) {
+		// Opened by a second click while the first was still loading.
+		if (dialog.open) {
 			return;
 		}
 		discarded.delete(dialog);
 		show(dialog);
 		opened.set(dialog, fields(dialog));
+	}
+
+	// Once, kept for every open after; ad-loaded tells the scripts that bind into it. A failed load
+	// is forgotten, so the next open tries again.
+	const loading = new WeakMap();
+	function load(slot) {
+		if (!loading.has(slot)) {
+			const done = fetch(slot.dataset.src)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`${response.status}`);
+					}
+					return response.text();
+				})
+				.then((html) => {
+					slot.innerHTML = html;
+					slot.removeAttribute("data-src");
+					slot.dispatchEvent(new Event("ad-loaded", { bubbles: true }));
+				})
+				.catch((error) => {
+					loading.delete(slot);
+					throw error;
+				});
+			loading.set(slot, done);
+		}
+		return loading.get(slot);
 	}
 
 	function requestClose(dialog) {

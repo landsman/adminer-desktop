@@ -31,13 +31,30 @@ class Dialog {
 		$this->shortcuts = $shortcuts;
 	}
 
+	/** The gear and the dialog's shell, on every page. The panels are not in it — see panels(). */
 	function render(): void {
 		Latte::engine()->render(__DIR__ . "/settings-dialog.latte", [
 			"desktop" => $this->desktop,
+			"shortcuts" => $this->shortcuts,
+		]);
+	}
+
+	/** Answer the shell's fetch for its panels and end the request, before adminer prints a page.
+	*
+	* A request of their own rather than part of every page: the theme gallery, the plugin
+	* catalogue and the MCP status were rendered on each load for a dialog most pages never open.
+	* Called from adminer-plugins.php, where LANG — all the panels need — is already set.
+	*/
+	function panels(): void {
+		if (!isset($_GET["desktop_settings_panels"])) {
+			return;
+		}
+		Latte::engine()->render(__DIR__ . "/settings-panels.latte", [
 			"theme" => $this->theme,
 			"plugins" => $this->plugins,
 			"mcp" => $this->mcp,
 			"shortcuts" => $this->shortcuts,
 		]);
+		exit;
 	}
 }

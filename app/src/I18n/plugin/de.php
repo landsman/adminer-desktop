@@ -18,6 +18,7 @@ return [
 	'modal.close' => 'Schließen',
 	'settings.reset' => 'Auf Standard zurücksetzen',
 	'settings.reset_confirm' => 'Alle Einstellungen auf den Standard zurücksetzen? Design, Plugins und die von Ihnen angepassten Breiten gehen verloren. Adminers eigene Sprache und gespeicherte Server bleiben erhalten.',
+	'settings.load_failed' => 'Die Einstellungen konnten nicht geladen werden.',
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.

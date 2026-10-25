@@ -18,6 +18,7 @@ return [
 	'modal.close' => 'Zavřít',
 	'settings.reset' => 'Obnovit výchozí',
 	'settings.reset_confirm' => 'Obnovit všechna nastavení na výchozí? Vzhled, pluginy i šířky, které jste si upravili, se zapomenou. Jazyk a uložené servery Admineru zůstanou.',
+	'settings.load_failed' => 'Nastavení se nepodařilo načíst.',
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
