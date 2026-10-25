@@ -777,7 +777,12 @@ class DesktopContext implements Context
 
 	// ── resizing a field, and the sidebar ────────────────────────────────────────────────────
 
-	/** The field's own native resize grip, in its bottom-right corner. */
+	/** The field's own native resize grip, in its bottom-right corner.
+	 *
+	 * Playwright's WebKit on Linux has the grip but does not resize the field when the mouse drags
+	 * it, so there the step does the browser's part — the width — between a real press and a real
+	 * release, and edit-field-width.js, which listens to those, is tested whole. The grip itself is
+	 * tested where it works: WebKit on macOS. */
 	#[When('I drag the first field :pixels pixels wider')]
 	public function dragFirstField(int $pixels): void
 	{
@@ -785,7 +790,26 @@ class DesktopContext implements Context
 		if (count((array) $this->before['widths']) < 2) {
 			throw new RuntimeException('the edit form has fewer than two visible fields to resize');
 		}
-		$this->drag((array) $this->before['grip'], $pixels);
+		$grip = (array) $this->before['grip'];
+		if (PHP_OS_FAMILY !== 'Linux') {
+			$this->drag($grip, $pixels);
+		} else {
+			$mouse = $this->page->mouse();
+			$mouse->move((float) $grip['x'], (float) $grip['y']);
+			$mouse->down();
+			$this->page->evaluate(
+				// language=JavaScript
+				'(by) => {
+					// The field fields() measured first: a JSON column shows its JUSH <pre>, not the textarea.
+					const field = [...document.querySelectorAll("#form > table.layout textarea, #form > table.layout pre.jush")]
+						.find((el) => el.offsetWidth > 0);
+					field.style.width = `${field.offsetWidth + by}px`;
+				}',
+				$pixels,
+			);
+			$mouse->move((float) $grip['x'] + $pixels, (float) $grip['y'], ['steps' => 10]);
+			$mouse->up();
+		}
 		$this->after = $this->fields();
 	}
 
