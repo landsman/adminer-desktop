@@ -2,11 +2,11 @@ package mcpbridge
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
@@ -34,7 +34,10 @@ func BenchmarkCall(b *testing.B) {
 				message := parse(request)
 				for b.Loop() {
 					start := time.Now()
-					_, result := bridge.exchange(context.Background(), request)
+					answer, result := bridge.exchange(context.Background(), request)
+					if answer == nil || result.status != statusOK || result.where.Database != "shop" {
+						b.Fatalf("the call did not go through, so its time says nothing: %+v", result)
+					}
 					bridge.record(message, request, start, result)
 				}
 			})
@@ -42,14 +45,18 @@ func BenchmarkCall(b *testing.B) {
 	}
 }
 
-// answerOf is a tool result of n rows with the app's _meta, as execute_query answers.
+// answerOf is a tool result of n rows as Server.php writes it: the rows pretty-printed into the
+// text, the envelope compact, and the app's _meta.
 func answerOf(n int) string {
-	rows := make([]string, n)
+	rows := make([]map[string]any, n)
 	for i := range rows {
-		rows[i] = fmt.Sprintf(`{"id":%d,"email":"user%d@example.com","total":"%d.50","created_at":"2026-10-25 12:00:00"}`, i, i, i)
+		rows[i] = map[string]any{"id": i, "email": fmt.Sprintf("user%d@example.com", i), "total": fmt.Sprintf("%d.50", i), "created_at": "2026-10-25 12:00:00"}
 	}
-	text := strings.ReplaceAll("["+strings.Join(rows, ",")+"]", `"`, `\"`)
-	return `{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"` + text + `"}],"_meta":{"adminer-desktop/call":{"connection":"pgsql|db|app","connection_name":"Shop","database":"shop"}}}}`
+	text, _ := json.MarshalIndent(map[string]any{"rows": rows}, "", "    ")
+	content, _ := json.Marshal([]map[string]string{{"type": "text", "text": string(text)}})
+	// By hand rather than from a map, which Go sorts: Server.php puts _meta last.
+	return `{"jsonrpc":"2.0","id":3,"result":{"content":` + string(content) +
+		`,"_meta":{"adminer-desktop/call":{"connection":"pgsql|db|app","connection_name":"Shop","database":"shop"}}}}`
 }
 
 // fullLogDir is a log directory as it stands after two weeks: a day file each, and the app's own
