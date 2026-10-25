@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -391,6 +391,11 @@ i18n: bin/frankenphp$(EXE) app/vendor  ## Generate the native-shell translations
 # PHP source is the committed definition.
 mcp-bridge-data: bin/frankenphp$(EXE) app/vendor  ## Generate the Go MCP bridge's catalogue and sentences from PHP
 	./bin/frankenphp$(EXE) php-cli cli/mcp-bridge.php
+
+# What the MCP bridge costs a call, the record included, against a stub app: run it before and
+# after a change to the bridge and compare. Six runs, so a difference can be told from noise.
+bench: mcp-bridge-data  ## Benchmark the MCP bridge's own cost per call
+	go test -run '^$$' -bench . -benchmem -count 6 ./launcher/mcpbridge/
 
 # Which strings each locale is still missing. Exits non-zero if any are, so CI can gate on it.
 i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)

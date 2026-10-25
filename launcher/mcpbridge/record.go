@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -41,9 +42,27 @@ type where struct {
 	Refused    bool   `json:"refused,omitempty"`
 }
 
-// answered reads the outcome out of the app's answer. The rows are decoded with it and dropped:
-// only an error's text is kept.
+// answered reads the outcome out of the app's answer: only an error's text is kept, never the rows.
+//
+// Decoding a thousand rows to drop them took longer than the rest of the bridge's work on the call
+// (make bench), so an answer with no error key skips it: quotes inside a JSON string are escaped,
+// so `"error":` and `"isError":true` only match a real key, and _meta is read from where it starts.
 func answered(body string) outcome {
+	if !strings.Contains(body, `"error":`) && !strings.Contains(body, `"isError":true`) {
+		o := outcome{status: statusOK}
+		if i := strings.LastIndex(body, `"_meta":`); i >= 0 {
+			var meta struct {
+				Call where `json:"adminer-desktop/call"`
+			}
+			if json.NewDecoder(strings.NewReader(body[i+len(`"_meta":`):])).Decode(&meta) == nil {
+				o.where = meta.Call
+			}
+		}
+		if o.where.Refused {
+			o.status = statusRefused
+		}
+		return o
+	}
 	var a struct {
 		Error *struct {
 			Message string `json:"message"`
@@ -121,8 +140,8 @@ func LogExit(logs, why string) {
 }
 
 // append writes one line with one O_APPEND write, which several bridges and concurrent calls
-// cannot interleave, and prunes what is past keepDays. Rotation is the filename: a new day names
-// a new file, and yesterday's is left exactly as it was.
+// cannot interleave, and prunes what is past keepDays once a day. Rotation is the filename: a new
+// day names a new file, and yesterday's is left exactly as it was.
 func (b *Bridge) append(l line, at time.Time) {
 	if b.logs == "" {
 		return
@@ -140,7 +159,9 @@ func (b *Bridge) append(l line, at time.Time) {
 	}
 	f.Write(buf.Bytes()) //nolint:errcheck // a record that cannot be written must not fail the call
 	f.Close()            //nolint:errcheck
-	prune(b.logs, at)
+	if day := at.UTC().Format(time.DateOnly); b.pruned.Swap(day) != day {
+		prune(b.logs, at)
+	}
 }
 
 var dayFile = regexp.MustCompile(`^mcp-(\d{4}-\d{2}-\d{2})\.log$`)

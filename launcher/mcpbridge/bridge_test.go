@@ -31,7 +31,7 @@ func bridge(t *testing.T, dir string) *Bridge {
 
 // handshake points the bridge at a server, in the shape Desktop\Mcp\Handshake writes: the url
 // names it, and the socket serve() gave it is where the call goes.
-func handshake(t *testing.T, dir, url string) {
+func handshake(t testing.TB, dir, url string) {
 	t.Helper()
 	socket := ""
 	stubs.Range(func(prefix, path any) bool {
@@ -51,7 +51,7 @@ func handshake(t *testing.T, dir, url string) {
 // since the bridge posts nowhere else. Its URL is only a name (each gets its own port, so
 // handshake() can find its socket by it); closing it leaves the socket file behind, refusing, as
 // a Cmd+Q leaves the gate's.
-func serve(t *testing.T, handler http.Handler) *httptest.Server {
+func serve(t testing.TB, handler http.Handler) *httptest.Server {
 	t.Helper()
 	dir, err := os.MkdirTemp("", "mb") // a unix socket path has to stay under ~100 bytes
 	if err != nil {
@@ -78,14 +78,14 @@ var (
 
 // reply is a test server's answer; a write that fails would leave the bridge with a short body
 // and the test asserting on something the server never meant to say.
-func reply(t *testing.T, w io.Writer, body string) {
+func reply(t testing.TB, w io.Writer, body string) {
 	t.Helper()
 	if _, err := io.WriteString(w, body); err != nil {
 		t.Error(err)
 	}
 }
 
-func readBody(t *testing.T, r *http.Request) string {
+func readBody(t testing.TB, r *http.Request) string {
 	t.Helper()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -94,7 +94,7 @@ func readBody(t *testing.T, r *http.Request) string {
 	return string(body)
 }
 
-func closeOrFail(t *testing.T, c io.Closer) {
+func closeOrFail(t testing.TB, c io.Closer) {
 	t.Helper()
 	if err := c.Close(); err != nil {
 		t.Error(err)
