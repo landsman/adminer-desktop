@@ -32,7 +32,7 @@ function onClick(e) {
 	clearTimeout(pendingNav);
 	const href = name.href;
 	pendingNav = setTimeout(() => {
-		window.adminerDesktop.go(href);
+		window.adminer.page.go(href);
 	}, DOUBLE_CLICK_MS);
 }
 
@@ -46,7 +46,7 @@ function onDoubleClick(e) {
 	clearTimeout(pendingNav);
 	const select = name.closest("li").querySelector("a.select");
 	if (select) {
-		window.adminerDesktop.go(select.href);
+		window.adminer.page.go(select.href);
 	}
 }
 

@@ -1,6 +1,6 @@
 // A brief message that confirms something happened and then gets out of the way.
 //
-// Exposed as window.adminerDesktop.toast so any of our scripts can call it without a module
+// Exposed as window.adminer.page.toast so any of our scripts can call it without a module
 // system — the page loads plain files, and the alternative is every caller reimplementing the same div.
 //
 // Deliberately not an alert(): these confirm an action the user just took, so they must not
@@ -37,7 +37,7 @@
 		return node;
 	}
 
-	window.adminerDesktop.toast = (message) => {
+	window.adminer.page.toast = (message) => {
 		if (!message) {
 			return;
 		}

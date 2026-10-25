@@ -39,12 +39,12 @@ func installFrameless(w webview.WebView) {
 		return
 	}
 	bind := func(name string, f any) {
-		if err := w.Bind(name, f); err != nil {
+		if err := bindNative(w, name, f); err != nil {
 			log.Printf("frameless: %s bind failed: %v", name, err)
 		}
 	}
-	bind("adDragWindow", func() { C.dragWindow(win) })
-	bind("adTitlebarDoubleClick", func() { C.titlebarDoubleClick(win) })
+	bind("dragWindow", func() { C.dragWindow(win) })
+	bind("titlebarDoubleClick", func() { C.titlebarDoubleClick(win) })
 	mark := func(on bool) string {
 		return fmt.Sprintf(`document.documentElement.classList.toggle("ad-fullscreen", %t);`, on)
 	}

@@ -24,10 +24,10 @@ waits are listed that way.
 | A form in the content sent, GET or POST | a SQL command; Select over a table's rows | nothing: busy.js takes every one ahead of adminer's own handler, but an export saved to a file |
 | A form with `data-busy-here` sent | logging in | its own `ad-waiting` class instead: the login modal turns Login into a Cancel (`connections.js`) |
 | A form elsewhere sent | none yet | `data-busy` on it or on an element around it |
-| A script setting `location` | the sidebar's tables on our design (`table-nav.js`); the search | `window.adminerDesktop.go(href)` in its place |
+| A script setting `location` | the sidebar's tables on our design (`table-nav.js`); the search | `window.adminer.page.go(href)` in its place |
 | Adminer's `form.submit()` on `#dbs` | the database and schema menus | a change listener in busy.js |
 | Adminer's `form.submit()` elsewhere | the language | nothing yet |
-| Rows fetched in place | paging and sorting (`refresh.js`) | `window.adminerDesktop.busy()`, then `adminerDesktop.busy(false)` |
+| Rows fetched in place | paging and sorting (`refresh.js`) | `window.adminer.page.busy()`, then `adminer.page.busy(false)` |
 | A download | an export saved to a file | never, see below |
 
 ## A SQL command, while it runs

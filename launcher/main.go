@@ -420,7 +420,7 @@ func main() {
 	defer w.Destroy()
 	// webview.New already mapped the window, unpainted and unsized -- that empty frame is the
 	// white flash. Hide it before the run loop starts (so it is never shown in that state) and
-	// bring it back once the loader has painted, in the adLoaderShown callback below.
+	// bring it back once the loader has painted, in the loaderShown callback below.
 	hideWindow(w.Window())
 	w.SetTitle("Adminer Desktop")
 	// Without an icon the Linux taskbar shows a generic placeholder. macOS uses the .app's
@@ -472,7 +472,7 @@ func main() {
 	// startup phase Go can't time, since it is WebKit's own paint. It separates "the window was
 	// shown before the loader rendered" from "WebKit was slow to paint". loading.html calls this
 	// on DOMContentLoaded.
-	if err := w.Bind("adLoaderShown", func() {
+	if err := bindNative(w, "loaderShown", func() {
 		log.Printf("startup: loader rendered in %s", time.Since(guiStart).Round(time.Millisecond))
 		// The loader has parsed and styled, so there is finally something to show: reveal the
 		// window (already sized), painting straight onto the spinner instead of a blank frame.
@@ -483,7 +483,7 @@ func main() {
 
 	// The page's background, from window-background.js, for the strip a fast resize uncovers.
 	// A computed colour is rgb() when opaque; anything else (transparent, rgba) is left alone.
-	if err := w.Bind("adSetBackground", func(css string) {
+	if err := bindNative(w, "setBackground", func(css string) {
 		var r, g, b int
 		if _, err := fmt.Sscanf(css, "rgb(%d, %d, %d)", &r, &g, &b); err == nil {
 			setWindowBackground(w.Window(), r, g, b)
@@ -493,7 +493,7 @@ func main() {
 	}
 
 	// The appearance preference, from window-background.js: what the sidebar's material is drawn in.
-	if err := w.Bind("adSetAppearance", func(mode string) {
+	if err := bindNative(w, "setAppearance", func(mode string) {
 		dark := -1
 		switch mode {
 		case "light":
@@ -532,6 +532,20 @@ func main() {
 // coarse mtime poll rather than an OS file-watch: it needs no dependency and is plenty for
 // editing PHP and CSS by hand, since frankenphp serves the tree live and a reload is all
 // it takes for a change to show.
+// bindNative puts f on the page as window.adminer.native[name]. Bind can only write window[name],
+// so f is bound flat and an init script added after it moves it in -- the bound function carries
+// its own name, so it still reaches f from there. Eval as well, as Bind does, for a page already up.
+func bindNative(w webview.WebView, name string, f any) error {
+	flat := "adminerNative_" + name
+	if err := w.Bind(flat, f); err != nil {
+		return err
+	}
+	js := fmt.Sprintf("((window.adminer ??= {}).native ??= {}).%s = window.%s; delete window.%s;", name, flat, flat)
+	w.Init(js)
+	w.Eval(js)
+	return nil
+}
+
 func watchAndReload(dir string, w webview.WebView) {
 	newest := func() (t time.Time) {
 		_ = filepath.Walk(dir, func(_ string, info os.FileInfo, err error) error {

@@ -2,7 +2,7 @@
  * Auto-login for `make demo`.
  *
  * The launcher forwards ADMINER_DESKTOP_DEMO and desktop.php turns it into
- * window.adminerDesktop.demo — a throwaway "driver server username password db". On the
+ * window.adminer.page.demo — a throwaway "driver server username password db". On the
  * login page we fill those in and submit, so `make demo` drops straight into the seeded
  * database.
  *
@@ -11,7 +11,7 @@
  * on the login form to fix by hand rather than resubmitting forever.
  */
 
-const desktopDemo = window.adminerDesktop.demo;
+const desktopDemo = window.adminer.page.demo;
 const driver = document.querySelector('[name="auth[driver]"]');
 
 if (desktopDemo && driver && !sessionStorage.getItem("desktop-demo-done")) {

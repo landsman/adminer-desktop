@@ -15,7 +15,7 @@
 		document.body.append(indicator);
 	}
 
-	window.adminerDesktop.busy = (on = true) => indicator?.togglePopover(on);
+	window.adminer.page.busy = (on = true) => indicator?.togglePopover(on);
 
 	// Stop, or Escape, drops the wait as a browser's Stop does: a saved connection whose server
 	// never answers otherwise turns until the connection times out. The server is not held up by it,
@@ -38,14 +38,14 @@
 	const waitOn = (form, on = true) =>
 		form.hasAttribute("data-busy-here")
 			? form.classList.toggle("ad-waiting", on)
-			: window.adminerDesktop.busy(on);
+			: window.adminer.page.busy(on);
 
 	// Two frames: the first draws the indicator, the second starts once that frame is out.
 	const afterPaint = (then) =>
 		requestAnimationFrame(() => requestAnimationFrame(then));
 
-	window.adminerDesktop.go = (href) => {
-		window.adminerDesktop.busy();
+	window.adminer.page.go = (href) => {
+		window.adminer.page.busy();
 		afterPaint(() => location.assign(href));
 	};
 
@@ -58,7 +58,7 @@
 			const form = event.target.closest?.("#dbs")?.closest("form");
 			if (form) {
 				event.stopPropagation();
-				window.adminerDesktop.busy();
+				window.adminer.page.busy();
 				afterPaint(() => form.requestSubmit());
 			}
 		},
@@ -145,13 +145,13 @@
 			!event.shiftKey
 		) {
 			event.preventDefault();
-			window.adminerDesktop.go(link.href);
+			window.adminer.page.go(link.href);
 		}
 	});
 
 	addEventListener("pageshow", (event) => {
 		if (event.persisted) {
-			window.adminerDesktop.busy(false);
+			window.adminer.page.busy(false);
 			for (const form of document.querySelectorAll(".ad-waiting")) {
 				form.classList.remove("ad-waiting");
 			}

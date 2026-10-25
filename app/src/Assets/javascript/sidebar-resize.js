@@ -36,7 +36,7 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	// torn down by the very next navigation.
 	const persist = () => {
 		navigator.sendBeacon(
-			window.adminerDesktop.api.resize,
+			window.adminer.page.api.resize,
 			new URLSearchParams({
 				what: "sidebar",
 				width: String(clamp(Math.round(width()))),
@@ -57,7 +57,7 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	handle.setAttribute("aria-valuenow", String(clamp(Math.round(width()))));
 	content.before(handle);
 
-	window.adminerDesktop.dragWidth(handle, {
+	window.adminer.page.dragWidth(handle, {
 		grab: width,
 		set: apply,
 		done: persist,

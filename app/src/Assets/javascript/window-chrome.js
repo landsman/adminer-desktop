@@ -24,7 +24,7 @@
 
 	// The toolbar's hairline shows only once the page scrolls under it, or while the window is not
 	// the active one, as Mail's does (window.css): two classes on <html> to draw it by.
-	if (window.adDragWindow) {
+	if (window.adminer.native?.dragWindow) {
 		const content = document.querySelector("#content");
 		const scrolled = () =>
 			root.classList.toggle(
@@ -40,7 +40,7 @@
 		active();
 	}
 
-	if (window.adDragWindow) {
+	if (window.adminer.native?.dragWindow) {
 		document.addEventListener("mousedown", (event) => {
 			const target = event.target;
 			if (
@@ -56,16 +56,16 @@
 			// Or the press starts selecting the breadcrumb's text as the window moves.
 			event.preventDefault();
 			if (event.detail === 2) {
-				window.adTitlebarDoubleClick();
+				window.adminer.native?.titlebarDoubleClick();
 			} else {
-				window.adDragWindow();
+				window.adminer.native?.dragWindow();
 			}
 		});
 	}
 
 	// Our design only, which draws it (window.css); not on the login page, which has no sidebar.
 	if (
-		window.adDragWindow &&
+		window.adminer.native?.dragWindow &&
 		!root.classList.contains("ad-frameless-foreign") &&
 		document.querySelector("#foot") &&
 		!document.querySelector('input[name="auth[username]"]')
@@ -73,7 +73,7 @@
 		const toggle = document.createElement("button");
 		toggle.type = "button";
 		toggle.id = "ad-sidebar-toggle";
-		toggle.title = window.adminerDesktop.lang(
+		toggle.title = window.adminer.page.lang(
 			"sidebar.toggle",
 			"Show or hide the sidebar",
 		);
@@ -88,7 +88,7 @@
 			const hidden = document.body.classList.toggle("ad-sidebar-hidden");
 			sync();
 			navigator.sendBeacon(
-				window.adminerDesktop.api.sidebar,
+				window.adminer.page.api.sidebar,
 				new URLSearchParams({ hidden: hidden ? "1" : "0" }),
 			);
 		});

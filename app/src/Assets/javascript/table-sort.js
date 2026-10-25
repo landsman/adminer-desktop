@@ -23,6 +23,6 @@ if (head) {
 			return;
 		}
 		event.preventDefault();
-		window.adminerDesktop.refresh(link.href);
+		window.adminer.page.refresh(link.href);
 	});
 }

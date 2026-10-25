@@ -19,16 +19,19 @@ a cache-buster; nothing lists them by name.
 ## Shared by name, not by import
 
 These are plain scripts, not modules, so what one file offers another it puts on
-`window.adminerDesktop`, and the file that defines it sorts earlier by name — `refresh.js`
+`window.adminer.page`, and the file that defines it sorts earlier by name — `refresh.js`
 before `table-columns.js`. `api.js` sorts first and creates the object; every other file adds
 to it, never replaces it.
 
-`window.ad*` is the native bridge's, not ours: the launcher's `w.Bind()` registers a function
-on `window` itself and cannot reach into an object, so `adDragWindow`, `adTitlebarDoubleClick`,
-`adLoaderShown`, `adSetBackground` and `adSetAppearance` stay there. They exist only in the
-app, never in a plain browser — call them with `?.`. A page script never defines an `ad*`.
+`window.adminer.native` is the launcher's, not ours: `bindNative()` in `launcher/main.go` puts
+each binding there. It exists only in the app, never in a plain browser or the e2e — reach it
+with `?.`. A page script never adds to it.
 
-What `window.adminerDesktop` holds so far:
+Both are declared once, as JSDoc typedefs at the top of `api.js` (`AdminerPage`,
+`AdminerNative`). A new member is a `@property` there first, so the IDE completes it and flags a
+name nobody declared. In Web Inspector, `window.adminer` shows what is actually there.
+
+What `window.adminer.page` holds so far:
 
 - `api` — the app's own endpoints, one place instead of URLs in string literals.
 - `lang(id, fallback)` — a string of ours, translated. Add it to the plugin

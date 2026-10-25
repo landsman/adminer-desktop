@@ -7,7 +7,7 @@
  *
  * Sorted before both callers, so it is defined by the time they run (see api.js).
  */
-window.adminerDesktop.dragWidth = (edge, { grab, set, done }) => {
+window.adminer.page.dragWidth = (edge, { grab, set, done }) => {
 	// A drag ends in a click on the edge like any other press, which on the data list's header
 	// row is adminer's "select every row" (tableClick); dblclick too, as two quick drags are one.
 	for (const bubbling of ["click", "dblclick"]) {

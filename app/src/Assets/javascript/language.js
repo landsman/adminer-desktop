@@ -41,7 +41,7 @@ if (slot && select && token) {
 		// rather than a reload, and settings-dialog.js restores across reloads only — so it has
 		// to be asked. Without this, changing the language dropped you back on the page with the
 		// settings you were in the middle of gone.
-		window.adminerDesktop.reopenSettings?.();
+		window.adminer.page.reopenSettings?.();
 		form.submit();
 	};
 	select.removeAttribute("name");

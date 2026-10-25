@@ -144,7 +144,7 @@ if (headers.length) {
 			lengthField.value = String(fits);
 			// The query has to run again for the longer values, but nobody asked for a new page:
 			// refresh.js swaps the rows in where they are, highlighting and all.
-			window.adminerDesktop.refresh();
+			window.adminer.page.refresh();
 		}
 	};
 
@@ -184,7 +184,7 @@ if (headers.length) {
 		const grip = document.createElement("div");
 		grip.className = "ad-column-grip";
 		th.append(grip);
-		window.adminerDesktop.dragWidth(grip, {
+		window.adminer.page.dragWidth(grip, {
 			grab: () => {
 				pinColumns();
 				return th.getBoundingClientRect().width;

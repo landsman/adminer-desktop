@@ -5,7 +5,7 @@
  * somewhere and a flash when you did not — a column dragged wider needs longer values, and
  * that is a round trip nobody asked for a new page from.
  *
- * `window.adminerDesktop.refresh()` is that round trip: it asks for what the options form currently
+ * `window.adminer.page.refresh()` is that round trip: it asks for what the options form currently
  * says, puts the answer's rows in place of the ones on screen, and leaves everything else
  * alone. Change a field first and this applies it — which is what pressing Select does, minus
  * the document swap.
@@ -20,7 +20,7 @@
  * the indicator's Stop dropped the request, and the rows on screen stay.
  */
 
-window.adminerDesktop.refresh = async (href) => {
+window.adminer.page.refresh = async (href) => {
 	// The results table, and the form the query's options live in — the select page has both,
 	// and a page without the rows has nothing to refresh.
 	const table = document.querySelector("#table");
@@ -36,7 +36,7 @@ window.adminerDesktop.refresh = async (href) => {
 	const url =
 		href ?? `${location.pathname}?${new URLSearchParams(new FormData(form))}`;
 	// Left up on a failure, which falls back to loading the page.
-	window.adminerDesktop.busy();
+	window.adminer.page.busy();
 	const stopped = new AbortController();
 	const stop = () => stopped.abort();
 	addEventListener("desktop-stop", stop);
@@ -57,7 +57,7 @@ window.adminerDesktop.refresh = async (href) => {
 		body.replaceWith(fresh);
 		// So a reload asks for what is on screen rather than what was asked for first.
 		history.replaceState(null, "", url);
-		window.adminerDesktop.busy(false);
+		window.adminer.page.busy(false);
 		return true;
 	} catch {
 		if (stopped.signal.aborted) {
