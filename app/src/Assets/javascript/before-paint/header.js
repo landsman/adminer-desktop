@@ -270,7 +270,7 @@
 		search.type = "button";
 		search.className = "ad-toolbar-search";
 		search.textContent = strings()["toolbar.search"] ?? "Search";
-		search.addEventListener("click", () => window.desktopSearch?.());
+		search.addEventListener("click", () => window.adminerDesktop.search?.());
 		toolbar.append(search);
 		breadcrumb.append(toolbar);
 	};

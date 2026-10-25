@@ -26,7 +26,7 @@
 	popup.setAttribute("popover", "manual");
 	const input = document.createElement("input");
 	input.type = "text";
-	input.placeholder = window.desktopLang(
+	input.placeholder = window.adminerDesktop.lang(
 		"select_filter.placeholder",
 		"Type part of a name",
 	);
@@ -94,7 +94,7 @@
 		if (!shown.length) {
 			const none = document.createElement("li");
 			none.className = "ad-select-filter-none";
-			none.textContent = window.desktopLang(
+			none.textContent = window.adminerDesktop.lang(
 				"select_filter.none",
 				"Nothing matches",
 			);

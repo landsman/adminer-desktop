@@ -1485,7 +1485,7 @@ class DesktopContext implements Context
 	{
 		$this->page->evaluate(
 			// language=JavaScript
-			"() => navigator.sendBeacon(window.desktopApi.resize, new URLSearchParams({what: 'sidebar', width: '420'}))",
+			"() => navigator.sendBeacon(window.adminerDesktop.api.resize, new URLSearchParams({what: 'sidebar', width: '420'}))",
 		);
 		for ($i = 0; $i < 30 && !isset(e2e_settings($this->fix)['user_resized_px']); $i++) {
 			usleep(100_000);
@@ -1896,7 +1896,7 @@ class DesktopContext implements Context
 			// language=JavaScript
 			'async () => {
 				const shown = () => document.querySelector("#ad-busy").matches(":popover-open");
-				const swapped = window.desktopRefresh();
+				const swapped = window.adminerDesktop.refresh();
 				const during = shown();
 				return { swapped: await swapped, during, after: shown() };
 			}',

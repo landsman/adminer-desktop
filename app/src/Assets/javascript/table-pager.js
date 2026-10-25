@@ -115,7 +115,7 @@ if (pagerGrid && pagerBox) {
 	const total = document.createElement("span");
 	total.className = "ad-page-total";
 	// The word between the rows on screen and the rows there are.
-	const word = window.desktopLang("pager.of", "/");
+	const word = window.adminerDesktop.lang("pager.of", "/");
 
 	/** Draw the row for the page we are on. Called again after each move, because every part of
 	 * it — which arrows lead anywhere, which page is selected — is that number. */
@@ -153,7 +153,7 @@ if (pagerGrid && pagerBox) {
 	let shown = at === "last" ? last : current;
 	const goTo = async (page) => {
 		render(page); // the pager moves at once; the rows follow when the answer arrives
-		const swapped = await window.desktopRefresh(urlOf(page));
+		const swapped = await window.adminerDesktop.refresh(urlOf(page));
 		// Stopped, so the rows on screen are still the page before. false fell back to a real
 		// navigation, and this page is on its way out.
 		if (swapped === null) {

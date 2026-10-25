@@ -242,12 +242,13 @@ class AdminerDesktop extends Adminer\Plugin {
 		// fills it into the login form and submits. Only `make demo` ever sets this, so a
 		// shipped build never defines the global and the script stays inert.
 		if ($demo = Env::Demo->get()) {
-			echo Adminer\script("window.desktopDemo = " . json_encode($demo) . ";");
+			echo Adminer\script("(window.adminerDesktop ??= {}).demo = " . json_encode($demo) . ";");
 		}
-		// The strings our scripts show, for window.desktopLang (src/Assets/javascript/api.js): every
-		// catalogue ID under js., translated, in one JSON block — so a new one is a catalogue entry
-		// and nothing here. A data block, never executed, so the CSP has nothing to say about it;
-		// JSON_HEX_TAG keeps a "</script>" or "<!--" in a translation from breaking out of it.
+		// The strings our scripts show, for window.adminerDesktop.lang
+		// (src/Assets/javascript/api.js): every catalogue ID under js., translated, in one JSON
+		// block — so a new one is a catalogue entry and nothing here. A data block, never
+		// executed, so the CSP has nothing to say about it; JSON_HEX_TAG keeps a "</script>" or
+		// "<!--" in a translation from breaking out of it.
 		$strings = [];
 		foreach (array_keys($this->translations[Locale::En->value]) as $id) {
 			if (str_starts_with($id, 'js.')) {

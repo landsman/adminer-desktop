@@ -5,11 +5,13 @@
  * action to a handler in src/Api/.
  *
  * These scripts are deferred and run in document order, which is this folder sorted by name
- * (Desktop\Javascript globs it). "api.js" sorts before its callers, so window.desktopApi is
- * set by the time they run.
+ * (Desktop\Javascript globs it). "api.js" sorts before its callers, so it is the one that creates
+ * window.adminerDesktop, where every page script puts what it offers the others. `??=` because
+ * `make demo` sets .demo from an inline script in the head, which runs before any of these.
  */
 
-window.desktopApi = Object.freeze({
+window.adminerDesktop ??= {};
+window.adminerDesktop.api = Object.freeze({
 	// Persists a width the user dragged — which one is the posted "what" (sidebar,
 	// edit_field); read back by head() on the next load.
 	resize: "api.php?action=resize",
@@ -24,7 +26,7 @@ window.desktopApi = Object.freeze({
  */
 // Closed over, not a top-level const: classic scripts share one global scope, so a "strings"
 // declared here would break any later file that declares its own.
-window.desktopLang = (
+window.adminerDesktop.lang = (
 	(strings) => (id, fallback) =>
 		strings[id] ?? fallback
 )(JSON.parse(document.getElementById("ad-i18n")?.textContent || "{}"));

@@ -52,7 +52,7 @@ function helpShortcut(e) {
 	e.preventDefault();
 	// Checked before opening: the tabs are radios, so this is the whole of switching to it.
 	tab.checked = true;
-	window.desktopOpenDialog?.("desktop-settings");
+	window.adminerDesktop.openDialog?.("desktop-settings");
 }
 
 addEventListener("keydown", helpShortcut);

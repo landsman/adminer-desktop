@@ -73,7 +73,7 @@
 		const toggle = document.createElement("button");
 		toggle.type = "button";
 		toggle.id = "ad-sidebar-toggle";
-		toggle.title = window.desktopLang(
+		toggle.title = window.adminerDesktop.lang(
 			"sidebar.toggle",
 			"Show or hide the sidebar",
 		);
@@ -88,7 +88,7 @@
 			const hidden = document.body.classList.toggle("ad-sidebar-hidden");
 			sync();
 			navigator.sendBeacon(
-				window.desktopApi.sidebar,
+				window.adminerDesktop.api.sidebar,
 				new URLSearchParams({ hidden: hidden ? "1" : "0" }),
 			);
 		});

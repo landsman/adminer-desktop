@@ -39,10 +39,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 			const copied = button.dataset.copied || label;
 			// The toast is what a person actually sees now that the button carries no text —
-			// the title only appears on hover. window.adToast is toast.js, same folder.
+			// the title only appears on hover. window.adminerDesktop.toast is toast.js, same folder.
 			say(copied);
-			if (typeof window.adToast === "function") {
-				window.adToast(copied);
+			if (typeof window.adminerDesktop.toast === "function") {
+				window.adminerDesktop.toast(copied);
 			}
 			clearTimeout(restore);
 			restore = setTimeout(() => {

@@ -18,19 +18,32 @@ a cache-buster; nothing lists them by name.
 
 ## Shared by name, not by import
 
-These are plain scripts, not modules, so what one file offers another it offers on `window`,
-and the file that defines it sorts earlier by name — `api.js` before its callers, `refresh.js`
-before `table-columns.js`. These so far:
+These are plain scripts, not modules, so what one file offers another it puts on
+`window.adminerDesktop`, and the file that defines it sorts earlier by name — `refresh.js`
+before `table-columns.js`. `api.js` sorts first and creates the object; every other file adds
+to it, never replaces it.
 
-- `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
-- `window.desktopLang(id, fallback)` — a string of ours, translated. Add it to the plugin
+`window.ad*` is the native bridge's, not ours: the launcher's `w.Bind()` registers a function
+on `window` itself and cannot reach into an object, so `adDragWindow`, `adTitlebarDoubleClick`,
+`adLoaderShown`, `adSetBackground` and `adSetAppearance` stay there. They exist only in the
+app, never in a plain browser — call them with `?.`. A page script never defines an `ad*`.
+
+What `window.adminerDesktop` holds so far:
+
+- `api` — the app's own endpoints, one place instead of URLs in string literals.
+- `lang(id, fallback)` — a string of ours, translated. Add it to the plugin
   catalogue (`app/src/I18n/plugin/`) as `js.<id>` and it is on every page; nothing else lists
   it. It goes through adminer's `lang()`, so sprintf: a placeholder is `{n}`, never `%`.
-- `window.desktopBusy(on = true)` and `window.desktopGo(href)` — the activity indicator over the
+- `busy(on = true)` and `go(href)` — the activity indicator over the
   page; which wait takes which is in [../busy.md](../busy.md).
-- `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
+- `openDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
-- `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the
+- `toast(message)` — a brief confirmation that needs no dismissing (`copy-field.js`).
+- `search()` — open the table search; `reopenSettings()` — bring the
+  settings dialog back after a navigation it caused (`language.js`).
+- `dragWidth(edge, {grab, set, done})` — drag an edge to a width.
+- `demo` — the `make demo` connection, set by PHP before any script runs.
+- `refresh(href?)` — put a select page's rows on screen without reloading the
   document, adminer's highlighting re-applied and the url corrected. With a url it asks for
   that one (a sort link); without, for whatever the options form currently says, so changing a
   field first is how you apply it. Anything that goes wrong falls back to what the browser
