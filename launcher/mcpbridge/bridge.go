@@ -84,6 +84,7 @@ const callTimeout = 60 * time.Second
 // unreachable, and forwards it to the gate otherwise.
 type Bridge struct {
 	dir    string        // where mcp.json and settings.json live; "" when the app has no durable home
+	logs   string        // where the day's mcp-YYYY-MM-DD.log goes; "" writes none
 	idle   time.Duration // callTimeout, shorter in a test
 	locale string
 }
@@ -91,13 +92,15 @@ type Bridge struct {
 // New is the bridge an agent spawns, on the launcher's own data dir whatever the environment
 // says: an agent started from a shell that has ADMINER_DESKTOP_DATA set for `make serve` or the
 // e2e suite would otherwise read another directory's handshake and report the app as not running
-// while it is open in front of you.
-func New() *Bridge {
+// while it is open in front of you. logs is the launcher's log directory, where Open Logs looks.
+func New(logs string) *Bridge {
 	dir, err := datadir.Path()
 	if err != nil {
 		dir = "" // no config dir at all: nothing to reach, which is what the agent is told
 	}
-	return NewIn(dir)
+	b := NewIn(dir)
+	b.logs = logs
+	return b
 }
 
 // NewIn is for a caller that already knows where the app keeps its state.
@@ -125,6 +128,12 @@ func locale() string {
 // Run pumps messages until stdin closes. Blank lines are skipped, one answer goes out per
 // request, and a notification gets none — JSON-RPC answers silence with silence.
 func (b *Bridge) Run(in io.Reader, out io.Writer) error {
+	return b.RunUntil(context.Background(), in, out)
+}
+
+// RunUntil is Run, ended early by ctx: the calls still in flight are cancelled and recorded as
+// such before it returns, so a signal does not take them out of the log with the process.
+func (b *Bridge) RunUntil(ctx context.Context, in io.Reader, out io.Writer) error {
 	// Messages are answered as they finish, not in turn, and stdin is read on whatever is in
 	// flight: a ping, or the notification that cancels a call, must never wait in the pipe behind
 	// a slow query, or a client checking the server is alive gives up on it. JSON-RPC matches
@@ -170,6 +179,8 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 	}
 	for {
 		select {
+		case <-ctx.Done():
+			return stop()
 		case <-gone:
 			return stop() // stdout is closed: nobody is left to answer
 		case err := <-ended:
@@ -205,17 +216,26 @@ func (b *Bridge) Run(in io.Reader, out io.Writer) error {
 				defer inFlight.Done()
 				defer cancel(nil)
 				defer running.Delete(string(message.id))
+				start := time.Now()
+				answer, result := (*string)(nil), outcome{status: statusCancelled}
+				waited := true
 				if message.method == "tools/call" {
 					select {
 					case slots <- struct{}{}:
 						defer func() { <-slots }()
 					case <-ctx.Done():
-						return // cancelled while it waited its turn
+						waited = false // cancelled while it waited its turn
 					}
 				}
-				answer := b.exchange(ctx, trimmed)
+				if waited {
+					answer, result = b.exchange(ctx, trimmed)
+				}
 				// MCP: a request the client cancelled gets no answer at all.
-				if answer == nil || errors.Is(context.Cause(ctx), errCancelled) {
+				if errors.Is(context.Cause(ctx), errCancelled) {
+					answer, result = nil, outcome{status: statusCancelled}
+				}
+				b.record(message, trimmed, start, result)
+				if answer == nil {
 					return
 				}
 				writing.Lock()
@@ -246,31 +266,37 @@ var errCancelled = errors.New("the client cancelled the request")
 // protocol answers with silence, and a failed request that carried no id, which is also a
 // notification and so also gets none.
 func (b *Bridge) Exchange(line string) *string {
-	return b.exchange(context.Background(), line)
+	answer, _ := b.exchange(context.Background(), line)
+	return answer
 }
 
-func (b *Bridge) exchange(ctx context.Context, line string) *string {
+// exchange is Exchange, and how it went, for the record.
+func (b *Bridge) exchange(ctx context.Context, line string) (*string, outcome) {
 	message := parse(line)
+	failed := func(status, id string) (*string, outcome) {
+		text := b.say(id)
+		return b.unavailable(message, text), outcome{status: status, error: text}
+	}
 
 	call, ok := b.handshake()
 	if !ok {
-		return b.unavailable(message, b.say("mcp.agent_not_running"))
+		return failed(statusNotRunning, "mcp.agent_not_running")
 	}
 	status, body, err := b.post(ctx, call, line)
 	if errors.Is(err, errTimedOut) {
-		return b.unavailable(message, b.say("mcp.agent_timed_out"))
+		return failed(statusTimeout, "mcp.agent_timed_out")
 	}
 	if err != nil {
-		return b.unavailable(message, b.say("mcp.agent_window_closed"))
+		return failed(statusWindowClosed, "mcp.agent_window_closed")
 	}
 	// Adminer redirects to its login page when the session behind the handshake has expired, and
 	// the gate answers 403 once it has no session to lend: say that, whatever the body. Any other
 	// error is not the app's answer either, however much it looks like JSON.
 	if (status >= 300 && status < 400) || status == http.StatusUnauthorized || status == http.StatusForbidden {
-		return b.unavailable(message, b.say("mcp.agent_session_expired"))
+		return failed(statusSessionExpired, "mcp.agent_session_expired")
 	}
 	if status < 200 || status >= 300 {
-		return b.unavailable(message, b.say("mcp.agent_window_closed"))
+		return failed(statusWindowClosed, "mcp.agent_window_closed")
 	}
 	// A BOM or a stray newline is not a different answer, and a newline would end the line stdio
 	// frames each message by.
@@ -279,13 +305,16 @@ func (b *Bridge) exchange(ctx context.Context, line string) *string {
 		// Silence answers a notification (the app's 204), and unavailable() keeps it silent. A
 		// request owed an answer that got none — PHP died, the gate had nothing to say — is told
 		// so, or the agent waits on its id for good.
-		return b.unavailable(message, b.say("mcp.agent_window_closed"))
+		if !message.hasID {
+			return nil, outcome{status: statusOK}
+		}
+		return failed(statusWindowClosed, "mcp.agent_window_closed")
 	}
 	// A login page served as 200 is an expired session too, rather than markup to guess at.
 	if body[0] != '{' && body[0] != '[' {
-		return b.unavailable(message, b.say("mcp.agent_session_expired"))
+		return failed(statusSessionExpired, "mcp.agent_session_expired")
 	}
-	return &body
+	return &body, answered(body)
 }
 
 // unavailable answers with the app out of reach, without failing the connection.
@@ -519,6 +548,7 @@ type rpcMessage struct {
 	hasID   bool
 	method  string
 	asked   string
+	tool    string // tools/call: the tool's name
 	cancels string // notifications/cancelled: the id of the request it cancels, as raw JSON
 }
 
@@ -538,9 +568,11 @@ func parse(line string) rpcMessage {
 	var params struct {
 		ProtocolVersion json.RawMessage `json:"protocolVersion"`
 		RequestID       json.RawMessage `json:"requestId"`
+		Name            json.RawMessage `json:"name"`
 	}
 	if json.Unmarshal(raw.Params, &params) == nil {
 		m.asked = str(params.ProtocolVersion)
+		m.tool = str(params.Name)
 		m.cancels = string(params.RequestID)
 	}
 	// json.RawMessage is nil when the key is absent; an explicit null is "null" and JSON-RPC

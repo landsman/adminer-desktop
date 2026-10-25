@@ -12,7 +12,6 @@ use Behat\Step\Given;
 use Behat\Step\Then;
 use Behat\Step\When;
 use Desktop\Mcp\Handshake;
-use Desktop\Mcp\RequestLog;
 use Desktop\Mcp\Tools;
 use Desktop\UserSettings;
 use RuntimeException;
@@ -64,10 +63,6 @@ class McpContext implements Context
 	private ?array $posted = null;
 
 	private ?string $raw = null;
-
-	private ?RequestLog $log = null;
-
-	private string $logDir = '';
 
 	/** Whether the scenario changed the reader's password, so it is put back for the next one. */
 	private bool $readerBroken = false;
@@ -1164,102 +1159,6 @@ class McpContext implements Context
 		}
 	}
 
-	// ── the request log ──────────────────────────────────────────────────────────────────────
-
-	/** Rotation and retention only misbehave on a date boundary, which is not something a run can
-	 * wait for — so the day is an argument and the boundary is just a number.
-	 */
-	#[Given('a log directory of its own')]
-	public function aLogDirectory(): void
-	{
-		$this->logDir = $this->scratch();
-		$this->log = new RequestLog($this->logDir);
-	}
-
-	#[When('a request is logged on day :day')]
-	public function requestIsLogged(string $day): void
-	{
-		$this->log?->append('tools/call', 'execute_query', "SELECT *\n  FROM users", $this->day($day));
-	}
-
-	#[When('a second request is logged on day :day')]
-	public function secondRequestIsLogged(string $day): void
-	{
-		$this->log?->append('tools/list', '', '', $this->day($day));
-	}
-
-	#[Then('day :day has its own file, named for the date')]
-	public function dayHasItsOwnFile(string $day): void
-	{
-		$path = (string) $this->log?->path($this->day($day));
-		$want = 'mcp-' . gmdate('Y-m-d', $this->day($day)) . '.log';
-		if (basename($path) !== $want) {
-			throw new RuntimeException("the file is named " . basename($path) . ", not $want");
-		}
-	}
-
-	#[Then('day :day holds :count lines')]
-	public function dayHoldsLines(string $day, int $count): void
-	{
-		$path = (string) $this->log?->path($this->day($day));
-		$lines = is_file($path) ? (array) file($path, FILE_IGNORE_NEW_LINES) : [];
-		if (count($lines) !== $count) {
-			throw new RuntimeException('day ' . $day . ' holds ' . count($lines) . " lines, not $count");
-		}
-	}
-
-	/** Newlines in SQL must not become extra lines, or one call reads as several. */
-	#[Then('the line names the method, the tool and the query on one line')]
-	public function lineIsTabSeparated(): void
-	{
-		$path = (string) $this->log?->path($this->day('1'));
-		$lines = (array) file($path, FILE_IGNORE_NEW_LINES);
-		$fields = explode("\t", (string) ($lines[0] ?? ''));
-		if (count($fields) !== 4) {
-			throw new RuntimeException('the line has ' . count($fields) . ' fields, not four: ' . json_encode($lines[0] ?? null));
-		}
-		if ($fields[1] !== 'tools/call' || $fields[2] !== 'execute_query' || $fields[3] !== 'SELECT * FROM users') {
-			throw new RuntimeException('the line reads ' . json_encode($fields));
-		}
-	}
-
-	#[Given('a file from :days days before day :day')]
-	public function anOldFile(int $days, string $day): void
-	{
-		$path = $this->logDir . '/mcp-' . gmdate('Y-m-d', $this->day($day) - ($days * 86400)) . '.log';
-		file_put_contents($path, "old\n");
-	}
-
-	#[Then('files older than the window are gone and recent ones are kept')]
-	public function oldFilesArePruned(): void
-	{
-		$old = $this->logDir . '/mcp-' . gmdate('Y-m-d', $this->day('2') - (20 * 86400)) . '.log';
-		$recent = $this->logDir . '/mcp-' . gmdate('Y-m-d', $this->day('2') - (5 * 86400)) . '.log';
-		if (is_file($old)) {
-			throw new RuntimeException('a file beyond the window survived');
-		}
-		if (!is_file($recent)) {
-			throw new RuntimeException('a file inside the window was pruned');
-		}
-	}
-
-	#[Then('the log is readable only by its owner')]
-	public function logIsPrivate(): void
-	{
-		$this->assertPrivate((string) $this->log?->path($this->day('2')));
-	}
-
-	/** Served without the launcher there is no directory, and that is silence rather than a crash. */
-	#[Then('a log with nowhere to write is silent rather than broken')]
-	public function logWithNoDirectory(): void
-	{
-		$none = new RequestLog(null);
-		if ($none->path($this->day('1')) !== null) {
-			throw new RuntimeException('a log with no directory offered a path anyway');
-		}
-		$none->append('ping', '', '', $this->day('1')); // must not throw
-	}
-
 	/** The parse behind the MySQL refusal, with no MySQL: the e2e MCP scenarios run on postgres. */
 	#[Then('of MySQL\'s grants only those beyond one database\'s data are refused')]
 	public function mysqlGrantsJudged(): void
@@ -1429,12 +1328,5 @@ class McpContext implements Context
 			$remove($dir);
 		});
 		return $dir;
-	}
-
-	/** The two days the log scenarios talk about, as timestamps. */
-	private function day(string $day): int
-	{
-		$first = mktime(12, 0, 0, 8, 3, 2026);
-		return (int) $first + ((int) $day - 1) * 86400;
 	}
 }

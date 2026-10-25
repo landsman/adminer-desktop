@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -64,9 +65,12 @@ func serveMCP() error {
 	// Write errors on a closed stdout come back as EPIPE, so the reason below gets logged; Go's
 	// default for fd 1 is to die of SIGPIPE before it can be.
 	signal.Ignore(syscall.SIGPIPE)
-	bridge := mcpbridge.New()
+	logs, _ := logDir() // "" writes no record, and the bridge still works
+	bridge := mcpbridge.New(logs)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	done := make(chan error, 1)
-	go func() { done <- bridge.Run(os.Stdin, os.Stdout) }()
+	go func() { done <- bridge.RunUntil(ctx, os.Stdin, os.Stdout) }()
 
 	// Caught rather than left to kill us, so the reason gets written down: clients log nothing
 	// when a server goes away, and a closed stdin, a kill and a crash all look like a server
@@ -76,6 +80,13 @@ func serveMCP() error {
 	defer signal.Stop(got)
 	select {
 	case s := <-got:
+		// Cancel what is in flight, so each call is recorded before we go. Bounded: a notification
+		// cannot be cancelled and may sit out the bridge's idle timeout.
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+		}
 		logBridgeExit("the client sent " + s.String())
 		return nil
 	case err := <-done:
@@ -94,16 +105,8 @@ func serveMCP() error {
 // a server that is simply gone.
 func logBridgeExit(why string) {
 	fmt.Fprintln(os.Stderr, "adminer-desktop -mcp stopped: "+why)
-	dir, err := logDir()
-	if err != nil {
-		return
-	}
-	// The format Desktop\Mcp\RequestLog writes: time, method, tool, detail, a tab between.
-	now := time.Now().UTC()
-	path := filepath.Join(dir, "mcp-"+now.Format(time.DateOnly)+".log")
-	if f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600); err == nil {
-		fmt.Fprintf(f, "%s\tbridge-exit\t\t%s\n", now.Format(time.RFC3339), why) //nolint:errcheck // best effort on the way out
-		f.Close()                                                                //nolint:errcheck
+	if dir, err := logDir(); err == nil {
+		mcpbridge.LogExit(dir, why)
 	}
 }
 
