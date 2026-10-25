@@ -340,6 +340,24 @@ body:has(#ad-connections) #logins {
 	cursor: pointer;
 }
 
+/* While a login waits on the server (connections.js): the fields stay put but dimmed, and Cancel,
+   turning, takes Login's place. */
+.ad-new-connection-dialog .ad-connect-cancel,
+.ad-waiting .ad-new-connection-dialog input[type="submit"] {
+	display: none;
+}
+
+.ad-waiting .ad-new-connection-dialog .ad-connect-cancel {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+}
+
+.ad-waiting .ad-new-connection-dialog .ad-modal-body {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
 .ad-confirm-dialog {
 	width: 28em;
 }

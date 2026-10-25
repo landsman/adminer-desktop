@@ -47,7 +47,8 @@
 {embed '../Assets/modal.latte', id: 'ad-new-connection-dialog', class: 'ad-new-connection-dialog', guard: true, form: false, labelledBy: 'ad-new-connection-title'}
 	{block header}<h2 id="ad-new-connection-title">{$desktop->t('connections.new')}</h2>{/block}
 	{block body}{$fields|noescape}{/block}
-	{block footer}{$submit|noescape}{/block}
+	{* Cancel stands in for Login while the login waits on the server (connections.js). *}
+	{block footer}{$submit|noescape}<button type="button" class="ad-connect-cancel">{\Desktop\Assets\Icon::Spinner->html()|noescape} {$desktop->t('connections.cancel')}</button>{/block}
 {/embed}
 {* Opened on load — see Connections::loginPage(). An attribute the script reads rather than an
 	inline script, which the CSP would want a nonce for. *}

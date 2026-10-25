@@ -31,6 +31,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Neue Verbindung',
+	'connections.cancel' => 'Abbrechen',
 	'connections.added' => 'Verbunden. Mit einem Namen ist die Verbindung leicht von den anderen zu unterscheiden.',
 	'connections.empty' => 'Noch keine gespeicherten Verbindungen.',
 	'connections.edit' => 'Bearbeiten',
