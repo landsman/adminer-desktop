@@ -821,6 +821,7 @@
 		);
 	}
 }
+
 /* Their transitions are for the sidebar sliding in and out: during a drag of its width they eased
    every pixel of it, so the path bar trailed the pointer (drag-width.js). */
 .ad-frameless.ad-dragging :is(#ad-pathbar, #foot) {
