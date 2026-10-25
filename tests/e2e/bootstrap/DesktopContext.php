@@ -1368,6 +1368,18 @@ class DesktopContext implements Context
 		$this->assertFocus('desktop-gear');
 	}
 
+	/** A click opened the dialog, so the focus it hands back is the pointer's, not the keyboard's. */
+	#[Then('the gear shows no focus ring')]
+	public function gearHasNoRing(): void
+	{
+		if ($this->page->evaluate(
+			// language=JavaScript
+			"() => getComputedStyle(document.querySelector('#desktop-gear')).outlineStyle !== 'none'",
+		)) {
+			throw new RuntimeException('the gear kept a focus ring after a click closed the dialog');
+		}
+	}
+
 	#[When('I tab into the settings dialog')]
 	public function tabIntoSettings(): void
 	{

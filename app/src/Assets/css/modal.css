@@ -37,6 +37,12 @@ dialog.ad-modal:focus {
 	outline: none;
 }
 
+/* The button a click opened a dialog with, handed the focus back as it closes: no ring, as a
+   clicked button has none (modal.js). */
+.ad-pointer-focus:focus-visible {
+	outline: none;
+}
+
 /* Dim the page behind well past the browser's faint default, so the modal reads clearly as the
    foreground. */
 .ad-modal::backdrop {
