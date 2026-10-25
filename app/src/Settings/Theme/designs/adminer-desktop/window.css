@@ -760,16 +760,17 @@
 		color: var(--fg);
 	}
 
-	/* At the sidebar's end, the inset off it, the gear just before. */
+	/* At the sidebar's end, the inset off it: the toggle, then the gear, the order they keep beside
+	   the lights once the sidebar is hidden, so neither changes places. */
 	.ad-frameless #ad-sidebar-toggle {
-		left: calc(var(--ad-sidebar-width) - var(--ad-tool-inset) - var(--ad-tool));
-	}
-
-	.ad-frameless #desktop-gear {
 		left: calc(
 			var(--ad-sidebar-width) - var(--ad-tool-inset) - 2 * var(--ad-tool) -
 				var(--ad-tool-gap)
 		);
+	}
+
+	.ad-frameless #desktop-gear {
+		left: calc(var(--ad-sidebar-width) - var(--ad-tool-inset) - var(--ad-tool));
 	}
 
 	.ad-frameless #ad-sidebar-toggle::before {
