@@ -71,20 +71,28 @@ body {
    its own 5px and the second gap it opens in the row, centring it in the gap that was there. */
 #ad-sidebar-resizer {
 	/* Over the panels its margins overlap: both are positioned, so with no gutter between them
-	   (window.css) they painted over it whole and it never got the press. */
+	   (window.css) they painted over it whole and it never got the press. Over the path bar too
+	   (z-index 5, window.css), which starts at the sidebar's edge and cut off the handle's foot. */
 	position: relative;
-	z-index: 1;
+	z-index: 6;
 	flex: 0 0 5px;
 	margin: 0 calc((5px + var(--ad-gutter)) / -2);
 	cursor: col-resize;
 	border-radius: var(--ad-radius-sm);
 	background: transparent;
-	transition: background-color 0.12s ease;
+	transition: filter 0.12s ease;
 }
 
+/* Lit while hovered, focused or dragged (:active holds it for the whole drag): a 2px line in the
+   accent down the middle of the 5px it can be grabbed by, with a glow round the line alone
+   (drop-shadow follows what is painted), so the edge being pulled is plain to see without
+   reading as a bar. */
 #ad-sidebar-resizer:hover,
+#ad-sidebar-resizer:active,
 #ad-sidebar-resizer:focus-visible {
-	background: var(--ad-accent-quiet);
+	background: linear-gradient(var(--ad-accent), var(--ad-accent)) center / 2px
+		100% no-repeat;
+	filter: drop-shadow(0 0 4px var(--ad-accent));
 	outline: none;
 }
 
