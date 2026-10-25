@@ -31,6 +31,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Nové připojení',
+	'connections.switch' => 'Změnit připojení',
 	'connections.cancel' => 'Zrušit',
 	'connections.stop_title' => 'Přestat se připojovat?',
 	'connections.stop_text' => 'Server zatím neodpověděl. Co jste vyplnili, ve formuláři zůstane.',

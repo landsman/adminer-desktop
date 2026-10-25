@@ -163,7 +163,7 @@ class Connections {
 	function badge(): void {
 		$current = $this->current();
 		if ($current) {
-			Latte::engine()->render(__DIR__ . "/connection-badge.latte", ["connection" => $current, "home" => $this->desktop->home()]);
+			Latte::engine()->render(__DIR__ . "/connection-badge.latte", ["connection" => $current, "home" => $this->desktop->home(), "title" => $this->desktop->t('connections.switch')]);
 		}
 	}
 

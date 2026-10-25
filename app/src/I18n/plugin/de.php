@@ -31,6 +31,7 @@ return [
 
 	// Saved connections.
 	'connections.new' => 'Neue Verbindung',
+	'connections.switch' => 'Verbindung wechseln',
 	'connections.cancel' => 'Abbrechen',
 	'connections.stop_title' => 'Verbindungsaufbau abbrechen?',
 	'connections.stop_text' => 'Der Server hat noch nicht geantwortet. Was Sie eingegeben haben, bleibt im Formular.',

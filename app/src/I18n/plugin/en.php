@@ -42,6 +42,8 @@ return [
 
 	// Saved connections on the login page (src/Connections/).
 	'connections.new' => 'New connection',
+	// The badge atop the sidebar, which leads back to the saved connections (connection-badge.latte).
+	'connections.switch' => 'Change connection',
 	'connections.cancel' => 'Cancel',
 	'connections.stop_title' => 'Stop connecting?',
 	'connections.stop_text' => 'The server has not answered yet. What you typed stays in the form.',
