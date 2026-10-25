@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -41,9 +42,27 @@ type where struct {
 	Refused    bool   `json:"refused,omitempty"`
 }
 
-// answered reads the outcome out of the app's answer. The rows are decoded with it and dropped:
-// only an error's text is kept.
+// answered reads the outcome out of the app's answer: only an error's text is kept, never the rows.
+//
+// Decoding a thousand rows to drop them took longer than the rest of the bridge's work on the call
+// (make bench), so an answer with no error key skips it: quotes inside a JSON string are escaped,
+// so `"error":` and `"isError":true` only match a real key, and _meta is read from where it starts.
 func answered(body string) outcome {
+	if !strings.Contains(body, `"error":`) && !strings.Contains(body, `"isError":true`) {
+		o := outcome{status: statusOK}
+		if i := strings.LastIndex(body, `"_meta":`); i >= 0 {
+			var meta struct {
+				Call where `json:"adminer-desktop/call"`
+			}
+			if json.NewDecoder(strings.NewReader(body[i+len(`"_meta":`):])).Decode(&meta) == nil {
+				o.where = meta.Call
+			}
+		}
+		if o.where.Refused {
+			o.status = statusRefused
+		}
+		return o
+	}
 	var a struct {
 		Error *struct {
 			Message string `json:"message"`

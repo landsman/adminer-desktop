@@ -185,3 +185,12 @@ func TestStoppedCallIsRecorded(t *testing.T) {
 		t.Errorf("the stopped call is not in the log: %q", raw)
 	}
 }
+
+// A row that reads like an error key is text, escaped, and does not make the call an error; a
+// _meta that is not last is still read.
+func TestRowsThatLookLikeErrorsAreNot(t *testing.T) {
+	o := answered(`{"jsonrpc":"2.0","id":1,"result":{"_meta":{"adminer-desktop/call":{"database":"shop"}},"content":[{"type":"text","text":"[{\"isError\":true,\"error\":\"x\"}]"}]}}`)
+	if o.status != statusOK || o.error != "" || o.where.Database != "shop" {
+		t.Errorf("an answer with error-like rows reads %+v", o)
+	}
+}
