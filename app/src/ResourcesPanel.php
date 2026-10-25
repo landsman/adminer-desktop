@@ -5,8 +5,8 @@ namespace Desktop;
 
 use Tracy\IBarPanel;
 
-/** Tracy bar panel with the app's memory: this request's PHP heap, and the resident size of
-* the frankenphp server and of the launcher that started it.
+/** Tracy bar panel with what the app uses of the machine. For now its memory: this request's
+* PHP heap, and the resident size of the frankenphp server and of the launcher that started it.
 *
 * Read when the bar renders, so it is current as of each page load or AJAX bar, not a live
 * graph. The WebKit processes are not in it: they are XPC children of launchd, so nothing
@@ -14,7 +14,7 @@ use Tracy\IBarPanel;
 *
 * Built only in Debug::enable(), under -debug.
 */
-class MemoryPanel implements IBarPanel {
+class ResourcesPanel implements IBarPanel {
 	/** The tab: what the server and the launcher hold together. */
 	function getTab(): string {
 		$total = array_sum(array_filter($this->processes()));
@@ -28,7 +28,7 @@ class MemoryPanel implements IBarPanel {
 		}
 		$rows .= '<tr><th>PHP heap, this request</th><td>' . self::size(memory_get_usage()) . '</td></tr>'
 			. '<tr><th>PHP heap, peak</th><td>' . self::size(memory_get_peak_usage()) . '</td></tr>';
-		return '<h1>Memory</h1><div class="tracy-inner"><table>' . $rows . '</table></div>';
+		return '<h1>Resources</h1><div class="tracy-inner"><table>' . $rows . '</table></div>';
 	}
 
 	/** Resident size in bytes per process, null when ps could not tell.
