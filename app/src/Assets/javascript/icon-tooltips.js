@@ -8,7 +8,7 @@
 document.addEventListener(
 	"mouseover",
 	(event) => {
-		const link = event.target.closest?.(
+		const link = /** @type {Element} */ (event.target).closest?.(
 			"#table td > a.edit:not([title]), .ad-toolbar-actions a:not([title])",
 		);
 		if (link) {

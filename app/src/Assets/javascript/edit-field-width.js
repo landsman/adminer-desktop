@@ -56,7 +56,7 @@ if (fields) {
 		// Fire-and-forget, like the sidebar's: nothing waits on the answer, and a beacon
 		// survives the page being torn down by the very next navigation.
 		navigator.sendBeacon(
-			window.desktopApi.resize,
+			window.adminer.page.api.resize,
 			new URLSearchParams({ what: "edit_field", width: String(clamp(width)) }),
 		);
 	});

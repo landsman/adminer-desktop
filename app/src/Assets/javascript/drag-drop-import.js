@@ -19,7 +19,7 @@ const input = document.querySelector('input[type="file"][name="sql_file[]"]');
 if (input) {
 	const overlay = document.createElement("div");
 	overlay.id = "ad-import-drop";
-	overlay.textContent = window.desktopLang(
+	overlay.textContent = window.adminer.page.lang(
 		"import.drop_hint",
 		"Drop the SQL file to import",
 	);

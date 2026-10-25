@@ -15,7 +15,7 @@
 		document.body.append(indicator);
 	}
 
-	window.desktopBusy = (on = true) => indicator?.togglePopover(on);
+	window.adminer.page.busy = (on = true) => indicator?.togglePopover(on);
 
 	// Stop, or Escape, drops the wait as a browser's Stop does: a saved connection whose server
 	// never answers otherwise turns until the connection times out. The server is not held up by it,
@@ -23,7 +23,7 @@
 	// desktop-stop reaches what window.stop() does not: rows fetched in place (refresh.js).
 	const stop = () => {
 		window.stop();
-		window.desktopBusy(false);
+		window.adminer.page.busy(false);
 		dispatchEvent(new Event("desktop-stop"));
 	};
 	indicator?.querySelector(".ad-busy-stop")?.addEventListener("click", stop);
@@ -38,14 +38,14 @@
 	const waitOn = (form, on = true) =>
 		form.hasAttribute("data-busy-here")
 			? form.classList.toggle("ad-waiting", on)
-			: window.desktopBusy(on);
+			: window.adminer.page.busy(on);
 
 	// Two frames: the first draws the indicator, the second starts once that frame is out.
 	const afterPaint = (then) =>
 		requestAnimationFrame(() => requestAnimationFrame(then));
 
-	window.desktopGo = (href) => {
-		window.desktopBusy();
+	window.adminer.page.go = (href) => {
+		window.adminer.page.busy();
 		afterPaint(() => location.assign(href));
 	};
 
@@ -55,10 +55,12 @@
 	document.addEventListener(
 		"change",
 		(event) => {
-			const form = event.target.closest?.("#dbs")?.closest("form");
+			const form = /** @type {Element} */ (event.target)
+				.closest?.("#dbs")
+				?.closest("form");
 			if (form) {
 				event.stopPropagation();
-				window.desktopBusy();
+				window.adminer.page.busy();
 				afterPaint(() => form.requestSubmit());
 			}
 		},
@@ -89,7 +91,7 @@
 	document.addEventListener(
 		"submit",
 		(event) => {
-			const form = event.target;
+			const form = /** @type {HTMLFormElement} */ (event.target);
 			if (!resent.has(form) && leavesBy(form, event.submitter)) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
@@ -112,7 +114,7 @@
 	// A POST a handler stopped the second time round stays on this page. A stopped GET does not:
 	// that is adminer sending it.
 	document.addEventListener("submit", (event) => {
-		const form = event.target;
+		const form = /** @type {HTMLFormElement} */ (event.target);
 		if (
 			resent.delete(form) &&
 			event.defaultPrevented &&
@@ -133,7 +135,7 @@
 				link.pathname + link.search === location.pathname + location.search
 			));
 	document.addEventListener("click", (event) => {
-		const link = event.target.closest?.("a[href]");
+		const link = /** @type {Element} */ (event.target).closest?.("a[href]");
 		// A modified click, or a link to another window, leaves this page where it is.
 		if (
 			link &&
@@ -145,13 +147,13 @@
 			!event.shiftKey
 		) {
 			event.preventDefault();
-			window.desktopGo(link.href);
+			window.adminer.page.go(link.href);
 		}
 	});
 
 	addEventListener("pageshow", (event) => {
 		if (event.persisted) {
-			window.desktopBusy(false);
+			window.adminer.page.busy(false);
 			for (const form of document.querySelectorAll(".ad-waiting")) {
 				form.classList.remove("ad-waiting");
 			}

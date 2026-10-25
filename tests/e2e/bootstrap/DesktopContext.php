@@ -1485,7 +1485,7 @@ class DesktopContext implements Context
 	{
 		$this->page->evaluate(
 			// language=JavaScript
-			"() => navigator.sendBeacon(window.desktopApi.resize, new URLSearchParams({what: 'sidebar', width: '420'}))",
+			"() => navigator.sendBeacon(window.adminer.page.api.resize, new URLSearchParams({what: 'sidebar', width: '420'}))",
 		);
 		for ($i = 0; $i < 30 && !isset(e2e_settings($this->fix)['user_resized_px']); $i++) {
 			usleep(100_000);
@@ -1896,7 +1896,7 @@ class DesktopContext implements Context
 			// language=JavaScript
 			'async () => {
 				const shown = () => document.querySelector("#ad-busy").matches(":popover-open");
-				const swapped = window.desktopRefresh();
+				const swapped = window.adminer.page.refresh();
 				const during = shown();
 				return { swapped: await swapped, during, after: shown() };
 			}',
@@ -1917,7 +1917,7 @@ class DesktopContext implements Context
 				window.e2eStayed = true;
 				const rows = document.querySelector("#table tbody");
 				const url = location.href;
-				const swapped = window.desktopRefresh();
+				const swapped = window.adminer.page.refresh();
 				document.querySelector("#ad-busy .ad-busy-stop").click();
 				return {
 					swapped: await swapped,
@@ -2710,9 +2710,9 @@ class DesktopContext implements Context
 					const dialog = document.querySelector("#ad-new-connection-dialog");
 					dialog.removeAttribute("data-guard");
 					dialog.close();
-					window.desktopBusy();
+					window.adminer.page.busy();
 					const box = document.querySelector("#ad-busy .ad-busy-stop").getBoundingClientRect();
-					window.desktopBusy(false);
+					window.adminer.page.busy(false);
 					return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 				}',
 			);
@@ -3135,8 +3135,15 @@ class DesktopContext implements Context
 		$this->page->addInitScript(
 			// language=JavaScript
 			'window.adDrags = 0;
-			window.adDragWindow = () => { window.adDrags++; };
-			window.adTitlebarDoubleClick = () => {};
+			// All of AdminerNative (api.js), not only the two used here: a script calls the rest
+			// without a ?. once native is there.
+			window.adminer = { native: {
+				loaderShown() {},
+				setBackground() {},
+				setAppearance() {},
+				dragWindow: () => { window.adDrags++; },
+				titlebarDoubleClick() {},
+			} };
 			// The sidebar is see-through there, onto the system material the launcher puts behind the
 			// page; Playwright has none, so the sidebar colour stands in, or axe reads its text on white.
 			const mark = () => {

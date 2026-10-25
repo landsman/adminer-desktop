@@ -1,7 +1,7 @@
 /* Toasts: brief confirmations, created only by src/Assets/javascript/toast.js.
  *
- * There is no markup for these anywhere in a template — window.adToast() builds and removes
- * them — so this file styles nodes that only ever exist at runtime.
+ * There is no markup for these anywhere in a template — window.adminer.page.toast() builds and
+ * removes them — so this file styles nodes that only ever exist at runtime.
  */
 
 /* Centred, over everything: in the top right a short "Copied" went unnoticed, the eye being on

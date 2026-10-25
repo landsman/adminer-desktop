@@ -19,7 +19,7 @@ let pendingNav = null;
  * @returns {HTMLAnchorElement | null}
  */
 function tableName(e) {
-	return e.target.closest("#tables li a:not(.select)");
+	return /** @type {Element} */ (e.target).closest("#tables li a:not(.select)");
 }
 
 /** @param {MouseEvent} e */
@@ -32,7 +32,7 @@ function onClick(e) {
 	clearTimeout(pendingNav);
 	const href = name.href;
 	pendingNav = setTimeout(() => {
-		window.desktopGo(href);
+		window.adminer.page.go(href);
 	}, DOUBLE_CLICK_MS);
 }
 
@@ -46,7 +46,7 @@ function onDoubleClick(e) {
 	clearTimeout(pendingNav);
 	const select = name.closest("li").querySelector("a.select");
 	if (select) {
-		window.desktopGo(select.href);
+		window.adminer.page.go(select.href);
 	}
 }
 

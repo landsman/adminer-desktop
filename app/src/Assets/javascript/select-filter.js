@@ -26,7 +26,7 @@
 	popup.setAttribute("popover", "manual");
 	const input = document.createElement("input");
 	input.type = "text";
-	input.placeholder = window.desktopLang(
+	input.placeholder = window.adminer.page.lang(
 		"select_filter.placeholder",
 		"Type part of a name",
 	);
@@ -94,7 +94,7 @@
 		if (!shown.length) {
 			const none = document.createElement("li");
 			none.className = "ad-select-filter-none";
-			none.textContent = window.desktopLang(
+			none.textContent = window.adminer.page.lang(
 				"select_filter.none",
 				"Nothing matches",
 			);
@@ -180,7 +180,7 @@
 
 	// Prevented, the mousedown never opens the native menu. A second click closes ours.
 	document.addEventListener("mousedown", (e) => {
-		const target = e.target.closest?.("select");
+		const target = /** @type {Element} */ (e.target).closest?.("select");
 		if (e.button !== 0 || !target || !wanted(target)) {
 			return;
 		}
@@ -194,7 +194,7 @@
 
 	// From the keyboard: a letter starts the filter with it, Space or an arrow opens it empty.
 	document.addEventListener("keydown", (e) => {
-		const target = e.target;
+		const target = /** @type {Element} */ (e.target);
 		if (
 			target.tagName !== "SELECT" ||
 			!wanted(target) ||

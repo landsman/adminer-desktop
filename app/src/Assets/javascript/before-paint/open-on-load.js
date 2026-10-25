@@ -38,7 +38,10 @@
 
 	const observer = new MutationObserver((records) => {
 		for (const record of records) {
-			for (const node of record.addedNodes) {
+			// Text nodes too, which have no matches(): hence the ?.
+			for (const node of /** @type {NodeListOf<Element>} */ (
+				record.addedNodes
+			)) {
 				if (node.matches?.("[data-open-dialog]")) {
 					open(node);
 				}

@@ -18,19 +18,37 @@ a cache-buster; nothing lists them by name.
 
 ## Shared by name, not by import
 
-These are plain scripts, not modules, so what one file offers another it offers on `window`,
-and the file that defines it sorts earlier by name — `api.js` before its callers, `refresh.js`
-before `table-columns.js`. These so far:
+These are plain scripts, not modules, so what one file offers another it puts on
+`window.adminer.page`, and the file that defines it sorts earlier by name — `refresh.js`
+before `table-columns.js`. `api.js` sorts first and creates the object; every other file adds
+to it, never replaces it.
 
-- `window.desktopApi` — the app's own endpoints, one place instead of URLs in string literals.
-- `window.desktopLang(id, fallback)` — a string of ours, translated. Add it to the plugin
+`window.adminer.native` is the launcher's, not ours: `bindNative()` in `launcher/main.go` puts
+each binding there. It exists only in the app, never in a plain browser or the e2e — reach it
+with `?.`. A page script never adds to it.
+
+Both are declared in `adminer.d.ts` (`AdminerPage`, `AdminerNative`), and `make qa` type-checks
+every script against it (`tsconfig.json`, `oxlint --type-check`): a member used or set without a
+line there fails the build. A new one is a line there first. `loose-dom.d.ts` keeps the check to
+that — it switches off TypeScript's opinion of what a `querySelector` returns. In Web Inspector,
+`window.adminer` shows what is actually there.
+
+What `window.adminer.page` holds so far:
+
+- `api` — the app's own endpoints, one place instead of URLs in string literals.
+- `lang(id, fallback)` — a string of ours, translated. Add it to the plugin
   catalogue (`app/src/I18n/plugin/`) as `js.<id>` and it is on every page; nothing else lists
   it. It goes through adminer's `lang()`, so sprintf: a placeholder is `{n}`, never `%`.
-- `window.desktopBusy(on = true)` and `window.desktopGo(href)` — the activity indicator over the
+- `busy(on = true)` and `go(href)` — the activity indicator over the
   page; which wait takes which is in [../busy.md](../busy.md).
-- `window.desktopOpenDialog(id)` — open a modal built on `modal.latte` from a script, the way a
+- `openDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
-- `window.desktopRefresh(href?)` — put a select page's rows on screen without reloading the
+- `toast(message)` — a brief confirmation that needs no dismissing (`copy-field.js`).
+- `search()` — open the table search; `reopenSettings()` — bring the
+  settings dialog back after a navigation it caused (`language.js`).
+- `dragWidth(edge, {grab, set, done})` — drag an edge to a width.
+- `demo` — the `make demo` connection, set by PHP before any script runs.
+- `refresh(href?)` — put a select page's rows on screen without reloading the
   document, adminer's highlighting re-applied and the url corrected. With a url it asks for
   that one (a sort link); without, for whatever the options form currently says, so changing a
   field first is how you apply it. Anything that goes wrong falls back to what the browser

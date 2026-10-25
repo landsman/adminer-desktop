@@ -1,0 +1,14 @@
+{
+	// Not for building — nothing is compiled. It is what `oxlint --type-check` (npm run lint)
+	// checks the page scripts against: every window.adminer member they use or add must be
+	// declared in adminer.d.ts.
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"strict": false,
+		"noEmit": true,
+		"target": "es2022",
+		"lib": ["es2023", "dom", "dom.iterable"]
+	},
+	"include": ["app/src/Assets/javascript"]
+}

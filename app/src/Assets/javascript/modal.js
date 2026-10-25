@@ -28,7 +28,9 @@
 		dialog.querySelector("form") ?? dialog.closest("form");
 	const fields = (dialog) => {
 		const form = formOf(dialog);
-		return form ? new URLSearchParams(new FormData(form)).toString() : "";
+		return form
+			? new URLSearchParams(/** @type {any} */ (new FormData(form))).toString()
+			: "";
 	};
 	const changed = (dialog) =>
 		dialog.hasAttribute("data-guard") &&
@@ -133,7 +135,9 @@
 	}
 
 	document.addEventListener("click", (event) => {
-		const opener = event.target.closest?.("[data-dialog]");
+		const opener = /** @type {Element} */ (event.target).closest?.(
+			"[data-dialog]",
+		);
 		if (opener) {
 			// WebKit on macOS does not focus a button it clicks, so the dialog had nothing to hand the
 			// focus back to when it closed.
@@ -145,7 +149,9 @@
 			open(dialog);
 			return;
 		}
-		const closer = event.target.closest?.("[data-close]");
+		const closer = /** @type {Element} */ (event.target).closest?.(
+			"[data-close]",
+		);
 		const dialog = closer?.closest("dialog");
 		if (dialog === discard) {
 			asking = null;
@@ -156,7 +162,7 @@
 	});
 
 	// For a script that opens a dialog without a button to click — shortcuts.js on ?.
-	window.desktopOpenDialog = (id) => open(document.getElementById(id));
+	window.adminer.page.openDialog = (id) => open(document.getElementById(id));
 
 	// Opened already, before the first paint (before-paint/open-on-load.js): the guard still needs
 	// its fields as they were.

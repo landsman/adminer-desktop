@@ -135,7 +135,7 @@
 
 	const go = (i) => {
 		if (shown[i]) {
-			window.desktopGo(shown[i].href);
+			window.adminer.page.go(shown[i].href);
 		}
 	};
 
@@ -143,13 +143,13 @@
 		all = items();
 		input.value = "";
 		render();
-		window.desktopOpenDialog?.("desktop-search");
+		window.adminer.page.openDialog?.("desktop-search");
 		input.focus();
 	};
 
 	// For the toolbar's search button (before-paint/header.js), which opens the same box.
 	if (dialog) {
-		window.desktopSearch = open;
+		window.adminer.page.search = open;
 	}
 
 	input?.addEventListener("input", render);

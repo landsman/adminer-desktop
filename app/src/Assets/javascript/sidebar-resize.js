@@ -36,7 +36,7 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	// torn down by the very next navigation.
 	const persist = () => {
 		navigator.sendBeacon(
-			window.desktopApi.resize,
+			window.adminer.page.api.resize,
 			new URLSearchParams({
 				what: "sidebar",
 				width: String(clamp(Math.round(width()))),
@@ -57,7 +57,11 @@ if (content && foot && getComputedStyle(document.body).display === "flex") {
 	handle.setAttribute("aria-valuenow", String(clamp(Math.round(width()))));
 	content.before(handle);
 
-	window.desktopDragWidth(handle, { grab: width, set: apply, done: persist });
+	window.adminer.page.dragWidth(handle, {
+		grab: width,
+		set: apply,
+		done: persist,
+	});
 
 	// Keyboard: the WAI-ARIA splitter pattern — arrows nudge the width, and it saves once on
 	// release rather than on every repeat.

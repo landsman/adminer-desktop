@@ -8,7 +8,7 @@
  * @param {MouseEvent} e
  */
 function suppressLinkMenu(e) {
-	if (e.target.closest("a")) {
+	if (/** @type {Element} */ (e.target).closest("a")) {
 		e.preventDefault();
 	}
 }

@@ -16,7 +16,7 @@
 		// adminer's own words, translated: the checkbox's label; "None" is ours.
 		const descLabel =
 			desc?.closest("label")?.textContent.trim() || "descending";
-		const noneLabel = window.desktopLang("sort.none", "None");
+		const noneLabel = window.adminer.page.lang("sort.none", "None");
 
 		const menu = document.createElement("div");
 		menu.id = "ad-sort-menu";

@@ -98,6 +98,11 @@ before the browser sees it. Use `{n}`.
 script. Inline scripts must follow the element they bind to — which is why ours are files
 under `src/Assets/javascript/` bound by id instead.
 
+**A page script's helper goes on `window.adminer.page`, never on `window` itself**, and what
+the launcher binds is on `window.adminer.native` (`bindNative()` in `launcher/main.go`). Both
+are declared in `app/src/Assets/javascript/adminer.d.ts`, and `make qa` type-checks every script
+against it — a member used or set without a line there fails. The `page-scripts` skill has the rest.
+
 **Our HTML is Latte, adminer's is adminer's.** `Desktop\Latte::engine()` builds the engine;
 templates sit beside the class that renders them and escape by context, so no `h()`.
 Adminer's `input_hidden()`/`input_token()` are registered on it, and `make qa` compiles

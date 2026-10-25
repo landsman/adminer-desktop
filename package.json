@@ -3,12 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format": "oxfmt --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js}'",
-    "lint": "oxfmt --check --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js}' && oxlint --deny-warnings app/src/Assets/javascript"
+    "format": "oxfmt --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}'",
+    "lint": "oxfmt --check --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}' && oxlint app/src/Assets/javascript"
   },
   "devDependencies": {
     "axe-core": "4.14.0",
     "oxfmt": "0.74.0",
-    "oxlint": "1.89.0"
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2005"
   }
 }

@@ -35,10 +35,12 @@ const OPEN_KEY = "ad-settings-open";
 // The exception to "reloads only": something inside the dialog navigating on purpose. Changing
 // the language POSTs and adminer redirects, which is an ordinary navigation, so the rule above
 // would drop the dialog — and that switch lives *in* the dialog, so you are certainly still
-// using it. One shot, consumed on read, set through window.adReopenSettings below.
+// using it. One shot, consumed on read, set through window.adminer.page.reopenSettings below.
 const REOPEN_KEY = "ad-settings-reopen";
 const reloaded =
-	performance.getEntriesByType("navigation")[0]?.type === "reload";
+	/** @type {PerformanceNavigationTiming | undefined} */ (
+		performance.getEntriesByType("navigation")[0]
+	)?.type === "reload";
 
 if (gear && dialog) {
 	const tabs = document.querySelector("#desktop-tabs");
@@ -59,7 +61,7 @@ if (gear && dialog) {
 
 	// For anything in the dialog that navigates deliberately — language.js is the one caller.
 	// It records the tab as well, so you come back to the panel you were on.
-	window.adReopenSettings = () => {
+	window.adminer.page.reopenSettings = () => {
 		remember();
 		sessionStorage.setItem(REOPEN_KEY, "1");
 	};

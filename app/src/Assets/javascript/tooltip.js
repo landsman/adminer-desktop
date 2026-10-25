@@ -77,7 +77,7 @@
 	}
 
 	document.addEventListener("mouseover", (event) => {
-		const target = event.target.closest?.("[title]");
+		const target = /** @type {Element} */ (event.target).closest?.("[title]");
 		if (!target || target === owner) {
 			return;
 		}
