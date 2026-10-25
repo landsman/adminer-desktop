@@ -40,9 +40,10 @@
 	{/block}
 
 	{* Empty until the dialog first opens: modal.js fetches the panels (settings-panels.latte) from
-		data-src, so a page that never opens settings never renders them. *}
+		data-src, so a page that never opens settings never renders them. On this page's connection
+		(adminer's ME), so a link in a panel can stay on it: the panels are answered before ME exists. *}
 	{block body}
-		<div id="desktop-panels" data-src="?desktop_settings_panels=1">
+		<div id="desktop-panels" data-src="{\Adminer\ME}desktop_settings_panels=1">
 			<p class="error" hidden data-load-failed>{$desktop->t('settings.load_failed')}</p>
 		</div>
 	{/block}

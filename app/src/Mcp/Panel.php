@@ -45,6 +45,7 @@ class Panel {
 			"status" => $this->status($enabled),
 			"lastUsed" => $this->lastUsed(time()),
 			"target" => $this->target(),
+			"calls" => Calls\CallsPage::url($_GET, ['mcp_calls' => '']),
 		]);
 	}
 

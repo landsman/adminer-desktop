@@ -1,0 +1,81 @@
+{* Every MCP call an agent made: filters, the grid, and one call's modal (CallsPage).
+
+	Filters and rows are links rather than a form and a script: each is the same page with one
+	parameter changed, so the back button walks them and there is nothing to bind. *}
+{parameters
+	\AdminerDesktop $desktop,
+	array $calls,
+	int $total,
+	array $statuses,
+	?\Desktop\Mcp\Calls\CallStatus $status,
+	array $connections,
+	string $connection,
+	?\Desktop\Mcp\Calls\Call $open,
+	\Closure $url
+}
+<p class="ad-mcp-calls-note">{$desktop->t('mcp.calls_intro')}</p>
+
+<p class="ad-mcp-calls-filter">
+	<a href="{$url(['mcp_connection' => $connection])}" n:attr="aria-current: $status === null ? 'true'">{$desktop->t('mcp.calls_all')}</a>
+	<a n:foreach="$statuses as $s" href="{$url(['mcp_status' => $s->value, 'mcp_connection' => $connection])}" n:attr="aria-current: $status === $s ? 'true'">{$s->label($desktop)}</a>
+</p>
+
+<p n:if="$connections" class="ad-mcp-calls-filter">
+	<a href="{$url(['mcp_status' => $status?->value ?? ''])}" n:attr="aria-current: $connection === '' ? 'true'">{$desktop->t('mcp.calls_every_connection')}</a>
+	<a n:foreach="$connections as $key => $name" href="{$url(['mcp_status' => $status?->value ?? '', 'mcp_connection' => $key])}" n:attr="aria-current: $connection === $key ? 'true'">{$name}</a>
+</p>
+
+<p n:if="!$calls">{$desktop->t('mcp.calls_none')}</p>
+
+<table n:if="$calls" class="odds ad-mcp-calls">
+	<thead>
+		<tr>
+			<th>{$desktop->t('mcp.calls_time')}</th>
+			<th>{$desktop->t('mcp.calls_status')}</th>
+			<th>{$desktop->t('mcp.calls_connection')}</th>
+			<th>{$desktop->t('mcp.calls_method')}</th>
+			<th>{$desktop->t('mcp.calls_duration')}</th>
+			<th>{$desktop->t('mcp.calls_summary')}</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr n:foreach="$calls as $call">
+			{* The time is the link: every row has one, and it is what tells two rows apart. *}
+			<td><a href="{$url(['mcp_status' => $status?->value ?? '', 'mcp_connection' => $connection, 'mcp_call' => $call->id])}"><time datetime="{$call->time}">{$call->time|substr:0,19|replace:'T',' '}</time></a></td>
+			<td n:class="$call->status->failed() ? 'ad-mcp-call-failed'">{$call->status->label($desktop)}</td>
+			<td>{$call->place()}</td>
+			<td>{$call->tool ?: $call->method}</td>
+			<td class="number">{if $call->durationMs !== null}{$call->durationMs} ms{/if}</td>
+			<td class="ad-mcp-calls-summary" title="{$call->summary()}">{$call->summary()}</td>
+		</tr>
+	</tbody>
+</table>
+
+<p n:if="$total > count($calls)" class="ad-mcp-calls-note">{$desktop->t('mcp.calls_capped')|replace:'{n}',(string) count($calls)}</p>
+
+{if $open}
+	<span hidden data-open-dialog="ad-mcp-call"></span>
+	{embed '../../Assets/modal.latte', id: 'ad-mcp-call', class: 'ad-mcp-call', form: false, labelledBy: 'ad-mcp-call-title'}
+		{block header}<h2 id="ad-mcp-call-title">{$open->tool ?: $open->method}</h2>{/block}
+		{block body}
+			<dl class="ad-mcp-call-facts">
+				<dt>{$desktop->t('mcp.calls_status')}</dt>
+				<dd n:class="$open->status->failed() ? 'ad-mcp-call-failed'">{$open->status->label($desktop)}</dd>
+				<dt>{$desktop->t('mcp.calls_time')}</dt>
+				<dd><time datetime="{$open->time}">{$open->time|replace:'T',' '}</time></dd>
+				<dt n:if="$open->durationMs !== null">{$desktop->t('mcp.calls_duration')}</dt>
+				<dd n:if="$open->durationMs !== null">{$open->durationMs} ms</dd>
+				<dt n:if="$open->place() !== ''">{$desktop->t('mcp.calls_connection')}</dt>
+				<dd n:if="$open->place() !== ''">{$open->place()}</dd>
+				<dt n:if="$open->error !== ''">{$desktop->t('mcp.calls_error')}</dt>
+				<dd n:if="$open->error !== ''" class="ad-mcp-call-failed">{$open->error}</dd>
+			</dl>
+			{* The SQL on its own, as written: inside the request it is one JSON string with its line
+				breaks as \n. Highlighted by adminer's jush, which colours every code.jush-* on load. *}
+			<h3 n:if="$open->sql() !== null">{$desktop->t('mcp.calls_sql')}</h3>
+			<pre n:if="$open->sql() !== null"><code class="jush-sql">{$open->sql()}</code></pre>
+			<h3>{$desktop->t('mcp.calls_request')}</h3>
+			<pre><code class="jush-json">{$open->pretty()}</code></pre>
+		{/block}
+	{/embed}
+{/if}
