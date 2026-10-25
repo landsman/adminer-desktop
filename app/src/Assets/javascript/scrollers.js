@@ -209,20 +209,40 @@
 
 	// A legacy bar is there before anything scrolls, and follows the panel's content as it grows or
 	// shrinks (a refresh swapping the rows), as no scroll event says.
-	if (ours() && legacy()) {
+	const panels = () => document.querySelectorAll(PANELS);
+	if (ours()) {
 		const sized = new ResizeObserver((entries) => {
+			if (!legacy()) {
+				return;
+			}
 			for (const panel of new Set(
 				entries.map((entry) => entry.target.closest(PANELS)),
 			)) {
 				show(panel);
 			}
 		});
-		for (const panel of document.querySelectorAll(PANELS)) {
+		for (const panel of panels()) {
 			sized.observe(panel);
 			for (const child of panel.children) {
 				sized.observe(child);
 			}
 		}
+		// The launcher flips the mode on an open page (a mouse plugged in or out, the setting
+		// changed): the bars come up at once, or are let fade as overlay ones do. Only on that
+		// flip: <html> changes its classes on every focus and scroll to the top as well.
+		let was = legacy();
+		new MutationObserver(() => {
+			if (legacy() === was) {
+				return;
+			}
+			was = legacy();
+			for (const panel of panels()) {
+				show(panel);
+			}
+		}).observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["class"],
+		});
 	}
 
 	// The sidebar's toggle (window-chrome.js) sets a class and slides the sidebar: no scroll and no
