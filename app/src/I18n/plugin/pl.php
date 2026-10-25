@@ -28,6 +28,7 @@ return [
 	'js.select_filter.none' => 'Brak wyników',
 
 	'busy.loading' => 'Ładowanie…',
+	'busy.stop' => 'Zatrzymaj',
 
 	// Saved connections.
 	'connections.new' => 'Nowe połączenie',

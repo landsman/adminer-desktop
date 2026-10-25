@@ -28,6 +28,7 @@ return [
 	'js.select_filter.none' => 'Nic neodpovídá',
 
 	'busy.loading' => 'Načítání…',
+	'busy.stop' => 'Zastavit',
 
 	// Saved connections.
 	'connections.new' => 'Nové připojení',

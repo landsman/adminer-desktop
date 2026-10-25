@@ -61,6 +61,13 @@ Feature: Saved connections
     Then Keep waiting had left the login waiting in the modal
     And the login stops waiting, with what I typed still in it
 
+  # A card's click is the same wait as the login's redirect: the page's indicator, with no modal.
+  Scenario: A wait under the activity indicator can be stopped, and leaves nothing waiting behind it
+    When I log in to a server that does not answer, under the activity indicator
+    And I stop the wait
+    Then the page stops waiting where it was
+    And the next page in the session answers straight away
+
   Scenario: A Cancel before the login is sent keeps it from going out
     Then a Cancel before the login is sent keeps it from being sent
 

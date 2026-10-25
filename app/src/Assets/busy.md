@@ -38,6 +38,12 @@ a long query ends, about 5 s in, with the sidebar, and so the indicator and busy
 [css/busy.css](css/busy.css) therefore marks the running query from the stylesheet: a spinner under
 the query with nothing after it yet.
 
+## Stop
+
+- After 3 s a Stop comes in under the indicator; it, or Escape, runs `window.stop()` and takes the indicator down.
+- For a server that never answers, a saved connection's card above all: the page would otherwise turn until the connection times out.
+- Adminer lets the session go before it connects (`patches/adminer-connect-without-session-lock.patch`), so the next page answers at once.
+
 ## Only for what leaves the page
 
 Nothing but the next page takes the indicator down, so mark only what navigates this one. A
