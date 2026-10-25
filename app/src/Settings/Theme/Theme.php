@@ -116,7 +116,7 @@ class Theme {
 			"scalings" => self::SCALINGS,
 			"scaling" => (string) $this->settings->get(SettingKey::Scaling, "100"),
 			// ?? "", like cssMap() above: nothing is stored until a design is picked, and the
-			// panel is drawn on every page — that would be a warning per row per load.
+			// panel is drawn on every page that opens settings — a warning per row each time.
 			"sides" => $this->sides(),
 		]);
 	}

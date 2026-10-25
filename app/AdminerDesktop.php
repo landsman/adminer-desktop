@@ -86,6 +86,11 @@ class AdminerDesktop extends Adminer\Plugin {
 		return $this->plugins;
 	}
 
+	/** The settings dialog, so adminer-plugins.php can answer its fetch for the panels. Not a hook either. */
+	function dialog(): Dialog {
+		return $this->dialog;
+	}
+
 	/** Translate a plugin-UI string by its ID. lang() is protected on Plugin and the classes in
 	* src/ need it; the IDs and their text live in app/src/I18n/plugin/ (loaded into $translations).
 	* @param literal-string $idf

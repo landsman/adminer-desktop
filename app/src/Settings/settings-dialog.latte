@@ -6,9 +6,6 @@
 *}
 {parameters
 	\AdminerDesktop $desktop,
-	\Desktop\Settings\Theme\Theme $theme,
-	\Desktop\Settings\Plugins\PluginList $plugins,
-	\Desktop\Mcp\Panel $mcp,
 	\Desktop\Shortcuts\Shortcuts $shortcuts
 }
 <button type="button" id="desktop-gear" data-dialog="desktop-settings" title="{$desktop->t('settings.title')}" data-shortcut="{$shortcuts->settings()}">&#9881;</button>
@@ -42,13 +39,11 @@
 		</div>
 	{/block}
 
-	{* The panels print themselves; this only decides where they sit. *}
+	{* Empty until the dialog first opens: modal.js fetches the panels (settings-panels.latte) from
+		data-src, so a page that never opens settings never renders them. *}
 	{block body}
-		<div id="desktop-panels">
-			<div id="desktop-panel-themes">{do $theme->panel()}</div>
-			<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
-			<div id="desktop-panel-mcp">{do $mcp->panel()}</div>
-			<div id="desktop-panel-shortcuts">{do $shortcuts->panel()}</div>
+		<div id="desktop-panels" data-src="?desktop_settings_panels=1">
+			<p class="error" hidden data-load-failed>{$desktop->t('settings.load_failed')}</p>
 		</div>
 	{/block}
 

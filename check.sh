@@ -103,6 +103,15 @@ grep -q "media='(prefers-color-scheme: dark)' href='src/Settings/Theme/designs/d
 	echo "FAIL: dark design not applied, or not gated on prefers-color-scheme"; exit 1; }
 echo "ok: designs switch before login and follow the OS theme"
 
+# The settings panels are fetched when the dialog first opens (Dialog::panels()), not printed
+# into every page: the page carries only the shell, the panels answer their own request.
+if curl -s "$BASE/adminer.php" | grep -q 'id="desktop-panel-themes"'; then
+	echo "FAIL: the page still renders the settings panels"; exit 1
+fi
+curl -s "$BASE/adminer.php?desktop_settings_panels=1" | grep -q 'id="desktop-panel-plugins"' || {
+	echo "FAIL: the settings panels did not answer their own request"; exit 1; }
+echo "ok: the settings panels load on their own request"
+
 # The enabled set is stored in settings.json, so the file is the state.
 SETTINGS="$ADMINER_DESKTOP_DATA/settings.json"
 JAR=$(mktemp)
@@ -204,11 +213,11 @@ echo "ok: every shipped plugin boots ($(wc -l < "$PLUGINS" | tr -d ' ') of them)
 rm -f "$PLUGINS"
 
 # The AI-access panel offers one register command per agent, not just Claude Code's. A
-# hardcoded `claude` is exactly the regression this catches, and it is drawn on the login page
-# so curl can see it. The toast stylesheet is checked here for the same reason it once
+# hardcoded `claude` is exactly the regression this catches, and the panels' own request draws
+# it so curl can see it. The toast stylesheet is checked here for the same reason it once
 # shipped unstyled: desktop.css only @imports it, so nothing else would notice it missing.
 PANEL=/tmp/adminer-desktop-panel.html
-curl -s "$BASE/adminer.php" > "$PANEL"
+curl -s "$BASE/adminer.php?desktop_settings_panels=1" > "$PANEL"
 # The commands are highlighted, one <span> per word, so they are matched with the tags removed.
 TEXTFILE=/tmp/adminer-desktop-panel.txt
 sed 's/<[^>]*>//g' "$PANEL" > "$TEXTFILE"

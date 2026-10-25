@@ -9,6 +9,8 @@
  *   preventDefault() on a second Escape with no click between, and can skip `cancel` right after
  *   the click that opened the dialog — on `close` it is reopened and asked instead, its fields
  *   intact, since closing a dialog does not reset its form.
+ * - An element with data-src inside a dialog is fetched on its first open: content the page
+ *   would otherwise render on every load for a dialog it rarely opens (the settings panels).
  */
 
 // In a block of its own: these files are classic scripts sharing one global scope, and a
@@ -47,13 +49,50 @@
 		}
 	}
 
-	function open(dialog) {
+	async function open(dialog) {
 		if (!dialog || dialog.open) {
+			return;
+		}
+		await load(dialog);
+		// Opened by a second click while the first was still loading.
+		if (dialog.open) {
 			return;
 		}
 		discarded.delete(dialog);
 		show(dialog);
 		opened.set(dialog, fields(dialog));
+	}
+
+	// An element with data-src is filled from that URL on the first open, before the dialog shows —
+	// so the guard's snapshot sees its fields. Once, kept for every open after; ad-loaded tells the
+	// scripts that bind into it. On a failure its [data-load-failed] message shows instead, and the
+	// next open tries again.
+	const loading = new WeakMap();
+	function load(dialog) {
+		const slot = dialog.querySelector("[data-src]");
+		if (!slot) {
+			return;
+		}
+		if (!loading.has(slot)) {
+			const done = fetch(slot.dataset.src)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`${response.status}`);
+					}
+					return response.text();
+				})
+				.then((html) => {
+					slot.innerHTML = html;
+					slot.removeAttribute("data-src");
+					slot.dispatchEvent(new Event("ad-loaded", { bubbles: true }));
+				})
+				.catch(() => {
+					slot.querySelector("[data-load-failed]")?.removeAttribute("hidden");
+					loading.delete(slot);
+				});
+			loading.set(slot, done);
+		}
+		return loading.get(slot);
 	}
 
 	function requestClose(dialog) {

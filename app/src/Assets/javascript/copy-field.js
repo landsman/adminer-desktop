@@ -5,8 +5,13 @@
 // carries strict-dynamic, which by spec makes the 'unsafe-inline' beside it ignored — and
 // -debug strips strict-dynamic, so an inline handler would work while you debug it and do
 // nothing for everyone else.
-document.addEventListener("DOMContentLoaded", () => {
-	for (const field of document.querySelectorAll("[data-copy-field]")) {
+// Bound again for whatever modal.js fetches into a dialog (ad-loaded): the MCP panel's commands
+// arrive that way, after this has run.
+document.addEventListener("DOMContentLoaded", () => bindCopyFields(document));
+document.addEventListener("ad-loaded", (event) => bindCopyFields(event.target));
+
+function bindCopyFields(root) {
+	for (const field of root.querySelectorAll("[data-copy-field]")) {
 		const value = field.querySelector("[data-copy-value]");
 		const button = field.querySelector("[data-copy-button]");
 		if (!value || !button) {
@@ -50,4 +55,4 @@ document.addEventListener("DOMContentLoaded", () => {
 			}, 1500);
 		});
 	}
-});
+}

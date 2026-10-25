@@ -17,11 +17,12 @@
  */
 
 const lang = document.querySelector("#lang");
-const slot = document.querySelector("#desktop-lang-slot");
 const select = lang?.querySelector('select[name="lang"]');
 const token = lang?.querySelector('input[name="token"]');
 
-if (slot && select && token) {
+// The slot arrives with the panels, which modal.js fetches when the dialog first opens: the
+// switch leaves the corner now and waits off the page until then.
+if (document.querySelector("#desktop-panels") && select && token) {
 	const tokenValue = token.value;
 	select.onchange = () => {
 		const form = document.createElement("form");
@@ -49,6 +50,8 @@ if (slot && select && token) {
 	// dispatches it from a document listener, so replacing the property above did not stop it.
 	// Left in place, it submits the settings form the select now sits in, without lang.
 	select.removeAttribute("data-onchange");
-	slot.append(select);
 	lang.remove();
+	document.addEventListener("ad-loaded", () =>
+		document.querySelector("#desktop-lang-slot")?.append(select),
+	);
 }

@@ -1,0 +1,12 @@
+{* The settings dialog's panels, fetched when it first opens (Dialog::panels()). They print
+	themselves; this only decides where they sit. *}
+{parameters
+	\Desktop\Settings\Theme\Theme $theme,
+	\Desktop\Settings\Plugins\PluginList $plugins,
+	\Desktop\Mcp\Panel $mcp,
+	\Desktop\Shortcuts\Shortcuts $shortcuts
+}
+<div id="desktop-panel-themes">{do $theme->panel()}</div>
+<div id="desktop-panel-plugins">{do $plugins->panel()}</div>
+<div id="desktop-panel-mcp">{do $mcp->panel()}</div>
+<div id="desktop-panel-shortcuts">{do $shortcuts->panel()}</div>

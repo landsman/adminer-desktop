@@ -27,6 +27,7 @@ return [
 	// before the browser (which fills in {n}) ever sees it.
 	'settings.reset' => 'Reset to defaults',
 	'settings.reset_confirm' => 'Reset every setting back to its default? The theme, the plugins and the widths you resized are all forgotten. Adminer\'s own language and saved servers are kept.',
+	'settings.load_failed' => 'Settings could not be loaded.',
 
 	// Data list pager (src/Assets/javascript/table-pager.js): "1-20 of 50", the rows on screen
 	// out of the rows there are.
