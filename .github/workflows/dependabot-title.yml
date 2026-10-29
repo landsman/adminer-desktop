@@ -1,13 +1,8 @@
 name: dependabot title
 
-# Dependabot titles a group PR "bump the composer group in /app with 2 updates", and
-# nothing in dependabot.yml can change that text — and a squash-merge makes it the
-# commit subject on main. This keeps the `deps` prefix and names what was bumped.
-# cli/dependabot-title.sh decides the text; `make qa` tests it, so no test job here.
-#
-# `pull_request`, not `pull_request_target`: a Dependabot run gets a read-only token
-# by default, but `permissions:` may raise it, and that avoids running with the
-# base repo's secrets.
+# Names what a Dependabot PR bumps instead of "the composer group", since the
+# squash-merge makes the title the subject on main. The workflow and its script
+# live in landsman/config, shared with every repo of mine.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -18,21 +13,8 @@ concurrency:
 
 jobs:
   retitle:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
-    runs-on: ubuntu-latest
+    # A called workflow holds no more than this grants.
     permissions:
       contents: read
       pull-requests: write
-    steps:
-      - uses: actions/checkout@v7
-      - id: meta
-        uses: dependabot/fetch-metadata@v3
-      - name: rewrite the title
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          TITLE: ${{ github.event.pull_request.title }}
-          NAMES: ${{ steps.meta.outputs.dependency-names }}
-          FROM: ${{ steps.meta.outputs.previous-version }}
-          TO: ${{ steps.meta.outputs.new-version }}
-        run: gh pr edit "$PR" --title "$(cli/dependabot-title.sh "$TITLE" "$NAMES" "$FROM" "$TO")"
+    uses: landsman/config/.github/workflows/dependabot-title.yml@main
