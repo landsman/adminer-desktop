@@ -21,6 +21,10 @@ http://:{$AD_PORT} {
 	# Quoted: the installed app's path has a space in it.
 	root * "{$AD_ROOT}"
 	log
+	# DNS rebinding: a page pointing its own domain at this port is same-origin to the browser,
+	# and only the name in Host gives it away.
+	@foreign not host 127.0.0.1 localhost
+	respond @foreign 403
 	# A short path for the stylesheets to the shared icons, still answered by the file server.
 	rewrite /icons/* /src/Assets{path}
 	@assets path *.css *.js *.svg *.png *.gif *.ico *.woff2

@@ -75,11 +75,36 @@ class McpContext implements Context
 		$this->driver = $driver;
 	}
 
+	private int $status = 0;
+
 	#[BeforeScenario]
 	public function open(): void
 	{
 		putenv("ADMINER_DESKTOP_E2E_DRIVER=$this->driver");
 		$this->fix = e2e_fixture();
+	}
+
+	// ── the server's own door ────────────────────────────────────────────────────────────────
+
+	#[When('a request for :path names the host :host')]
+	public function requestNamesHost(string $path, string $host): void
+	{
+		$port = parse_url((string) $this->fix['base'], PHP_URL_PORT);
+		$ch = curl_init("http://127.0.0.1:$port$path");
+		curl_setopt_array($ch, [
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_HTTPHEADER => ["Host: $host:$port"],
+		]);
+		curl_exec($ch);
+		$this->status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+	}
+
+	#[Then('the server answers :status')]
+	public function serverAnswers(int $status): void
+	{
+		if ($this->status !== $status) {
+			throw new RuntimeException("expected $status, got $this->status");
+		}
 	}
 
 	// ── the endpoint, against a real window ──────────────────────────────────────────────────
