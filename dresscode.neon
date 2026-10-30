@@ -1,0 +1,40 @@
+# The conventions phpstan does not judge, on the PHP we wrote. No coding standard: the code
+# follows adminer's, and only what is decided here gets reported.
+
+paths:
+	- app
+	- cli
+
+# Everything that ships verbatim from the adminer release keeps its own conventions.
+excludePaths:
+	- app/vendor
+	- app/adminer.php
+	- app/editor.php
+	- app/src/Settings/Plugins/available
+	- app/src/Settings/Theme/designs
+
+# composer.json names no PHP version; this is frankenphp's, the one the app runs on.
+targets:
+	php: 8.5
+
+# strict_types only applies to the file that declares it, so one missing is a silent hole.
+file:
+	finalLineEndings: 1
+	trailingWhitespace: forbidden
+	strictTypes:
+		declaration: required
+		position: nextLine
+
+indentation:
+	unit: tab
+
+literals:
+	arraySyntax:
+		array: short
+
+# A bare @var is not enough. phpstan cannot say this: its missing-type rule for constants only
+# looks inside a type that is already written, so `const MAX = 2000` is invisible to it.
+types:
+	declaration:
+		property: required
+		constant: required

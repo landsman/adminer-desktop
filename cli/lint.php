@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-/** Syntax and style check for the PHP we ship.
+/** Syntax check for the PHP we ship.
 *
 * Run through the frankenphp we already download, so QA needs nothing installed:
 *   ./bin/frankenphp php-cli cli/lint.php
@@ -10,7 +10,7 @@ declare(strict_types=1);
 *
 * This stays dependency-free on purpose: it runs before `mise run install` on a fresh clone,
 * where a parse error would otherwise blank the app. The deeper checks that need composer —
-* phpstan for types, phpcs (with slevomat) for the conventions — run in `make qa` through the
+* phpstan for types, dresscode for the conventions — run in `make qa` through the
 * same frankenphp once the deps are in; keep new rules there, not here.
 */
 
@@ -57,31 +57,7 @@ foreach ($filenames as $filename) {
 	} catch (ParseError $e) {
 		fwrite(STDERR, "$short: syntax: " . $e->getMessage() . "\n");
 		$errors++;
-		continue; // style checks on a file that does not parse are just noise
-	}
-
-	// Adminer is tab-indented and enforces it (Generic.WhiteSpace.DisallowSpaceIndent);
-	// these files sit next to adminer's own, so they follow adminer's convention.
-	foreach (explode("\n", $source) as $i => $line) {
-		$n = $i + 1;
-		if (preg_match('~^ +~', $line)) {
-			fwrite(STDERR, "$short:$n: space indentation, adminer uses tabs\n");
-			$errors++;
-		}
-		if (preg_match('~[ \t]+$~', $line)) {
-			fwrite(STDERR, "$short:$n: trailing whitespace\n");
-			$errors++;
-		}
-	}
-	if ($source !== "" && substr($source, -1) !== "\n") {
-		fwrite(STDERR, "$short: no newline at end of file\n");
-		$errors++;
-	}
-	// Enforced rather than remembered: strict_types only applies to the file that
-	// declares it, so one file missing it is a silent hole rather than an error.
-	if (!preg_match('~^<\?php\s*\ndeclare\(strict_types=1\);~', $source)) {
-		fwrite(STDERR, "$short: missing declare(strict_types=1) on the line after <?php\n");
-		$errors++;
+		continue;
 	}
 
 	// That superglobal is banned outright in adminer: it merges GET, POST and COOKIE, so it

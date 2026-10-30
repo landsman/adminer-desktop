@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8b3f734511c28fc3ebb8f80c43213a78",
+    "content-hash": "f1bcf7ab2560d8e9a1d6b8cd3efa6cfe",
     "packages": [
         {
             "name": "latte/latte",
@@ -442,6 +442,83 @@
             "time": "2026-06-07T11:47:49+00:00"
         },
         {
+            "name": "composer/semver",
+            "version": "3.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/composer/semver.git",
+                "reference": "d92543b7ede9c4ec6b59853cefb061e39866d2cf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/composer/semver/zipball/d92543b7ede9c4ec6b59853cefb061e39866d2cf",
+                "reference": "d92543b7ede9c4ec6b59853cefb061e39866d2cf",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.3.2 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^1.11",
+                "symfony/phpunit-bridge": "^3 || ^7"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Composer\\Semver\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nils Adermann",
+                    "email": "naderman@naderman.de",
+                    "homepage": "http://www.naderman.de"
+                },
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be",
+                    "homepage": "http://seld.be"
+                },
+                {
+                    "name": "Rob Bast",
+                    "email": "rob.bast@gmail.com",
+                    "homepage": "http://robbast.nl"
+                }
+            ],
+            "description": "Version comparison library that offers utilities, version constraint parsing and validation.",
+            "keywords": [
+                "semantic",
+                "semver",
+                "validation",
+                "versioning"
+            ],
+            "support": {
+                "irc": "ircs://irc.libera.chat:6697/composer",
+                "issues": "https://github.com/composer/semver/issues",
+                "source": "https://github.com/composer/semver/tree/3.6.0"
+            },
+            "funding": [
+                {
+                    "url": "https://packagist.com",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/composer",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-10-29T09:13:34+00:00"
+        },
+        {
             "name": "composer/xdebug-handler",
             "version": "3.0.5",
             "source": {
@@ -549,102 +626,6 @@
                 "source": "https://github.com/cucumber/tag-expressions-php/tree/v11.0.1"
             },
             "time": "2026-03-24T10:42:49+00:00"
-        },
-        {
-            "name": "dealerdirect/phpcodesniffer-composer-installer",
-            "version": "v1.2.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/PHPCSStandards/composer-installer.git",
-                "reference": "963f0c67bffde0eac41b56be71ac0e8ba132f0bd"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/composer-installer/zipball/963f0c67bffde0eac41b56be71ac0e8ba132f0bd",
-                "reference": "963f0c67bffde0eac41b56be71ac0e8ba132f0bd",
-                "shasum": ""
-            },
-            "require": {
-                "composer-plugin-api": "^2.2",
-                "php": ">=5.4",
-                "squizlabs/php_codesniffer": "^3.1.0 || ^4.0"
-            },
-            "require-dev": {
-                "composer/composer": "^2.2",
-                "ext-json": "*",
-                "ext-zip": "*",
-                "php-parallel-lint/php-parallel-lint": "^1.4.0",
-                "phpcompatibility/php-compatibility": "^9.0 || ^10.0.0@dev",
-                "yoast/phpunit-polyfills": "^1.0"
-            },
-            "type": "composer-plugin",
-            "extra": {
-                "class": "PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\Plugin"
-            },
-            "autoload": {
-                "psr-4": {
-                    "PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Franck Nijhof",
-                    "email": "opensource@frenck.dev",
-                    "homepage": "https://frenck.dev",
-                    "role": "Open source developer"
-                },
-                {
-                    "name": "Contributors",
-                    "homepage": "https://github.com/PHPCSStandards/composer-installer/graphs/contributors"
-                }
-            ],
-            "description": "PHP_CodeSniffer Standards Composer Installer Plugin",
-            "keywords": [
-                "PHPCodeSniffer",
-                "PHP_CodeSniffer",
-                "code quality",
-                "codesniffer",
-                "composer",
-                "installer",
-                "phpcbf",
-                "phpcs",
-                "plugin",
-                "qa",
-                "quality",
-                "standard",
-                "standards",
-                "style guide",
-                "stylecheck",
-                "tests"
-            ],
-            "support": {
-                "issues": "https://github.com/PHPCSStandards/composer-installer/issues",
-                "security": "https://github.com/PHPCSStandards/composer-installer/security/policy",
-                "source": "https://github.com/PHPCSStandards/composer-installer"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/PHPCSStandards",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/jrfnl",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/php_codesniffer",
-                    "type": "open_collective"
-                },
-                {
-                    "url": "https://thanks.dev/u/gh/phpcsstandards",
-                    "type": "thanks_dev"
-                }
-            ],
-            "time": "2026-05-06T08:26:05+00:00"
         },
         {
             "name": "dg/composer-cleaner",
@@ -775,6 +756,297 @@
             "time": "2026-02-22T20:46:57+00:00"
         },
         {
+            "name": "dresscode/dresscode",
+            "version": "v1.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dg/dresscode.git",
+                "reference": "032704e07f2698759c0f94746638e50f800cad31"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dg/dresscode/zipball/032704e07f2698759c0f94746638e50f800cad31",
+                "reference": "032704e07f2698759c0f94746638e50f800cad31",
+                "shasum": ""
+            },
+            "require": {
+                "composer/semver": "^3.4",
+                "nette/command-line": "^2.0",
+                "nette/neon": "^3.4 || ^4.0",
+                "nette/schema": "^1.4 || ^2.0",
+                "nette/utils": "^4.1",
+                "php": "8.4 - 8.6",
+                "phpstan/phpdoc-parser": "^2.4",
+                "phpsyntax/phpsyntax": "^1.0"
+            },
+            "conflict": {
+                "phpstan/phpstan": "<2.3.4"
+            },
+            "require-dev": {
+                "nette/phpstan-rules": "^1.0",
+                "nette/tester": "^2.7",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^2.3",
+                "tracy/tracy": "^2.12"
+            },
+            "bin": [
+                "bin/dresscode"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.3-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "DressCode\\": "src"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                }
+            ],
+            "description": "👔 DressCode: checks and fixes PHP coding style, and upgrades code to newer PHP and to new versions of libraries. Built on a lossless syntax tree, so it changes only what it touches. PER Coding Style, PSR-12, Nette.",
+            "homepage": "https://dresscode.run",
+            "keywords": [
+                "Code style",
+                "Coding Standard",
+                "deprecations",
+                "fixer",
+                "formatter",
+                "linter",
+                "modernization",
+                "per-cs",
+                "php-cs-fixer",
+                "phpcs",
+                "psr-12",
+                "rector",
+                "refactoring",
+                "upgrade"
+            ],
+            "support": {
+                "issues": "https://github.com/dg/dresscode/issues",
+                "source": "https://github.com/dg/dresscode/tree/v1.3.1"
+            },
+            "time": "2026-10-19T13:51:53+00:00"
+        },
+        {
+            "name": "nette/command-line",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nette/command-line.git",
+                "reference": "429068c2b64cae4260b1d07556b8c6460777cebb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nette/command-line/zipball/429068c2b64cae4260b1d07556b8c6460777cebb",
+                "reference": "429068c2b64cae4260b1d07556b8c6460777cebb",
+                "shasum": ""
+            },
+            "require": {
+                "php": "8.2 - 8.6"
+            },
+            "require-dev": {
+                "nette/phpstan-rules": "^1.0",
+                "nette/tester": "^2.5",
+                "phpstan/extension-installer": "^1.4@stable",
+                "phpstan/phpstan": "^2.1@stable",
+                "tracy/tracy": "^2.9"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nette\\": "src"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0-only",
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                },
+                {
+                    "name": "Nette Community",
+                    "homepage": "https://nette.org/contributors"
+                }
+            ],
+            "description": "Nette Command Line: options and arguments parser.",
+            "homepage": "https://nette.org",
+            "keywords": [
+                "cmd",
+                "cmd-line",
+                "nette"
+            ],
+            "support": {
+                "issues": "https://github.com/nette/command-line/issues",
+                "source": "https://github.com/nette/command-line/tree/v2.0.0"
+            },
+            "time": "2026-10-21T03:24:41+00:00"
+        },
+        {
+            "name": "nette/neon",
+            "version": "v4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nette/neon.git",
+                "reference": "187c00a5c45d786a00ba08b3297f2ebb43d53c96"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nette/neon/zipball/187c00a5c45d786a00ba08b3297f2ebb43d53c96",
+                "reference": "187c00a5c45d786a00ba08b3297f2ebb43d53c96",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "php": "8.4 - 8.6"
+            },
+            "require-dev": {
+                "nette/phpstan-rules": "^1.0",
+                "nette/tester": "^2.4",
+                "phpstan/extension-installer": "^1.4@stable",
+                "phpstan/phpstan": "^2.3@stable",
+                "tracy/tracy": "^2.7"
+            },
+            "bin": [
+                "bin/neon-lint"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nette\\": "src"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0-only",
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                }
+            ],
+            "description": "🍸 Nette NEON: a human-friendly data format, simpler than YAML and with entities for objects. Comes with a fast encoder and decoder.",
+            "homepage": "https://neon.nette.org",
+            "keywords": [
+                "config",
+                "configuration",
+                "data format",
+                "neon",
+                "nette",
+                "parser",
+                "yaml"
+            ],
+            "support": {
+                "issues": "https://github.com/nette/neon/issues",
+                "source": "https://github.com/nette/neon/tree/v4.0.0"
+            },
+            "time": "2026-10-26T00:16:48+00:00"
+        },
+        {
+            "name": "nette/schema",
+            "version": "v1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nette/schema.git",
+                "reference": "af9fa8a86bfca9b02b10346220db26e62ef942ec"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nette/schema/zipball/af9fa8a86bfca9b02b10346220db26e62ef942ec",
+                "reference": "af9fa8a86bfca9b02b10346220db26e62ef942ec",
+                "shasum": ""
+            },
+            "require": {
+                "nette/utils": "^4.0",
+                "php": "8.1 - 8.6"
+            },
+            "require-dev": {
+                "nette/phpstan-rules": "^1.0.7",
+                "nette/tester": "^2.6",
+                "phpstan/extension-installer": "^1.4@stable",
+                "phpstan/phpstan": "^2.3@stable",
+                "tracy/tracy": "^2.8"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.4-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nette\\": "src"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0-only",
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                }
+            ],
+            "description": "📐 Nette Schema: validates and normalizes data such as configuration or API input against a schema described in a few readable lines of PHP, with precise error messages.",
+            "homepage": "https://doc.nette.org/schema",
+            "keywords": [
+                "configuration",
+                "data validation",
+                "nette",
+                "normalization",
+                "schema",
+                "validation"
+            ],
+            "support": {
+                "issues": "https://github.com/nette/schema/issues",
+                "source": "https://github.com/nette/schema/tree/v1.4.0"
+            },
+            "time": "2026-10-22T02:12:50+00:00"
+        },
+        {
             "name": "nette/tester",
             "version": "v2.6.2",
             "source": {
@@ -853,17 +1125,108 @@
             "time": "2026-09-13T00:11:01+00:00"
         },
         {
-            "name": "phpstan/phpdoc-parser",
-            "version": "2.3.3",
+            "name": "nette/utils",
+            "version": "v4.1.6",
             "source": {
                 "type": "git",
-                "url": "https://github.com/phpstan/phpdoc-parser.git",
-                "reference": "fb19eedd2bb67ff8cf7a5502ad329e701d6398a3"
+                "url": "https://github.com/nette/utils.git",
+                "reference": "6bf24518accf32cf845bca305e0b92078700fd01"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/fb19eedd2bb67ff8cf7a5502ad329e701d6398a3",
-                "reference": "fb19eedd2bb67ff8cf7a5502ad329e701d6398a3",
+                "url": "https://api.github.com/repos/nette/utils/zipball/6bf24518accf32cf845bca305e0b92078700fd01",
+                "reference": "6bf24518accf32cf845bca305e0b92078700fd01",
+                "shasum": ""
+            },
+            "require": {
+                "php": "8.2 - 8.6"
+            },
+            "conflict": {
+                "nette/finder": "<3",
+                "nette/schema": "<1.2.2"
+            },
+            "require-dev": {
+                "jetbrains/phpstorm-attributes": "^1.2",
+                "nette/phpstan-rules": "^1.0",
+                "nette/tester": "^2.5",
+                "phpstan/extension-installer": "^1.4@stable",
+                "phpstan/phpstan": "^2.1@stable",
+                "tracy/tracy": "^2.9"
+            },
+            "suggest": {
+                "ext-gd": "to use Image",
+                "ext-iconv": "to use Strings::chr(), ord() and reverse()",
+                "ext-intl": "to use Strings::webalize(), toAscii(), normalize() and compare()",
+                "ext-json": "to use Nette\\Utils\\Json",
+                "ext-mbstring": "to use Strings::lower() etc...",
+                "ext-tokenizer": "to use Nette\\Utils\\Reflection::getUseStatements()"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nette\\": "src"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0-only",
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                },
+                {
+                    "name": "Nette Community",
+                    "homepage": "https://nette.org/contributors"
+                }
+            ],
+            "description": "🛠  Nette Utils: lightweight utilities for string & array manipulation, image handling, safe JSON encoding/decoding, validation, slug or strong password generating etc.",
+            "homepage": "https://nette.org",
+            "keywords": [
+                "array",
+                "core",
+                "datetime",
+                "images",
+                "json",
+                "nette",
+                "paginator",
+                "password",
+                "slugify",
+                "string",
+                "unicode",
+                "utf-8",
+                "utility",
+                "validation"
+            ],
+            "support": {
+                "issues": "https://github.com/nette/utils/issues",
+                "source": "https://github.com/nette/utils/tree/v4.1.6"
+            },
+            "time": "2026-10-20T17:07:56+00:00"
+        },
+        {
+            "name": "phpstan/phpdoc-parser",
+            "version": "2.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpstan/phpdoc-parser.git",
+                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/af8e840551031d254cfdb3a18a62c3470a309c10",
+                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10",
                 "shasum": ""
             },
             "require": {
@@ -895,17 +1258,17 @@
             "description": "PHPDoc parser with support for nullable, intersection and generic types",
             "support": {
                 "issues": "https://github.com/phpstan/phpdoc-parser/issues",
-                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.3.3"
+                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.1"
             },
-            "time": "2026-07-08T07:01:06+00:00"
+            "time": "2026-10-30T19:36:28+00:00"
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.1",
+            "version": "2.3.4",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/6155239b488e95d26d1ebd95c6b4bb294d7f09db",
-                "reference": "6155239b488e95d26d1ebd95c6b4bb294d7f09db",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/f20ce6f3c82556cfcfc086b152445a12d1d64fff",
+                "reference": "f20ce6f3c82556cfcfc086b152445a12d1d64fff",
                 "shasum": ""
             },
             "require": {
@@ -961,7 +1324,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-08T21:09:11+00:00"
+            "time": "2026-10-28T22:38:53+00:00"
         },
         {
             "name": "phpstan/phpstan-strict-rules",
@@ -1014,6 +1377,80 @@
                 "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.1.0"
             },
             "time": "2026-10-01T21:30:37+00:00"
+        },
+        {
+            "name": "phpsyntax/phpsyntax",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpsyntax/phpsyntax.git",
+                "reference": "0071048f6bbf129d34c1b5cbef761d68698c21b7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpsyntax/phpsyntax/zipball/0071048f6bbf129d34c1b5cbef761d68698c21b7",
+                "reference": "0071048f6bbf129d34c1b5cbef761d68698c21b7",
+                "shasum": ""
+            },
+            "require": {
+                "ext-tokenizer": "*",
+                "php": "8.4 - 8.6"
+            },
+            "require-dev": {
+                "nette/phpstan-rules": "^1.0",
+                "nette/tester": "^2.6",
+                "nikic/php-parser": "^5.0",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^2.2",
+                "tracy/tracy": "^2.12"
+            },
+            "bin": [
+                "bin/phpsyntax"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PhpSyntax\\": "src"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "David Grudl",
+                    "homepage": "https://davidgrudl.com"
+                }
+            ],
+            "description": "🌳 PhpSyntax: a lossless concrete syntax tree (CST) for PHP. Every token, space and comment is kept, so the tree prints back byte for byte and a tool changes only what it touches. Comes with a mutation API for refactoring tools and formatters.",
+            "homepage": "https://phpsyntax.deegee.dev",
+            "keywords": [
+                "ast",
+                "code generation",
+                "cst",
+                "lexer",
+                "lossless",
+                "parser",
+                "php-parser",
+                "refactoring",
+                "static analysis",
+                "syntax tree",
+                "tokenizer"
+            ],
+            "support": {
+                "issues": "https://github.com/phpsyntax/phpsyntax/issues",
+                "source": "https://github.com/phpsyntax/phpsyntax/tree/v1.0.0"
+            },
+            "time": "2026-10-21T23:56:27+00:00"
         },
         {
             "name": "playwright-php/playwright",
@@ -1303,155 +1740,6 @@
                 "source": "https://github.com/php-fig/log/tree/3.0.2"
             },
             "time": "2024-09-11T13:17:53+00:00"
-        },
-        {
-            "name": "slevomat/coding-standard",
-            "version": "8.31.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/slevomat/coding-standard.git",
-                "reference": "0a40807a48873948bfa7ffce2a4e69ba40cf5e76"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/slevomat/coding-standard/zipball/0a40807a48873948bfa7ffce2a4e69ba40cf5e76",
-                "reference": "0a40807a48873948bfa7ffce2a4e69ba40cf5e76",
-                "shasum": ""
-            },
-            "require": {
-                "dealerdirect/phpcodesniffer-composer-installer": "^0.7 || ^1.2.1",
-                "php": "^7.4 || ^8.0",
-                "phpstan/phpdoc-parser": "^2.3.3",
-                "squizlabs/php_codesniffer": "^4.0.1"
-            },
-            "require-dev": {
-                "phing/phing": "3.0.1|3.1.2",
-                "php-parallel-lint/php-parallel-lint": "1.4.0",
-                "phpstan/phpstan": "2.2.7",
-                "phpstan/phpstan-deprecation-rules": "2.0.5",
-                "phpstan/phpstan-phpunit": "2.0.18",
-                "phpstan/phpstan-strict-rules": "2.0.12",
-                "phpunit/phpunit": "9.6.34|10.5.63|11.4.4|11.5.56|12.5.33"
-            },
-            "type": "phpcodesniffer-standard",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "8.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "SlevomatCodingStandard\\": "SlevomatCodingStandard/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Slevomat Coding Standard for PHP_CodeSniffer complements Consistence Coding Standard by providing sniffs with additional checks.",
-            "keywords": [
-                "dev",
-                "phpcs"
-            ],
-            "support": {
-                "issues": "https://github.com/slevomat/coding-standard/issues",
-                "source": "https://github.com/slevomat/coding-standard/tree/8.31.1"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/kukulich",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/slevomat/coding-standard",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2026-07-31T10:42:43+00:00"
-        },
-        {
-            "name": "squizlabs/php_codesniffer",
-            "version": "4.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/PHPCSStandards/PHP_CodeSniffer.git",
-                "reference": "bbdc3d0532623e21838b7041a4364383a8126f96"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/bbdc3d0532623e21838b7041a4364383a8126f96",
-                "reference": "bbdc3d0532623e21838b7041a4364383a8126f96",
-                "shasum": ""
-            },
-            "require": {
-                "ext-libxml": "*",
-                "ext-simplexml": "*",
-                "ext-tokenizer": "*",
-                "ext-xmlwriter": "*",
-                "php": ">=7.2.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^8.4.0 || ^9.3.4 || ^10.5.32 || 11.3.3 - 11.5.28 || ^11.5.31"
-            },
-            "suggest": {
-                "ext-iconv": "For accurate character length calculation when the checked files contain multi-byte characters.",
-                "ext-pcntl": "For parallel processing support via the --parallel CLI option."
-            },
-            "bin": [
-                "bin/phpcbf",
-                "bin/phpcs"
-            ],
-            "type": "library",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Greg Sherwood",
-                    "role": "Former lead"
-                },
-                {
-                    "name": "Juliette Reinders Folmer",
-                    "role": "Current lead"
-                },
-                {
-                    "name": "Contributors",
-                    "homepage": "https://github.com/PHPCSStandards/PHP_CodeSniffer/graphs/contributors"
-                }
-            ],
-            "description": "PHP_CodeSniffer tokenizes PHP files and detects violations of a defined set of coding standards.",
-            "homepage": "https://github.com/PHPCSStandards/PHP_CodeSniffer",
-            "keywords": [
-                "phpcs",
-                "standards",
-                "static analysis"
-            ],
-            "support": {
-                "issues": "https://github.com/PHPCSStandards/PHP_CodeSniffer/issues",
-                "security": "https://github.com/PHPCSStandards/PHP_CodeSniffer/security/policy",
-                "source": "https://github.com/PHPCSStandards/PHP_CodeSniffer",
-                "wiki": "https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/PHPCSStandards",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/jrfnl",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/php_codesniffer",
-                    "type": "open_collective"
-                },
-                {
-                    "url": "https://thanks.dev/u/gh/phpcsstandards",
-                    "type": "thanks_dev"
-                }
-            ],
-            "time": "2026-08-06T02:45:27+00:00"
         },
         {
             "name": "symfony/config",
