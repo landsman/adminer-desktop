@@ -1,5 +1,17 @@
 {
 	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "test -x \"$CLAUDE_PROJECT_DIR/bin/frankenphp\" && test -d \"$CLAUDE_PROJECT_DIR/app/vendor/dresscode\" || exit 0; \"$CLAUDE_PROJECT_DIR/bin/frankenphp\" php-cli \"$CLAUDE_PROJECT_DIR/cli/dresscode-hook.php\"",
+						"timeout": 60
+					}
+				]
+			}
+		],
 		"SessionEnd": [
 			{
 				"hooks": [
