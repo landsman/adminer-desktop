@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan dresscode golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -229,6 +229,11 @@ phpstan: bin/frankenphp$(EXE) app/adminer.php app/vendor $(PHPSTAN_INI)/phpstan.
 # frankenphp's php-cli that is frankenphp itself, which takes `check` for a command of its own.
 dresscode: app/vendor
 	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1
+
+# What .claude/settings.json runs after an agent's edit, the edit's JSON on stdin. Silent and with no
+# prerequisites: what it prints goes to the agent, and an edit must not start a composer install.
+dresscode-hook:
+	@test -x bin/frankenphp$(EXE) && test -d app/vendor/dresscode || exit 0; ./bin/frankenphp$(EXE) php-cli cli/dresscode-hook.php
 
 # A cache per checkout. The default one is per user and keeps absolute paths, so an agent's
 # worktree linted second got the first one's findings at that worktree's paths; once it was

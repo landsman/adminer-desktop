@@ -6,7 +6,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "test -x \"$CLAUDE_PROJECT_DIR/bin/frankenphp\" && test -d \"$CLAUDE_PROJECT_DIR/app/vendor/dresscode\" || exit 0; \"$CLAUDE_PROJECT_DIR/bin/frankenphp\" php-cli \"$CLAUDE_PROJECT_DIR/cli/dresscode-hook.php\"",
+						"command": "make -s -C \"$CLAUDE_PROJECT_DIR\" dresscode-hook",
 						"timeout": 60
 					}
 				]
