@@ -54,6 +54,14 @@ curl -s "$BASE/adminer.php" | grep -q "src/Assets/javascript/shortcuts.js?v=[0-9
 	echo "FAIL: shortcuts.js does not serve"; exit 1; }
 echo "ok: refresh shortcut wired and served"
 
+# A post with no value is refused rather than read as "show the sidebar".
+sidebar() { curl -s -o /dev/null -w '%{http_code}' "$@" "$BASE/api.php?action=sidebar"; }
+[ "$(sidebar -X POST)" = "400" ] || {
+	echo "FAIL: a sidebar post without a value was not refused"; exit 1; }
+[ "$(sidebar -d hidden=1)" = "204" ] || {
+	echo "FAIL: a sidebar post with a value was not stored"; exit 1; }
+echo "ok: a sidebar post without a value is refused"
+
 # Static files are cached, or WebKit fetches every icon again on each page and a CSS mask shows
 # blank until it arrives. Pages are not: adminer's own no-cache must survive the header rule.
 cache() { curl -s -o /dev/null -w '%header{cache-control}' "$BASE/$1"; }
