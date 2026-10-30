@@ -55,6 +55,11 @@ make e2e           # browser check: logs in, asserts the theme light and dark (n
 `qa` and `check` pass locally before a push. Tools not installed here — shellcheck,
 semgrep — run through Docker rather than being skipped.
 
+## Attacks we design against
+
+`.docs/threats.md` lists them, with what stops each and where that is checked. Read it before adding
+an endpoint, anything an agent can reach, or an e2e feature, and add the new ones there.
+
 ## Things that will bite
 
 **A quit app can leave its server running.** The launcher stops frankenphp when its run loop
