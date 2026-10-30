@@ -13,11 +13,12 @@ use Desktop\UserSettings;
 class SidebarPreference {
 	/** @return int the HTTP status to answer with */
 	static function handle(): int {
-		$hidden = filter_input(INPUT_POST, 'hidden', FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
-		if ($hidden === null) {
+		// Not FILTER_VALIDATE_BOOL: with FILTER_NULL_ON_FAILURE it reads a missing field as false.
+		$hidden = filter_input(INPUT_POST, 'hidden');
+		if ($hidden !== '1' && $hidden !== '0') {
 			return 400;
 		}
-		(new UserSettings())->set(SettingKey::SidebarHidden, $hidden);
+		(new UserSettings())->set(SettingKey::SidebarHidden, $hidden === '1');
 		return 204;
 	}
 }
