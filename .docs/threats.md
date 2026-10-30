@@ -17,7 +17,7 @@ Who we assume is hostile:
 |---|---|---|---|
 | **DNS rebinding:** a page points its own domain at the server's port and reads the answers as same-origin | The login form as a proxy to guess database passwords, and the preference writes. No session: cookies are bound to the name | `launcher/Caddyfile` answers 403 to any Host but `127.0.0.1` and `localhost` | `features/shell/host.feature` |
 | **Forged Host at the MCP gate** | The window's session, lent to the caller | `launcher/mcpgate` checks Host and method, and requires the token | `launcher/mcpgate/mcpgate_test.go` |
-| **Agent writes through a read tool**, including a `COMMIT` smuggled into the query | Changed data with writes switched off | Adminer's untrusted-SQL guard and a read-only transaction | `features/shell/mcp.feature` |
+| **Agent writes through a read tool**, including a `COMMIT` smuggled into the query | Changed data with writes switched off | Postgres: Adminer's untrusted-SQL guard, a read-only transaction. MySQL: the statement runs and is rolled back | `features/shell/mcp.feature` |
 | **Agent writes to a connection marked Prod** with writes allowed | Changed production data | `Desktop\Mcp\Endpoint` keeps Prod read-only whatever the setting says | `features/shell/mcp.feature` |
 | **Agent reads the session or a password from the handshake** | Every database the user is signed in to | The gate keeps the session in memory, the handshake carries only its URL and token | `features/shell/mcp.feature` |
 | **Handshake or a redirect sends the bridge elsewhere** | The token and the agent's SQL | The bridge accepts only a loopback URL and follows no redirect | `launcher/mcpbridge/bridge_test.go` |
