@@ -1,5 +1,6 @@
 # The conventions phpstan does not judge, on the PHP we wrote. No coding standard: the code
 # follows adminer's, and only what is decided here gets reported.
+# https://dresscode.run/
 
 paths:
 	- app
