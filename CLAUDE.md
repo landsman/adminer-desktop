@@ -270,15 +270,19 @@ type on every property (`private ?string $file`, not a bare `private $file` on a
 stays only for what the native type can't say — an array's shape), `[]` not `array()`, and an
 enum for a fixed set of values (`Desktop\Mode` for the light/dark scheme) rather than a magic
 string. `make qa` enforces these: phpstan at level 6 for parameter, return and value types,
-and phpcs with slevomat (`phpcs.xml`) for the two things phpstan does not judge — native
-property declarations and short array syntax. Both run through the bundled frankenphp, no
+and dresscode (`dresscode.neon`) for what phpstan does not judge — native
+property and constant declarations, short array syntax, tabs, `strict_types`. Both run through the bundled frankenphp, no
 separate PHP install. The exceptions are adminer's own downloaded files (excluded) and a
 method or property that overrides an untyped one in adminer's base class — those keep
-adminer's untyped shape (a phpdoc `@param`/`@return`, or a `phpcs:ignore` on the line),
+adminer's untyped shape (a phpdoc `@param`/`@return`, or a `// dresscode:ignore` on the line),
 because PHP forbids narrowing an inherited signature. Class files are PSR-4: a PascalCase
 filename matching the class, in folders matching the namespace (`Settings\Theme\Theme` →
 `src/Settings/Theme/Theme.php`). Only non-class files stay lowercase — the `.latte` templates,
 the `css/`/`javascript/` assets, and the two bare entries served by URL.
+
+An agent's `Edit` or `Write` of a PHP file runs dresscode at once (`cli/dresscode-hook.php`, wired in
+`.claude/settings.json`): it fixes what the edit broke and hands the agent what is left. A file
+written through Bash is not seen, so `make qa` still decides.
 
 Commit messages say why, not what. No Claude or AI attribution anywhere — not in
 commits, PR text, comments or docs.

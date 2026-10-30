@@ -1,5 +1,17 @@
 {
 	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "make -s -C \"$CLAUDE_PROJECT_DIR\" dresscode-hook",
+						"timeout": 60
+					}
+				]
+			}
+		],
 		"SessionEnd": [
 			{
 				"hooks": [

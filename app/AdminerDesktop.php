@@ -364,7 +364,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param string $missing
 	* @return void
 	*/
-	function navigation($missing): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
+	function navigation($missing): void {
 		Latte::engine()->render(__DIR__ . "/src/Assets/busy.latte");
 		if ($missing != "auth") {
 			$this->dialog->render();
@@ -386,7 +386,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @param string $missing
 	* @return null
 	*/
-	function databasesPrint($missing) { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- adminer's own signature is untyped
+	function databasesPrint($missing) {
 		$this->connections->badge();
 		return null;
 	}

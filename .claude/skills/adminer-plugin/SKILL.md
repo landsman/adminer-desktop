@@ -170,15 +170,15 @@ your output and `exit` — this is how `sql-gemini.php` answers its own AJAX POS
 
 Our own code is PSR-4 `Desktop\` under `app/src/`, native types on properties, `[]` not
 `array()`, enums over magic strings. The downloaded catalogue in `available/` is
-**excluded** from phpstan and phpcs (`phpstan.neon`, `phpcs.xml`) — so upstream's
+**excluded** from phpstan and dresscode (`phpstan.neon`, `dresscode.neon`) — so upstream's
 untyped style there is not a signal for code you write. A hook overriding an untyped
-adminer method keeps adminer's shape (phpdoc `@param`/`@return`, or a `phpcs:ignore`),
+adminer method keeps adminer's shape (phpdoc `@param`/`@return`, or a `// dresscode:ignore`),
 because PHP forbids narrowing an inherited signature.
 
 Verify:
 
 ```sh
-make qa       # php lint, phpstan level 6, phpcs, golangci-lint, oxfmt, oxlint, shellcheck
+make qa       # php lint, phpstan level 6, dresscode, golangci-lint, oxfmt, oxlint, shellcheck
 make check    # boots the app, constructs every picked plugin, asserts before-login behaviour
 make e2e      # Behat browser scenarios (needs docker); plugins in features/pgsql/plugins.feature
 make debug    # run with Safari Web Inspector attached — use this the moment a symptom is visual

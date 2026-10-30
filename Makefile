@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan phpcs golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -224,12 +224,16 @@ phpstan: bin/frankenphp$(EXE) app/adminer.php app/vendor $(PHPSTAN_INI)/phpstan.
 	PHP_INI_SCAN_DIR=$(PHPSTAN_INI) ./bin/frankenphp$(EXE) php-cli app/vendor/phpstan/phpstan/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
-# The conventions phpstan does not judge: every property a native type (a bare @var is not
-# enough) and [] over array(). PHPCS with slevomat, run through the frankenphp we already
-# download — no separate PHP install. The ruleset (phpcs.xml) holds the rules and excludes
-# adminer's own downloaded files, which keep their conventions.
-phpcs: app/vendor
-	./bin/frankenphp$(EXE) php-cli app/vendor/bin/phpcs --standard=phpcs.xml
+# The conventions phpstan does not judge, listed in dresscode.neon, which also excludes adminer's
+# own downloaded files. --jobs 1 because its workers start through PHP_BINARY, and under
+# frankenphp's php-cli that is frankenphp itself, which takes `check` for a command of its own.
+dresscode: app/vendor
+	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1
+
+# What .claude/settings.json runs after an agent's edit, the edit's JSON on stdin. Silent and with no
+# prerequisites: what it prints goes to the agent, and an edit must not start a composer install.
+dresscode-hook:
+	@test -x bin/frankenphp$(EXE) && test -d app/vendor/dresscode || exit 0; ./bin/frankenphp$(EXE) php-cli cli/dresscode-hook.php
 
 # A cache per checkout. The default one is per user and keeps absolute paths, so an agent's
 # worktree linted second got the first one's findings at that worktree's paths; once it was
@@ -328,7 +332,7 @@ qa: bin/frankenphp$(EXE) app/vendor i18n mcp-bridge-data  ## Run every static ch
 	@sh tests/launcher/downloads.sh
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
 	@$(MAKE) --no-print-directory phpstan
-	@$(MAKE) --no-print-directory phpcs && echo "phpcs ok"
+	@$(MAKE) --no-print-directory dresscode
 	@$(MAKE) --no-print-directory golangci && echo "golangci-lint ok"
 	@$(MAKE) --no-print-directory oxc && echo "oxfmt + oxlint ok"
 
@@ -505,8 +509,8 @@ bundle: build app/vendor $(ICON)  ## Build the macOS .app bundle
 	# The whole app/ tree in one copy — vendor/ lives in app/ now, so it (and the autoloader
 	# Latte needs) travels along too.
 	rsync -a app/ "$(APP)"/Contents/Resources/app/
-	# Strip the dev tooling the shared app/vendor target installs for qa (phpcs, slevomat,
-	# playwright — ~9 MB the shipped app never runs). composer.json travels with app/, so this
+	# Strip the dev tooling the shared app/vendor target installs for qa (dresscode,
+	# playwright: nothing the shipped app runs). composer.json travels with app/, so this
 	# reconciles the copied tree down to the production deps in place.
 	$(call package-app,"$(APP)"/Contents/Resources/app)
 	# NSLocalizedString resolves against the main bundle, so the .lproj folders have to
@@ -557,7 +561,7 @@ DIST = build.noindex/pkg/adminer-desktop
 
 # Turns a copy of app/ into what ships; bundle, dist and e2e-packaged share it, so the nightly tests
 # the same tree a release carries. composer strips the dev tooling app/vendor carries for qa
-# (phpcs, slevomat, playwright — ~9 MB the shipped app never runs), reconciling the copy down to
+# (dresscode, playwright: nothing the shipped app runs), reconciling the copy down to
 # production deps in place. No precompile on windows: Latte locks even a precompiled template
 # there, so app/ would have to be writable.
 define package-app
