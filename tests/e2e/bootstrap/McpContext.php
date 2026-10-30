@@ -70,12 +70,13 @@ class McpContext implements Context
 	/** Whether the scenario gave the agent's role a statement limit, so it is taken off again. */
 	private bool $agentLimited = false;
 
+	/** The answer to the last request that named a host of its own. */
+	private int $status = 0;
+
 	public function __construct(string $driver)
 	{
 		$this->driver = $driver;
 	}
-
-	private int $status = 0;
 
 	#[BeforeScenario]
 	public function open(): void

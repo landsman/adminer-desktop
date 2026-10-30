@@ -45,7 +45,8 @@ $actions = [
 // ponytail: no CSRF token. A page in a browser on this machine can post here if it finds the
 // random port, and the Caddyfile refuses only a foreign Host, not a foreign Origin. What these
 // handlers write is the user's own UI preferences, each validated and clamped, so that is not
-// worth threading adminer's token out to a background beacon — revisit if an action does more.
+// worth threading adminer's token out to a background beacon — revisit if the server ever listens
+// on anything but loopback, or an action does more.
 $action = (string) filter_input(INPUT_GET, "action");
 if (!isset($actions[$action])) {
 	$status = 404;
