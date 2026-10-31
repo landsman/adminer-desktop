@@ -1,0 +1,3 @@
+# What dresscode's type rules read: it looks for this file only in its own root, app/.
+includes:
+    - ../phpstan.neon

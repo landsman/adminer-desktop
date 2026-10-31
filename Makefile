@@ -229,11 +229,12 @@ phpstan: fetch app/vendor $(PHPSTAN_INI)/phpstan.ini
 	PHP_INI_SCAN_DIR=$(PHPSTAN_INI) ./bin/frankenphp$(EXE) php-cli app/vendor/phpstan/phpstan/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
-# The conventions phpstan does not judge, listed in dresscode.neon, which also excludes adminer's
+# The conventions phpstan does not judge, listed in app/dresscode.neon, which also excludes adminer's
 # own downloaded files. --jobs 1 because its workers start through PHP_BINARY, and under
 # frankenphp's php-cli that is frankenphp itself, which takes `check` for a command of its own.
-dresscode: app/vendor
-	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1
+# fetch because typeAnalysis reads phpstan.neon, and without the files it names only warns.
+dresscode: fetch app/vendor
+	./cli/dresscode.sh ./bin/frankenphp$(EXE)
 
 # What .claude/settings.json runs after an agent's edit, the edit's JSON on stdin. Silent and with no
 # prerequisites: what it prints goes to the agent, and an edit must not start a composer install.
@@ -325,8 +326,8 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go or *_windows.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh cli/compile-adminer.sh cli/dresscode.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/dresscode-test.sh tests/cli/dresscode-hook-test.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/dresscode.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
@@ -335,6 +336,8 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
 	./bin/frankenphp$(EXE) php-cli tests/cli/WindowsIcoTest.php
 	@sh tests/cli/kill-orphans-test.sh
+	@sh tests/cli/dresscode-test.sh
+	@sh tests/cli/dresscode-hook-test.sh
 	@# The launcher's own download code against the real webview, every way adminer starts one.
 	@sh tests/launcher/downloads.sh
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
@@ -585,6 +588,7 @@ DIST = build.noindex/pkg/adminer-desktop
 define package-app
 	rm -rf $(1)/cli
 	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(1)
+	rm -f $(1)/*.neon
 	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(1))
 endef
 
