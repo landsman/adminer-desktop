@@ -99,6 +99,8 @@ Notes:
 Nothing custom to test — WebView2 has its own download handling and UI. Confirm once that
 **Export → Save** offers to save the file (WebView2's own download bar), rather than showing it.
 
+The icon (`launcher/icon.rc`): the logo on the exe in Explorer, on the title bar and on the taskbar.
+
 The menu bar (`launcher/menu_windows.c`):
 
 - The page fills the window under the menu, nothing cut off at the bottom, also after a resize.

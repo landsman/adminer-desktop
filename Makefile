@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: logo-ico help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -406,7 +406,21 @@ bench: mcp-bridge-data  ## Benchmark the MCP bridge's own cost per call
 i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)
 	@./bin/frankenphp$(EXE) php-cli cli/i18n.php check
 
-build: fetch i18n mcp-bridge-data  ## Build the launcher binary
+# The exe's icon on Windows. go build links any .syso beside the sources, and windres comes with
+# the gcc cgo already needs. The .ico is committed: nothing on a Windows runner can resize a PNG.
+WIN_ICON = $(if $(EXE),launcher/icon_windows_amd64.syso)
+
+launcher/icon_windows_amd64.syso: launcher/icon.rc assets/logo.ico
+	windres -O coff -i $< -o $@
+
+# macOS only, for sips. After editing the logo: make logo-ico, and commit assets/logo.ico.
+logo-ico: bin/frankenphp$(EXE)  ## Rebuild assets/logo.ico from assets/logo.png
+	@mkdir -p build.noindex/ico
+	@for s in 16 24 32 48 64 128 256; do sips -z $$s $$s assets/logo.png --out build.noindex/ico/$$s.png >/dev/null; done
+	./bin/frankenphp$(EXE) php-cli cli/ico.php assets/logo.ico $$(for s in 16 24 32 48 64 128 256; do echo build.noindex/ico/$$s.png; done)
+	@rm -rf build.noindex/ico
+
+build: fetch i18n mcp-bridge-data $(WIN_ICON)  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
 # NSLocalizedString reads the .lproj folders beside an unbundled binary as it does a bundle's
 # Resources: without them `make run` showed the menu's keys (menu.edit) for its titles.

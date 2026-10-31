@@ -1,0 +1,2 @@
+// 32512 is IDI_APPLICATION, the id webview loads the window's icon from. Explorer takes the same one.
+32512 ICON "../assets/logo.ico"
