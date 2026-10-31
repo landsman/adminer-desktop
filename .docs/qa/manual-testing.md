@@ -98,3 +98,14 @@ Notes:
 
 Nothing custom to test — WebView2 has its own download handling and UI. Confirm once that
 **Export → Save** offers to save the file (WebView2's own download bar), rather than showing it.
+
+The menu bar (`launcher/menu_windows.c`):
+
+- The page fills the window under the menu, nothing cut off at the bottom, also after a resize.
+- **Settings…** opens the dialog, **Help → Shortcuts** opens it on the shortcuts tab.
+- **Ctrl+,** still opens settings, with the focus in the page and in a field.
+- Adminer and Editor switch, and the choice survives a restart.
+- Open Logs opens the folder; the three Help links open the browser.
+- About shows the versions; Quit closes the app and leaves no `frankenphp.exe` running.
+- With Windows in Czech the items are in Czech.
+- Alt opens the menu, with the focus in the page.

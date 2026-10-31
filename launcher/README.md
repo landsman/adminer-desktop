@@ -22,6 +22,7 @@ WebKitGTK) bring most of this themselves.
 | Cmd+R / F5 reload | `installReloadShortcut` | WKWebView binds neither; the page never sees the keystroke (off macOS `shortcuts.js` does). |
 | **downloads** | `installDownloads` | see below |
 | menu bar | `installMenu` | an unbundled binary gets a bare default menu. |
+| menu bar on Windows | `menu_windows.c` | webview makes a window with no menu. `SetMenu`, and its clicks taken from the window procedure. Not themed: Win32 draws it light in dark mode too. |
 | Web Inspector (`-debug` only) | `enableInspector` | no console or breakpoints otherwise. |
 
 ## Downloads

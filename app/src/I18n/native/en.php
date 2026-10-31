@@ -16,7 +16,7 @@ declare(strict_types=1);
 // the C table.
 
 return [
-	// Menu bar (menu_darwin.m). Adminer and Editor are product names and stay untranslated.
+	// Menu bar (menu_darwin.m, menu_windows.c). Adminer and Editor are product names and stay untranslated.
 	'menu.about' => 'About Adminer Desktop',
 	'menu.settings' => 'Settings…',
 	'menu.open_logs' => 'Open Logs',
