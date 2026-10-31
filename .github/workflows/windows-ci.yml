@@ -36,10 +36,10 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      # Go alone: this job needs neither node nor gh, and a Windows minute is billed double.
+      - uses: jdx/mise-action@v4
         with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
+          install_args: go
       - name: Cache pinned downloads
         uses: actions/cache@v6
         with:
@@ -47,5 +47,6 @@ jobs:
             bin
             .cache
           key: pinned-frankenphp-windows-x86_64.zip-${{ hashFiles('Makefile') }}
-      - run: make fetch mcp-bridge-data FRANKEN_ASSET=frankenphp-windows-x86_64.zip
-      - run: go test -v ./launcher/mcpgate/ ./launcher/mcpbridge/
+      - run: make go-test FRANKEN_ASSET=frankenphp-windows-x86_64.zip
+        env:
+          REQUIRE_BUNDLED_PHP: 1
