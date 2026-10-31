@@ -18,7 +18,10 @@ on:
   # nobody knows is broken), the scenarios, steps and config under tests/e2e, and the composer
   # lock that pins behat and playwright-php — a behat bump once broke `make e2e` with nothing
   # to say so until somebody ran it — and patches/, which changes adminer itself.
+  # A draft is still changing, so its runs are billed for nothing: skipped below, and
+  # ready_for_review, which is not a default type, runs the suite once it stops being one.
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - ".github/workflows/e2e.yml"
       - "tests/e2e/**"
@@ -33,6 +36,7 @@ concurrency:
 
 jobs:
   e2e:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     # docker pull, then the suite twice, against the checkout and then the packaged app/. The
     # default is 6 hours, which is what a wedged run costs before anyone looks.
