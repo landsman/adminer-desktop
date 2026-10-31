@@ -146,6 +146,9 @@ func openApp(name string) {
 //export goMenuSettings
 func goMenuSettings() { menuEval("window.adminer?.page?.openSettings?.()") }
 
+//export goMenuShortcuts
+func goMenuShortcuts() { menuEval("window.adminer?.page?.openShortcuts?.()") }
+
 //export goMenuLogs
 func goMenuLogs() {
 	// `open` on the directory, not the file: a .log has no reliable default handler, but

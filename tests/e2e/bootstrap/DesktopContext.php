@@ -3079,6 +3079,21 @@ class DesktopContext implements Context
 		}
 	}
 
+	/** What the item runs (menu_darwin.go): a browser has no native menu to click. */
+	#[When('the Help menu asks for the shortcuts')]
+	public function helpMenuShortcuts(): void
+	{
+		$this->page->evaluate(
+			// language=JavaScript
+			'() => window.adminer?.page?.openShortcuts?.()',
+		);
+		// The dialog loads its panels first, so it opens a moment after the call returns.
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => document.querySelector('#desktop-settings').open",
+		);
+	}
+
 	#[Then('the settings dialog is open on the shortcuts tab')]
 	public function settingsOnShortcuts(): void
 	{

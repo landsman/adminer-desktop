@@ -5,6 +5,7 @@
 void goMenuAdminer(void);
 void goMenuEditor(void);
 void goMenuSettings(void);
+void goMenuShortcuts(void);
 void goMenuLogs(void);
 void goMenuAdminerSite(void);
 void goMenuRepo(void);
@@ -20,6 +21,7 @@ static NSString *aboutCredits = nil;
 - (void)openAdminer:(id)sender;
 - (void)openEditor:(id)sender;
 - (void)openSettings:(id)sender;
+- (void)openShortcuts:(id)sender;
 - (void)openLogs:(id)sender;
 - (void)openAbout:(id)sender;
 - (void)openAdminerSite:(id)sender;
@@ -31,6 +33,7 @@ static NSString *aboutCredits = nil;
 - (void)openAdminer:(id)sender { goMenuAdminer(); }
 - (void)openEditor:(id)sender { goMenuEditor(); }
 - (void)openSettings:(id)sender { goMenuSettings(); }
+- (void)openShortcuts:(id)sender { goMenuShortcuts(); }
 - (void)openLogs:(id)sender { goMenuLogs(); }
 - (void)openAdminerSite:(id)sender { goMenuAdminerSite(); }
 - (void)openRepo:(id)sender { goMenuRepo(); }
@@ -126,6 +129,8 @@ void installMenu(const char *version, const char *adminerVersion, const char *fr
 	[bar addItem:helpItem];
 	NSMenu *helpMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"menu.help", nil)];
 	addItem(helpMenu, NSLocalizedString(@"menu.about", nil), @selector(openAbout:), @"", menuTarget);
+	[helpMenu addItem:[NSMenuItem separatorItem]];
+	addItem(helpMenu, NSLocalizedString(@"menu.shortcuts", nil), @selector(openShortcuts:), @"", menuTarget);
 	[helpMenu addItem:[NSMenuItem separatorItem]];
 	addItem(helpMenu, NSLocalizedString(@"menu.adminer_website", nil), @selector(openAdminerSite:), @"", menuTarget);
 	addItem(helpMenu, NSLocalizedString(@"menu.github", nil), @selector(openRepo:), @"", menuTarget);

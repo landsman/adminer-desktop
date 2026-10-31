@@ -29,6 +29,7 @@ return [
 	'menu.paste' => 'Paste',
 	'menu.select_all' => 'Select All',
 	'menu.help' => 'Help',
+	'menu.shortcuts' => 'Shortcuts',
 	'menu.adminer_website' => 'Adminer Website',
 	'menu.github' => 'adminer-desktop on GitHub',
 	'menu.report_issue' => 'Report an Issue',

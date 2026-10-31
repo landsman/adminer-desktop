@@ -19,6 +19,7 @@ return [
 	'menu.paste' => 'Wklej',
 	'menu.select_all' => 'Zaznacz wszystko',
 	'menu.help' => 'Pomoc',
+	'menu.shortcuts' => 'Skróty',
 	'menu.adminer_website' => 'Strona Adminera',
 	'menu.github' => 'adminer-desktop na GitHubie',
 	'menu.report_issue' => 'Zgłoś błąd',

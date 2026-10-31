@@ -19,6 +19,7 @@ return [
 	'menu.paste' => 'Lipește',
 	'menu.select_all' => 'Selectează tot',
 	'menu.help' => 'Ajutor',
+	'menu.shortcuts' => 'Comenzi rapide',
 	'menu.adminer_website' => 'Site-ul Adminer',
 	'menu.github' => 'adminer-desktop pe GitHub',
 	'menu.report_issue' => 'Raportează o problemă',

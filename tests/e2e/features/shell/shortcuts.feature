@@ -27,6 +27,19 @@ Feature: The keyboard shortcuts tab
     When I press the "ControlOrMeta+Comma" key
     Then the settings dialog is open
 
+  Scenario: The Help menu opens settings on the shortcuts tab
+    When I open the "users" table
+    And the Help menu asks for the shortcuts
+    Then the settings dialog is open on the shortcuts tab
+    When I press Escape
+    Then the settings dialog is closed
+
+  Scenario: The Help menu switches an open settings dialog to the shortcuts tab
+    When I open the "users" table
+    And I press the "ControlOrMeta+Comma" key
+    And the Help menu asks for the shortcuts
+    Then the settings dialog is open on the shortcuts tab
+
   Scenario: ? in a field types a question mark
     When I open the edit form for "users" row 1
     And I press "?" in the first field

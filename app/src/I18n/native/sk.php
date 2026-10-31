@@ -19,6 +19,7 @@ return [
 	'menu.paste' => 'Prilepiť',
 	'menu.select_all' => 'Vybrať všetko',
 	'menu.help' => 'Pomocník',
+	'menu.shortcuts' => 'Skratky',
 	'menu.adminer_website' => 'Web Admineru',
 	'menu.github' => 'adminer-desktop na GitHube',
 	'menu.report_issue' => 'Nahlásiť chybu',
