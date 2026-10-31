@@ -9,7 +9,15 @@ on:
     paths:
       - launcher/mcpgate/**
       - launcher/mcpbridge/**
+      - launcher/datadir/**
       - app/src/Mcp/Endpoint.php
+      - app/src/Mcp/GateReport.php
+      - app/src/Env.php
+      # What the job builds with: the frankenphp pin, the Go toolchain.
+      - Makefile
+      - go.mod
+      - go.sum
+      - mise.toml
       - .github/workflows/windows-ci.yml
 
 concurrency:
