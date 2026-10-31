@@ -1,4 +1,4 @@
-name: mcp-windows
+name: windows-ci
 
 # The gate's Windows half is the part no other job runs: its directory's ACL, the socket between
 # two Go processes, and the bundled PHP reporting over loopback. Only when that code changes,
@@ -10,7 +10,7 @@ on:
       - launcher/mcpgate/**
       - launcher/mcpbridge/**
       - app/src/Mcp/Endpoint.php
-      - .github/workflows/mcp-windows.yml
+      - .github/workflows/windows-ci.yml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
