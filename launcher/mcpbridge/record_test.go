@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -138,7 +139,7 @@ func TestDayFilesRotateAndPrune(t *testing.T) {
 	if _, err := os.Stat(recent); err != nil {
 		t.Error("a file inside keepDays was pruned")
 	}
-	if info, err := os.Stat(filepath.Join(b.logs, "mcp-2026-08-04.log")); err != nil || info.Mode().Perm() != 0o600 {
+	if info, err := os.Stat(filepath.Join(b.logs, "mcp-2026-08-04.log")); err != nil || (runtime.GOOS != "windows" && info.Mode().Perm() != 0o600) { // Windows has no mode bits to read
 		t.Errorf("the log is not private: %v", info.Mode())
 	}
 	(&Bridge{}).append(line{Method: "ping"}, day) // no directory: silence, not a crash
