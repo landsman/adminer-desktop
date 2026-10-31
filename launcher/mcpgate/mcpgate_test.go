@@ -289,6 +289,9 @@ func phpReports(t *testing.T, env []string) ([]byte, error) {
 		php += ".exe"
 	}
 	if _, err := os.Stat(php); err != nil {
+		if os.Getenv("REQUIRE_BUNDLED_PHP") != "" {
+			t.Fatalf("windows-ci exists to run this: %v", err)
+		}
 		t.Skip("no bundled frankenphp: make fetch")
 	}
 	script := filepath.Join(t.TempDir(), "report.php")
