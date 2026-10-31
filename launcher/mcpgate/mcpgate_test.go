@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +19,7 @@ import (
 // What PHP reports for a window logged in to demo, and where that sends a call.
 const (
 	endpoint = "/adminer.php?pgsql=x&username=u&db=demo&mcp=1"
-	session  = `{"cookie":"adminer_sid=s; adminer_key=k","endpoint":"http://127.0.0.1:1` + endpoint + `"}`
+	session  = `{"key":"k","cookie":"adminer_sid=s; adminer_key=k","endpoint":"http://127.0.0.1:1` + endpoint + `"}`
 )
 
 // gate in front of a fake frankenphp that records what every call it gets asks for, and as whom.
@@ -34,6 +36,7 @@ func gate(t *testing.T) (*Gate, *[]string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.key = "k"
 	t.Cleanup(g.Close)
 	return g, seen
 }
@@ -96,7 +99,7 @@ func TestLendsTheReportedSession(t *testing.T) {
 	if w := call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token); w.Code != 200 || w.Body.String() != `{"ok":true}` {
 		t.Fatalf("got %d %q", w.Code, w.Body.String())
 	}
-	report(g, `{"cookie":"","endpoint":""}`) // switched off
+	report(g, `{"key":"k","cookie":"","endpoint":""}`) // switched off
 	if w := call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token); w.Code != http.StatusForbidden {
 		t.Errorf("switched off: got %d, want 403", w.Code)
 	}
@@ -133,7 +136,7 @@ func TestOpensOnlyTheReportedEndpoint(t *testing.T) {
 func TestReportsArriveOverTheSocket(t *testing.T) {
 	g, _ := gate(t)
 	go g.Serve()
-	c, err := net.Dial("unix", g.reports.Addr().String())
+	c, err := net.Dial(g.reports.Addr().Network(), g.reports.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,6 +151,51 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 		}
 	}
 	t.Error("a report written to the socket never reached the gate")
+}
+
+// Anything local can reach a loopback port, and a page's post arrives as lines too.
+func TestAReportWithoutTheKeyIsDropped(t *testing.T) {
+	g, _ := gate(t)
+	report(g, session)
+	report(g, `{"cookie":"forged=1","endpoint":"http://127.0.0.1:1/adminer.php?download=1"}`)
+	report(g, `{"key":"wrong","cookie":"forged=1","endpoint":"http://127.0.0.1:1/adminer.php?download=1"}`)
+	if g.cookie != "adminer_sid=s; adminer_key=k" || g.endpoint != endpoint {
+		t.Errorf("a forged report replaced the session: %q %q", g.cookie, g.endpoint)
+	}
+}
+
+// The address the launcher hands out has to open in the PHP that ships: a unix:// one does not on
+// Windows, and nothing but the bundled binary can say so.
+func TestBundledPHPReaches(t *testing.T) {
+	php := filepath.Join("..", "..", "bin", "frankenphp")
+	if runtime.GOOS == "windows" {
+		php += ".exe"
+	}
+	if _, err := os.Stat(php); err != nil {
+		t.Skip("no bundled frankenphp: make fetch")
+	}
+	g, _ := gate(t)
+	go g.Serve()
+	script := filepath.Join(t.TempDir(), "report.php")
+	code := `<?php $g = stream_socket_client(getenv("ADMINER_DESKTOP_MCP_REPORT"), $n, $e, 1) or exit(1);
+fwrite($g, json_encode(["key" => getenv("ADMINER_DESKTOP_MCP_REPORT_KEY"), "cookie" => "from=php", "endpoint" => ""]) . "\n");`
+	if err := os.WriteFile(script, []byte(code), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(php, "php-cli", script)
+	cmd.Env = append(os.Environ(), g.Env()...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("php could not connect: %v\n%s", err, out)
+	}
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+		g.mu.Lock()
+		got := g.cookie
+		g.mu.Unlock()
+		if got == "from=php" {
+			return
+		}
+	}
+	t.Error("php's report never reached the gate")
 }
 
 // The bridge's own way in: the socket in the gate's private directory, under the TCP address's
@@ -200,6 +248,7 @@ func TestGivingUpReachesFrankenphp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.key = "k"
 	t.Cleanup(g.Close)
 	report(g, session)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -235,6 +284,7 @@ func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.key = "k"
 	t.Cleanup(g.Close)
 	report(g, session)
 	go g.Serve()

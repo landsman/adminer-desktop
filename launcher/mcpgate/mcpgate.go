@@ -14,6 +14,11 @@
 // every message an agent sends, token and SQL included, and could answer them. A socket in this
 // 0700 directory cannot be taken over by another account, and once the app is gone it refuses.
 //
+// PHP on Windows has no unix:// transport (main/streams/xp_socket.c undefines AF_UNIX there), so
+// reports arrive on a loopback port instead. Any local process or web page can post to that, which
+// is why every report carries a key only frankenphp's environment holds; the bridge's socket stays
+// a socket, since both ends of it are Go.
+//
 // A socket and not an inherited descriptor: frankenphp is a thread-safe PHP build, which resolves
 // symlinks in every path it opens, so on Linux /dev/fd/3 (a link into /proc) never opens, and
 // php://fd is CLI-only. Anyone who can connect can send a report but never read one back, and a
@@ -36,6 +41,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -45,6 +51,7 @@ import (
 type Gate struct {
 	upstream string // frankenphp, http://127.0.0.1:port
 	token    string
+	key      string       // what a report must carry; not the token, which sits in a file agents read
 	ln       net.Listener // the address the bridge names in the Host header, and posts to without a socket
 	calls    net.Listener // where the bridge posts, a unix socket only this account can reach
 	reports  net.Listener // where PHP says which session to lend
@@ -57,17 +64,16 @@ type Gate struct {
 
 // New opens the listener the bridge posts to and the socket PHP reports the session on.
 func New(upstream string) (*Gate, error) {
-	b := make([]byte, 32)
+	b := make([]byte, 64)
 	if _, err := rand.Read(b); err != nil {
 		return nil, err
 	}
 	sweep(os.TempDir())
-	// MkdirTemp makes it 0700, so no other account can even connect.
-	dir, err := os.MkdirTemp("", "adminer-desktop-gate-")
+	dir, err := privateDir()
 	if err != nil {
 		return nil, err
 	}
-	reports, err := net.Listen("unix", filepath.Join(dir, "report.sock"))
+	reports, err := listenReports(dir)
 	if err != nil {
 		os.RemoveAll(dir) //nolint:errcheck // giving up anyway
 		return nil, err
@@ -80,7 +86,14 @@ func New(upstream string) (*Gate, error) {
 	if err != nil {
 		return nil, errors.Join(err, calls.Close(), reports.Close(), os.RemoveAll(dir))
 	}
-	return &Gate{upstream: upstream, token: hex.EncodeToString(b), ln: ln, calls: calls, reports: reports, dir: dir}, nil
+	return &Gate{upstream: upstream, token: hex.EncodeToString(b[:32]), key: hex.EncodeToString(b[32:]), ln: ln, calls: calls, reports: reports, dir: dir}, nil
+}
+
+func listenReports(dir string) (net.Listener, error) {
+	if runtime.GOOS == "windows" {
+		return net.Listen("tcp", "127.0.0.1:0")
+	}
+	return net.Listen("unix", filepath.Join(dir, "report.sock"))
 }
 
 // sweep removes the directories earlier gates left behind. Close removes its own, but a Cmd+Q
@@ -115,14 +128,15 @@ func listening(socket string) bool {
 }
 
 // Env is what PHP needs to point the handshake here: the address, the socket the bridge posts
-// to, the token it must show, and the socket to report the session on. None of it unlocks a
-// password.
+// to, the token it must show, and where to report the session, as a stream_socket_client() address
+// with the key that report needs. None of it unlocks a password.
 func (g *Gate) Env() []string {
 	return []string{
 		"ADMINER_DESKTOP_MCP_GATE=" + g.ln.Addr().String(),
 		"ADMINER_DESKTOP_MCP_SOCKET=" + g.calls.Addr().String(),
 		"ADMINER_DESKTOP_MCP_TOKEN=" + g.token,
-		"ADMINER_DESKTOP_MCP_REPORT=" + g.reports.Addr().String(),
+		"ADMINER_DESKTOP_MCP_REPORT=" + g.reports.Addr().Network() + "://" + g.reports.Addr().String(),
+		"ADMINER_DESKTOP_MCP_REPORT_KEY=" + g.key,
 	}
 }
 
@@ -150,18 +164,20 @@ func (g *Gate) Close() {
 	_ = errors.Join(g.ln.Close(), g.calls.Close(), g.reports.Close(), os.RemoveAll(g.dir))
 }
 
-// listen takes one JSON line per report, {"cookie": "...", "endpoint": "http://…?…&mcp=1"}; empty
-// is the feature being switched off. A line that does not parse is dropped: the next page the
-// window loads reports again.
+// listen takes one JSON line per report, {"key": "...", "cookie": "...", "endpoint":
+// "http://…?…&mcp=1"}; empty is the feature being switched off. A line that does not parse or has
+// the wrong key is dropped: the next page the window loads reports again.
 func (g *Gate) listen(c io.ReadCloser) {
 	defer c.Close() //nolint:errcheck // one report per connection
 	s := bufio.NewScanner(c)
 	for s.Scan() {
 		var report struct {
+			Key      string  `json:"key"`
 			Cookie   *string `json:"cookie"`
 			Endpoint string  `json:"endpoint"`
 		}
-		if json.Unmarshal(s.Bytes(), &report) != nil || report.Cookie == nil {
+		if json.Unmarshal(s.Bytes(), &report) != nil || report.Cookie == nil ||
+			subtle.ConstantTimeCompare([]byte(report.Key), []byte(g.key)) != 1 {
 			continue
 		}
 		// Only its path and query: the host PHP saw is ours, and frankenphp is g.upstream.

@@ -31,6 +31,8 @@ it; it stays as the baseline the e2e suite holds the Go bridge to.
   - **Socket:** posting over it, and refusing one in an open directory.
   - **Data dir:** it is always the launcher's own, whatever the environment says.
   - **Gate:** it hangs up on frankenphp when the client hangs up on the socket.
+- **`mcp-windows` workflow:** the same `go test` on Windows, when the gate, the bridge or
+  `Endpoint.php` changes. PHP has no `unix://` transport there, so reports use a keyed loopback port.
 - **Tests that are known to fail when their fix is taken out:** the quiet socket (the fix from
   [#183](https://github.com/landsman/adminer-desktop/pull/183)), the statement limit, the gate's hang-up, and the bridge's cancel.
 
@@ -86,9 +88,9 @@ HOME=$H ADMINER_DESKTOP_DEMO='pgsql 127.0.0.1:55432 agent demo demo' ./build.noi
 
 ## Known weak spots
 
-- **Windows has no MCP at all.** The launcher starts no gate there (`launcher/main.go`), so the
-  bridge only ever says the app is not running. The Windows code paths (`private_windows.go`,
-  the handshake rename retry) have been through `go vet` and nothing else.
+- **Windows has not been tried in a window.** The `mcp-windows` workflow runs the gate, the bridge,
+  the ACL check and the bundled PHP's report on a Windows runner. A signed-in window, a real client
+  and the handshake rename retry have not run there.
 - **On a small machine** frankenphp has 2 PHP threads per core: 8 on four cores. Each agent runs
   up to 4 calls at once, and a call to another connection holds 2 threads. With a few busy agents
   the window will wait. This has not been measured.

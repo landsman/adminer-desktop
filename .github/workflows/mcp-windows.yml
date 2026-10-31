@@ -1,0 +1,41 @@
+name: mcp-windows
+
+# The gate's Windows half is the part no other job runs: its directory's ACL, the socket between
+# two Go processes, and the bundled PHP reporting over loopback. Only when that code changes,
+# since a Windows runner is billed double.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - launcher/mcpgate/**
+      - launcher/mcpbridge/**
+      - app/src/Mcp/Endpoint.php
+      - .github/workflows/mcp-windows.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: windows-2025
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Cache pinned downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            bin
+            .cache
+          key: pinned-frankenphp-windows-x86_64.zip-${{ hashFiles('Makefile') }}
+      - run: make fetch mcp-bridge-data FRANKEN_ASSET=frankenphp-windows-x86_64.zip
+      - run: go test -v ./launcher/mcpgate/ ./launcher/mcpbridge/

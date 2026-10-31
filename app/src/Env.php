@@ -36,8 +36,11 @@ enum Env: string {
 	/** Seconds one agent statement may run (Mcp\Tools::STATEMENT_SECONDS when unset). Set by the
 	* e2e fixture alone, so a scenario can outlast it without waiting most of a minute. */
 	case McpStatementSeconds = 'ADMINER_DESKTOP_MCP_STATEMENT_SECONDS';
-	/** The unix socket the gate hears the window's session on (Mcp\Endpoint::report()). */
+	/** The stream_socket_client() address the gate hears the window's session on: a unix socket,
+	* or a loopback port on Windows, whose PHP has no unix transport (Mcp\Endpoint::report()). */
 	case McpReport = 'ADMINER_DESKTOP_MCP_REPORT';
+	/** What a report must carry, so that nothing else on this machine can replace the session. */
+	case McpReportKey = 'ADMINER_DESKTOP_MCP_REPORT_KEY';
 
 	/** The launcher's build version, `git describe --tags --always --dirty` from the Makefile:
 	* a tag, a tag with commits past it (beta-v0.7.2-15-gaa1715f), or "dev". Unset when app/ is
