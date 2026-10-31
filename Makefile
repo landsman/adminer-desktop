@@ -220,7 +220,7 @@ $(PHPSTAN_INI)/phpstan.ini:
 	@mkdir -p $(dir $@)
 	printf 'phpstan.restarted=1\n' > $@
 
-phpstan: bin/frankenphp$(EXE) app/adminer.php app/vendor $(PHPSTAN_INI)/phpstan.ini
+phpstan: fetch app/vendor $(PHPSTAN_INI)/phpstan.ini
 	PHP_INI_SCAN_DIR=$(PHPSTAN_INI) ./bin/frankenphp$(EXE) php-cli app/vendor/phpstan/phpstan/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
@@ -295,7 +295,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: bin/frankenphp$(EXE) app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, js lint + formatting)
+qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, js lint + formatting)
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
