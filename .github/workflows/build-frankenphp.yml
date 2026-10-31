@@ -1,0 +1,71 @@
+name: build frankenphp
+
+# Builds frankenphp with only the extensions the app uses, and pushes it to GHCR. Packages stay on
+# upstream's binary until the Makefile points at what this publishes.
+on:
+  # Measures only: reports the size of a build and publishes nothing.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - .github/workflows/build-frankenphp.yml
+      - cli/build-frankenphp.sh
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Starts at 1 for a frankenphp version, up by one when the extension list changes
+        type: number
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Linux in the upstream builder's container, macOS natively: a container cannot produce a
+        # Mach-O binary. Windows is not here, its zip is a PHP install trimmed by leaving files out.
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - run: make frankenphp-build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Check the binary and report its size
+        run: |
+          make frankenphp-smoke
+          ./cli/build-frankenphp.sh size .cache/frankenphp-build/"$(./cli/build-frankenphp.sh asset)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: oras-project/setup-oras@v2
+        if: github.event_name == 'workflow_dispatch'
+
+      - name: Publish
+        id: publish
+        if: github.event_name == 'workflow_dispatch'
+        run: make frankenphp-publish REVISION="$REVISION"
+        env:
+          REVISION: ${{ inputs.revision }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - uses: actions/attest@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/frankenphp
+          subject-digest: ${{ steps.publish.outputs.digest }}
+          push-to-registry: true

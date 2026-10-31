@@ -2,6 +2,10 @@
 ADMINER_VERSION    = 6.1.1
 FRANKENPHP_VERSION = 1.13.3
 
+# What cli/build-frankenphp.sh compiles in. composer and phpstan run on this binary too.
+FRANKEN_EXTENSIONS = opcache,session,mysqli,mysqlnd,pgsql,sqlite3,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,openssl,zlib,bz2,zip,mbstring,ctype,iconv,dom,xml,simplexml,tokenizer,fileinfo,filter,phar,curl
+FRANKEN_BUILT = .cache/frankenphp-build/$(shell ./cli/build-frankenphp.sh asset)
+
 ADMINER_URL = https://github.com/vrana/adminer/releases/download/v$(ADMINER_VERSION)
 FRANKEN_URL = https://github.com/php/frankenphp/releases/download/v$(FRANKENPHP_VERSION)
 
@@ -20,7 +24,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: frankenphp-build frankenphp-smoke frankenphp-publish help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -162,6 +166,16 @@ FRANKEN_DL = $(if $(filter .zip,$(suffix $(FRANKEN_ASSET))),.cache/frankenphp.zi
 verify: fetch  ## Verify the downloads: adminer checksums, frankenphp build provenance
 	$(SHA256) -c checksums.txt
 	gh attestation verify $(FRANKEN_DL) --repo php/frankenphp
+
+frankenphp-build:  ## Build frankenphp with FRANKEN_EXTENSIONS only (docker on Linux, Homebrew on macOS)
+	./cli/build-frankenphp.sh build $(FRANKENPHP_VERSION) $(FRANKEN_EXTENSIONS) .cache/frankenphp-build
+
+frankenphp-smoke:
+	./cli/build-frankenphp.sh smoke $(FRANKEN_BUILT) $(FRANKEN_EXTENSIONS)
+
+# CI only, it needs a token that can write packages. REVISION goes up when the extensions change.
+frankenphp-publish:
+	./cli/build-frankenphp.sh publish $(FRANKEN_BUILT) $$(./cli/build-frankenphp.sh image $(FRANKENPHP_VERSION) $(REVISION))
 
 # Regenerate after a deliberate version bump or a change in patches/. Review the diff.
 checksums:
@@ -320,8 +334,8 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go or *_windows.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh cli/demo-mysql.sh cli/build-frankenphp.sh tests/cli/kill-orphans-test.sh tests/cli/build-frankenphp-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && sh -n cli/build-frankenphp.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
@@ -329,6 +343,7 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	./bin/frankenphp$(EXE) php-cli tests/version/AppVersionTest.php
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
 	@sh tests/cli/kill-orphans-test.sh
+	@sh tests/cli/build-frankenphp-test.sh
 	@# The launcher's own download code against the real webview, every way adminer starts one.
 	@sh tests/launcher/downloads.sh
 	@command -v plutil >/dev/null && plutil -lint Info.plist.in lproj/*/Localizable.strings >/dev/null && echo "i18n + plists ok" || echo "i18n ok (plutil skipped, macOS only)"
