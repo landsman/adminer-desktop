@@ -17,8 +17,9 @@
 //
 // PHP on Windows has no unix:// transport (main/streams/xp_socket.c undefines AF_UNIX there), so
 // reports arrive on a loopback port instead. Any local process or web page can post to that, which
-// is why every report carries a key only frankenphp's environment holds; the bridge's socket stays
-// a socket, since both ends of it are Go.
+// is why every report carries a key only frankenphp's environment holds. And frankenphp can outlive
+// a killed launcher while another account binds the freed port, so the gate first proves it holds
+// the key too (Desktop\Mcp\GateReport). The bridge's socket stays a socket, since both ends are Go.
 //
 // A socket and not an inherited descriptor: frankenphp is a thread-safe PHP build, which resolves
 // symlinks in every path it opens, so on Linux /dev/fd/3 (a link into /proc) never opens, and
@@ -31,7 +32,9 @@ package mcpgate
 
 import (
 	"bufio"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
@@ -170,9 +173,11 @@ func (g *Gate) Close() {
 	_ = errors.Join(g.calls.Close(), g.reports.Close(), os.RemoveAll(g.dir))
 }
 
-// listen takes one JSON line per report, {"key": "...", "cookie": "...", "endpoint":
-// "http://…?…&mcp=1"}; empty is the feature being switched off. A line that does not parse or has
-// the wrong key is dropped: the next page the window loads reports again.
+// listen answers the first line, PHP's challenge, with its HMAC under the key, and then takes one
+// JSON line per report, {"key": "...", "cookie": "...", "endpoint": "http://…?…&mcp=1"}; empty is
+// the feature being switched off. A line that does not parse or has the wrong key is dropped: the
+// next page the window loads reports again. Anyone may ask for a proof: a challenge is random and
+// never repeats, so one obtained here answers no later PHP.
 func (g *Gate) listen(c net.Conn) {
 	defer c.Close() //nolint:errcheck // one report per connection
 	// On Windows anyone can connect, and one who sends nothing must not keep a socket for it.
@@ -180,6 +185,14 @@ func (g *Gate) listen(c net.Conn) {
 		return
 	}
 	s := bufio.NewScanner(c)
+	if !s.Scan() {
+		return
+	}
+	proof := hmac.New(sha256.New, []byte(g.key))
+	proof.Write(s.Bytes()) //nolint:errcheck // a hash never fails
+	if _, err := io.WriteString(c, hex.EncodeToString(proof.Sum(nil))+"\n"); err != nil {
+		return
+	}
 	for s.Scan() {
 		var report struct {
 			Key      string  `json:"key"`

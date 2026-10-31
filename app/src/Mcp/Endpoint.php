@@ -123,11 +123,7 @@ class Endpoint {
 		if ($socket === false || $socket === '') {
 			return;
 		}
-		$gate = @stream_socket_client($socket, $errno, $error, 1);
-		if ($gate !== false) {
-			@fwrite($gate, json_encode(['key' => (string) Env::McpReportKey->get(), 'cookie' => $cookie, 'endpoint' => $endpoint]) . "\n");
-			fclose($gate);
-		}
+		GateReport::send($socket, (string) Env::McpReportKey->get(), $cookie, $endpoint);
 	}
 
 	/** The two cookies that unlock this session: its id, and adminer_key, which the passwords in

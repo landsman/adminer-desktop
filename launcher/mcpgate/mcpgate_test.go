@@ -1,7 +1,11 @@
 package mcpgate
 
 import (
+	"bufio"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"net"
@@ -52,12 +56,19 @@ func call(g *Gate, method, target, token string) *httptest.ResponseRecorder {
 	return w
 }
 
+// say is PHP's side of a report: a challenge, whose answer it reads, and then the line.
+func say(c net.Conn, line string) {
+	io.WriteString(c, "challenge\n")    //nolint:errcheck
+	bufio.NewReader(c).ReadString('\n') //nolint:errcheck
+	io.WriteString(c, line+"\n")        //nolint:errcheck
+	c.Close()                           //nolint:errcheck
+}
+
 func report(g *Gate, line string) {
 	ours, theirs := net.Pipe()
 	done := make(chan struct{})
 	go func() { g.listen(ours); close(done) }()
-	io.WriteString(theirs, line+"\n") //nolint:errcheck
-	theirs.Close()                    //nolint:errcheck
+	say(theirs, line)
 	<-done
 }
 
@@ -145,8 +156,7 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	io.WriteString(c, session+"\n") //nolint:errcheck
-	c.Close()                       //nolint:errcheck
+	say(c, session)
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
 		g.mu.Lock()
 		got := g.cookie
@@ -195,8 +205,7 @@ func TestReportsSurviveAnAcceptError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	io.WriteString(c, session+"\n") //nolint:errcheck
-	c.Close()                       //nolint:errcheck
+	say(c, session)
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
 		g.mu.Lock()
 		got := g.cookie
@@ -224,25 +233,11 @@ func TestAReportWithoutTheKeyIsDropped(t *testing.T) {
 // The address the launcher hands out has to open in the PHP that ships: a unix:// one does not on
 // Windows, and nothing but the bundled binary can say so.
 func TestBundledPHPReaches(t *testing.T) {
-	php := filepath.Join("..", "..", "bin", "frankenphp")
-	if runtime.GOOS == "windows" {
-		php += ".exe"
-	}
-	if _, err := os.Stat(php); err != nil {
-		t.Skip("no bundled frankenphp: make fetch")
-	}
 	g, _ := gate(t)
 	go g.Serve()
-	script := filepath.Join(t.TempDir(), "report.php")
-	code := `<?php $g = stream_socket_client(getenv("ADMINER_DESKTOP_MCP_REPORT"), $n, $e, 1) or exit(1);
-fwrite($g, json_encode(["key" => getenv("ADMINER_DESKTOP_MCP_REPORT_KEY"), "cookie" => "from=php", "endpoint" => ""]) . "\n");`
-	if err := os.WriteFile(script, []byte(code), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	cmd := exec.Command(php, "php-cli", script)
-	cmd.Env = append(os.Environ(), g.Env()...)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("php could not connect: %v\n%s", err, out)
+	out, err := phpReports(t, g.Env())
+	if err != nil {
+		t.Fatalf("php could not report: %v\n%s", err, out)
 	}
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
 		g.mu.Lock()
@@ -253,6 +248,58 @@ fwrite($g, json_encode(["key" => getenv("ADMINER_DESKTOP_MCP_REPORT_KEY"), "cook
 		}
 	}
 	t.Error("php's report never reached the gate")
+}
+
+// What a killed launcher leaves: frankenphp still up, and someone else on its port who has no key.
+func TestPHPTellsAnImpostorNothing(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close() //nolint:errcheck
+	heard := make(chan string, 1)
+	go func() {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer c.Close() //nolint:errcheck
+		r := bufio.NewReader(c)
+		challenge, _ := r.ReadString('\n')
+		mac := hmac.New(sha256.New, []byte("not the key"))
+		mac.Write([]byte(strings.TrimSpace(challenge)))          //nolint:errcheck
+		io.WriteString(c, hex.EncodeToString(mac.Sum(nil))+"\n") //nolint:errcheck
+		rest, _ := io.ReadAll(r)
+		heard <- string(rest)
+	}()
+	out, err := phpReports(t, []string{"ADMINER_DESKTOP_MCP_REPORT=tcp://" + ln.Addr().String(), "ADMINER_DESKTOP_MCP_REPORT_KEY=k"})
+	if exit := new(exec.ExitError); !errors.As(err, &exit) || exit.ExitCode() != 3 {
+		t.Errorf("php took the impostor for the gate: %v\n%s", err, out)
+	}
+	if got := <-heard; got != "" {
+		t.Errorf("php told the impostor: %q", got)
+	}
+}
+
+// phpReports runs Desktop\Mcp\GateReport in the bundled PHP, with the address the launcher hands out.
+func phpReports(t *testing.T, env []string) ([]byte, error) {
+	t.Helper()
+	php := filepath.Join("..", "..", "bin", "frankenphp")
+	if runtime.GOOS == "windows" {
+		php += ".exe"
+	}
+	if _, err := os.Stat(php); err != nil {
+		t.Skip("no bundled frankenphp: make fetch")
+	}
+	script := filepath.Join(t.TempDir(), "report.php")
+	code := `<?php require "../../app/src/Mcp/GateReport.php";
+exit(Desktop\Mcp\GateReport::send(getenv("ADMINER_DESKTOP_MCP_REPORT"), getenv("ADMINER_DESKTOP_MCP_REPORT_KEY"), "from=php", "") ? 0 : 3);`
+	if err := os.WriteFile(script, []byte(code), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(php, "php-cli", script)
+	cmd.Env = append(os.Environ(), env...)
+	return cmd.CombinedOutput()
 }
 
 // The bridge's own way in: the socket in the gate's private directory, under the TCP address's
