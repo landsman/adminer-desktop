@@ -234,10 +234,13 @@ phpstan: fetch app/vendor $(PHPSTAN_INI)/phpstan.ini
 # frankenphp's php-cli that is frankenphp itself, which takes `check` for a command of its own.
 # fetch because typeAnalysis reads phpstan.neon, and without the files it names only warns.
 # cli/ file by file: a directory outside the config's root is dropped without a word, a file is not.
-# The canary is excluded, so only naming it checks it: a clean run cannot tell type rules from silence.
+# The bad file is copied in for one run, because only under app/ does it go silent with the rest: a clean
+# run cannot tell type rules from silence.
 dresscode: fetch app/vendor
 	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon app $(shell find cli -name '*.php')
-	@./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon --no-color app/dresscode-canary.php | grep -q upgrading.classes.Override || { echo "dresscode's type rules went silent: app/dresscode-canary.php was not reported"; exit 1; }
+	@cp tests/dresscode/override-missing.php app/override-missing.php; \
+	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon --no-color app/override-missing.php | grep -q upgrading.classes.Override; found=$$?; \
+	rm -f app/override-missing.php; test $$found = 0 || { echo "dresscode's type rules went silent: tests/dresscode/override-missing.php was not reported"; exit 1; }
 
 # What .claude/settings.json runs after an agent's edit, the edit's JSON on stdin. Silent and with no
 # prerequisites: what it prints goes to the agent, and an edit must not start a composer install.
@@ -589,7 +592,7 @@ DIST = build.noindex/pkg/adminer-desktop
 define package-app
 	rm -rf $(1)/cli
 	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(1)
-	rm -f $(1)/dresscode.neon $(1)/dresscode-canary.php
+	rm -f $(1)/dresscode.neon
 	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(1))
 endef
 
