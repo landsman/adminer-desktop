@@ -404,16 +404,26 @@ func TestPostsOverTheSocketOnly(t *testing.T) {
 
 // The check and what it checks are written apart, in two packages: this is what ties them.
 func TestTheGatesOwnSocketIsPrivate(t *testing.T) {
+	if socket := gateSocket(t); !private(socket) {
+		t.Errorf("the gate's socket %s does not count as private", socket)
+	}
+}
+
+// gateSocket starts a real gate and returns the socket it tells PHP about.
+func gateSocket(t *testing.T) string {
+	t.Helper()
 	g, err := mcpgate.New("http://127.0.0.1:1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer g.Close()
+	t.Cleanup(g.Close)
 	for _, line := range g.Env() {
-		if socket, ok := strings.CutPrefix(line, "ADMINER_DESKTOP_MCP_SOCKET="); ok && !private(socket) {
-			t.Errorf("the gate's socket %s does not count as private", socket)
+		if socket, ok := strings.CutPrefix(line, "ADMINER_DESKTOP_MCP_SOCKET="); ok {
+			return socket
 		}
 	}
+	t.Fatal("the gate names no socket")
+	return ""
 }
 
 // A socket in a directory another account could have made is not dialled: on Linux the gate's
