@@ -30,6 +30,10 @@ interface AdminerPage {
 	refresh(href?: string): Promise<boolean | null>;
 	/** Open a modal.latte dialog by id (modal.js). */
 	openDialog(id: string): void;
+	/** Open settings, unless another dialog is up (shortcuts.js). */
+	openSettings(): void;
+	/** Open settings on the shortcuts tab, unless another dialog is up (shortcuts.js). */
+	openShortcuts(): void;
 	/** A brief confirmation (toast.js). */
 	toast(message: string): void;
 	/** Open the table search (search.js), on a page that has it. */

@@ -18,6 +18,7 @@ declare(strict_types=1);
 return [
 	// Menu bar (menu_darwin.m). Adminer and Editor are product names and stay untranslated.
 	'menu.about' => 'About Adminer Desktop',
+	'menu.settings' => 'Settings…',
 	'menu.open_logs' => 'Open Logs',
 	'menu.quit' => 'Quit Adminer Desktop',
 	'menu.edit' => 'Edit',
@@ -28,6 +29,7 @@ return [
 	'menu.paste' => 'Paste',
 	'menu.select_all' => 'Select All',
 	'menu.help' => 'Help',
+	'menu.shortcuts' => 'Shortcuts',
 	'menu.adminer_website' => 'Adminer Website',
 	'menu.github' => 'adminer-desktop on GitHub',
 	'menu.report_issue' => 'Report an Issue',

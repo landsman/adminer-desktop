@@ -8,6 +8,7 @@ declare(strict_types=1);
 return [
 	// Menu bar.
 	'menu.about' => 'Über Adminer Desktop',
+	'menu.settings' => 'Einstellungen…',
 	'menu.open_logs' => 'Protokolle öffnen',
 	'menu.quit' => 'Adminer Desktop beenden',
 	'menu.edit' => 'Bearbeiten',
@@ -18,6 +19,7 @@ return [
 	'menu.paste' => 'Einfügen',
 	'menu.select_all' => 'Alles auswählen',
 	'menu.help' => 'Hilfe',
+	'menu.shortcuts' => 'Tastenkürzel',
 	'menu.adminer_website' => 'Adminer-Website',
 	'menu.github' => 'adminer-desktop auf GitHub',
 	'menu.report_issue' => 'Fehler melden',

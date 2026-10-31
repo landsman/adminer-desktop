@@ -47,15 +47,23 @@ function helpShortcut(e) {
 	) {
 		return;
 	}
+	e.preventDefault();
+	window.adminer.page.openShortcuts();
+}
+
+/**
+ * Open settings on the shortcuts tab; the mac Help menu calls this too (menu_darwin.go). With
+ * settings already open it only switches the tab, so the menu item never looks dead.
+ */
+window.adminer.page.openShortcuts = () => {
 	const tab = document.querySelector("#desktop-tab-shortcuts");
-	if (!tab) {
+	if (!tab || document.querySelector("dialog[open]:not(#desktop-settings)")) {
 		return;
 	}
-	e.preventDefault();
 	// Checked before opening: the tabs are radios, so this is the whole of switching to it.
 	tab.checked = true;
-	window.adminer.page.openDialog?.("desktop-settings");
-}
+	window.adminer.page.openDialog("desktop-settings");
+};
 
 addEventListener("keydown", helpShortcut);
 
@@ -66,17 +74,18 @@ addEventListener("keydown", helpShortcut);
  * @param {KeyboardEvent} e
  */
 function settingsShortcut(e) {
-	if (
-		e.key !== "," ||
-		!(e.metaKey || e.ctrlKey) ||
-		e.altKey ||
-		e.shiftKey ||
-		document.querySelector("dialog[open]")
-	) {
+	if (e.key !== "," || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) {
 		return;
 	}
 	e.preventDefault();
-	window.adminer.page.openDialog("desktop-settings");
+	window.adminer.page.openSettings();
 }
+
+/** Open settings, unless another dialog is up; the mac menu calls this too (menu_darwin.go). */
+window.adminer.page.openSettings = () => {
+	if (!document.querySelector("dialog[open]")) {
+		window.adminer.page.openDialog("desktop-settings");
+	}
+};
 
 addEventListener("keydown", settingsShortcut);

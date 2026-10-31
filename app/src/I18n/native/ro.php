@@ -8,6 +8,7 @@ declare(strict_types=1);
 return [
 	// Menu bar.
 	'menu.about' => 'Despre Adminer Desktop',
+	'menu.settings' => 'Setări…',
 	'menu.open_logs' => 'Deschide jurnalele',
 	'menu.quit' => 'Închide Adminer Desktop',
 	'menu.edit' => 'Editare',
@@ -18,6 +19,7 @@ return [
 	'menu.paste' => 'Lipește',
 	'menu.select_all' => 'Selectează tot',
 	'menu.help' => 'Ajutor',
+	'menu.shortcuts' => 'Comenzi rapide',
 	'menu.adminer_website' => 'Site-ul Adminer',
 	'menu.github' => 'adminer-desktop pe GitHub',
 	'menu.report_issue' => 'Raportează o problemă',

@@ -43,6 +43,8 @@ What `window.adminer.page` holds so far:
   page; which wait takes which is in [../busy.md](../busy.md).
 - `openDialog(id)` — open a modal built on `modal.latte` from a script, the way a
   `data-dialog` button would (`shortcuts.js` opens settings on the shortcuts tab on `?`).
+- `openSettings()` — open settings unless another dialog is up: `shortcuts.js`, the mac menu.
+- `openShortcuts()` — the same, on the shortcuts tab: `?`, the mac Help menu.
 - `toast(message)` — a brief confirmation that needs no dismissing (`copy-field.js`).
 - `search()` — open the table search; `reopenSettings()` — bring the
   settings dialog back after a navigation it caused (`language.js`).

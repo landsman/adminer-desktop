@@ -469,7 +469,7 @@ func main() {
 			log.Print("web inspector unavailable")
 		}
 	}
-	installMenu(w.Navigate, "http://"+addr, filepath.Dir(logPath))
+	installMenu(w.Navigate, w.Eval, "http://"+addr, filepath.Dir(logPath))
 
 	// Report from inside the webview when the loader has actually parsed and rendered -- the one
 	// startup phase Go can't time, since it is WebKit's own paint. It separates "the window was
