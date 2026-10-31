@@ -110,21 +110,6 @@ func describeTitlebarHit(window unsafe.Pointer) string {
 	return C.GoString(c)
 }
 
-// Set by installMenu before the menu can be clicked. The menu only exists while the
-// webview is running, so these are always populated by the time a callback fires.
-var (
-	menuNavigate func(string)
-	menuEval     func(string)
-	menuBaseURL  string
-	menuLogDir   string
-)
-
-const (
-	adminerSiteURL = "https://www.adminer.org"
-	repoURL        = "https://github.com/landsman/adminer-desktop"
-	issuesURL      = repoURL + "/issues"
-)
-
 func openURL(url string) { _ = exec.Command("open", url).Start() }
 
 //export goMenuAdminer
@@ -133,21 +118,11 @@ func goMenuAdminer() { openApp("adminer.php") }
 //export goMenuEditor
 func goMenuEditor() { openApp("editor.php") }
 
-// openApp switches the window and remembers the choice, so the next launch reopens
-// whichever of the two you were last using.
-func openApp(name string) {
-	menuNavigate(menuBaseURL + "/" + name)
-	setLastApp(name)
-}
-
-// The page decides: the loader and the unreachable page have no settings, and it refuses over
-// another dialog.
-//
 //export goMenuSettings
-func goMenuSettings() { menuEval("window.adminer?.page?.openSettings?.()") }
+func goMenuSettings() { menuEval(evalOpenSettings) }
 
 //export goMenuShortcuts
-func goMenuShortcuts() { menuEval("window.adminer?.page?.openShortcuts?.()") }
+func goMenuShortcuts() { menuEval(evalOpenShortcuts) }
 
 //export goMenuLogs
 func goMenuLogs() {
@@ -234,7 +209,7 @@ func installDownloads(window unsafe.Pointer) {
 	}
 }
 
-func installMenu(navigate, eval func(string), baseURL, logDir string) {
+func installMenu(_ unsafe.Pointer, navigate, eval func(string), baseURL, logDir string) {
 	menuNavigate, menuEval, menuBaseURL, menuLogDir = navigate, eval, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)
 	defer C.free(unsafe.Pointer(v))

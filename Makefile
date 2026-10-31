@@ -311,12 +311,13 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	@# Every darwin-only function needs a non-darwin definition, or the build breaks on
 	@# linux and windows only -- a CI round trip away rather than a compile away. That is
 	@# either a shared stub in menu_other.go, or a platform split (a real *_linux.go and a
-	@# *_other.go stub for windows), the way installDownloads is done.
+	@# *_other.go stub for windows), the way installDownloads is done, or the reverse (a real
+	@# *_windows.go and a *_linux.go stub), the way installMenu is.
 	@for f in $$(grep -oE '^func [a-zA-Z]+' launcher/menu_darwin.go | cut -d' ' -f2); do \
 		grep -q "$$f(" launcher/main.go || continue; \
 		grep -q "func $$f(" launcher/menu_other.go && continue; \
-		{ grep -lq "func $$f(" launcher/*_linux.go && grep -lq "func $$f(" launcher/*_other.go; } \
-			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go split)"; exit 1; }; \
+		{ grep -lq "func $$f(" launcher/*_linux.go && grep -lq "func $$f(" launcher/*_other.go launcher/*_windows.go; } \
+			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go or *_windows.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
 		&& { shellcheck check.sh cli/compile-adminer.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
