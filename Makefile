@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: logo-ico help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -197,6 +197,11 @@ $(WIN_INI)/openssl.ini:
 	@mkdir -p $(dir $@)
 	printf 'extension_dir=bin/ext\nextension=php_openssl.dll\n' > $@
 
+# The windows frankenphp keeps gd as an extension too, and the icon build resizes with it.
+$(WIN_INI)/gd.ini:
+	@mkdir -p $(dir $@)
+	printf 'extension_dir=bin/ext\nextension=php_gd.dll\n' > $@
+
 # The app's own PHP deps: latte renders our markup and tracy stands behind -debug. qa
 # needs them as much as the app does -- phpstan resolves those classes through vendor/,
 # and the template linter is one of the packages. composer.json lives in app/ so vendor/
@@ -328,6 +333,7 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	./bin/frankenphp$(EXE) php-cli tests/i18n/GeneratorTest.php
 	./bin/frankenphp$(EXE) php-cli tests/version/AppVersionTest.php
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
+	./bin/frankenphp$(EXE) php-cli tests/cli/WindowsIcoTest.php
 	@sh tests/cli/kill-orphans-test.sh
 	@# The launcher's own download code against the real webview, every way adminer starts one.
 	@sh tests/launcher/downloads.sh
@@ -406,19 +412,16 @@ bench: mcp-bridge-data  ## Benchmark the MCP bridge's own cost per call
 i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)
 	@./bin/frankenphp$(EXE) php-cli cli/i18n.php check
 
-# The exe's icon on Windows. go build links any .syso beside the sources, and windres comes with
-# the gcc cgo already needs. The .ico is committed: nothing on a Windows runner can resize a PNG.
+# The exe's icon on Windows, from the same logo.png as the mac and linux ones. go build links any
+# .syso beside the sources, and windres comes with the gcc cgo already needs.
 WIN_ICON = $(if $(EXE),launcher/icon_windows_amd64.syso)
 
-launcher/icon_windows_amd64.syso: launcher/icon.rc assets/logo.ico
+launcher/icon_windows_amd64.syso: launcher/icon.rc build.noindex/logo.ico
 	windres -O coff -i $< -o $@
 
-# macOS only, for sips. After editing the logo: make logo-ico, and commit assets/logo.ico.
-logo-ico: bin/frankenphp$(EXE)  ## Rebuild assets/logo.ico from assets/logo.png
-	@mkdir -p build.noindex/ico
-	@for s in 16 24 32 48 64 128 256; do sips -z $$s $$s assets/logo.png --out build.noindex/ico/$$s.png >/dev/null; done
-	./bin/frankenphp$(EXE) php-cli cli/windows-ico.php
-	@rm -rf build.noindex/ico
+build.noindex/logo.ico: assets/logo.png app/cli/WindowsIco.php app/vendor $(if $(EXE),$(WIN_INI)/gd.ini)
+	@mkdir -p $(dir $@)
+	$(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) ./bin/frankenphp$(EXE) php-cli -r 'require "app/vendor/autoload.php"; Desktop\Cli\WindowsIco::run();'
 
 build: fetch i18n mcp-bridge-data $(WIN_ICON)  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
@@ -578,8 +581,9 @@ DIST = build.noindex/pkg/adminer-desktop
 # the same tree a release carries. composer strips the dev tooling app/vendor carries for qa
 # (dresscode, playwright: nothing the shipped app runs), reconciling the copy down to
 # production deps in place. No precompile on windows: Latte locks even a precompiled template
-# there, so app/ would have to be writable.
+# there, so app/ would have to be writable. app/cli/ is build tooling, so it does not ship.
 define package-app
+	rm -rf $(1)/cli
 	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(1)
 	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(1))
 endef

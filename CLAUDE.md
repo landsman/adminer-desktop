@@ -146,6 +146,10 @@ boot adminer — `api.php`, `Settings/Theme/screenshot.php` — each `require`
 (`Env::DataDir->get()`, `Latte::engine()`, `Debug\Tracy::enable()`), so there are no function files
 to special-case — PSR-4 covers everything.
 
+**Build tooling in PHP goes to `app/cli/`, as `Desktop\Cli\` classes.** A static method with its
+test in `tests/cli/`, added to `make qa`. It is dev-only autoload, and `package-app` removes the
+folder, so it never ships. `cli/` still holds the scripts not moved yet.
+
 ## The Adminer Desktop theme
 
 `app/src/Settings/Theme/designs/adminer-desktop/` is the app's own default look, not one of
@@ -226,6 +230,7 @@ run, so an edited seed needs no `make destroy`.
 app/adminer-plugins.php      the entry adminer includes: boots the autoloader, returns ours + the enabled plugins
 app/AdminerDesktop.php       the plugin adminer sees (global namespace): hooks and all translations
 app/api.php                  the one URL the page's own scripts post to: ?action= routes to src/Api/
+app/cli/                     Desktop\Cli\: build tooling, never released
 app/src/                     the Desktop\ namespace, PSR-4: everything we wrote
 app/src/Api/                 one class per action; ResizePreference stores a dragged width
 app/src/Files.php            Desktop\Files - recursive file finding
