@@ -417,7 +417,7 @@ launcher/icon_windows_amd64.syso: launcher/icon.rc assets/logo.ico
 logo-ico: bin/frankenphp$(EXE)  ## Rebuild assets/logo.ico from assets/logo.png
 	@mkdir -p build.noindex/ico
 	@for s in 16 24 32 48 64 128 256; do sips -z $$s $$s assets/logo.png --out build.noindex/ico/$$s.png >/dev/null; done
-	./bin/frankenphp$(EXE) php-cli cli/ico.php assets/logo.ico $$(for s in 16 24 32 48 64 128 256; do echo build.noindex/ico/$$s.png; done)
+	./bin/frankenphp$(EXE) php-cli cli/ico.php
 	@rm -rf build.noindex/ico
 
 build: fetch i18n mcp-bridge-data $(WIN_ICON)  ## Build the launcher binary
