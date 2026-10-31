@@ -51,8 +51,11 @@ jobs:
           make frankenphp-smoke
           ./cli/build-frankenphp.sh size .cache/frankenphp-build/"$(./cli/build-frankenphp.sh asset)" >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: oras-project/setup-oras@v2
+      # Through mise: this repo allows no third-party action beyond a short list.
+      - uses: jdx/mise-action@v4
         if: github.event_name == 'workflow_dispatch'
+        with:
+          install_args: oras
 
       - name: Publish
         id: publish
