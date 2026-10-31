@@ -236,7 +236,7 @@ phpstan: fetch app/vendor $(PHPSTAN_INI)/phpstan.ini
 # cli/ file by file: a directory outside the config's root is dropped without a word, a file is not.
 # The canary is excluded, so only naming it checks it: a clean run cannot tell type rules from silence.
 dresscode: fetch app/vendor
-	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon app $(wildcard cli/*.php)
+	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon app $(shell find cli -name '*.php')
 	@./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon --no-color app/dresscode-canary.php | grep -q upgrading.classes.Override || { echo "dresscode's type rules went silent: app/dresscode-canary.php was not reported"; exit 1; }
 
 # What .claude/settings.json runs after an agent's edit, the edit's JSON on stdin. Silent and with no
