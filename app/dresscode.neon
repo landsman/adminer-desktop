@@ -14,6 +14,7 @@ typeAnalysis: phpstan
 
 # Everything that ships verbatim from the adminer release keeps its own conventions.
 excludePaths:
+	- dresscode-canary.php
 	- vendor
 	- adminer.php
 	- editor.php

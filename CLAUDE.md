@@ -134,6 +134,7 @@ in the packaged app (where `app/` is the document root and there is no root abov
 **`dresscode.neon` stays in `app/`, beside `vendor/`.** Anywhere else DressCode takes `app/` for
 foreign code, and a rule that needs types finds nothing there and exits 0. The cost is that `cli/`
 lies outside its root, so the Makefile names those files and the hook drops `--skip-excluded` for them.
+`make dresscode` fails unless it reports `app/dresscode-canary.php`, which breaks a type rule on purpose.
 
 **Our code is PSR-4 under `src/`.** `app/composer.json` maps `"Desktop\\": "src/"`, so a
 `Desktop\` class loads from the matching path — `Desktop\Settings\Theme\Theme` →
