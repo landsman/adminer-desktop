@@ -29,6 +29,8 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: windows-2025
     timeout-minutes: 15
+    permissions:
+      contents: read
     defaults:
       run:
         shell: bash
