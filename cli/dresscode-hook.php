@@ -15,7 +15,12 @@ if (!is_string($file) || pathinfo($file, PATHINFO_EXTENSION) !== "php" || !is_fi
 	exit(0);
 }
 
-$root = dirname(__DIR__);
+// The hook runs from the session's checkout, but an edit in a worktree belongs to that worktree's
+// config and dresscode: an installation outside the config's root finds nothing, and exits 0.
+$root = preg_match('~^(.*/\.claude/worktrees/[^/]+)/~', $file, $match) === 1 ? $match[1] : dirname(__DIR__);
+if (!is_file($root . "/app/vendor/bin/dresscode")) {
+	exit(0);
+}
 $command = [PHP_BINARY, "php-cli", $root . "/app/vendor/bin/dresscode", "fix", $file, "-c", $root . "/app/dresscode.neon", "--format", "agent", "--no-color", "--jobs", "1"];
 // cli/ lies outside the config's root, so --skip-excluded would leave every file there unchecked.
 if (!str_starts_with($file, $root . "/cli/")) {
