@@ -17,7 +17,7 @@ Who we assume is hostile:
 |---|---|---|---|
 | **DNS rebinding:** a page points its own domain at the server's port and reads the answers as same-origin | The login form as a proxy to guess database passwords, and the preference writes. No session: cookies are bound to the name | `launcher/Caddyfile` answers 403 to any Host but `127.0.0.1` and `localhost` | `features/shell/host.feature` |
 | **Forged Host at the MCP gate** | The window's session, lent to the caller | `launcher/mcpgate` checks Host and method, and requires the token | `launcher/mcpgate/mcpgate_test.go` |
-| **Local process forges a session report**, on Windows a loopback port any process or page can post to | Agent calls run in the forger's session, or against a path other than the MCP endpoint | A report needs the key only frankenphp's environment holds; it reads nothing back | `launcher/mcpgate/mcpgate_test.go` |
+| **A page or another account forges a session report**, on Windows a loopback port anyone can post to | Agent calls run in the forger's session, or against a path other than the MCP endpoint | A report needs the key in frankenphp's environment, which neither can read; it reads nothing back. The same account can, see Accepted | `launcher/mcpgate/mcpgate_test.go` |
 | **Another account takes the report port** after the launcher dies and frankenphp lives on | The key, and the session cookies that decrypt the stored passwords | PHP sends nothing until the listener proves it holds the key | `launcher/mcpgate/mcpgate_test.go` |
 | **Local process holds report connections open** to exhaust sockets and stop the gate hearing a sign-out | The last session lent on after sign-out | A deadline per connection; `Accept` errors are waited out | `launcher/mcpgate/mcpgate_test.go` |
 | **Another Windows account connects to the bridge's socket**: Windows lets anyone traverse a directory, so the directory's ACL alone stops nothing | The token and the agent's SQL | The gate's directory is created private and its files inherit that; the bridge checks both | `launcher/mcpbridge`, `windows-ci` workflow |
@@ -29,7 +29,7 @@ Who we assume is hostile:
 | **A page posts wrong logins to `127.0.0.1`**, which passes the Host check, to lock the user out | 30 failures stop every login for 30 minutes | Adminer's `verify_token()` wants the page's token and `Sec-Fetch-Site: same-origin`, so the post never reaches the counter, and the page cannot read the token | Not in the suite. Tried by hand with a form and a `fetch` from `localhost`, in Chromium and WebKit: the counter stayed |
 | **Agent reads the session or a password from the handshake** | Every database the user is signed in to | The gate keeps the session in memory, the handshake carries only its URL and token | `features/shell/mcp.feature` |
 | **Handshake or a redirect sends the bridge elsewhere** | The token and the agent's SQL | The bridge accepts only a loopback URL and follows no redirect | `launcher/mcpbridge/bridge_test.go` |
-| **Another account reads the key or the settings** | Stored database passwords | Data dir `0700`; `adminer.key` and the handshake `0600` | Not tested |
+| **Another account reads the key or the settings** | Stored database passwords | Data dir `0700`; `adminer.key` and the handshake `0600`. On Windows `chmod` does nothing, so only the profile's ACL holds | Not tested |
 | **Tampered Adminer or FrankenPHP download** | Code running with access to every database | `checksums.txt` and FrankenPHP's build provenance | `make verify` |
 
 ## Accepted
@@ -41,6 +41,10 @@ Who we assume is hostile:
   not undo it. `refuseOverprivileged()` does not stop it either: it judges reach beyond the data,
   and `ALL` on one database passes on purpose. Only a login without that privilege stops it, which
   `.docs/mcp.md` tells the user to set up and nothing enforces.
+
+- **A process of the user's own account forges a session report:** it can read the key from
+  frankenphp's environment, on any platform, and swap the session or the endpoint. An agent that runs
+  code as the user is outside what the gate can stop: it could read the cookies out of that memory too.
 
 ## When writing an e2e feature
 
