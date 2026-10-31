@@ -190,6 +190,8 @@ COMPOSER_VERSION = 2.10.2
 # at startup, before any argument parsing, so it lands whatever the SAPI does with argv.
 WIN_INI  = .cache/php-ini
 COMPOSER = $(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) ./bin/frankenphp$(EXE) php-cli .cache/composer.phar
+# The build tooling under app/cli/: `$(CLI) <command>`, the commands listed in run.php.
+CLI = ./bin/frankenphp$(EXE) php-cli app/cli/run.php
 
 # Both paths are relative to the directory make runs in, which is the repo root; composer's
 # --working-dir only chdirs later, long after PHP has loaded its extensions.
@@ -398,7 +400,7 @@ endif
 # i18n dependency. The outputs are gitignored and rebuilt here before every build; the language
 # files are the committed source. The PHP plugin UI localises itself, via AdminerDesktop::$translations.
 i18n: bin/frankenphp$(EXE) app/vendor  ## Generate the native-shell translations from app/src/I18n/Locale/*.php
-	./bin/frankenphp$(EXE) php-cli -r 'require "app/vendor/autoload.php"; Desktop\Cli\I18n::run();'
+	$(CLI) i18n
 
 # The MCP bridge's copy of what PHP owns — the tool catalogue for both settings, the offline
 # sentences per locale — so the Go bridge describes tools from Server::catalogue() rather than a
@@ -414,7 +416,7 @@ bench: mcp-bridge-data  ## Benchmark the MCP bridge's own cost per call
 
 # Which strings each locale is still missing. Exits non-zero if any are, so CI can gate on it.
 i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)
-	@./bin/frankenphp$(EXE) php-cli -r 'require "app/vendor/autoload.php"; Desktop\Cli\I18n::check();'
+	@$(CLI) i18n-check
 
 # The exe's icon on Windows, from the same logo.png as the mac and linux ones. go build links any
 # .syso beside the sources, and windres comes with the gcc cgo already needs.
@@ -425,7 +427,7 @@ launcher/icon_windows_amd64.syso: launcher/icon.rc build.noindex/logo.ico
 
 build.noindex/logo.ico: assets/logo.png app/cli/WindowsIco.php app/vendor $(if $(EXE),$(WIN_INI)/gd.ini)
 	@mkdir -p $(dir $@)
-	$(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) ./bin/frankenphp$(EXE) php-cli -r 'require "app/vendor/autoload.php"; Desktop\Cli\WindowsIco::run();'
+	$(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) $(CLI) windows-ico
 
 build: fetch i18n mcp-bridge-data $(WIN_ICON)  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
