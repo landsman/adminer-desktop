@@ -11,7 +11,7 @@ namespace Desktop\I18n;
 * for the C side. English is the base and the fallback, so it gets no C rows of its own.
 */
 final class Generator {
-	private const string BANNER = 'Generated from app/src/I18n/native/*.php by cli/i18n.php. Do not edit — edit the language files and run `make i18n`.';
+	private const string BANNER = 'Generated from app/src/I18n/native/*.php by app/cli/Command/I18n.php. Do not edit — edit the language files and run `make i18n`.';
 
 	public function __construct(private readonly Catalog $catalog) {
 	}

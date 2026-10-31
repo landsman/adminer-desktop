@@ -154,8 +154,8 @@ boot adminer — `api.php`, `Settings/Theme/screenshot.php` — each `require`
 (`Env::DataDir->get()`, `Latte::engine()`, `Debug\Tracy::enable()`), so there are no function files
 to special-case — PSR-4 covers everything.
 
-**Build tooling in PHP goes to `app/cli/`, as `Desktop\Cli\` classes.** A static method with its
-test in `tests/cli/`, added to `make qa`. It is dev-only autoload, and `package-app` removes the
+**Build tooling in PHP goes to `app/cli/Command/`, as `Desktop\Cli\Command\` classes.** A static method listed in
+`app/cli/run.php`, which the Makefile calls as `$(CLI) <command>`, with its test in `tests/cli/`, added to `make qa`. It is dev-only autoload, and `package-app` removes the
 folder, so it never ships. `cli/` still holds the scripts not moved yet.
 
 ## The Adminer Desktop theme
