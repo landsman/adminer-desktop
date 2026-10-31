@@ -116,6 +116,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* the language files with every other string rather than as a special case.
 	* @return string
 	*/
+	#[Override]
 	function description(): string {
 		return $this->t('plugin.description');
 	}

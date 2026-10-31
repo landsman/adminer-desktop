@@ -23,6 +23,7 @@ class Latte {
 			// differs on every machine, so a cache compiled by the build would never be found;
 			// relative to app/ it is the same wherever the app was unpacked.
 			$latte->setLoader(new class extends FileLoader {
+				#[\Override]
 				function getUniqueId(string $file): string {
 					return str_replace(dirname(__DIR__), "", $file);
 				}

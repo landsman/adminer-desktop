@@ -16,7 +16,11 @@ if (!is_string($file) || pathinfo($file, PATHINFO_EXTENSION) !== "php" || !is_fi
 }
 
 $root = dirname(__DIR__);
-$command = [PHP_BINARY, "php-cli", $root . "/app/vendor/bin/dresscode", "fix", $file, "--format", "agent", "--no-color", "--skip-excluded", "--jobs", "1"];
+$command = [PHP_BINARY, "php-cli", $root . "/app/vendor/bin/dresscode", "fix", $file, "-c", $root . "/app/dresscode.neon", "--format", "agent", "--no-color", "--jobs", "1"];
+// cli/ lies outside the config's root, so --skip-excluded would leave every file there unchecked.
+if (dirname($file) !== $root . "/cli") {
+	$command[] = "--skip-excluded";
+}
 $original = $input["tool_response"]["originalFile"] ?? null;
 $before = is_string($original) ? tempnam(sys_get_temp_dir(), "dresscode-before-") : false;
 if ($before !== false && file_put_contents($before, $original) !== false) {

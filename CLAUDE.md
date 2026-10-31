@@ -131,6 +131,10 @@ in the packaged app (where `app/` is the document root and there is no root abov
 `composer.json`/`composer.lock` moved there too; run composer with
 `--working-dir=app`, as the `app/vendor` target does. We do not vendor Go deps.
 
+**`dresscode.neon` stays in `app/`, beside `vendor/`.** Anywhere else DressCode takes `app/` for
+foreign code, and a rule that needs types finds nothing there and exits 0. The cost is that `cli/`
+lies outside its root, so the Makefile names those files and the hook drops `--skip-excluded` for them.
+
 **Our code is PSR-4 under `src/`.** `app/composer.json` maps `"Desktop\\": "src/"`, so a
 `Desktop\` class loads from the matching path — `Desktop\Settings\Theme\Theme` →
 `src/Settings/Theme/Theme.php`, filename and case matching the class. The case match is not
@@ -275,7 +279,7 @@ type on every property (`private ?string $file`, not a bare `private $file` on a
 stays only for what the native type can't say — an array's shape), `[]` not `array()`, and an
 enum for a fixed set of values (`Desktop\Mode` for the light/dark scheme) rather than a magic
 string. `make qa` enforces these: phpstan at level 6 for parameter, return and value types,
-and dresscode (`dresscode.neon`) for what phpstan does not judge — native
+and dresscode (`app/dresscode.neon`) for what phpstan does not judge — native
 property and constant declarations, short array syntax, tabs, `strict_types`. Both run through the bundled frankenphp, no
 separate PHP install. The exceptions are adminer's own downloaded files (excluded) and a
 method or property that overrides an untyped one in adminer's base class — those keep

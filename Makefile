@@ -229,11 +229,13 @@ phpstan: fetch app/vendor $(PHPSTAN_INI)/phpstan.ini
 	PHP_INI_SCAN_DIR=$(PHPSTAN_INI) ./bin/frankenphp$(EXE) php-cli app/vendor/phpstan/phpstan/phpstan.phar analyse -c phpstan.neon \
 		--no-progress --debug --memory-limit=2G
 
-# The conventions phpstan does not judge, listed in dresscode.neon, which also excludes adminer's
+# The conventions phpstan does not judge, listed in app/dresscode.neon, which also excludes adminer's
 # own downloaded files. --jobs 1 because its workers start through PHP_BINARY, and under
 # frankenphp's php-cli that is frankenphp itself, which takes `check` for a command of its own.
-dresscode: app/vendor
-	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1
+# fetch because typeAnalysis reads phpstan.neon, and without the files it names only warns.
+# cli/ file by file: a directory outside the config's root is dropped without a word, a file is not.
+dresscode: fetch app/vendor
+	./bin/frankenphp$(EXE) php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon app $(wildcard cli/*.php)
 
 # What .claude/settings.json runs after an agent's edit, the edit's JSON on stdin. Silent and with no
 # prerequisites: what it prints goes to the agent, and an edit must not start a composer install.
@@ -585,6 +587,7 @@ DIST = build.noindex/pkg/adminer-desktop
 define package-app
 	rm -rf $(1)/cli
 	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(1)
+	rm -f $(1)/dresscode.neon
 	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(1))
 endef
 
