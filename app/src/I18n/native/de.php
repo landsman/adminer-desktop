@@ -8,6 +8,7 @@ declare(strict_types=1);
 return [
 	// Menu bar.
 	'menu.about' => 'Über Adminer Desktop',
+	'menu.settings' => 'Einstellungen…',
 	'menu.open_logs' => 'Protokolle öffnen',
 	'menu.quit' => 'Adminer Desktop beenden',
 	'menu.edit' => 'Bearbeiten',

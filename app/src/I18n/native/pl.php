@@ -8,6 +8,7 @@ declare(strict_types=1);
 return [
 	// Menu bar.
 	'menu.about' => 'O aplikacji Adminer Desktop',
+	'menu.settings' => 'Ustawienia…',
 	'menu.open_logs' => 'Otwórz logi',
 	'menu.quit' => 'Zakończ Adminer Desktop',
 	'menu.edit' => 'Edycja',

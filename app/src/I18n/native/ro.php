@@ -8,6 +8,7 @@ declare(strict_types=1);
 return [
 	// Menu bar.
 	'menu.about' => 'Despre Adminer Desktop',
+	'menu.settings' => 'Setări…',
 	'menu.open_logs' => 'Deschide jurnalele',
 	'menu.quit' => 'Închide Adminer Desktop',
 	'menu.edit' => 'Editare',

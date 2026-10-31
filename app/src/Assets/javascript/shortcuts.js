@@ -66,17 +66,18 @@ addEventListener("keydown", helpShortcut);
  * @param {KeyboardEvent} e
  */
 function settingsShortcut(e) {
-	if (
-		e.key !== "," ||
-		!(e.metaKey || e.ctrlKey) ||
-		e.altKey ||
-		e.shiftKey ||
-		document.querySelector("dialog[open]")
-	) {
+	if (e.key !== "," || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) {
 		return;
 	}
 	e.preventDefault();
-	window.adminer.page.openDialog("desktop-settings");
+	window.adminer.page.openSettings();
 }
+
+/** Open settings, unless another dialog is up; the mac menu calls this too (menu_darwin.go). */
+window.adminer.page.openSettings = () => {
+	if (!document.querySelector("dialog[open]")) {
+		window.adminer.page.openDialog("desktop-settings");
+	}
+};
 
 addEventListener("keydown", settingsShortcut);

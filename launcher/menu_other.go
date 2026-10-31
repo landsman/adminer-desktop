@@ -15,7 +15,7 @@ import (
 // remembered across launches, and the log path is printed at startup.
 //
 // Build this out when someone actually asks; installMenu is already the seam.
-func installMenu(navigate func(string), baseURL, logDir string) {}
+func installMenu(navigate, eval func(string), baseURL, logDir string) {}
 
 func installJSDialogs(window unsafe.Pointer) {}
 

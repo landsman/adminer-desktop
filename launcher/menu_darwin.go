@@ -114,6 +114,7 @@ func describeTitlebarHit(window unsafe.Pointer) string {
 // webview is running, so these are always populated by the time a callback fires.
 var (
 	menuNavigate func(string)
+	menuEval     func(string)
 	menuBaseURL  string
 	menuLogDir   string
 )
@@ -138,6 +139,12 @@ func openApp(name string) {
 	menuNavigate(menuBaseURL + "/" + name)
 	setLastApp(name)
 }
+
+// The page decides: the loader and the unreachable page have no settings, and it refuses over
+// another dialog.
+//
+//export goMenuSettings
+func goMenuSettings() { menuEval("window.adminer?.page?.openSettings?.()") }
 
 //export goMenuLogs
 func goMenuLogs() {
@@ -224,8 +231,8 @@ func installDownloads(window unsafe.Pointer) {
 	}
 }
 
-func installMenu(navigate func(string), baseURL, logDir string) {
-	menuNavigate, menuBaseURL, menuLogDir = navigate, baseURL, logDir
+func installMenu(navigate, eval func(string), baseURL, logDir string) {
+	menuNavigate, menuEval, menuBaseURL, menuLogDir = navigate, eval, baseURL, logDir
 	v, a, f := C.CString(version), C.CString(adminerVersion), C.CString(frankenphpVersion)
 	defer C.free(unsafe.Pointer(v))
 	defer C.free(unsafe.Pointer(a))
