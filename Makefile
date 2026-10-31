@@ -335,6 +335,7 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	./bin/frankenphp$(EXE) php-cli tests/version/AppVersionTest.php
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
 	./bin/frankenphp$(EXE) php-cli tests/cli/WindowsIcoTest.php
+	./bin/frankenphp$(EXE) php-cli tests/cli/I18nTest.php
 	@sh tests/cli/kill-orphans-test.sh
 	@sh tests/cli/dresscode-test.sh
 	@sh tests/cli/dresscode-hook-test.sh
@@ -397,7 +398,7 @@ endif
 # i18n dependency. The outputs are gitignored and rebuilt here before every build; the language
 # files are the committed source. The PHP plugin UI localises itself, via AdminerDesktop::$translations.
 i18n: bin/frankenphp$(EXE) app/vendor  ## Generate the native-shell translations from app/src/I18n/Locale/*.php
-	./bin/frankenphp$(EXE) php-cli cli/i18n.php
+	./bin/frankenphp$(EXE) php-cli -r 'require "app/vendor/autoload.php"; Desktop\Cli\I18n::run();'
 
 # The MCP bridge's copy of what PHP owns — the tool catalogue for both settings, the offline
 # sentences per locale — so the Go bridge describes tools from Server::catalogue() rather than a
@@ -413,7 +414,7 @@ bench: mcp-bridge-data  ## Benchmark the MCP bridge's own cost per call
 
 # Which strings each locale is still missing. Exits non-zero if any are, so CI can gate on it.
 i18n-check: bin/frankenphp$(EXE) app/vendor  ## Report native-shell translation coverage (missing strings per locale)
-	@./bin/frankenphp$(EXE) php-cli cli/i18n.php check
+	@./bin/frankenphp$(EXE) php-cli -r 'require "app/vendor/autoload.php"; Desktop\Cli\I18n::check();'
 
 # The exe's icon on Windows, from the same logo.png as the mac and linux ones. go build links any
 # .syso beside the sources, and windres comes with the gcc cgo already needs.
