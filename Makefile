@@ -425,7 +425,7 @@ WIN_ICON = $(if $(EXE),launcher/icon_windows_amd64.syso)
 launcher/icon_windows_amd64.syso: launcher/icon.rc build.noindex/logo.ico
 	windres -O coff -i $< -o $@
 
-build.noindex/logo.ico: assets/logo.png app/cli/WindowsIco.php app/vendor $(if $(EXE),$(WIN_INI)/gd.ini)
+build.noindex/logo.ico: assets/logo.png app/cli/Command/WindowsIco.php app/vendor $(if $(EXE),$(WIN_INI)/gd.ini)
 	@mkdir -p $(dir $@)
 	$(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) $(CLI) windows-ico
 

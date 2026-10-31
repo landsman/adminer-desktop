@@ -5,7 +5,7 @@ declare(strict_types=1);
  * wrong offset still builds, and shows up only as a blank icon on a machine nobody tests on.
  */
 
-use Desktop\Cli\WindowsIco;
+use Desktop\Cli\Command\WindowsIco;
 use Tester\Assert;
 
 require dirname(__DIR__) . "/bootstrap.php";

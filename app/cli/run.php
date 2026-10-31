@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 // The one entry the Makefile calls for build tooling: `$(CLI) <command>`.
 
-use Desktop\Cli\I18n;
-use Desktop\Cli\WindowsIco;
+use Desktop\Cli\Command\I18n;
+use Desktop\Cli\Command\WindowsIco;
 
 require dirname(__DIR__) . "/vendor/autoload.php";
 

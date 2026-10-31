@@ -5,7 +5,7 @@ declare(strict_types=1);
  * exactly like one that found nothing, and CI runs it to decide.
  */
 
-use Desktop\Cli\I18n;
+use Desktop\Cli\Command\I18n;
 use Desktop\I18n\Catalog;
 use Tester\Assert;
 

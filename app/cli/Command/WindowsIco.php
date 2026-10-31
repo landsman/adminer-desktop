@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop\Cli;
+namespace Desktop\Cli\Command;
 
 use GdImage;
 use RuntimeException;
@@ -11,7 +11,7 @@ class WindowsIco {
 	private const array SIZES = [16, 24, 32, 48, 64, 128, 256];
 
 	static function run(): void {
-		$root = dirname(__DIR__, 2);
+		$root = dirname(__DIR__, 3);
 		$logo = imagecreatefrompng("$root/assets/logo.png");
 		if (!$logo) {
 			throw new RuntimeException("ico: cannot read assets/logo.png");

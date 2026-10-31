@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Desktop\Cli;
+namespace Desktop\Cli\Command;
 
 use Desktop\I18n\Catalog;
 use Desktop\I18n\Domain;
@@ -14,7 +14,7 @@ use Desktop\I18n\Generator;
 class I18n {
 	static function run(): void {
 		$catalog = Catalog::load(Domain::Native);
-		(new Generator($catalog))->generate(dirname(__DIR__, 2));
+		(new Generator($catalog))->generate(dirname(__DIR__, 3));
 		echo "i18n: wrote " . count($catalog->all()) . " .strings + launcher/i18n_gen.h\n";
 	}
 
