@@ -251,9 +251,8 @@ class McpContext implements Context
 			'a wrong token' => [$url . '&mcp=1', str_repeat('0', strlen($token))],
 		];
 		foreach ($cases as $what => [$to, $bearer]) {
-			$this->postToGate($to, $bearer);
-			$status = (string) (http_get_last_response_headers()[0] ?? '');
-			if (!str_contains($status, ' 403 ')) {
+			[$status] = $this->postToGate($to, $bearer);
+			if ($status !== 403) {
 				throw new RuntimeException("the gate let through $what: $status");
 			}
 		}
@@ -265,21 +264,28 @@ class McpContext implements Context
 		}
 		$app = '127.0.0.1:' . parse_url((string) $this->fix['base'], PHP_URL_PORT);
 		$gate = '127.0.0.1:' . parse_url($url, PHP_URL_PORT);
-		$answer = $this->postToGate(str_replace($app, $gate, $download) . '&mcp=1', $token);
+		[, $answer] = $this->postToGate(str_replace($app, $gate, $download) . '&mcp=1', $token);
 		if (str_contains($answer, 'anna@example.com') || !str_starts_with($answer, '{')) {
 			throw new RuntimeException('the gate opened a page of adminer with the token: ' . substr($answer, 0, 200));
 		}
 	}
 
-	private function postToGate(string $url, string $token): string
+	/** Over the socket, the only way in: nothing listens on the url's port.
+	 *
+	 * @return array{int, string} the status and the body
+	 */
+	private function postToGate(string $url, string $token): array
 	{
-		$context = stream_context_create(['http' => [
-			'method' => 'POST',
-			'header' => ['Content-Type: application/json', "Authorization: Bearer $token"],
-			'content' => $this->request(),
-			'ignore_errors' => true,
-		]]);
-		return (string) @file_get_contents($url, false, $context);
+		$curl = curl_init($url);
+		curl_setopt_array($curl, [
+			CURLOPT_UNIX_SOCKET_PATH => (string) $this->readHandshake()['socket'],
+			CURLOPT_POST => true,
+			CURLOPT_HTTPHEADER => ['Content-Type: application/json', "Authorization: Bearer $token"],
+			CURLOPT_POSTFIELDS => $this->request(),
+			CURLOPT_RETURNTRANSFER => true,
+		]);
+		$answer = curl_exec($curl);
+		return [(int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE), is_string($answer) ? $answer : ''];
 	}
 
 	/** Adminer keeps the passwords in the session, encrypted with the adminer_key cookie, so the

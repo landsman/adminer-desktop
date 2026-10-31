@@ -43,7 +43,7 @@ func gate(t *testing.T) (*Gate, *[]string) {
 
 func call(g *Gate, method, target, token string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}`))
-	r.Host = g.ln.Addr().String()
+	r.Host = address
 	if token != "" {
 		r.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -210,7 +210,7 @@ func TestAnswersOverTheCallSocket(t *testing.T) {
 			return d.DialContext(ctx, "unix", g.calls.Addr().String())
 		},
 	}}
-	req, err := http.NewRequest("POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	req, err := http.NewRequest("POST", "http://"+address+"/adminer.php?mcp=1", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestGivingUpReachesFrankenphp(t *testing.T) {
 	report(g, session)
 	ctx, cancel := context.WithCancel(context.Background())
 	r := httptest.NewRequest("POST", "/adminer.php?mcp=1", strings.NewReader(`{}`)).WithContext(ctx)
-	r.Host = g.ln.Addr().String()
+	r.Host = address
 	r.Header.Set("Authorization", "Bearer "+g.token)
 	go g.ServeHTTP(httptest.NewRecorder(), r)
 	time.Sleep(50 * time.Millisecond)
@@ -296,7 +296,7 @@ func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
 			return d.DialContext(ctx, "unix", g.calls.Addr().String())
 		},
 	}}
-	req, err := http.NewRequestWithContext(ctx, "POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	req, err := http.NewRequestWithContext(ctx, "POST", "http://"+address+"/adminer.php?mcp=1", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}
