@@ -8,7 +8,7 @@ set -eu
 frankenphp=$1
 
 run() {
-	find cli -name '*.php' -exec "$frankenphp" php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon --no-color app {} +
+	find cli -name '*.php' -exec "$frankenphp" php-cli app/vendor/bin/dresscode check --jobs 1 -c app/dresscode.neon --no-color "$@" app {} +
 }
 
 if [ ! -f app/phpstan.neon ]; then
@@ -25,7 +25,8 @@ for file in app/override-missing.php cli/override-missing.php; do
 	cp tests/dresscode/override-missing.php "$file"
 done
 
-output=$(run || true)
+# A fixed format: under GitHub Actions the default one prints each finding twice.
+output=$(run --format agent || true)
 case $output in
 *"the types go without it"*)
 	printf '%s\n' "$output"
