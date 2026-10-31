@@ -30,6 +30,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "Desktop\\Cli\\": "cli/",
             "Desktop\\Tests\\": "../tests/e2e/bootstrap/"
         }
     },
