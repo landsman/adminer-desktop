@@ -20,6 +20,7 @@ activate_aggressive = true
 # publishes GitHub build provenance, and `gh attestation verify` is what reads that. It is
 # a build dependency like any other — pinned rather than assumed to be on the machine.
 [tools]
+oras = "1.3.6"
 node = "22"
 go = "1.26.5"
 gh = "2"
