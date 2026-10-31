@@ -132,9 +132,12 @@ in the packaged app (where `app/` is the document root and there is no root abov
 `--working-dir=app`, as the `app/vendor` target does. We do not vendor Go deps.
 
 **`dresscode.neon` stays in `app/`, beside `vendor/`.** Anywhere else DressCode takes `app/` for
-foreign code, and a rule that needs types finds nothing there and exits 0. The cost is that `cli/`
-lies outside its root, so the Makefile names those files and the hook drops `--skip-excluded` for them.
-`make dresscode` fails unless it reports `tests/dresscode/override-missing.php`, copied into `app/` for that run, which breaks a type rule on purpose.
+foreign code, and a rule that needs types finds nothing there and exits 0. Its type rules read
+`phpstan.neon` from that root too, hence `app/phpstan.neon`, which includes the real one. `cli/` lies
+outside the root, so `cli/dresscode.sh` names those files and the hook drops `--skip-excluded` for them;
+run dresscode through `make dresscode`, because `check -c app/dresscode.neon` alone skips `cli/` and
+says OK. That script fails unless `tests/dresscode/override-missing.php`, copied into `app/` and `cli/`
+for one run, is reported from both.
 
 **Our code is PSR-4 under `src/`.** `app/composer.json` maps `"Desktop\\": "src/"`, so a
 `Desktop\` class loads from the matching path — `Desktop\Settings\Theme\Theme` →

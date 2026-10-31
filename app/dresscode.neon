@@ -2,11 +2,9 @@
 # follows adminer's, and only what is decided here gets reported.
 # https://dresscode.run/
 
-# ../cli only gives the type rules its files: a directory outside this root is not walked, so the
-# Makefile names them.
+# cli/ lies outside this root, where a directory is not walked: cli/dresscode.sh names its files.
 paths:
 	- .
-	- ../cli
 
 # Beside vendor/ on purpose: from anywhere else DressCode takes app/, its own installation, for
 # foreign code, and the rules that need types find nothing there and still exit 0.
