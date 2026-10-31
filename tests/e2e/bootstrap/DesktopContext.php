@@ -3384,6 +3384,86 @@ class DesktopContext implements Context
 		$this->overlapsNothing('#desktop-gear');
 	}
 
+	/** Written to settings.json, not picked in the dialog: the gear that opens the dialog is what is
+	 * on trial. Goes through all of them before failing, so one run names every design that breaks.
+	 * The appearance is pinned to the design's side, or the OS's scheme would leave half unlinked. */
+	#[Then('every gallery design shows a settings gear that opens the dialog')]
+	public function everyDesignHasGear(): void
+	{
+		$this->openSettingsDialog(); // the dialog's panels are what lists the designs
+		$sides = (array) $this->page->evaluate(
+			// language=JavaScript
+			'() => Object.fromEntries(["light", "dark"].map((side) => [side,
+				[...document.querySelectorAll(`input[name=design_${side}]`)].map((r) => r.value).filter(Boolean),
+			]))',
+		);
+		$failures = [];
+		$checked = 0;
+		foreach ($sides as $side => $designs) {
+			foreach ((array) $designs as $design) {
+				file_put_contents(
+					$this->fix['data'] . '/settings.json',
+					(string) json_encode(['appearance' => $side, "design_$side" => $design]),
+				);
+				// Closed first: it reopens itself after a reload it was open for, on top of the gear.
+				$this->page->evaluate(
+					// language=JavaScript
+					"() => { document.querySelector('#desktop-settings').close(); sessionStorage.clear(); }",
+				);
+				$this->page->reload();
+				$checked++;
+				$this->screenshotDesign((string) $design);
+				try {
+					$this->assertGearWorks((string) $design);
+				} catch (\Throwable $e) {
+					$failures[] = basename(dirname((string) $design)) . ": " . strtok($e->getMessage(), "\n");
+				}
+			}
+		}
+		if ($checked === 0) {
+			throw new RuntimeException('no gallery design was offered');
+		}
+		if ($failures !== []) {
+			throw new RuntimeException(count($failures) . " of $checked designs:\n" . implode("\n", $failures));
+		}
+	}
+
+	/** Every design's page in one folder, passing or not: a gear in the right place can still look
+	 * wrong, and only an eye sees that. <design>-<page>.png, so one design's shots sort together. */
+	private function screenshotDesign(string $design): void
+	{
+		$page = (string) $this->page->evaluate(
+			// language=JavaScript
+			"() => !location.search.includes('username=') ? 'login'
+				: document.documentElement.classList.contains('ad-frameless') ? 'no-title-bar' : 'window'",
+		);
+		$dir = $this->fix['artifacts'] . '/gallery-designs';
+		@mkdir($dir, 0777, true);
+		$this->page->screenshot("$dir/" . basename(dirname($design)) . "-$page.png");
+	}
+
+	private function assertGearWorks(string $design): void
+	{
+		// That the design really is on the page: a setting nothing read would pass every check below.
+		$linked = $this->page->evaluate(
+			// language=JavaScript
+			'(design) => [...document.querySelectorAll("link[rel=stylesheet]")].some((l) => l.href.includes(design))',
+			$design,
+		);
+		if ($linked !== true) {
+			throw new RuntimeException('the design is not linked');
+		}
+		$this->controlsOnScreen('settings gear');
+		$this->page->locator(
+			// language=JQuery-CSS
+			'#desktop-gear',
+		)->click(['timeout' => 2000]);
+		$this->page->waitForFunction(
+			// language=JavaScript
+			'() => document.querySelector("#desktop-settings").open',
+		);
+	}
+
 	private function overlapsNothing(string $selector): void
 	{
 		$overlap = $this->page->evaluate(
