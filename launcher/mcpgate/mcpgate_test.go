@@ -53,7 +53,12 @@ func call(g *Gate, method, target, token string) *httptest.ResponseRecorder {
 }
 
 func report(g *Gate, line string) {
-	g.listen(io.NopCloser(strings.NewReader(line + "\n")))
+	ours, theirs := net.Pipe()
+	done := make(chan struct{})
+	go func() { g.listen(ours); close(done) }()
+	io.WriteString(theirs, line+"\n") //nolint:errcheck
+	theirs.Close()                    //nolint:errcheck
+	<-done
 }
 
 // Everything the token is not for is refused before frankenphp sees it: no session goes out.
@@ -151,6 +156,58 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 		}
 	}
 	t.Error("a report written to the socket never reached the gate")
+}
+
+// A connection that says nothing is hung up on, so a stream of them cannot hold sockets for good.
+func TestASilentReportIsHungUpOn(t *testing.T) {
+	g, _ := gate(t)
+	ours, theirs := net.Pipe()
+	defer theirs.Close() //nolint:errcheck
+	done := make(chan struct{})
+	go func() { g.listen(ours); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(reportDeadline + 2*time.Second):
+		t.Error("a connection that sent nothing is still being read")
+	}
+}
+
+type failsOnce struct {
+	net.Listener
+	failed bool
+}
+
+func (l *failsOnce) Accept() (net.Conn, error) {
+	if !l.failed {
+		l.failed = true
+		return nil, errors.New("too many open files")
+	}
+	return l.Listener.Accept()
+}
+
+// Out of sockets once must not leave the gate deaf for the rest of the session.
+func TestReportsSurviveAnAcceptError(t *testing.T) {
+	g, _ := gate(t)
+	g.reports = &failsOnce{Listener: g.reports}
+	done := make(chan struct{})
+	go func() { g.acceptReports(); close(done) }()
+	c, err := net.Dial(g.reports.Addr().Network(), g.reports.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	io.WriteString(c, session+"\n") //nolint:errcheck
+	c.Close()                       //nolint:errcheck
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+		g.mu.Lock()
+		got := g.cookie
+		g.mu.Unlock()
+		if got != "" {
+			g.Close()
+			<-done
+			return
+		}
+	}
+	t.Error("no report was heard after the accept error")
 }
 
 // Anything local can reach a loopback port, and a page's post arrives as lines too.

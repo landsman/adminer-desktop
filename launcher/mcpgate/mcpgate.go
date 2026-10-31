@@ -51,6 +51,9 @@ import (
 // address is what the bridge's URL names and the Host a call must carry. Nothing listens on it.
 const address = "127.0.0.1:1"
 
+// reportDeadline is how long one report may take. PHP's is written at once.
+const reportDeadline = 2 * time.Second
+
 // Gate holds the window's session and lets a token-bearing MCP call borrow it.
 type Gate struct {
 	upstream string // frankenphp, http://127.0.0.1:port
@@ -141,16 +144,24 @@ func (g *Gate) Env() []string {
 
 // Serve takes session reports and answers the bridge until Close.
 func (g *Gate) Serve() {
-	go func() {
-		for {
-			c, err := g.reports.Accept()
-			if err != nil {
-				return
-			}
-			go g.listen(c)
-		}
-	}()
+	go g.acceptReports()
 	_ = http.Serve(g.calls, g) // ends with Close, the only error it returns
+}
+
+// acceptReports runs until Close. Any other error, such as running out of sockets, is waited out:
+// stopping would leave the gate lending the last session after a sign-out it never heard of.
+func (g *Gate) acceptReports() {
+	for {
+		c, err := g.reports.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			return
+		}
+		if err != nil {
+			time.Sleep(50 * time.Millisecond)
+			continue
+		}
+		go g.listen(c)
+	}
 }
 
 // Close stops both sockets and removes the socket's directory.
@@ -162,8 +173,12 @@ func (g *Gate) Close() {
 // listen takes one JSON line per report, {"key": "...", "cookie": "...", "endpoint":
 // "http://…?…&mcp=1"}; empty is the feature being switched off. A line that does not parse or has
 // the wrong key is dropped: the next page the window loads reports again.
-func (g *Gate) listen(c io.ReadCloser) {
+func (g *Gate) listen(c net.Conn) {
 	defer c.Close() //nolint:errcheck // one report per connection
+	// On Windows anyone can connect, and one who sends nothing must not keep a socket for it.
+	if c.SetDeadline(time.Now().Add(reportDeadline)) != nil {
+		return
+	}
 	s := bufio.NewScanner(c)
 	for s.Scan() {
 		var report struct {
