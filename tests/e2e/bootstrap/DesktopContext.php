@@ -3221,6 +3221,15 @@ class DesktopContext implements Context
 		)->getByRole('button', ['name' => 'Search'])->click();
 	}
 
+	#[Then('the search box is closed')]
+	public function searchBoxIsClosed(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => !document.querySelector('#desktop-search').open",
+		);
+	}
+
 	#[Then('the search box is open')]
 	public function searchBoxIsOpen(): void
 	{
@@ -3442,6 +3451,34 @@ class DesktopContext implements Context
 			}",
 		);
 		$this->page->mouse()->click((float) $box['x'], (float) $box['y']);
+	}
+
+	#[When('I drag the mouse along the backdrop in the toolbar\'s band')]
+	public function dragBackdropInBand(): void
+	{
+		$this->page->mouse()->move(100, 10);
+		$this->page->mouse()->down();
+		$this->page->mouse()->move(140, 10);
+		$this->page->mouse()->up();
+	}
+
+	/** A real press, then the move a browser would report once the button is up: no release event. */
+	#[When('I press the backdrop in the toolbar\'s band and the release gets lost')]
+	public function pressBackdropReleaseLost(): void
+	{
+		$this->page->mouse()->move(100, 10);
+		$this->page->mouse()->down();
+		$this->page->evaluate(
+			// language=JavaScript
+			"() => dispatchEvent(new MouseEvent('mousemove', { clientX: 140, clientY: 10, buttons: 0 }))",
+		);
+		$this->page->mouse()->up();
+	}
+
+	#[When('I click the backdrop in the toolbar\'s band')]
+	public function clickBackdropInBand(): void
+	{
+		$this->page->mouse()->click(100, 10);
 	}
 
 	#[When('I open the toolbar\'s sort menu')]

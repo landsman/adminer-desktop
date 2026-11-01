@@ -22,6 +22,49 @@
 	const CONTROLS =
 		"a, button, input, select, textarea, label, summary, [role=button], [tabindex], [contenteditable], dialog";
 
+	// A press on a modal's backdrop lands on the dialog itself, whose content is all inside its box.
+	const onBackdrop = (event) => {
+		const target = /** @type {Element} */ (event.target);
+		if (!target.matches("dialog")) {
+			return false;
+		}
+		const box = target.getBoundingClientRect();
+		return (
+			event.clientX < box.left ||
+			event.clientX > box.right ||
+			event.clientY < box.top ||
+			event.clientY > box.bottom
+		);
+	};
+
+	// The backdrop still closes the dialog on a click, and a window drag takes the release, so the
+	// drag waits for the pointer to really move. preventDefault() leaves the click alone.
+	const dragOnceMoved = (press) => {
+		press.preventDefault();
+		const stop = () => {
+			removeEventListener("mousemove", move);
+			removeEventListener("mouseup", stop);
+		};
+		const move = (event) => {
+			// A lost release would leave this listening, and the next drag anywhere would move the window.
+			if (!event.buttons) {
+				stop();
+				return;
+			}
+			if (
+				Math.hypot(
+					event.clientX - press.clientX,
+					event.clientY - press.clientY,
+				) >= 3
+			) {
+				stop();
+				window.adminer.native?.dragWindow();
+			}
+		};
+		addEventListener("mousemove", move);
+		addEventListener("mouseup", stop);
+	};
+
 	// The toolbar's hairline shows only once the page scrolls under it, or while the window is not
 	// the active one, as Mail's does (window.css): two classes on <html> to draw it by.
 	if (window.adminer.native?.dragWindow) {
@@ -43,11 +86,17 @@
 	if (window.adminer.native?.dragWindow) {
 		document.addEventListener("mousedown", (event) => {
 			const target = /** @type {Element} */ (event.target);
+			// Full screen has no title bar to stand in for.
+			if (event.button !== 0 || root.classList.contains("ad-fullscreen")) {
+				return;
+			}
+			if (document.querySelector("dialog[open]")) {
+				if (event.clientY < band() && onBackdrop(event)) {
+					dragOnceMoved(event);
+				}
+				return;
+			}
 			if (
-				event.button !== 0 ||
-				// Full screen has no title bar to stand in for, and a dialog's backdrop closes it.
-				root.classList.contains("ad-fullscreen") ||
-				document.querySelector("dialog[open]") ||
 				!(target === document.body || event.clientY < band()) ||
 				target.closest(CONTROLS)
 			) {

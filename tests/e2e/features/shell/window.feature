@@ -50,6 +50,30 @@ Feature: The window without a title bar
     When I press the mouse on one of the toolbar's buttons
     Then the window was asked to move 1 time
 
+  Scenario: With a modal open the band above it still moves the window, and a click there does not
+    When I open the "users" table
+    And I open the settings dialog
+    And I drag the mouse along the backdrop in the toolbar's band
+    Then the window was asked to move 1 time
+    And the settings dialog is open
+    When I click the backdrop in the toolbar's band
+    Then the window was asked to move 1 time
+    And the settings dialog is open
+
+  Scenario: A click on the band above a dialog that closes on a click outside closes it, without moving the window
+    When I open the "users" table
+    And I click the toolbar's search
+    Then the search box is open
+    When I click the backdrop in the toolbar's band
+    Then the search box is closed
+    And the window was asked to move 0 times
+
+  Scenario: A move with no button down does not move the window, if the release above a modal got lost
+    When I open the "users" table
+    And I open the settings dialog
+    And I press the backdrop in the toolbar's band and the release gets lost
+    Then the window was asked to move 0 times
+
   Scenario: The sidebar stays hidden across pages, its toggle beside the lights
     When I open the "users" table
     And I hide the sidebar
