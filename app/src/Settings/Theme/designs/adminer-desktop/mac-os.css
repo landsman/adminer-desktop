@@ -1,0 +1,136 @@
+/* What macOS changes in our design: its accent and neutral greys, its corners, and its overlay
+ * scrollbars. Theme::cssMap() loads it after adminer.css, on macOS only. The frameless window has
+ * its own file, window.css, because that follows from the launcher and not from the OS class. */
+
+/* On macOS the accent is the system's (System Settings > Appearance > Colour), read through
+   WebKit's own keyword, so links, icons and the selected row follow it and change with it. Other
+   engines have no such keyword and keep the theme's indigo below. Text on it is white on a dark
+   accent and black on a light one (yellow, orange, green), chosen from the accent's own lightness:
+   white on the yellow one is about 1.6:1. */
+@supports (color: -apple-system-control-accent) {
+	/* :root, not html: it outranks the html block below, which sets the default. */
+	:root {
+		--ad-accent: -apple-system-control-accent;
+		--ad-accent-fg: oklch(
+			from var(--ad-accent) clamp(0, (0.72 - l) * 1000, 1) 0 0
+		);
+		/* The buttons stay out of it: graphite, so a form's Save does not shout in the accent
+		   every link already wears. Lighter on the dark surface, or it sinks into it; white on both. */
+		--ad-button: light-dark(#333336, #5a5a5f);
+		--ad-button-fg: #ffffff;
+		/* The dark side in macOS's own neutral greys, as Mail and the system's windows are, not
+		   the theme's blue-tinted ones, which beside the system's sidebar material read as
+		   another app's. The light side keeps the theme's. */
+		--bg: light-dark(#ffffff, #1e1e1e);
+		--fg: light-dark(#1d2127, #dcdcdc);
+		--dim: light-dark(#f1f3f6, #2a2a2a);
+		--ad-panel: light-dark(#ffffff, #1e1e1e);
+		--ad-menu-bg: light-dark(#f7f8fa, #262626);
+		/* Adminer's highlight (a row it marks, :target, a checked row) tinted by the accent. */
+		--lit: light-dark(
+			color-mix(in srgb, var(--ad-accent) 12%, #ffffff),
+			color-mix(in srgb, var(--ad-accent) 22%, #1e1e1e)
+		);
+	}
+}
+
+/* macOS 26+ rounds a titled window with a continuous curve, not a circle: 16.5pt at its apex,
+   easing into the edges 24pt from the corner (measured off a screenshot of ours). A circular
+   corner cannot follow both; 20 sits between them and is the one that reads as parallel. */
+.mac-os {
+	--ad-window-radius: 20px;
+	/* What stands on a surface, a table or a card: as round as a message in Mail. */
+	--ad-card-radius: 12px;
+}
+
+/* macOS renders system-ui (San Francisco) best antialiased; Windows and Linux stay on
+   the OS default, where forcing this only thins the text. .mac-os comes from bodyClass. */
+.mac-os body {
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars that show only while the pointer is over what they scroll, as macOS draws them in
+ * its own apps. WebKit here keeps them on screen for good — Safari too, on a bare page, with the
+ * system set to hide them — so the panels wore two grey bars at all times. Transparent until
+ * hovered (`:hover` holds for every element under the pointer, so the scroller it is in), and
+ * thin, as an overlay scrollbar is, and while it scrolls (.ad-scrolling, scrollers.js), as an
+ * overlay one appears then. Windows has the same in windows-os.css; Linux keeps its own on screen.
+ *
+ * Only while the system draws overlay scrollbars. With a mouse plugged in, or System Settings set
+ * to Always, macOS draws legacy ones that stay on screen, and so does every native app — Mail
+ * included; the launcher says which (ad-legacy-scrollers on <html>, installScrollerStyle), and then
+ * WebKit's own are left as they are, except the panels' (below). A plain browser is never told,
+ * and keeps the overlay behaviour. */
+:root:not(.ad-legacy-scrollers) .mac-os * {
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+}
+
+:root:not(.ad-legacy-scrollers) .mac-os :is(:hover, .ad-scrolling) {
+	scrollbar-color: color-mix(in srgb, var(--fg) 35%, transparent) transparent;
+}
+
+/* Even transparent, that bar keeps its width, so every rule in the two panels stopped one
+   scrollbar short of the right edge. A legacy one takes the same column, and the toolbar's
+   hairline and search stopped short of it. So the panels' bars are scrollers.js's in both modes;
+   the scrollers inside them keep theirs. */
+.mac-os #menu,
+.mac-os #content {
+	scrollbar-width: none;
+}
+
+/* Rounded corners on the grid, macOS only.
+ *
+ * It costs nothing structurally: adminer already draws its tables with border-spacing: 0 and
+ * split borders — `table { border-width: 1px 0 0 1px }`, `td, th { border-width: 0 1px 1px 0 }`
+ * — which is the separated-border model a radius needs. No overflow: hidden, which would make
+ * the table its own scroll container and quietly kill the sticky <thead>.
+ *
+ * The corner cells are rounded as well as the table: the cell backgrounds paint over the
+ * table's own rounded corner otherwise, and square off exactly the corner being rounded.
+ * `> :first-child` is the section (thead/tbody — the browser inserts one either way), so this
+ * finds the true first and last row whether or not the table has a header.
+ *
+ * macOS only, because a rounded grid is a macOS idiom rather than a house style: Windows and
+ * Linux keep the square corners their own tables have, which is what mac-os not matching
+ * leaves them with. */
+.mac-os table {
+	border-radius: var(--ad-radius);
+}
+
+.mac-os table > :first-child > tr:first-child > :first-child {
+	border-top-left-radius: var(--ad-radius);
+}
+
+.mac-os table > :first-child > tr:first-child > :last-child {
+	border-top-right-radius: var(--ad-radius);
+}
+
+.mac-os table > :last-child > tr:last-child > :first-child {
+	border-bottom-left-radius: var(--ad-radius);
+}
+
+.mac-os table > :last-child > tr:last-child > :last-child {
+	border-bottom-right-radius: var(--ad-radius);
+}
+
+/* A settings table's corners, which everything drawing them reads from --ad-radius. */
+.mac-os #desktop-panels table {
+	--ad-radius: var(--ad-card-radius);
+}
+
+/* A notice inside the settings dialog, rounded as its tables are. */
+.mac-os dialog#desktop-settings :is(.message, .error) {
+	border-radius: var(--ad-card-radius);
+	padding: 1.2em 1.5em;
+}
+
+/* A select in a dialog's body only: the sidebar's and the pages' keep the UI's tighter corners. */
+.mac-os .ad-modal-body select {
+	border-radius: 10px;
+}
+
+/* The saved connections on the index. */
+.mac-os :is(.ad-card, #ad-new-connection) {
+	border-radius: var(--ad-card-radius);
+}

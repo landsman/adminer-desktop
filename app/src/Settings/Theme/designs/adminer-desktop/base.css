@@ -79,12 +79,6 @@ kbd,
 	font-family: var(--ad-mono);
 }
 
-/* macOS renders system-ui (San Francisco) best antialiased; Windows and Linux stay on
-   the OS default, where forcing this only thins the text. .os-* comes from bodyClass. */
-.mac-os body {
-	-webkit-font-smoothing: antialiased;
-}
-
 /* Links. */
 a,
 a:visited {
@@ -199,36 +193,6 @@ body.theme-dark .icon {
 	body.theme-auto .icon {
 		filter: invert(1) hue-rotate(180deg);
 	}
-}
-
-/* Scrollbars that show only while the pointer is over what they scroll, as macOS draws them in
- * its own apps. WebKit here keeps them on screen for good — Safari too, on a bare page, with the
- * system set to hide them — so the panels wore two grey bars at all times. Transparent until
- * hovered (`:hover` holds for every element under the pointer, so the scroller it is in), and
- * thin, as an overlay scrollbar is, and while it scrolls (.ad-scrolling, scrollers.js), as an
- * overlay one appears then. Windows has the same in windows-os.css; Linux keeps its own on screen.
- *
- * Only while the system draws overlay scrollbars. With a mouse plugged in, or System Settings set
- * to Always, macOS draws legacy ones that stay on screen, and so does every native app — Mail
- * included; the launcher says which (ad-legacy-scrollers on <html>, installScrollerStyle), and then
- * WebKit's own are left as they are, except the panels' (below). A plain browser is never told,
- * and keeps the overlay behaviour. */
-:root:not(.ad-legacy-scrollers) .mac-os * {
-	scrollbar-width: thin;
-	scrollbar-color: transparent transparent;
-}
-
-:root:not(.ad-legacy-scrollers) .mac-os :is(:hover, .ad-scrolling) {
-	scrollbar-color: color-mix(in srgb, var(--fg) 35%, transparent) transparent;
-}
-
-/* Even transparent, that bar keeps its width, so every rule in the two panels stopped one
-   scrollbar short of the right edge. A legacy one takes the same column, and the toolbar's
-   hairline and search stopped short of it. So the panels' bars are scrollers.js's in both modes;
-   the scrollers inside them keep theirs. */
-.mac-os #menu,
-.mac-os #content {
-	scrollbar-width: none;
 }
 
 /* The panels' overlay thumbs (scrollers.js): a rounded bar over the content's edge, in macOS's

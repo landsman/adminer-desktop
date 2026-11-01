@@ -175,7 +175,7 @@ Desktop" row) on each side means "use it".
 
 It reskins through Adminer's own `--bg/--fg/--dim/--lit` plus our `--ad-*`, and is split
 into components pulled in by `@import`: `tokens`, `base`, `tables`, `forms`, `sidebar`,
-`settings`. `light-dark()` is colour-only, so the one non-colour scheme difference —
+`settings`, `window`, and `Theme::cssMap()` adds `mac-os.css` or `windows-os.css` after them. `light-dark()` is colour-only, so the one non-colour scheme difference —
 inverting adminer's sprite icons on the dark surface — lives in `base.css` and keys off the
 `theme-auto`/`theme-dark` body class instead. `system-ui` gives the native OS font with no
 branching; the `theme-*`, `mac-os`/`windows-os`/`linux-os` and `density-compact`/`-cozy`/
