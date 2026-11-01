@@ -7,3 +7,25 @@
 .omarchy-linux #tables a {
 	color: var(--fg);
 }
+
+/* Save is filled in --ad-ok, and a palette replaces that with the theme's own `green` -- a colour
+   chosen to be read as text on the background, not to be a surface. Tokyo Night's #9ece6a fills the
+   button in a lime nobody picked, and every theme whose green is a terminal green does the same.
+   So Save takes the shape .message already has on this side, with the same pair of tokens: the
+   green as text over --ad-ok-bg, which is where that colour is legible. It stays the filled one of
+   the two -- Reset is text and a border over nothing -- so the pair still reads at a glance. */
+.omarchy-linux .ad-modal-footer .ad-primary {
+	background: var(--ad-ok-bg);
+	color: var(--ad-ok);
+	border-color: color-mix(in srgb, var(--ad-ok) 26%, transparent);
+}
+
+/* A filled button darkens under the pointer; a tinted one has nowhere to darken to, so these
+   deepen the tint instead -- the same gesture, read on a surface that is mostly background. */
+.omarchy-linux .ad-modal-footer .ad-primary:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-ok) 12%, var(--ad-ok-bg));
+}
+
+.omarchy-linux .ad-modal-footer .ad-primary:active:not(:disabled) {
+	background: color-mix(in srgb, var(--ad-ok) 20%, var(--ad-ok-bg));
+}
