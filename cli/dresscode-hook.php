@@ -24,7 +24,18 @@ if (!is_file($root . "/app/vendor/bin/dresscode")) {
 	tellAgent("dresscode did not run on $file: $root has no app/vendor. Run make qa there.");
 	exit(0);
 }
-$command = [PHP_BINARY, "php-cli", $root . "/app/vendor/bin/dresscode", "fix", $file, "-c", $root . "/app/dresscode.neon", "--format", "agent", "--no-color", "--jobs", "1"];
+// frankenphp's php-cli leaves PHP_BINARY empty on Linux -- the mac build fills it in, that one
+// does not -- and proc_open refuses an empty program name, so every PHP file an agent wrote on
+// Linux ended here in an uncaught ValueError: dresscode never ran, and nothing said it had not.
+// The repo's own frankenphp is that binary either way. Asked of the filesystem rather than of
+// the string, because phpstan's stub has PHP_BINARY as a non-empty string and would call the
+// comparison dead code -- and because a path that is there is the thing proc_open needs.
+$php = is_file(PHP_BINARY) ? PHP_BINARY : $root . "/bin/frankenphp";
+if (!is_file($php)) {
+	tellAgent("dresscode did not run on $file: no PHP binary at $php. Run make fetch there.");
+	exit(0);
+}
+$command = [$php, "php-cli", $root . "/app/vendor/bin/dresscode", "fix", $file, "-c", $root . "/app/dresscode.neon", "--format", "agent", "--no-color", "--jobs", "1"];
 // cli/ lies outside the config's root, so --skip-excluded would leave every file there unchecked.
 if (!str_starts_with($file, $root . "/cli/")) {
 	$command[] = "--skip-excluded";
