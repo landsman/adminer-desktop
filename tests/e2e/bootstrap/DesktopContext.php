@@ -3221,6 +3221,15 @@ class DesktopContext implements Context
 		)->getByRole('button', ['name' => 'Search'])->click();
 	}
 
+	#[Then('the search box is closed')]
+	public function searchBoxIsClosed(): void
+	{
+		$this->page->waitForFunction(
+			// language=JavaScript
+			"() => !document.querySelector('#desktop-search').open",
+		);
+	}
+
 	#[Then('the search box is open')]
 	public function searchBoxIsOpen(): void
 	{

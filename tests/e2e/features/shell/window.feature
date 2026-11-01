@@ -60,6 +60,14 @@ Feature: The window without a title bar
     Then the window was asked to move 1 time
     And the settings dialog is open
 
+  Scenario: A click on the band above a dialog that closes on a click outside closes it, without moving the window
+    When I open the "users" table
+    And I click the toolbar's search
+    Then the search box is open
+    When I click the backdrop in the toolbar's band
+    Then the search box is closed
+    And the window was asked to move 0 times
+
   Scenario: The sidebar stays hidden across pages, its toggle beside the lights
     When I open the "users" table
     And I hide the sidebar
