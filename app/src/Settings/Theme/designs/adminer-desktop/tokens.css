@@ -12,38 +12,6 @@
  * inverting Adminer's sprite icons on the dark surface — is in base.css.
  */
 
-/* On macOS the accent is the system's (System Settings > Appearance > Colour), read through
-   WebKit's own keyword, so links, icons and the selected row follow it and change with it. Other
-   engines have no such keyword and keep the theme's indigo below. Text on it is white on a dark
-   accent and black on a light one (yellow, orange, green), chosen from the accent's own lightness:
-   white on the yellow one is about 1.6:1. */
-@supports (color: -apple-system-control-accent) {
-	/* :root, not html: it outranks the html block below, which sets the default. */
-	:root {
-		--ad-accent: -apple-system-control-accent;
-		--ad-accent-fg: oklch(
-			from var(--ad-accent) clamp(0, (0.72 - l) * 1000, 1) 0 0
-		);
-		/* The buttons stay out of it: graphite, so a form's Save does not shout in the accent
-		   every link already wears. Lighter on the dark surface, or it sinks into it; white on both. */
-		--ad-button: light-dark(#333336, #5a5a5f);
-		--ad-button-fg: #ffffff;
-		/* The dark side in macOS's own neutral greys, as Mail and the system's windows are, not
-		   the theme's blue-tinted ones, which beside the system's sidebar material read as
-		   another app's. The light side keeps the theme's. */
-		--bg: light-dark(#ffffff, #1e1e1e);
-		--fg: light-dark(#1d2127, #dcdcdc);
-		--dim: light-dark(#f1f3f6, #2a2a2a);
-		--ad-panel: light-dark(#ffffff, #1e1e1e);
-		--ad-menu-bg: light-dark(#f7f8fa, #262626);
-		/* Adminer's highlight (a row it marks, :target, a checked row) tinted by the accent. */
-		--lit: light-dark(
-			color-mix(in srgb, var(--ad-accent) 12%, #ffffff),
-			color-mix(in srgb, var(--ad-accent) 22%, #1e1e1e)
-		);
-	}
-}
-
 /* Sidebar width. Registered, so it becomes px once, on <body>, and everything inherits that:
    unregistered it is text, resolved against each user's own font size, and the gear (font-size
    0) sat at 0. On <body> because the text scale is set there, so the 19em default grows with
@@ -77,7 +45,7 @@ html {
 		oklch(from var(--ad-accent) min(l, 0.52) c h),
 		oklch(from var(--ad-accent) max(l, 0.72) c h)
 	);
-	/* A form's buttons; the accent unless a platform says otherwise (the macOS block above). */
+	/* A form's buttons; the accent unless a platform says otherwise (mac-os.css). */
 	--ad-button: var(--ad-accent);
 	--ad-button-fg: var(--ad-accent-fg);
 	--ad-accent-quiet: light-dark(
@@ -160,15 +128,6 @@ html {
 	   value here would beat the meta and defeat a Light/Dark override. accent-color rides on
 	   --ad-accent, which is already scheme-aware above. */
 	accent-color: var(--ad-accent);
-}
-
-/* macOS 26+ rounds a titled window with a continuous curve, not a circle: 16.5pt at its apex,
-   easing into the edges 24pt from the corner (measured off a screenshot of ours). A circular
-   corner cannot follow both; 20 sits between them and is the one that reads as parallel. */
-.mac-os {
-	--ad-window-radius: 20px;
-	/* What stands on a surface, a table or a card: as round as a message in Mail. */
-	--ad-card-radius: 12px;
 }
 
 /* Row density. These set variables only; padding and line-height read them from

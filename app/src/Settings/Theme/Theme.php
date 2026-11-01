@@ -17,6 +17,7 @@ use Desktop\UserSettings;
 */
 class Theme {
 	private const string OWN_DESIGN = "src/Settings/Theme/designs/adminer-desktop/adminer.css";
+	private const string MAC_SHEET = "src/Settings/Theme/designs/adminer-desktop/mac-os.css";
 	private const string WINDOWS_SHEET = "src/Settings/Theme/designs/adminer-desktop/windows-os.css";
 
 	private \AdminerDesktop $desktop;
@@ -65,7 +66,12 @@ class Theme {
 	*/
 	function cssMap(): array {
 		$map = $this->designMap();
-		if (Os::look() !== Os::Windows) {
+		$sheet = match (Os::look()) {
+			Os::Mac => self::MAC_SHEET,
+			Os::Windows => self::WINDOWS_SHEET,
+			Os::Linux => null,
+		};
+		if ($sheet === null) {
 			return $map;
 		}
 		// Right after ours and tagged the same, so it applies wherever ours does and never over a
@@ -74,7 +80,7 @@ class Theme {
 		foreach ($map as $path => $mode) {
 			$return[$path] = $mode;
 			if ($path === self::OWN_DESIGN) {
-				$return[self::WINDOWS_SHEET] = $mode;
+				$return[$sheet] = $mode;
 			}
 		}
 		return $return;
