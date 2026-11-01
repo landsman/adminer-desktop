@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -472,6 +473,20 @@ func main() {
 	}
 	installMenu(w.Window(), w.Navigate, w.Eval, "http://"+addr, filepath.Dir(logPath))
 
+	// The window is hidden until something reveals it, so whatever reveals it must not be
+	// able to fail: hidden forever is not a slow start, it is an app that never opened. The
+	// loader's own report below is the good path and the deadline is the floor. Once, because
+	// both may arrive.
+	var revealed sync.Once
+	reveal := func(late bool) {
+		revealed.Do(func() {
+			if late {
+				log.Print("startup: the loader never reported back (the page's native bindings are not working); showing the window anyway")
+			}
+			showWindow(w.Window())
+		})
+	}
+
 	// Report from inside the webview when the loader has actually parsed and rendered -- the one
 	// startup phase Go can't time, since it is WebKit's own paint. It separates "the window was
 	// shown before the loader rendered" from "WebKit was slow to paint". loading.html calls this
@@ -480,10 +495,20 @@ func main() {
 		log.Printf("startup: loader rendered in %s", time.Since(guiStart).Round(time.Millisecond))
 		// The loader has parsed and styled, so there is finally something to show: reveal the
 		// window (already sized), painting straight onto the spinner instead of a blank frame.
-		showWindow(w.Window())
+		reveal(false)
 	}); err != nil {
 		log.Print("startup: loader timing bind failed: ", err)
 	}
+
+	// And the floor under it, because that report comes back over a JavaScript binding and the
+	// binding is not guaranteed: on WebKitGTK 2.54 (Arch, Fedora) nothing from the page ever
+	// reaches Go, so the window stayed hidden for the whole run and `make run` looked like an
+	// app that had not started -- while the server was up and serving behind it. Two seconds is
+	// well past the loader's own paint everywhere it does work (759ms was the worst seen here, on
+	// a cold first launch), so the good path still reveals the window first and this only ever
+	// fires where that path is broken. Dispatch, because GTK and AppKit both want the main
+	// thread, which is where every other reveal already happens.
+	time.AfterFunc(2*time.Second, func() { w.Dispatch(func() { reveal(true) }) })
 
 	// The page's background, from window-background.js, for the strip a fast resize uncovers.
 	// A computed colour is rgb() when opaque; anything else (transparent, rgba) is left alone.
