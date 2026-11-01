@@ -872,3 +872,180 @@
 		display: none;
 	}
 }
+
+/* The settings dialog as the same glass as the sort menu, its body filled further, because that
+   body is long text and controls. The dim is what the glass frosts, so at modal.css's 60% it
+   would only ever show grey. */
+.ad-frameless dialog#desktop-settings {
+	border: 0;
+	background: light-dark(rgb(246 246 246 / 72%), rgb(44 44 46 / 72%));
+	/* Redrawn on every frame of the fade, at a cost that grows with the radius over this large an
+	   area: at 80px it stuttered. So no rise with it either, only the fade. */
+	-webkit-backdrop-filter: blur(30px) saturate(1.8);
+	backdrop-filter: blur(30px) saturate(1.8);
+	transform: none;
+	box-shadow:
+		inset 0 0 0 0.5px light-dark(rgb(255 255 255 / 60%), rgb(255 255 255 / 12%)),
+		0 0 0 0.5px rgb(0 0 0 / 18%),
+		0 20px 60px rgb(0 0 0 / 30%);
+}
+
+/* Every dialog's, so they dim the page alike. */
+.ad-frameless .ad-modal::backdrop {
+	background: rgb(0 0 0 / 40%);
+}
+
+/* The bands float over the body, which fills the dialog and scrolls beneath them, so what passes
+   under a band shows through it, frosted: all three share one grid cell. Their heights are set,
+   since the body's padding has to clear them and CSS cannot read them. The dialog's own filter
+   makes it the backdrop root, so a band frosts the body and not the page again. */
+.ad-frameless #desktop-settings {
+	--ad-settings-header-h: 5.7em;
+	--ad-settings-footer-h: 4em;
+}
+
+.ad-frameless #desktop-settings > form {
+	display: grid;
+	grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+.ad-frameless #desktop-settings > form > * {
+	grid-area: 1 / 1;
+}
+
+.ad-frameless #desktop-settings :is(.ad-modal-header, .ad-modal-footer) {
+	z-index: 2;
+	box-sizing: border-box;
+	background: light-dark(rgb(246 246 246 / 60%), rgb(44 44 46 / 60%));
+	-webkit-backdrop-filter: blur(24px) saturate(1.8);
+	backdrop-filter: blur(24px) saturate(1.8);
+}
+
+.ad-frameless #desktop-settings .ad-modal-header {
+	align-self: start;
+	height: var(--ad-settings-header-h);
+}
+
+.ad-frameless #desktop-settings .ad-modal-footer {
+	align-self: end;
+	height: var(--ad-settings-footer-h);
+}
+
+.ad-frameless #desktop-settings .ad-modal-body {
+	/* Over 1.05, the body's own text size against the bands': em is read here, and a sticky header
+	   stops at this padding, so a pixel too many is a strip of rows above it. */
+	padding-block: calc(var(--ad-settings-header-h) / 1.05)
+		calc(var(--ad-settings-footer-h) / 1.05);
+	background: light-dark(rgb(246 246 246 / 40%), rgb(44 44 46 / 40%));
+}
+
+/* The scrollbar runs between the bands, not under them. A track margin is the only way to say so,
+   and a track is only there without base.css's standard scrollbar properties, which turn the
+   pseudo-elements off. It then takes a column, so the padding gives that back. */
+.ad-frameless #desktop-settings .ad-modal-body {
+	--ad-settings-bar: 11px;
+	padding-inline-end: calc(var(--ad-dialog-padding) - var(--ad-settings-bar));
+	scrollbar-width: auto;
+	scrollbar-color: auto;
+}
+
+.ad-frameless #desktop-settings .ad-modal-body::-webkit-scrollbar {
+	width: var(--ad-settings-bar);
+}
+
+.ad-frameless #desktop-settings .ad-modal-body::-webkit-scrollbar-track {
+	margin-block: calc(var(--ad-settings-header-h) / 1.05)
+		calc(var(--ad-settings-footer-h) / 1.05);
+	background: transparent;
+}
+
+.ad-frameless #desktop-settings .ad-modal-body::-webkit-scrollbar-thumb {
+	border: 2px solid transparent;
+	border-radius: 6px;
+	background-clip: padding-box;
+}
+
+.ad-frameless
+	#desktop-settings
+	.ad-modal-body:is(:hover, .ad-scrolling)::-webkit-scrollbar-thumb {
+	background-color: color-mix(in srgb, var(--fg) 35%, transparent);
+}
+
+/* Flush to the band: settings.css fills the gap above with --bg, an opaque strip on glass. */
+.ad-frameless #desktop-panels thead {
+	top: 0;
+}
+
+.ad-frameless #desktop-panels thead th {
+	box-shadow: none;
+}
+
+/* What closes the dialog is the red light of a mac window: the same 14px disc, in the same place
+   off the corner, its × only under the pointer. The button round it stays the larger target. */
+.ad-frameless {
+	--ad-modal-close-size: 32px;
+	--ad-modal-close-inset: 6px;
+}
+
+.ad-frameless .ad-modal-header h2,
+.ad-frameless #content .ad-modal-header h2 {
+	padding-inline-start: 14px;
+}
+
+.ad-frameless .ad-modal-header .ad-modal-close {
+	position: absolute;
+	/* Off its grid area, which is what placed an absolute child inside a header that has a filter. */
+	grid-area: auto;
+	top: var(--ad-modal-close-inset);
+	left: var(--ad-modal-close-inset);
+	isolation: isolate;
+	width: var(--ad-modal-close-size);
+	height: var(--ad-modal-close-size);
+	margin: 0;
+	border-radius: 50%;
+	color: rgb(77 0 0 / 85%);
+}
+
+.ad-frameless .ad-modal-header .ad-modal-close::before {
+	content: "";
+	position: absolute;
+	inset: 9px;
+	z-index: -1;
+	border-radius: 50%;
+	background: radial-gradient(circle at 50% 62%, #ff7a70, #f4483e);
+	box-shadow: inset 0 0 0 0.5px rgb(150 25 15 / 45%);
+}
+
+.ad-frameless .ad-modal-header .ad-modal-close:hover {
+	background: none;
+	color: rgb(77 0 0 / 85%);
+}
+
+.ad-frameless .ad-modal-header .ad-modal-close:active::before {
+	filter: brightness(0.8);
+}
+
+.ad-frameless .ad-modal-header .ad-modal-close .ad-icon {
+	width: 9px;
+	height: 9px;
+	opacity: 0;
+}
+
+.ad-frameless
+	.ad-modal-header
+	.ad-modal-close:is(:hover, :focus-visible)
+	.ad-icon {
+	opacity: 1;
+}
+
+/* The tabs in the middle of the dialog, as a mac preferences window has them: across the × column
+   and past the header's uneven padding, which settings.css sets for the title's left edge. */
+.ad-frameless #desktop-settings .ad-modal-header {
+	padding-right: calc(1.05 * (var(--ad-dialog-padding) + 0.4em));
+}
+
+.ad-frameless #desktop-tabs {
+	grid-column: 1 / -1;
+	margin-left: 0;
+	text-align: center;
+}

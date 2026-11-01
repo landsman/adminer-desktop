@@ -46,6 +46,17 @@ th,
 	border-bottom-right-radius: var(--ad-radius);
 }
 
+/* A settings table's corners, which everything drawing them reads from --ad-radius. */
+.os-mac #desktop-panels table {
+	--ad-radius: var(--ad-card-radius);
+}
+
+/* Stuck to the top of the dialog's body, where rows would show in round corners
+   (settings-table-stuck.js). */
+#desktop-panels table.ad-stuck th {
+	border-radius: 0;
+}
+
 td,
 th {
 	padding: var(--ad-row-py) var(--ad-row-px);
@@ -63,6 +74,8 @@ thead td,
 thead th {
 	background: var(--dim);
 	border-bottom: 1px solid var(--ad-border-strong);
+	padding-block: calc(var(--ad-row-py) * 1.4);
+	font-size: 1.05em;
 	font-weight: 600;
 	color: color-mix(in srgb, var(--fg) 88%, transparent);
 }
@@ -355,4 +368,20 @@ span.ad-page-step {
 	background: currentcolor;
 	-webkit-mask: url("/icons/edit.svg") center / 0.85rem no-repeat;
 	mask: url("/icons/edit.svg") center / 0.85rem no-repeat;
+}
+
+/* A notice inside the settings dialog, rounded as its tables are. */
+.os-mac dialog#desktop-settings :is(.message, .error) {
+	border-radius: var(--ad-card-radius);
+	padding: 1.2em 1.5em;
+}
+
+/* A select in a dialog's body only: the sidebar's and the pages' keep the UI's tighter corners. */
+.os-mac .ad-modal-body select {
+	border-radius: 10px;
+}
+
+/* The saved connections on the index. */
+.os-mac :is(.ad-card, #ad-new-connection) {
+	border-radius: var(--ad-card-radius);
 }

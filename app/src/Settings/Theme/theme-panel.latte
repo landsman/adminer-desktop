@@ -16,29 +16,44 @@
 }
 <p class="message">{$desktop->t('theme.appearance_hint')}
 
-{* Sync with OS (the default) hands both schemes to the browser and lets prefers-color-scheme
-	pick; Light or Dark pins it, so it stays put whatever the OS does. *}
-<h4>{$desktop->t('theme.appearance')}</h4>
-<p>
-	<label n:foreach="$appearances as $value => $label" for="desktop-appearance-{$value}" style="margin-right: 1.2em; white-space: nowrap">
-		<input type="radio" name="appearance" value="{$value}" id="desktop-appearance-{$value}" n:attr="checked: $appearance == $value"> {$label}</label>
+<div class="ad-settings-rows">
+	<div class="ad-settings-row">
+		<h4>{$desktop->t('theme.language')}</h4>
+		<p id="desktop-lang-slot"></p>
+	</div>
 
-<h4>{$desktop->t('theme.language')}</h4>
-<p id="desktop-lang-slot"></p>
+	{* Row density applies to the Adminer Desktop theme (it drives our --ad-row-*); a gallery
+		design brings its own spacing, so this has no effect while one is chosen. *}
+	<div class="ad-settings-row">
+		<h4>{$desktop->t('theme.density')}</h4>
+		<p>
+			<select name="density">
+				<option n:foreach="$densities as $value => $label" value="{$value}" n:attr="selected: $density == $value">{$label}</option>
+			</select>
+		</p>
+	</div>
 
-{* Row density applies to the Adminer Desktop theme (it drives our --ad-row-*); a gallery
-	design brings its own spacing, so this has no effect while one is chosen. *}
-<h4>{$desktop->t('theme.density')}</h4>
-<p>
-	<label n:foreach="$densities as $value => $label" for="desktop-density-{$value}" style="margin-right: 1.2em; white-space: nowrap">
-		<input type="radio" name="density" value="{$value}" id="desktop-density-{$value}" n:attr="checked: $density == $value"> {$label}</label>
+	{* Scaling zooms the whole UI. Like density it only affects the Adminer Desktop theme. *}
+	<div class="ad-settings-row">
+		<h4>{$desktop->t('theme.scaling')}</h4>
+		<p>
+			<select name="scaling">
+				<option n:foreach="$scalings as $value" value="{$value}" n:attr="selected: $scaling == $value">{$value}%</option>
+			</select>
+		</p>
+	</div>
 
-{* Scaling zooms the whole UI. Like density it only affects the Adminer Desktop theme. *}
-<h4>{$desktop->t('theme.scaling')}</h4>
-<p>
-	<select name="scaling">
-		<option n:foreach="$scalings as $value" value="{$value}" n:attr="selected: $scaling == $value">{$value}%</option>
-	</select>
+	{* Sync with OS (the default) hands both schemes to the browser and lets prefers-color-scheme
+		pick; Light or Dark pins it, so it stays put whatever the OS does. *}
+	<div class="ad-settings-row">
+		<h4>{$desktop->t('theme.appearance')}</h4>
+		<p>
+			<select name="appearance">
+				<option n:foreach="$appearances as $value => $label" value="{$value}" n:attr="selected: $appearance == $value">{$label}</option>
+			</select>
+		</p>
+	</div>
+</div>
 
 {* A design is either light or dark — none upstream ships both — so it belongs to exactly
 	one of these tables, and the radio group it sits in is what makes it the light choice
