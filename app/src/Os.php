@@ -31,8 +31,12 @@ enum Os: string {
 	/** The OS the UI dresses as: the real one, unless -debug asks for another (Env::SimulateOs).
 	* Only for how the page looks. Paths and printed commands stay on current(). */
 	static function look(): self {
-		$simulated = Env::Debug->get() ? self::tryFrom((string) Env::SimulateOs->get()) : null;
-		return $simulated ?? self::current();
+		if (!Env::Debug->get()) {
+			return self::current();
+		}
+		$simulated = (string) Env::SimulateOs->get();
+		// A Linux flavour dresses as Linux first (LinuxDistro::look).
+		return self::tryFrom($simulated) ?? (LinuxDistro::tryFrom($simulated) ? self::Linux : self::current());
 	}
 
 	/** The class on <body> the theme keys off (AdminerDesktop::bodyClass). */

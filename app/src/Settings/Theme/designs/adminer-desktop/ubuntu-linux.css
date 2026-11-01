@@ -1,0 +1,33 @@
+/* Ubuntu's GNOME session: Yaru's colours, from ubuntu/yaru, gtk/src/default/gtk-3.0 (_colors.scss,
+ * _palette.scss) and common/accent-colors.scss.in. Values only: Yaru is GPL-3.0, so none of its code
+ * is here. #2c2c2c and #272727 are $jet lightened 8% and 6%, as _colors.scss does it.
+ *
+ * Tokens sit on the body class, so what html derives from them is restated. */
+.ubuntu-linux {
+	--ad-menu-bg: light-dark(#fafafa, #2c2c2c);
+	--bg: light-dark(#ffffff, #272727);
+	--ad-panel: light-dark(#ffffff, #272727);
+	--dim: light-dark(#fafafa, #2c2c2c);
+	--fg: light-dark(#3d3d3d, #f7f7f7);
+	--ad-border: light-dark(#c7c7c7, #181818);
+	--ad-border-strong: light-dark(#c7c7c7, #181818);
+
+	--ad-accent: #e95420;
+	--ad-accent-fg: #ffffff;
+	--ad-accent-text: light-dark(
+		oklch(from var(--ad-accent) min(l, 0.52) c h),
+		oklch(from var(--ad-accent) max(l, 0.72) c h)
+	);
+	--ad-accent-quiet: color-mix(in srgb, var(--ad-accent) 15%, transparent);
+	--ad-button: var(--ad-accent);
+	--ad-button-fg: var(--ad-accent-fg);
+	--lit: color-mix(in srgb, var(--ad-accent) 15%, var(--bg));
+	accent-color: var(--ad-accent);
+}
+
+/* The sidebar is a list to read: native ones keep the text's colour, and the accent on every name
+   was loud. */
+.ubuntu-linux #logins a,
+.ubuntu-linux #tables a {
+	color: var(--fg);
+}

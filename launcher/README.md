@@ -23,7 +23,7 @@ WebKitGTK) bring most of this themselves.
 | **downloads** | `installDownloads` | see below |
 | menu bar | `installMenu` | an unbundled binary gets a bare default menu. |
 | menu bar on Windows | `menu_windows.c` | webview makes a window with no menu. `SetMenu`, and its clicks taken from the window procedure. Not themed: Win32 draws it light in dark mode too. |
-| Web Inspector (`-debug` only) | `enableInspector` | no console or breakpoints otherwise. |
+| Web Inspector (`-debug` only) | `enableInspector` | no console or breakpoints otherwise. Real on both macOS (Safari's, over `setInspectable`) and Linux (WebKitGTK's own, opened with F12 or Ctrl+Shift+I, with console messages to stdout either way — `inspector_linux.go`). Neither opens by itself; only WebView2 brings its own, on F12. |
 
 ## Downloads
 

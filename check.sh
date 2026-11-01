@@ -23,7 +23,21 @@ ADMINER_DESKTOP_DATA=$(mktemp -d)
 export ADMINER_DESKTOP_DATA
 
 # The launcher's own Caddyfile and the cache policy a build gets, so what is checked is what ships.
-AD_PORT=$PORT AD_ROOT=app AD_ASSET_CACHE="max-age=31536000, immutable" \
+#
+# HOME goes into the throwaway directory with it, on every platform, because the page reads the
+# desktop it is running on: LinuxDistro looks for ~/.local/state/omarchy to tell an Omarchy machine
+# apart, and on one Auto follows that machine's current theme rather than the system (OmarchyTheme).
+# So the design assertions below -- post a light and a dark design, expect both back media-gated --
+# cannot hold on a developer whose theme pins the page to one side, while staying green on macOS and
+# in CI, where no such theme exists. Red for one person and green everywhere else is the dearest
+# kind of failing test: it reads as a regression in whatever that person last touched. Pointed at a
+# directory with no theme in it, every machine answers the way CI does. The same seam
+# tests/cli/OmarchyThemeTest.php uses, and the only other thing here that reads a home directory is
+# caddy's own storage, which then lands in the throwaway dir and is removed with it.
+#
+# What os-release says is still this machine's (Mint and Ubuntu keep their flavour), but that only
+# adds a stylesheet and pins no scheme, so nothing below depends on it.
+AD_PORT=$PORT AD_ROOT=app AD_ASSET_CACHE="max-age=31536000, immutable" HOME="$ADMINER_DESKTOP_DATA" \
 	./bin/frankenphp run --config launcher/Caddyfile --adapter caddyfile \
 	2>/tmp/adminer-desktop-check.log &
 SERVER=$!

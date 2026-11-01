@@ -19,4 +19,17 @@ if [ "$got" != "$want" ]; then
 	echo "kill-orphans picked [$got], wanted [$want]" >&2
 	exit 1
 fi
+# The same, reparented the way Linux does it: systemd --user is a subreaper, so the orphan sits
+# on its pid rather than on 1. Passed in, because the pid is the machine's; what is asserted is
+# that a reaper other than init counts, which is the whole of the Linux path.
+got=$(sh "$(dirname "$0")/../../cli/kill-orphans.sh" --filter '1 1013' <<'EOF'
+  201  1013 bin/frankenphp run --config /home/u/.config/Adminer Desktop/Caddyfile --adapter caddyfile
+  202  1013 /usr/bin/pipewire
+  203  2048 bin/frankenphp run --config /home/u/.config/Adminer Desktop/Caddyfile --adapter caddyfile
+EOF
+)
+if [ "$got" != "201" ]; then
+	echo "kill-orphans picked [$got] under a systemd --user reaper, wanted [201]" >&2
+	exit 1
+fi
 echo "kill-orphans ok"

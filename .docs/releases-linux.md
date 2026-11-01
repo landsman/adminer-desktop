@@ -61,11 +61,13 @@ Skipped: signing, arm64, and a tag-push trigger — that last one is four lines
 
 Not for Debian. Debian is served by stage 1. Flatpak buys three things:
 
-1. **Every other distro.** `make linux-deps` refuses anything without apt, and says so.
-   Fedora, Arch, openSUSE and Silverblue users currently have a tarball and their own
-   luck with GTK/WebKit versions.
+1. **Every other distro.** A checkout builds on Fedora, Arch and openSUSE — `make
+   linux-deps` names the headers to install where it cannot install them itself — but
+   there is nothing to *ship* them: those users have a tarball and their own luck with
+   GTK/WebKit versions.
 2. **The webkit2gtk version chase ends.** The runtime pins GTK3 and WebKitGTK, so the
-   `webkit2gtk-4.0` → `4.1` shim `linux-deps` installs stops being a per-distro problem.
+   `webkit2gtk-4.0` → `4.1` shim the build writes into `.cache/pkgconfig` stops being a
+   per-distro problem.
 3. **Auto-updates**, which a downloaded `.deb` will never have.
 
 ### Repackage, do not rebuild
