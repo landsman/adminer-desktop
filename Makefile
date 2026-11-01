@@ -20,6 +20,25 @@ else
 	EXE = .exe
 endif
 
+# webview is cgo and hardcodes `pkg-config webkit2gtk-4.0`, a .pc no current distro ships:
+# Ubuntu dropped it in 24.04 and Arch never had it, both carrying webkit2gtk-4.1 instead —
+# the same API over libsoup3, and what download_linux.go already asks for by name. A .pc of
+# our own that requires 4.1 is what satisfies webview, and it lives in .cache with
+# PKG_CONFIG_PATH pointing cgo at it rather than in /usr: writing there needs root, and it
+# made `make build` on a working checkout depend on a sudo someone had run once, months ago.
+# Here it is a build artifact like any other, so every distro gets the same 4.1 build and no
+# build step needs root. Exported, because every go command in this file compiles the cgo
+# launcher — `build`, `go vet`, golangci — not just the one that links it.
+ifeq ($(UNAME_S),Linux)
+WEBKIT_SHIM = .cache/pkgconfig/webkit2gtk-4.0.pc
+export PKG_CONFIG_PATH := $(CURDIR)/.cache/pkgconfig$(if $(PKG_CONFIG_PATH),:$(PKG_CONFIG_PATH))
+endif
+
+.cache/pkgconfig/webkit2gtk-4.0.pc:
+	@mkdir -p $(dir $@)
+	@printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1 for webview_go\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' > $@
+	@echo "wrote $@ (webview asks for webkit2gtk-4.0; this points it at 4.1)"
+
 .PHONY: help install linux-deps fetch verify qa go-test phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
@@ -49,18 +68,17 @@ endif
 	$(MAKE) fetch
 
 # The one build dependency mise cannot pin: webview is cgo, and on Linux that means the
-# system GTK-3 and WebKit2GTK dev headers — distro packages, not a toolchain. webview_go
-# also hardcodes `pkg-config webkit2gtk-4.0`, which Ubuntu 24.04 dropped for 4.1 (same API
-# over libsoup3), so a shim .pc that just requires 4.1 keeps the build on a current distro.
-# Debian/Ubuntu (apt) is the only Linux supported right now — and the path CI and the .deb
-# build on — so gate on apt up front and fail clearly on Arch/Fedora/others rather than
-# half-installing. The pkg-config guard then makes a re-run a no-op that never re-sudos.
-linux-deps:  ## Install the Linux webview build deps (GTK/WebKit dev headers, Debian/Ubuntu only)
-	@command -v apt-get >/dev/null 2>&1 || { echo "linux-deps: Debian/Ubuntu (apt) is the only supported Linux distribution right now. On Arch, Fedora and others, install the GTK-3 and WebKit2GTK 4.1 dev headers with your own package manager."; exit 1; }
+# system GTK-3 and WebKit2GTK dev headers — distro packages, not a toolchain. Only the
+# install is distro-specific, so the headers being there already is the first thing asked:
+# that answer is the same everywhere, and a distro we have no package names for (Arch,
+# Fedora) is then a checkout that builds rather than one that is turned away. apt is the
+# install path CI and the .deb build on; anywhere else names what to install and stops,
+# which beats half-installing. The pkg-config guard makes a re-run a no-op that never
+# re-sudos. $(WEBKIT_SHIM) is the other half, and needs no package manager at all.
+linux-deps: $(WEBKIT_SHIM)  ## Install the Linux webview build deps (GTK/WebKit dev headers)
 	@pkg-config --exists gtk+-3.0 webkit2gtk-4.1 2>/dev/null && echo "gtk/webkit dev headers present" || { \
+		command -v apt-get >/dev/null 2>&1 || { echo "linux-deps: install the GTK-3 and WebKit2GTK 4.1 dev headers with your package manager (Arch: gtk3 webkit2gtk-4.1; Fedora: gtk3-devel webkit2gtk4.1-devel), then re-run."; exit 1; }; \
 		sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev; }
-	@pkg-config --exists webkit2gtk-4.0 2>/dev/null || printf 'Name: webkit2gtk-4.0\nDescription: Shim onto webkit2gtk-4.1\nVersion: 2.44.0\nRequires: webkit2gtk-4.1\n' \
-		| sudo tee /usr/lib/$(UNAME_M)-linux-gnu/pkgconfig/webkit2gtk-4.0.pc >/dev/null
 
 fetch: app/adminer.php app/editor.php app/src/Settings/Plugins/available app/src/Settings/Theme/designs/README.md bin/frankenphp$(EXE)  ## Download frankenphp, build adminer from its release sources + patches/ (pinned, checksum-verified)
 
@@ -256,7 +274,7 @@ dresscode-hook:
 # A cache per checkout. The default one is per user and keeps absolute paths, so an agent's
 # worktree linted second got the first one's findings at that worktree's paths; once it was
 # deleted, the //nolint comments there could not be read and the lint failed on them.
-golangci: mcp-bridge-data  # the bridge embeds it: go cannot even type-check the package without it
+golangci: mcp-bridge-data $(WEBKIT_SHIM)  # the bridge embeds it: go cannot even type-check the package without it
 	GOLANGCI_LINT_CACHE=$(CURDIR)/.cache/golangci-lint go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION) run ./...
 
 # Format-check CSS and JS with oxfmt and lint JS with oxlint; the file list is package.json's.
@@ -313,7 +331,7 @@ security:
 
 # Static checks, every one from a tool we already have: the php is the frankenphp we
 # download, the rest ship with macOS or the go toolchain. Nothing to install.
-qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, js lint + formatting)
+qa: fetch app/vendor i18n mcp-bridge-data $(WEBKIT_SHIM)  ## Run every static check (php, go, js lint + formatting)
 	./bin/frankenphp$(EXE) php-cli cli/lint.php
 	@# No database and no browser: it replays adminer's own parser over a dump.
 	./bin/frankenphp$(EXE) php-cli tests/postgres/copy-import/run.php
@@ -445,7 +463,7 @@ build.noindex/logo.ico: assets/logo.png app/cli/Command/WindowsIco.php app/vendo
 	@mkdir -p $(dir $@)
 	$(if $(EXE),PHP_INI_SCAN_DIR=$(WIN_INI)) $(CLI) windows-ico
 
-build: fetch i18n mcp-bridge-data $(WIN_ICON)  ## Build the launcher binary
+build: fetch i18n mcp-bridge-data $(WIN_ICON) $(WEBKIT_SHIM)  ## Build the launcher binary
 	go build -ldflags "$(LDFLAGS)" -o build.noindex/adminer-desktop$(EXE) ./launcher
 # NSLocalizedString reads the .lproj folders beside an unbundled binary as it does a bundle's
 # Resources: without them `make run` showed the menu's keys (menu.edit) for its titles.

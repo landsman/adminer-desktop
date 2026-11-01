@@ -13,8 +13,10 @@ make install
 
 The toolchain via mise (node, go, composer and npm deps, the WebKit the browser checks
 drive), plus the pinned Adminer and frankenphp downloads. On Linux it also runs
-`make linux-deps` — the one step that needs apt, for the GTK/WebKit dev headers the webview
-links against.
+`make linux-deps`, for the GTK/WebKit dev headers the webview links against: those are a
+distro package rather than a toolchain, so it installs them with apt where it can and
+otherwise names what to install (Arch: `gtk3 webkit2gtk-4.1`; Fedora: `gtk3-devel
+webkit2gtk4.1-devel`) and stops. Headers already present, and it is a no-op on any distro.
 
 ## Building and running
 
