@@ -29,3 +29,24 @@
 .omarchy-linux .ad-modal-footer .ad-primary:active:not(:disabled) {
 	background: color-mix(in srgb, var(--ad-ok) 20%, var(--ad-ok-bg));
 }
+
+/* Omarchy is square, so this window is too. Its own default is `rounding = 0`
+   (/usr/share/omarchy/default/hypr/looknfeel.lua) and a theme does not touch it -- a theme ships
+   colours, and only the user's own hypr config overrides the rounding -- so the desktop around
+   this window has hard corners and a 7px card in the middle of it reads as a web page again.
+   These two tokens carry most of the app's corners. */
+.omarchy-linux {
+	--ad-radius: 0;
+	--ad-radius-sm: 0;
+}
+
+/* The corners that do not come through those tokens, which is the whole of the rest on this
+   platform: `grep -rn border-radius app/src --include "*.css" | grep -v ad-radius`, less
+   window.css (the macOS frameless chrome, which no Linux window has) and the gallery designs
+   (this sheet is never loaded over one). A list and not a blanket `* { border-radius: 0 }`,
+   which would put a declaration on every cell of a table that can run to thousands of them.
+   Discs are left alone: the connection icon and the environment dot are shapes, not corners. */
+.omarchy-linux :is(code, #ad-busy, .ad-card-databases a),
+.omarchy-linux #menu h1 #ad-connection-badge .ad-env {
+	border-radius: 0;
+}
