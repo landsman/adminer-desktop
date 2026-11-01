@@ -587,12 +587,13 @@ DIST = build.noindex/pkg/adminer-desktop
 # the same tree a release carries. composer strips the dev tooling app/vendor carries for qa
 # (dresscode, playwright: nothing the shipped app runs), reconciling the copy down to
 # production deps in place. No precompile on windows: Latte locks even a precompiled template
-# there, so app/ would have to be writable. app/cli/ is build tooling, so it does not ship.
+# there, so app/ would have to be writable. app/cli/ is build tooling, so it does not ship: the
+# precompile goes first, through the copy's own run.php, because it has to load the copy's classes.
 define package-app
+	$(if $(EXE),,./bin/frankenphp php-cli $(1)/cli/run.php latte-precompile)
 	rm -rf $(1)/cli
 	$(COMPOSER) install --no-dev --no-interaction --working-dir=$(1)
 	rm -f $(1)/*.neon
-	$(if $(EXE),,./bin/frankenphp php-cli cli/latte-precompile.php $(1))
 endef
 
 dist: build app/vendor  ## Stage the Linux/Windows folder layout

@@ -36,5 +36,5 @@
 # Everything below is downloaded by `make fetch` at a pinned version.
 # The enabled-plugin set is user state, not source.
 .DS_Store
-# Compiled templates, written into a packaged copy of app/ by cli/latte-precompile.php.
+# Compiled templates, written into a packaged copy of app/ by app/cli/Command/LattePrecompile.php.
 /app/latte-cache/
