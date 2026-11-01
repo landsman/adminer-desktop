@@ -1,14 +1,20 @@
 package mcpgate
 
 import (
+	"bufio"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +23,7 @@ import (
 // What PHP reports for a window logged in to demo, and where that sends a call.
 const (
 	endpoint = "/adminer.php?pgsql=x&username=u&db=demo&mcp=1"
-	session  = `{"cookie":"adminer_sid=s; adminer_key=k","endpoint":"http://127.0.0.1:1` + endpoint + `"}`
+	session  = `{"key":"k","cookie":"adminer_sid=s; adminer_key=k","endpoint":"http://127.0.0.1:1` + endpoint + `"}`
 )
 
 // gate in front of a fake frankenphp that records what every call it gets asks for, and as whom.
@@ -34,13 +40,14 @@ func gate(t *testing.T) (*Gate, *[]string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.key = "k"
 	t.Cleanup(g.Close)
 	return g, seen
 }
 
 func call(g *Gate, method, target, token string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}`))
-	r.Host = g.ln.Addr().String()
+	r.Host = address
 	if token != "" {
 		r.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -49,8 +56,20 @@ func call(g *Gate, method, target, token string) *httptest.ResponseRecorder {
 	return w
 }
 
+// say is PHP's side of a report: a challenge, whose answer it reads, and then the line.
+func say(c net.Conn, line string) {
+	io.WriteString(c, "challenge\n")    //nolint:errcheck
+	bufio.NewReader(c).ReadString('\n') //nolint:errcheck
+	io.WriteString(c, line+"\n")        //nolint:errcheck
+	c.Close()                           //nolint:errcheck
+}
+
 func report(g *Gate, line string) {
-	g.listen(io.NopCloser(strings.NewReader(line + "\n")))
+	ours, theirs := net.Pipe()
+	done := make(chan struct{})
+	go func() { g.listen(ours); close(done) }()
+	say(theirs, line)
+	<-done
 }
 
 // Everything the token is not for is refused before frankenphp sees it: no session goes out.
@@ -96,7 +115,7 @@ func TestLendsTheReportedSession(t *testing.T) {
 	if w := call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token); w.Code != 200 || w.Body.String() != `{"ok":true}` {
 		t.Fatalf("got %d %q", w.Code, w.Body.String())
 	}
-	report(g, `{"cookie":"","endpoint":""}`) // switched off
+	report(g, `{"key":"k","cookie":"","endpoint":""}`) // switched off
 	if w := call(g, "POST", "/adminer.php?pgsql=x&mcp=1", g.token); w.Code != http.StatusForbidden {
 		t.Errorf("switched off: got %d, want 403", w.Code)
 	}
@@ -133,12 +152,11 @@ func TestOpensOnlyTheReportedEndpoint(t *testing.T) {
 func TestReportsArriveOverTheSocket(t *testing.T) {
 	g, _ := gate(t)
 	go g.Serve()
-	c, err := net.Dial("unix", g.reports.Addr().String())
+	c, err := net.Dial(g.reports.Addr().Network(), g.reports.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	io.WriteString(c, session+"\n") //nolint:errcheck
-	c.Close()                       //nolint:errcheck
+	say(c, session)
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
 		g.mu.Lock()
 		got := g.cookie
@@ -148,6 +166,143 @@ func TestReportsArriveOverTheSocket(t *testing.T) {
 		}
 	}
 	t.Error("a report written to the socket never reached the gate")
+}
+
+// A connection that says nothing is hung up on, so a stream of them cannot hold sockets for good.
+func TestASilentReportIsHungUpOn(t *testing.T) {
+	g, _ := gate(t)
+	ours, theirs := net.Pipe()
+	defer theirs.Close() //nolint:errcheck
+	done := make(chan struct{})
+	go func() { g.listen(ours); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(reportDeadline + 2*time.Second):
+		t.Error("a connection that sent nothing is still being read")
+	}
+}
+
+type failsOnce struct {
+	net.Listener
+	failed bool
+}
+
+func (l *failsOnce) Accept() (net.Conn, error) {
+	if !l.failed {
+		l.failed = true
+		return nil, errors.New("too many open files")
+	}
+	return l.Listener.Accept()
+}
+
+// Out of sockets once must not leave the gate deaf for the rest of the session.
+func TestReportsSurviveAnAcceptError(t *testing.T) {
+	g, _ := gate(t)
+	g.reports = &failsOnce{Listener: g.reports}
+	done := make(chan struct{})
+	go func() { g.acceptReports(); close(done) }()
+	c, err := net.Dial(g.reports.Addr().Network(), g.reports.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	say(c, session)
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+		g.mu.Lock()
+		got := g.cookie
+		g.mu.Unlock()
+		if got != "" {
+			g.Close()
+			<-done
+			return
+		}
+	}
+	t.Error("no report was heard after the accept error")
+}
+
+// Anything local can reach a loopback port, and a page's post arrives as lines too.
+func TestAReportWithoutTheKeyIsDropped(t *testing.T) {
+	g, _ := gate(t)
+	report(g, session)
+	report(g, `{"cookie":"forged=1","endpoint":"http://127.0.0.1:1/adminer.php?download=1"}`)
+	report(g, `{"key":"wrong","cookie":"forged=1","endpoint":"http://127.0.0.1:1/adminer.php?download=1"}`)
+	if g.cookie != "adminer_sid=s; adminer_key=k" || g.endpoint != endpoint {
+		t.Errorf("a forged report replaced the session: %q %q", g.cookie, g.endpoint)
+	}
+}
+
+// The address the launcher hands out has to open in the PHP that ships: a unix:// one does not on
+// Windows, and nothing but the bundled binary can say so.
+func TestBundledPHPReaches(t *testing.T) {
+	g, _ := gate(t)
+	go g.Serve()
+	out, err := phpReports(t, g.Env())
+	if err != nil {
+		t.Fatalf("php could not report: %v\n%s", err, out)
+	}
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+		g.mu.Lock()
+		got := g.cookie
+		g.mu.Unlock()
+		if got == "from=php" {
+			return
+		}
+	}
+	t.Error("php's report never reached the gate")
+}
+
+// What a killed launcher leaves: frankenphp still up, and someone else on its port who has no key.
+func TestPHPTellsAnImpostorNothing(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close() //nolint:errcheck
+	heard := make(chan string, 1)
+	go func() {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer c.Close() //nolint:errcheck
+		r := bufio.NewReader(c)
+		challenge, _ := r.ReadString('\n')
+		mac := hmac.New(sha256.New, []byte("not the key"))
+		mac.Write([]byte(strings.TrimSpace(challenge)))          //nolint:errcheck
+		io.WriteString(c, hex.EncodeToString(mac.Sum(nil))+"\n") //nolint:errcheck
+		rest, _ := io.ReadAll(r)
+		heard <- string(rest)
+	}()
+	out, err := phpReports(t, []string{"ADMINER_DESKTOP_MCP_REPORT=tcp://" + ln.Addr().String(), "ADMINER_DESKTOP_MCP_REPORT_KEY=k"})
+	if exit := new(exec.ExitError); !errors.As(err, &exit) || exit.ExitCode() != 3 {
+		t.Errorf("php took the impostor for the gate: %v\n%s", err, out)
+	}
+	if got := <-heard; got != "" {
+		t.Errorf("php told the impostor: %q", got)
+	}
+}
+
+// phpReports runs Desktop\Mcp\GateReport in the bundled PHP, with the address the launcher hands out.
+func phpReports(t *testing.T, env []string) ([]byte, error) {
+	t.Helper()
+	php := filepath.Join("..", "..", "bin", "frankenphp")
+	if runtime.GOOS == "windows" {
+		php += ".exe"
+	}
+	if _, err := os.Stat(php); err != nil {
+		if os.Getenv("REQUIRE_BUNDLED_PHP") != "" {
+			t.Fatalf("windows-ci exists to run this: %v", err)
+		}
+		t.Skip("no bundled frankenphp: make fetch")
+	}
+	script := filepath.Join(t.TempDir(), "report.php")
+	code := `<?php require "../../app/src/Mcp/GateReport.php";
+exit(Desktop\Mcp\GateReport::send(getenv("ADMINER_DESKTOP_MCP_REPORT"), getenv("ADMINER_DESKTOP_MCP_REPORT_KEY"), "from=php", "") ? 0 : 3);`
+	if err := os.WriteFile(script, []byte(code), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(php, "php-cli", script)
+	cmd.Env = append(os.Environ(), env...)
+	return cmd.CombinedOutput()
 }
 
 // The bridge's own way in: the socket in the gate's private directory, under the TCP address's
@@ -162,7 +317,7 @@ func TestAnswersOverTheCallSocket(t *testing.T) {
 			return d.DialContext(ctx, "unix", g.calls.Addr().String())
 		},
 	}}
-	req, err := http.NewRequest("POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	req, err := http.NewRequest("POST", "http://"+address+"/adminer.php?mcp=1", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,11 +355,12 @@ func TestGivingUpReachesFrankenphp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.key = "k"
 	t.Cleanup(g.Close)
 	report(g, session)
 	ctx, cancel := context.WithCancel(context.Background())
 	r := httptest.NewRequest("POST", "/adminer.php?mcp=1", strings.NewReader(`{}`)).WithContext(ctx)
-	r.Host = g.ln.Addr().String()
+	r.Host = address
 	r.Header.Set("Authorization", "Bearer "+g.token)
 	go g.ServeHTTP(httptest.NewRecorder(), r)
 	time.Sleep(50 * time.Millisecond)
@@ -235,6 +391,7 @@ func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.key = "k"
 	t.Cleanup(g.Close)
 	report(g, session)
 	go g.Serve()
@@ -246,7 +403,7 @@ func TestHangingUpOnTheSocketReachesFrankenphp(t *testing.T) {
 			return d.DialContext(ctx, "unix", g.calls.Addr().String())
 		},
 	}}
-	req, err := http.NewRequestWithContext(ctx, "POST", "http://"+g.ln.Addr().String()+"/adminer.php?mcp=1", strings.NewReader(`{}`))
+	req, err := http.NewRequestWithContext(ctx, "POST", "http://"+address+"/adminer.php?mcp=1", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}

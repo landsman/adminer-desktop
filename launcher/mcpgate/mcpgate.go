@@ -9,10 +9,17 @@
 // token. The gate sends each call to that endpoint with the cookies added. The token opens the
 // MCP endpoint and nothing else; the cookies stay in this process's memory.
 //
-// The bridge reaches the gate over a second unix socket beside the reports one, and the TCP
-// address only names it. A port outlives the app: after a quit, whatever binds it next would get
-// every message an agent sends, token and SQL included, and could answer them. A socket in this
-// 0700 directory cannot be taken over by another account, and once the app is gone it refuses.
+// The bridge reaches the gate over a second unix socket beside the reports one, and nothing listens
+// on the address in its URL. A port outlives the app: after a quit, whatever binds it next would get
+// every message an agent sends, token and SQL included, and could answer them. And a port would take
+// the token from anyone, which on Windows may have read it from a mcp.json chmod cannot protect. A
+// socket in this private directory stops both, and once the app is gone it refuses.
+//
+// PHP on Windows has no unix:// transport (main/streams/xp_socket.c undefines AF_UNIX there), so
+// reports arrive on a loopback port instead. Any local process or web page can post to that, which
+// is why every report carries a key only frankenphp's environment holds. And frankenphp can outlive
+// a killed launcher while another account binds the freed port, so the gate first proves it holds
+// the key too (Desktop\Mcp\GateReport). The bridge's socket stays a socket, since both ends are Go.
 //
 // A socket and not an inherited descriptor: frankenphp is a thread-safe PHP build, which resolves
 // symlinks in every path it opens, so on Linux /dev/fd/3 (a link into /proc) never opens, and
@@ -25,7 +32,9 @@ package mcpgate
 
 import (
 	"bufio"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
@@ -36,16 +45,23 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 )
 
+// address is what the bridge's URL names and the Host a call must carry. Nothing listens on it.
+const address = "127.0.0.1:1"
+
+// reportDeadline is how long one report may take. PHP's is written at once.
+const reportDeadline = 2 * time.Second
+
 // Gate holds the window's session and lets a token-bearing MCP call borrow it.
 type Gate struct {
 	upstream string // frankenphp, http://127.0.0.1:port
 	token    string
-	ln       net.Listener // the address the bridge names in the Host header, and posts to without a socket
+	key      string       // what a report must carry; not the token, which sits in a file agents read
 	calls    net.Listener // where the bridge posts, a unix socket only this account can reach
 	reports  net.Listener // where PHP says which session to lend
 	dir      string       // the reports socket's private directory
@@ -55,19 +71,18 @@ type Gate struct {
 	endpoint string // the MCP endpoint's path and query, the only thing the token opens
 }
 
-// New opens the listener the bridge posts to and the socket PHP reports the session on.
+// New opens the socket the bridge posts to and the one PHP reports the session on.
 func New(upstream string) (*Gate, error) {
-	b := make([]byte, 32)
+	b := make([]byte, 64)
 	if _, err := rand.Read(b); err != nil {
 		return nil, err
 	}
 	sweep(os.TempDir())
-	// MkdirTemp makes it 0700, so no other account can even connect.
-	dir, err := os.MkdirTemp("", "adminer-desktop-gate-")
+	dir, err := privateDir()
 	if err != nil {
 		return nil, err
 	}
-	reports, err := net.Listen("unix", filepath.Join(dir, "report.sock"))
+	reports, err := listenReports(dir)
 	if err != nil {
 		os.RemoveAll(dir) //nolint:errcheck // giving up anyway
 		return nil, err
@@ -76,11 +91,14 @@ func New(upstream string) (*Gate, error) {
 	if err != nil {
 		return nil, errors.Join(err, reports.Close(), os.RemoveAll(dir))
 	}
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return nil, errors.Join(err, calls.Close(), reports.Close(), os.RemoveAll(dir))
+	return &Gate{upstream: upstream, token: hex.EncodeToString(b[:32]), key: hex.EncodeToString(b[32:]), calls: calls, reports: reports, dir: dir}, nil
+}
+
+func listenReports(dir string) (net.Listener, error) {
+	if runtime.GOOS == "windows" {
+		return net.Listen("tcp", "127.0.0.1:0")
 	}
-	return &Gate{upstream: upstream, token: hex.EncodeToString(b), ln: ln, calls: calls, reports: reports, dir: dir}, nil
+	return net.Listen("unix", filepath.Join(dir, "report.sock"))
 }
 
 // sweep removes the directories earlier gates left behind. Close removes its own, but a Cmd+Q
@@ -115,53 +133,74 @@ func listening(socket string) bool {
 }
 
 // Env is what PHP needs to point the handshake here: the address, the socket the bridge posts
-// to, the token it must show, and the socket to report the session on. None of it unlocks a
-// password.
+// to, the token it must show, and where to report the session, as a stream_socket_client() address
+// with the key that report needs. None of it unlocks a password.
 func (g *Gate) Env() []string {
 	return []string{
-		"ADMINER_DESKTOP_MCP_GATE=" + g.ln.Addr().String(),
+		"ADMINER_DESKTOP_MCP_GATE=" + address,
 		"ADMINER_DESKTOP_MCP_SOCKET=" + g.calls.Addr().String(),
 		"ADMINER_DESKTOP_MCP_TOKEN=" + g.token,
-		"ADMINER_DESKTOP_MCP_REPORT=" + g.reports.Addr().String(),
+		"ADMINER_DESKTOP_MCP_REPORT=" + g.reports.Addr().Network() + "://" + g.reports.Addr().String(),
+		"ADMINER_DESKTOP_MCP_REPORT_KEY=" + g.key,
 	}
 }
 
 // Serve takes session reports and answers the bridge until Close.
 func (g *Gate) Serve() {
-	go func() {
-		for {
-			c, err := g.reports.Accept()
-			if err != nil {
-				return
-			}
-			go g.listen(c)
-		}
-	}()
-	// Both end with Close, which is the only error either returns.
-	done := make(chan error, 2)
-	go func() { done <- http.Serve(g.calls, g) }()
-	go func() { done <- http.Serve(g.ln, g) }()
-	<-done
+	go g.acceptReports()
+	_ = http.Serve(g.calls, g) // ends with Close, the only error it returns
 }
 
-// Close stops both listeners and removes the socket's directory.
+// acceptReports runs until Close. Any other error, such as running out of sockets, is waited out:
+// stopping would leave the gate lending the last session after a sign-out it never heard of.
+func (g *Gate) acceptReports() {
+	for {
+		c, err := g.reports.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			return
+		}
+		if err != nil {
+			time.Sleep(50 * time.Millisecond)
+			continue
+		}
+		go g.listen(c)
+	}
+}
+
+// Close stops both sockets and removes the socket's directory.
 func (g *Gate) Close() {
 	// Shutting down: a listener that will not close has nothing left to serve either.
-	_ = errors.Join(g.ln.Close(), g.calls.Close(), g.reports.Close(), os.RemoveAll(g.dir))
+	_ = errors.Join(g.calls.Close(), g.reports.Close(), os.RemoveAll(g.dir))
 }
 
-// listen takes one JSON line per report, {"cookie": "...", "endpoint": "http://…?…&mcp=1"}; empty
-// is the feature being switched off. A line that does not parse is dropped: the next page the
-// window loads reports again.
-func (g *Gate) listen(c io.ReadCloser) {
+// listen answers the first line, PHP's challenge, with its HMAC under the key, and then takes one
+// JSON line per report, {"key": "...", "cookie": "...", "endpoint": "http://…?…&mcp=1"}; empty is
+// the feature being switched off. A line that does not parse or has the wrong key is dropped: the
+// next page the window loads reports again. Anyone may ask for a proof: a challenge is random and
+// never repeats, so one obtained here answers no later PHP.
+func (g *Gate) listen(c net.Conn) {
 	defer c.Close() //nolint:errcheck // one report per connection
+	// On Windows anyone can connect, and one who sends nothing must not keep a socket for it.
+	if c.SetDeadline(time.Now().Add(reportDeadline)) != nil {
+		return
+	}
 	s := bufio.NewScanner(c)
+	if !s.Scan() {
+		return
+	}
+	proof := hmac.New(sha256.New, []byte(g.key))
+	proof.Write(s.Bytes()) //nolint:errcheck // a hash never fails
+	if _, err := io.WriteString(c, hex.EncodeToString(proof.Sum(nil))+"\n"); err != nil {
+		return
+	}
 	for s.Scan() {
 		var report struct {
+			Key      string  `json:"key"`
 			Cookie   *string `json:"cookie"`
 			Endpoint string  `json:"endpoint"`
 		}
-		if json.Unmarshal(s.Bytes(), &report) != nil || report.Cookie == nil {
+		if json.Unmarshal(s.Bytes(), &report) != nil || report.Cookie == nil ||
+			subtle.ConstantTimeCompare([]byte(report.Key), []byte(g.key)) != 1 {
 			continue
 		}
 		// Only its path and query: the host PHP saw is ours, and frankenphp is g.upstream.
@@ -179,10 +218,9 @@ func (g *Gate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.mu.Lock()
 	cookie, endpoint := g.cookie, g.endpoint
 	g.mu.Unlock()
-	// A web page in a browser can post to loopback too. It cannot read mcp.json, so it has no
-	// token; and it can only reach us under our own address, never a rebound hostname.
+	// Whoever reaches the socket still needs the token and our own address in Host.
 	got := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-	if r.Method != http.MethodPost || r.Host != g.ln.Addr().String() || endpoint == "" ||
+	if r.Method != http.MethodPost || r.Host != address || endpoint == "" ||
 		subtle.ConstantTimeCompare([]byte(got), []byte(g.token)) != 1 {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return

@@ -20,7 +20,7 @@ else
 	EXE = .exe
 endif
 
-.PHONY: help install linux-deps fetch verify qa phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
+.PHONY: help install linux-deps fetch verify qa go-test phpstan dresscode dresscode-hook golangci oxc security check check-app e2e e2e-visual e2e-packaged i18n i18n-check mcp-bridge-data bench build run dev editor debug demo down destroy kill-orphans bundle zip dist tarball windows deb logs serve clean checksums
 
 .DEFAULT_GOAL := help
 
@@ -315,7 +315,7 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	go vet ./...
 	@# The MCP gate decides what reaches the window's session, so its refusals are tested here,
 	@# with no server; the bridge's offline answers and forwarding likewise (launcher/mcpbridge).
-	go test ./launcher/mcpgate/ ./launcher/mcpbridge/
+	$(MAKE) go-test
 	@# Every darwin-only function needs a non-darwin definition, or the build breaks on
 	@# linux and windows only -- a CI round trip away rather than a compile away. That is
 	@# either a shared stub in menu_other.go, or a platform split (a real *_linux.go and a
@@ -408,6 +408,9 @@ i18n: bin/frankenphp$(EXE) app/vendor  ## Generate the native-shell translations
 # PHP source is the committed definition.
 mcp-bridge-data: bin/frankenphp$(EXE) app/vendor  ## Generate the Go MCP bridge's catalogue and sentences from PHP
 	./bin/frankenphp$(EXE) php-cli cli/mcp-bridge.php
+
+go-test: fetch mcp-bridge-data  ## Test the MCP gate and bridge, no server needed
+	go test ./launcher/mcpgate/ ./launcher/mcpbridge/
 
 # What the MCP bridge costs a call, the record included, against a stub app: run it before and
 # after a change to the bridge and compare. Six runs, so a difference can be told from noise.

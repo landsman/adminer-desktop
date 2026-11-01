@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/landsman/adminer-desktop/launcher/datadir"
+	"github.com/landsman/adminer-desktop/launcher/mcpgate"
 )
 
 // The scenarios tests/e2e/features/shell/mcp-bridge.feature describes, against this package with
@@ -400,9 +402,36 @@ func TestPostsOverTheSocketOnly(t *testing.T) {
 	}
 }
 
+// The check and what it checks are written apart, in two packages: this is what ties them.
+func TestTheGatesOwnSocketIsPrivate(t *testing.T) {
+	if socket := gateSocket(t); !private(socket) {
+		t.Errorf("the gate's socket %s does not count as private", socket)
+	}
+}
+
+// gateSocket starts a real gate and returns the socket it tells PHP about.
+func gateSocket(t *testing.T) string {
+	t.Helper()
+	g, err := mcpgate.New("http://127.0.0.1:1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(g.Close)
+	for _, line := range g.Env() {
+		if socket, ok := strings.CutPrefix(line, "ADMINER_DESKTOP_MCP_SOCKET="); ok {
+			return socket
+		}
+	}
+	t.Fatal("the gate names no socket")
+	return ""
+}
+
 // A socket in a directory another account could have made is not dialled: on Linux the gate's
 // directory is in the shared /tmp, and after the app has gone anyone can recreate the path.
 func TestSocketInAnOpenDirectoryIsRefused(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("chmod does not open a directory there: private_windows_test.go")
+	}
 	short, err := os.MkdirTemp("", "mb")
 	if err != nil {
 		t.Fatal(err)

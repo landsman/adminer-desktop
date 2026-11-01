@@ -340,17 +340,14 @@ func main() {
 		srv.Env = append(srv.Env, "ADMINER_DESKTOP_DEBUG=1")
 	}
 	// An agent's MCP calls borrow the window's session through the gate, which keeps it in this
-	// process's memory instead of a file the agent could read (launcher/mcpgate). Not on Windows:
-	// the MCP bridge does not cover Windows yet.
+	// process's memory instead of a file the agent could read (launcher/mcpgate).
 	closeGate := func() {}
-	if runtime.GOOS != "windows" {
-		if gate, err := mcpgate.New("http://" + addr); err != nil {
-			log.Print("mcp gate: ", err)
-		} else {
-			closeGate = gate.Close
-			srv.Env = append(srv.Env, gate.Env()...)
-			go gate.Serve()
-		}
+	if gate, err := mcpgate.New("http://" + addr); err != nil {
+		log.Print("mcp gate: ", err)
+	} else {
+		closeGate = gate.Close
+		srv.Env = append(srv.Env, gate.Env()...)
+		go gate.Serve()
 	}
 	srv.Stderr = io.MultiWriter(os.Stderr, logFile)
 	srv.Stdout = srv.Stderr

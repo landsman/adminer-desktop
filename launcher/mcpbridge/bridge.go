@@ -426,7 +426,7 @@ func (b *Bridge) say(id string) string {
 type call struct {
 	url    string
 	token  string
-	socket string // the gate's unix socket, the only place a call goes
+	socket string // the gate's unix socket, Windows included, the only place a call goes
 }
 
 // handshake is where the window can be reached, written while the feature is on and a connected

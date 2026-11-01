@@ -34,7 +34,7 @@ message, so it keeps working across restarts without touching the config again.
 - **Remove** on the same tab prints the command to unregister it.
 - Use it when the app moves or is uninstalled: a stale registration only shows as a server that will not connect.
 
-Windows is not covered yet — see the platform table in [install.md](install.md).
+- Windows: the gate runs and is tested on a runner, but not yet with a real window and client; the app itself is not usable yet, see [install.md](install.md).
 
 For other MCP clients, the command is the same; only the way you register it differs — most want
 it written into a config file as a stdio server rather than added from a CLI.

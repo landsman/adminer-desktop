@@ -115,8 +115,7 @@ class Endpoint {
 	}
 
 	/** Tell the gate which session an agent's call may borrow, and the one endpoint it may borrow
-	* it for, over its unix socket: only the launcher reads it, and nothing is ever sent back
-	* (launcher/mcpgate). One connection per report, so two requests reporting at once cannot
+	* it for: only the launcher reads it, and nothing is ever sent back (launcher/mcpgate). One connection per report, so two requests reporting at once cannot
 	* interleave.
 	*/
 	private function report(string $cookie, string $endpoint): void {
@@ -124,11 +123,7 @@ class Endpoint {
 		if ($socket === false || $socket === '') {
 			return;
 		}
-		$gate = @stream_socket_client("unix://$socket", $errno, $error, 1);
-		if ($gate !== false) {
-			@fwrite($gate, json_encode(['cookie' => $cookie, 'endpoint' => $endpoint]) . "\n");
-			fclose($gate);
-		}
+		GateReport::send($socket, (string) Env::McpReportKey->get(), $cookie, $endpoint);
 	}
 
 	/** The two cookies that unlock this session: its id, and adminer_key, which the passwords in
