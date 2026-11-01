@@ -152,6 +152,9 @@ func describeUIDelegate(window unsafe.Pointer) string {
 	return C.GoString(c)
 }
 
+// Where to look once it is on; the inspector lives in Safari on this platform.
+const inspectorHint = "Safari > Develop > this machine > Adminer Desktop"
+
 // enableInspector turns on Safari's Web Inspector for the app's page.
 func enableInspector(window unsafe.Pointer) bool {
 	return C.enableInspector(window) == 1

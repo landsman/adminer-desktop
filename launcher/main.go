@@ -254,7 +254,7 @@ func loaderPage(html string) string {
 
 func main() {
 	editor := flag.Bool("editor", false, "open Adminer Editor instead of Adminer")
-	debug := flag.Bool("debug", false, "open devtools support: Safari > Develop > Adminer Desktop")
+	debug := flag.Bool("debug", false, "turn the web inspector on (Safari's Develop menu on macOS, WebKitGTK's own window on Linux)")
 	headless := flag.Bool("headless", false, "start the server, verify it serves, exit (used by `make check-app`)")
 	dev := flag.Bool("dev", false, "reload the window whenever a file under app/ changes")
 	mcp := flag.Bool("mcp", false, "serve MCP over stdio for an agent, and exit (no window)")
@@ -465,7 +465,7 @@ func main() {
 		log.Print("webview ", describeUIDelegate(w.Window()))
 		log.Print("titlebar band hits ", describeTitlebarHit(w.Window()))
 		if enableInspector(w.Window()) {
-			log.Print("web inspector on: Safari > Develop > this machine > Adminer Desktop")
+			log.Print("web inspector on: ", inspectorHint)
 		} else {
 			log.Print("web inspector unavailable")
 		}
