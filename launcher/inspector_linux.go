@@ -18,16 +18,11 @@ static WebKitWebView *inspector_web_view(void *window) {
 	return WEBKIT_WEB_VIEW(child);
 }
 
-static gboolean show_inspector_idle(gpointer inspector) {
-	webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
-	return G_SOURCE_REMOVE;
-}
-
-// F12 or Ctrl+Shift+I reopens the inspector. Closing its window only closes it -- WebKit
-// keeps the inspector itself alive and show() brings it back -- but with no menu bar on
-// Linux and nothing like Safari's Develop menu, there was no way to ask for it again: the
-// one route left was right-clicking the page for Inspect Element, which is no help at all
-// on a page whose own context menu is the thing being debugged.
+// F12 or Ctrl+Shift+I opens the inspector, and reopens it after a close -- closing its window
+// only closes it, WebKit keeps the inspector itself alive and show() brings it back. This is
+// the only way in on Linux: there is no menu bar to hang a Develop menu on, and right-clicking
+// the page for Inspect Element is no help when the page's own context menu is what is being
+// debugged.
 //
 // Connected to the window rather than the webview: GTK offers a key press to handlers on
 // the toplevel before its default handler forwards it to whatever has focus, so this fires
@@ -60,12 +55,10 @@ static int enable_inspector(void *window) {
 	if (!inspector) {
 		return 0;
 	}
-	// Shown from an idle callback, not here: this runs before the GTK main loop starts and
-	// before the window itself is shown. G_SOURCE_REMOVE so it fires once -- and through a
-	// wrapper rather than casting webkit_web_inspector_show to GSourceFunc, which returns
-	// void: that cast leaves the return value to whatever is in the register, and a stray
-	// TRUE would keep the source alive and reopen the inspector on every idle turn.
-	g_idle_add(show_inspector_idle, inspector);
+	// Available, not open. -debug is also how the window is dressed as another OS and how the
+	// page is checked by hand, and an inspector taking half the window on every one of those
+	// runs is in the way; macOS does the same, where setInspectable only puts the page in
+	// Safari's Develop menu and opening it is yours. The key below is the switch.
 	g_signal_connect(GTK_WIDGET(window), "key-press-event", G_CALLBACK(on_inspector_key), inspector);
 	return 1;
 }
@@ -86,8 +79,8 @@ import "C"
 
 import "unsafe"
 
-// Where to look once it is on. GTK has no Develop menu, so the inspector's own window is it.
-const inspectorHint = "its own window — F12 or Ctrl+Shift+I reopens it after a close, and console messages also go to the log"
+// How to open it, GTK having no Develop menu to find it in.
+const inspectorHint = "press F12 or Ctrl+Shift+I for it, and console messages go to the log either way"
 
 // enableInspector turns WebKitGTK's Web Inspector on for the app's page. Debug builds only:
 // a page with developer extras in a shipped app is an open door, the same reason the macOS
