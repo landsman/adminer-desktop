@@ -46,6 +46,11 @@
 			removeEventListener("mouseup", stop);
 		};
 		const move = (event) => {
+			// A lost release would leave this listening, and the next drag anywhere would move the window.
+			if (!event.buttons) {
+				stop();
+				return;
+			}
 			if (
 				Math.hypot(
 					event.clientX - press.clientX,

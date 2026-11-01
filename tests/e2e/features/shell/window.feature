@@ -68,6 +68,12 @@ Feature: The window without a title bar
     Then the search box is closed
     And the window was asked to move 0 times
 
+  Scenario: A move with no button down does not move the window, if the release above a modal got lost
+    When I open the "users" table
+    And I open the settings dialog
+    And I press the backdrop in the toolbar's band and the release gets lost
+    Then the window was asked to move 0 times
+
   Scenario: The sidebar stays hidden across pages, its toggle beside the lights
     When I open the "users" table
     And I hide the sidebar

@@ -3462,6 +3462,19 @@ class DesktopContext implements Context
 		$this->page->mouse()->up();
 	}
 
+	/** A real press, then the move a browser would report once the button is up: no release event. */
+	#[When('I press the backdrop in the toolbar\'s band and the release gets lost')]
+	public function pressBackdropReleaseLost(): void
+	{
+		$this->page->mouse()->move(100, 10);
+		$this->page->mouse()->down();
+		$this->page->evaluate(
+			// language=JavaScript
+			"() => dispatchEvent(new MouseEvent('mousemove', { clientX: 140, clientY: 10, buttons: 0 }))",
+		);
+		$this->page->mouse()->up();
+	}
+
 	#[When('I click the backdrop in the toolbar\'s band')]
 	public function clickBackdropInBand(): void
 	{
