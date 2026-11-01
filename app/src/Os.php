@@ -28,9 +28,16 @@ enum Os: string {
 		};
 	}
 
+	/** The OS the UI dresses as: the real one, unless -debug asks for another (Env::SimulateOs).
+	* Only for how the page looks. Paths and printed commands stay on current(). */
+	static function look(): self {
+		$simulated = Env::Debug->get() ? self::tryFrom((string) Env::SimulateOs->get()) : null;
+		return $simulated ?? self::current();
+	}
+
 	/** The class on <body> the theme keys off (AdminerDesktop::bodyClass). */
 	function bodyClass(): string {
-		return 'os-' . $this->value;
+		return $this->value . '-os';
 	}
 
 	/** The name a person recognises, for the settings UI. */

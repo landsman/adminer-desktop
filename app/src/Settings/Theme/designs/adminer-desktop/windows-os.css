@@ -1,0 +1,209 @@
+/* Windows 11's look, from WinUI's own resources (controls/dev/CommonStyles in
+ * microsoft/microsoft-ui-xaml): Common_themeresources_any.xaml for the colours, Button_themeresources
+ * for the padding, CornerRadius_themeresources for the corners. A translucent XAML #AARRGGBB is
+ * written here as rgb(r g b / a).
+ *
+ * Tokens sit on the body class, so what html derives from them is restated: a var() resolves where
+ * it is declared, and --ad-accent-text on html would keep html's accent.
+ *
+ * Element rules take :where(.windows-os), so they outrank the same rule in forms.css by coming later
+ * and nothing with a class of its own: the sidebar's icons, the dialogs' buttons, Delete and Drop. */
+
+.windows-os {
+	/* Solid*BackgroundFillColorBase: the window; Tertiary: the layer on it. */
+	--ad-menu-bg: light-dark(#f3f3f3, #202020);
+	--bg: light-dark(#f9f9f9, #282828);
+	--ad-panel: light-dark(#f9f9f9, #282828);
+	/* A sticky header sits on top of rows, so opaque: the window's colour, not ControlAltFill. */
+	--dim: light-dark(#f3f3f3, #202020);
+	/* TextFillColorPrimary. */
+	--fg: light-dark(rgb(0 0 0 / 89.4%), #ffffff);
+	--ad-fg-secondary: light-dark(rgb(0 0 0 / 62%), rgb(255 255 255 / 77.3%));
+
+	/* AccentFillColorDefault for Windows' default accent, until the launcher hands over the user's. */
+	--ad-accent: light-dark(#005fb8, #60cdff);
+	--ad-accent-fg: light-dark(#ffffff, #000000);
+	--ad-accent-text: var(--ad-accent);
+	--ad-accent-quiet: color-mix(in srgb, var(--ad-accent) 18%, transparent);
+	--lit: color-mix(in srgb, var(--ad-accent) 16%, var(--bg));
+	accent-color: var(--ad-accent);
+
+	/* ControlStrokeColorDefault, Secondary and ControlStrongStrokeColorDefault. */
+	--ad-border: light-dark(rgb(0 0 0 / 5.9%), rgb(255 255 255 / 7%));
+	--ad-border-raised: light-dark(rgb(0 0 0 / 16.1%), rgb(255 255 255 / 9.4%));
+	--ad-border-strong: light-dark(rgb(0 0 0 / 44.7%), rgb(255 255 255 / 54.5%));
+
+	/* ControlFillColorDefault, Secondary, Tertiary. */
+	--ad-control: light-dark(rgb(255 255 255 / 70%), rgb(255 255 255 / 5.9%));
+	--ad-control-hover: light-dark(
+		rgb(249 249 249 / 50%),
+		rgb(255 255 255 / 8.2%)
+	);
+	--ad-control-pressed: light-dark(
+		rgb(249 249 249 / 30%),
+		rgb(255 255 255 / 3.1%)
+	);
+
+	/* OverlayCornerRadius and ControlCornerRadius. */
+	--ad-radius: 8px;
+	--ad-radius-sm: 4px;
+	/* Windows 11 rounds a window with an 8px circle. */
+	--ad-window-radius: 8px;
+
+	--ad-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+	/* Chromium has no ui-monospace. */
+	--ad-mono: "Cascadia Mono", Consolas, monospace;
+
+	/* The type ramp's body: 14/20. */
+	font-size: calc(14px * var(--ad-scale, 1));
+}
+
+.windows-os.density-cozy {
+	--ad-line: 1.43;
+}
+
+/* The ramp's subtitle: 20/28, semibold, on the optical size meant for display. */
+#content > :where(h2) {
+	:where(.windows-os) & {
+		font-family: "Segoe UI Variable Display", var(--ad-font);
+		font-size: calc(20px * var(--ad-scale, 1));
+		border-bottom-color: transparent;
+	}
+}
+
+/* Scrollbars: Windows 11's own fade until wanted, where Chromium's stay wide and on screen. The same
+   treatment as macOS in base.css: thin and hidden until hovered, and the panels' are scrollers.js's,
+   so no rule in them stops a scrollbar short of the edge. */
+:where(.windows-os) * {
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+}
+
+:where(.windows-os) :is(:hover, .ad-scrolling) {
+	scrollbar-color: color-mix(in srgb, var(--fg) 35%, transparent) transparent;
+}
+
+.windows-os #menu,
+.windows-os #content {
+	scrollbar-width: none;
+}
+
+/* The badge's edge without a connection colour falls back to the text's, which here is pure white. */
+.windows-os #foot:has(#ad-connection-badge) {
+	--ad-badge-border: color-mix(
+		in srgb,
+		var(--ad-conn, var(--ad-border)) 40%,
+		transparent
+	);
+}
+
+/* The sidebar: a list to read, so the text's colour, and the selection a subtle fill with the accent
+   bar NavigationView marks it by. SubtleFillColorSecondary for both that and the hover. */
+.windows-os #logins a,
+.windows-os #tables a {
+	color: var(--fg);
+}
+
+.windows-os #logins a:hover,
+.windows-os #tables li > a:hover {
+	background: light-dark(rgb(0 0 0 / 3.5%), rgb(255 255 255 / 5.9%));
+}
+
+.windows-os #tables li:has(a.active) > a:not(.select),
+.windows-os #tables li:has(a.select.active) > a:not(.select) {
+	background: light-dark(rgb(0 0 0 / 3.5%), rgb(255 255 255 / 5.9%));
+	box-shadow: inset 3px 0 0 var(--ad-accent);
+	color: var(--fg);
+	font-weight: 400;
+}
+
+/* A field: the control fill, with the strong stroke along its bottom edge alone. Focus turns that
+   edge into 2px of accent, the second pixel a shadow so nothing moves. The outline stays,
+   transparent, for forced-colors mode, which drops the shadow and paints the outline. */
+:where(.windows-os) :is(input, select, textarea),
+:where(.windows-os) pre.sqlarea {
+	background-color: var(--ad-control);
+	border-color: var(--ad-border);
+	border-bottom-color: var(--ad-border-strong);
+}
+
+:where(.windows-os) :is(input, select, textarea):where(:not(:disabled)):hover,
+:where(.windows-os) pre.sqlarea:hover {
+	background-color: var(--ad-control-hover);
+	border-color: var(--ad-border);
+	border-bottom-color: var(--ad-border-strong);
+}
+
+:where(.windows-os) :is(input, select, textarea):focus-visible,
+:where(.windows-os) pre.sqlarea:focus {
+	background-color: var(--bg);
+	border-color: var(--ad-border);
+	border-bottom-color: var(--ad-accent);
+	box-shadow: inset 0 -1px 0 var(--ad-accent);
+	outline: 2px solid transparent;
+	outline-offset: 0;
+}
+
+/* A button: standard, the accent kept for the page's one default action. ButtonPadding is
+   11,5,11,6; its bottom stroke is the darker one, which is what raises it. */
+:where(.windows-os) input[type="submit"],
+:where(.windows-os) input[type="button"],
+:where(.windows-os) input[type="reset"],
+:where(.windows-os) button {
+	background: var(--ad-control);
+	color: var(--fg);
+	border: 1px solid var(--ad-border);
+	border-bottom-color: var(--ad-border-raised);
+	padding: 0.36em 0.79em 0.43em;
+	font-weight: 400;
+	line-height: 1.43;
+}
+
+:where(.windows-os) input[type="submit"]:hover,
+:where(.windows-os) input[type="button"]:hover,
+:where(.windows-os) input[type="reset"]:hover,
+:where(.windows-os) button:hover {
+	background: var(--ad-control-hover);
+}
+
+:where(.windows-os) input[type="submit"]:active,
+:where(.windows-os) input[type="button"]:active,
+:where(.windows-os) input[type="reset"]:active,
+:where(.windows-os) button:active {
+	background: var(--ad-control-pressed);
+	color: var(--ad-fg-secondary);
+	border-color: var(--ad-border);
+}
+
+:where(.windows-os) input[type="submit"].default {
+	background: var(--ad-accent);
+	color: var(--ad-accent-fg);
+	border-color: transparent;
+	font-weight: 400;
+}
+
+:where(.windows-os) input[type="submit"].default:hover {
+	background: color-mix(in srgb, var(--ad-accent) 90%, transparent);
+}
+
+:where(.windows-os) input[type="submit"].default:active {
+	background: color-mix(in srgb, var(--ad-accent) 80%, transparent);
+}
+
+/* The focus ring is the text's colour and stands off the control, not the accent. */
+:where(.windows-os)
+	:is(input[type="submit"], input[type="button"], button):focus-visible,
+:where(.windows-os) a:focus-visible {
+	outline: 2px solid var(--fg);
+	outline-offset: 1px;
+}
+
+/* Lighter than modal.css's 60%: SmokeFillColorDefault, WinUI's own dim behind a dialog. */
+.windows-os .ad-modal::backdrop {
+	background: rgb(0 0 0 / 30%);
+}
+
+/* The footer sets its own corner from --ad-radius, which here is the overlay's. */
+.windows-os .ad-modal-footer button {
+	border-radius: var(--ad-radius-sm);
+}

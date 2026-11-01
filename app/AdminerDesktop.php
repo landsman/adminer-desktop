@@ -310,7 +310,7 @@ class AdminerDesktop extends Adminer\Plugin {
 	* @return void
 	*/
 	function bodyClass(): void {
-		echo " " . Os::current()->bodyClass();
+		echo " " . Os::look()->bodyClass();
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
 		if (Env::Debug->get()) {

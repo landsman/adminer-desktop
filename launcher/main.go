@@ -455,8 +455,12 @@ func main() {
 	installReloadShortcut(w.Window())
 	installDownloads(w.Window())
 	clearWebViewBackground(w.Window())
-	installFrameless(w)
-	installScrollerStyle(w)
+	// Dressed as another OS under -debug, the page gets the plain titled window that OS has, or
+	// window.css would lay macOS's frameless layout over it.
+	if simulated := os.Getenv("ADMINER_DESKTOP_SIMULATE_OS"); !*debug || simulated == "" || simulated == "mac" {
+		installFrameless(w)
+		installScrollerStyle(w)
+	}
 	if *debug {
 		log.Print("webview ", describeUIDelegate(w.Window()))
 		log.Print("titlebar band hits ", describeTitlebarHit(w.Window()))

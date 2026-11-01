@@ -81,7 +81,7 @@ kbd,
 
 /* macOS renders system-ui (San Francisco) best antialiased; Windows and Linux stay on
    the OS default, where forcing this only thins the text. .os-* comes from bodyClass. */
-.os-mac body {
+.mac-os body {
 	-webkit-font-smoothing: antialiased;
 }
 
@@ -206,19 +206,19 @@ body.theme-dark .icon {
  * system set to hide them — so the panels wore two grey bars at all times. Transparent until
  * hovered (`:hover` holds for every element under the pointer, so the scroller it is in), and
  * thin, as an overlay scrollbar is, and while it scrolls (.ad-scrolling, scrollers.js), as an
- * overlay one appears then. macOS only: Windows and Linux keep theirs on screen natively.
+ * overlay one appears then. Windows has the same in windows-os.css; Linux keeps its own on screen.
  *
  * Only while the system draws overlay scrollbars. With a mouse plugged in, or System Settings set
  * to Always, macOS draws legacy ones that stay on screen, and so does every native app — Mail
  * included; the launcher says which (ad-legacy-scrollers on <html>, installScrollerStyle), and then
  * WebKit's own are left as they are, except the panels' (below). A plain browser is never told,
  * and keeps the overlay behaviour. */
-:root:not(.ad-legacy-scrollers) .os-mac * {
+:root:not(.ad-legacy-scrollers) .mac-os * {
 	scrollbar-width: thin;
 	scrollbar-color: transparent transparent;
 }
 
-:root:not(.ad-legacy-scrollers) .os-mac :is(:hover, .ad-scrolling) {
+:root:not(.ad-legacy-scrollers) .mac-os :is(:hover, .ad-scrolling) {
 	scrollbar-color: color-mix(in srgb, var(--fg) 35%, transparent) transparent;
 }
 
@@ -226,8 +226,8 @@ body.theme-dark .icon {
    scrollbar short of the right edge. A legacy one takes the same column, and the toolbar's
    hairline and search stopped short of it. So the panels' bars are scrollers.js's in both modes;
    the scrollers inside them keep theirs. */
-.os-mac #menu,
-.os-mac #content {
+.mac-os #menu,
+.mac-os #content {
 	scrollbar-width: none;
 }
 

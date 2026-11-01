@@ -23,6 +23,8 @@ log found in one line what two rounds of guessing had missed.
 
 Never enable the inspector outside `-debug`.
 
+`make debug` asks which OS to look like, so the Windows or Linux theme can be checked from a Mac. It sets `ADMINER_DESKTOP_SIMULATE_OS`, ignored without `-debug`. It changes the look and the window only (`Os::look()`): the engine stays WKWebView, and without Segoe the font falls back.
+
 PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but only
 because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to
 the page and nowhere else. `make logs` or the Open Logs menu item opens the folder.
@@ -176,7 +178,7 @@ into components pulled in by `@import`: `tokens`, `base`, `tables`, `forms`, `si
 `settings`. `light-dark()` is colour-only, so the one non-colour scheme difference —
 inverting adminer's sprite icons on the dark surface — lives in `base.css` and keys off the
 `theme-auto`/`theme-dark` body class instead. `system-ui` gives the native OS font with no
-branching; the `theme-*`, `os-mac`/`os-windows`/`os-linux` and `density-compact`/`-cozy`/
+branching; the `theme-*`, `mac-os`/`windows-os`/`linux-os` and `density-compact`/`-cozy`/
 `-comfortable` body classes come from `AdminerDesktop::bodyClass()` and are the hooks for
 appearance, per-OS and per-density tweaks. oxfmt owns the formatting — one declaration per
 line.

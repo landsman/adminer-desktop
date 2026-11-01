@@ -9,6 +9,7 @@ pulled in by native `@import` from `adminer.css`:
 - `tables.css`  — the data grid
 - `forms.css`   — inputs and buttons
 - `sidebar.css` — the menu and breadcrumb
+- `windows-os.css` — Windows 11's tokens and controls under `windows-os`, with values from WinUI's resources; `Theme::cssMap()` loads it on Windows only, not this file
 
 One file carrying both schemes: every scheme difference is a `light-dark(light, dark)`
 token, and the used `color-scheme` picks the side. Adminer sets that from its
@@ -19,7 +20,7 @@ dark surface, keys off the `theme-auto` / `theme-dark` body class instead (`base
 It is excluded from the gallery (`Theme::designs()`) because it is the default, offered as
 the empty "Adminer Desktop" option on each side rather than one entry among the rest.
 
-Per-OS adaptation is mostly `system-ui` (the OS UI font, no branching); the `os-mac` /
-`os-windows` / `os-linux` body class from `AdminerDesktop::bodyClass()` is the hook for
+Per-OS adaptation is mostly `system-ui` (the OS UI font, no branching); the `mac-os` /
+`windows-os` / `linux-os` body class from `AdminerDesktop::bodyClass()` is the hook for
 the rest. Row density (`density-compact` / `-cozy` / `-comfortable`) comes from the same
 place.

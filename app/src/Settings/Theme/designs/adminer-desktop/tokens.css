@@ -165,7 +165,7 @@ html {
 /* macOS 26+ rounds a titled window with a continuous curve, not a circle: 16.5pt at its apex,
    easing into the edges 24pt from the corner (measured off a screenshot of ours). A circular
    corner cannot follow both; 20 sits between them and is the one that reads as parallel. */
-.os-mac {
+.mac-os {
 	--ad-window-radius: 20px;
 	/* What stands on a surface, a table or a card: as round as a message in Mail. */
 	--ad-card-radius: 12px;
