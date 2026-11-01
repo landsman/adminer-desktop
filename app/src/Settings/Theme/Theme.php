@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Desktop\Settings\Theme;
 
 use Desktop\Latte;
+use Desktop\Os;
 use Desktop\SettingKey;
 use Desktop\UserSettings;
 
@@ -15,6 +16,9 @@ use Desktop\UserSettings;
 * (include/plugins.inc.php:33), so a helper called AdminerTheme would quietly become one.
 */
 class Theme {
+	private const string OWN_DESIGN = "src/Settings/Theme/designs/adminer-desktop/adminer.css";
+	private const string WINDOWS_SHEET = "src/Settings/Theme/designs/adminer-desktop/windows-os.css";
+
 	private \AdminerDesktop $desktop;
 	private UserSettings $settings;
 
@@ -60,7 +64,27 @@ class Theme {
 	* @return array<string,string>
 	*/
 	function cssMap(): array {
-		$self = "src/Settings/Theme/designs/adminer-desktop/adminer.css";
+		$map = $this->designMap();
+		if (Os::look() !== Os::Windows) {
+			return $map;
+		}
+		// Right after ours and tagged the same, so it applies wherever ours does and never over a
+		// gallery design.
+		$return = [];
+		foreach ($map as $path => $mode) {
+			$return[$path] = $mode;
+			if ($path === self::OWN_DESIGN) {
+				$return[self::WINDOWS_SHEET] = $mode;
+			}
+		}
+		return $return;
+	}
+
+	/** Which design each side uses, before anything per-OS is added to it.
+	* @return array<string,string>
+	*/
+	private function designMap(): array {
+		$self = self::OWN_DESIGN;
 		$sides = [];
 		foreach (Mode::cases() as $mode) {
 			$design = (string) $this->settings->get($mode->designKey(), "");

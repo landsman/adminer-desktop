@@ -328,8 +328,8 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 			|| { echo "launcher: no non-darwin definition of $$f() (menu_other.go stub, or *_linux.go + *_other.go or *_windows.go split)"; exit 1; }; \
 	done && echo "platform stubs ok"
 	@command -v shellcheck >/dev/null \
-		&& { shellcheck check.sh cli/compile-adminer.sh cli/dresscode.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/dresscode-test.sh tests/cli/dresscode-hook-test.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
-		|| { sh -n check.sh && sh -n cli/compile-adminer.sh && sh -n cli/dresscode.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && echo "sh ok (shellcheck not installed)"; }
+		&& { shellcheck check.sh cli/pick-os.sh tests/cli/pick-os-test.sh cli/compile-adminer.sh cli/dresscode.sh cli/kill-orphans.sh cli/demo-mysql.sh tests/cli/dresscode-test.sh tests/cli/dresscode-hook-test.sh tests/cli/kill-orphans-test.sh tests/launcher/downloads.sh && echo "shellcheck ok"; } \
+		|| { sh -n check.sh && sh -n cli/pick-os.sh && sh -n tests/cli/pick-os-test.sh && sh -n cli/compile-adminer.sh && sh -n cli/dresscode.sh && sh -n cli/kill-orphans.sh && sh -n cli/demo-mysql.sh && echo "sh ok (shellcheck not installed)"; }
 	@# Native-shell strings: the `i18n` prerequisite already generated the real files (which is
 	@# also what makes i18n_gen.h exist before `go vet` compiles the cgo launcher above). Assert the
 	@# generator's output quality and lint the emitted plists. `make i18n-check` reports coverage.
@@ -338,6 +338,7 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	./bin/frankenphp$(EXE) php-cli tests/shortcuts/ShortcutsTest.php
 	./bin/frankenphp$(EXE) php-cli tests/cli/WindowsIcoTest.php
 	./bin/frankenphp$(EXE) php-cli tests/cli/I18nTest.php
+	@sh tests/cli/pick-os-test.sh
 	@sh tests/cli/kill-orphans-test.sh
 	@sh tests/cli/dresscode-test.sh
 	@sh tests/cli/dresscode-hook-test.sh
@@ -459,8 +460,9 @@ editor: build  ## Run in editor mode
 # Brings up the e2e's seeded mysql beside it, so there is a database to point it at; no
 # docker skips it rather than refusing to debug.
 debug: build  ## Run with Safari's Web Inspector attached, and a seeded mysql (docker)
-	@./cli/demo-mysql.sh $(DEMO_MYSQL) || echo "no mysql: docker is not running"
-	./build.noindex/adminer-desktop$(EXE) -debug
+	@os=$$(./cli/pick-os.sh); \
+	./cli/demo-mysql.sh $(DEMO_MYSQL) || echo "no mysql: docker is not running"; \
+	ADMINER_DESKTOP_SIMULATE_OS=$$os ./build.noindex/adminer-desktop$(EXE) -debug
 
 # The app in dev mode against seeded demo data, for clicking around by hand. Brings up
 # (or reuses) the same throwaway postgres the e2e uses, reseeds it, and opens the app

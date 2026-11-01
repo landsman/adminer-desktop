@@ -12,7 +12,8 @@
  * launcher marks <html> with ad-legacy-scrollers) the panels' thumbs are ours too, only always on
  * screen and as thick as Mail's: WebKit's own took a column of the panel, and the toolbar inside
  * #content, its hairline and its search, stopped that column short of the window's edge. The
- * inner scrollers keep WebKit's legacy ones. macOS only, as base.css's rules are.
+ * inner scrollers keep WebKit's legacy ones. macOS and Windows, whose own bars fade the same way
+ * (windows-os.css); Linux keeps its own.
  */
 
 {
@@ -29,7 +30,8 @@
 	// Our design only, which hides WebKit's bars and styles the thumb (base.css); --ad-accent is
 	// defined by it alone, as table-nav.js tells it.
 	const ours = () =>
-		document.body?.classList.contains("os-mac") &&
+		(document.body?.classList.contains("mac-os") ||
+			document.body?.classList.contains("windows-os")) &&
 		getComputedStyle(document.documentElement)
 			.getPropertyValue("--ad-accent")
 			.trim() !== "";

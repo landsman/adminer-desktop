@@ -24,30 +24,30 @@ th,
  * finds the true first and last row whether or not the table has a header.
  *
  * macOS only, because a rounded grid is a macOS idiom rather than a house style: Windows and
- * Linux keep the square corners their own tables have, which is what os-mac not matching
+ * Linux keep the square corners their own tables have, which is what mac-os not matching
  * leaves them with. */
-.os-mac table {
+.mac-os table {
 	border-radius: var(--ad-radius);
 }
 
-.os-mac table > :first-child > tr:first-child > :first-child {
+.mac-os table > :first-child > tr:first-child > :first-child {
 	border-top-left-radius: var(--ad-radius);
 }
 
-.os-mac table > :first-child > tr:first-child > :last-child {
+.mac-os table > :first-child > tr:first-child > :last-child {
 	border-top-right-radius: var(--ad-radius);
 }
 
-.os-mac table > :last-child > tr:last-child > :first-child {
+.mac-os table > :last-child > tr:last-child > :first-child {
 	border-bottom-left-radius: var(--ad-radius);
 }
 
-.os-mac table > :last-child > tr:last-child > :last-child {
+.mac-os table > :last-child > tr:last-child > :last-child {
 	border-bottom-right-radius: var(--ad-radius);
 }
 
 /* A settings table's corners, which everything drawing them reads from --ad-radius. */
-.os-mac #desktop-panels table {
+.mac-os #desktop-panels table {
 	--ad-radius: var(--ad-card-radius);
 }
 
@@ -371,17 +371,17 @@ span.ad-page-step {
 }
 
 /* A notice inside the settings dialog, rounded as its tables are. */
-.os-mac dialog#desktop-settings :is(.message, .error) {
+.mac-os dialog#desktop-settings :is(.message, .error) {
 	border-radius: var(--ad-card-radius);
 	padding: 1.2em 1.5em;
 }
 
 /* A select in a dialog's body only: the sidebar's and the pages' keep the UI's tighter corners. */
-.os-mac .ad-modal-body select {
+.mac-os .ad-modal-body select {
 	border-radius: 10px;
 }
 
 /* The saved connections on the index. */
-.os-mac :is(.ad-card, #ad-new-connection) {
+.mac-os :is(.ad-card, #ad-new-connection) {
 	border-radius: var(--ad-card-radius);
 }
