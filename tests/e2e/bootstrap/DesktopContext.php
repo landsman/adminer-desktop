@@ -1245,8 +1245,8 @@ class DesktopContext implements Context
 	{
 		$this->page->locator(
 			// language=JQuery-CSS
-			"input[name=\"density\"][value=\"$density\"]",
-		)->check(['force' => true]);
+			"select[name=\"density\"]",
+		)->selectOption($density);
 	}
 
 	#[When('I force the :appearance appearance')]
@@ -1254,8 +1254,8 @@ class DesktopContext implements Context
 	{
 		$this->page->locator(
 			// language=JQuery-CSS
-			"input[name=\"appearance\"][value=\"$appearance\"]",
-		)->check(['force' => true]);
+			"select[name=\"appearance\"]",
+		)->selectOption($appearance);
 	}
 
 	/** Whichever gallery design is offered first, so this does not break when the catalogue changes. */
@@ -1407,7 +1407,7 @@ class DesktopContext implements Context
 	{
 		$state = (string) $this->page->evaluate(
 			// language=JavaScript
-			'() => document.querySelector("#desktop-settings").open && !document.querySelector("#ad-discard").open ? document.querySelector("input[name=density]:checked")?.value ?? "" : "(closed)"',
+			'() => document.querySelector("#desktop-settings").open && !document.querySelector("#ad-discard").open ? document.querySelector("select[name=density]").value : "(closed)"',
 		);
 		if ($state !== $density) {
 			throw new RuntimeException("the settings dialog holds '$state'");

@@ -3,13 +3,13 @@
  * menu lists them. */
 
 #desktop-panel-shortcuts td {
-	padding: 0.5em 0.75em;
+	padding: 0.5em var(--ad-settings-cell-px);
 }
 
 /* A pixel more than the gap the sticky thead's shadow fills (settings.css): its 1px spread
    otherwise lands on the table above and paints out its bottom border. */
 #desktop-panel-shortcuts table + table {
-	margin-top: calc(var(--ad-dialog-padding) + 1px);
+	margin-top: calc(var(--ad-dialog-padding-block) + 1px);
 }
 
 /* As narrow as its keys, so the action's column takes the rest. */

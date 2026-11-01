@@ -21,6 +21,17 @@
 	});
 
 	const open = (marker) => {
+		// A logged-out card's form opens because the card was clicked. Its URL stays, and a reload
+		// is not that click. Removed, so modal.js does not open it either.
+		if (
+			marker.hasAttribute("data-not-on-reload") &&
+			/** @type {PerformanceNavigationTiming | undefined} */ (
+				performance.getEntriesByType("navigation")[0]
+			)?.type === "reload"
+		) {
+			marker.remove();
+			return;
+		}
 		const dialog = document.getElementById(marker.dataset.openDialog);
 		if (!dialog || dialog.open) {
 			return;

@@ -136,7 +136,7 @@ body:has(.ad-modal[open]) {
 	overflow: auto;
 	min-height: 0;
 	flex: 1;
-	padding: var(--ad-dialog-padding);
+	padding: var(--ad-dialog-padding-block) var(--ad-dialog-padding);
 }
 
 /* Cancel first, primary action last: the order every mac dialog uses, and muscle memory puts

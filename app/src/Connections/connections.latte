@@ -62,4 +62,4 @@
 {/embed}
 {* Opened on load — see Connections::loginPage(). An attribute the script reads rather than an
 	inline script, which the CSP would want a nonce for. *}
-<span n:if="$adding" hidden data-open-dialog="ad-new-connection-dialog"></span>
+<span n:if="$adding" hidden data-open-dialog="ad-new-connection-dialog" n:attr="data-not-on-reload: empty($_POST['auth'])"></span>

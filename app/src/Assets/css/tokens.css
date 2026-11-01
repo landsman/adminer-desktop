@@ -24,7 +24,10 @@
 	--ad-dialog-width: 56em;
 	--ad-dialog-max-width: 92vw;
 	--ad-dialog-max-height: 88vh;
-	--ad-dialog-padding: 1.2em;
+	--ad-dialog-padding: 2em;
+	--ad-dialog-padding-block: 3em;
+	/* How far a settings table's cells hold their content off its borders. */
+	--ad-settings-cell-px: 1.5em;
 	/* How long a dialog and its backdrop take to fade in or out (modal.css). */
 	--ad-modal-speed: 200ms;
 

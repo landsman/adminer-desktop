@@ -141,11 +141,13 @@ dialog#desktop-settings p.message {
 
 #desktop-panels > div {
 	display: none;
-	padding: 0 0.4em var(--ad-panel-gap);
+	/* Here and not as a margin on each panel's first child: a margin is in that child's font size,
+	   so the tabs started at different heights. */
+	padding: var(--ad-dialog-padding-block) 0.4em var(--ad-panel-gap);
 }
 
 #desktop-panels > div > :first-child {
-	margin-top: var(--ad-dialog-padding);
+	margin-top: 0;
 }
 
 #desktop-settings:has(#desktop-tab-plugins:checked) #desktop-panel-plugins,
@@ -185,7 +187,7 @@ dialog#desktop-settings p.message {
 	padding-bottom: calc(2 * var(--ad-panel-gap));
 }
 
-#desktop-panel-mcp > p:first-child {
+#desktop-panel-mcp > p:first-child:has(> input[type="checkbox"]) {
 	margin-top: 0;
 }
 
@@ -410,6 +412,71 @@ dialog#desktop-settings p.message {
 	flex: none;
 }
 
+/* --- Preference rows --------------------------------------------------------- */
+
+/* Label and control side by side, every control starting on one line, a hairline between rows.
+   Subgrid so the rows can draw that line and still share their columns. `dialog#` to outrank the rule that takes the sidebar's styling off this dialog's
+   paragraphs. */
+.ad-settings-rows {
+	display: grid;
+	grid-template-columns: minmax(max-content, 12em) 1fr;
+	align-items: center;
+	column-gap: 2.5em;
+	margin-block: calc(2 * var(--ad-panel-gap));
+}
+
+.ad-settings-row {
+	display: grid;
+	grid-column: 1 / -1;
+	grid-template-columns: subgrid;
+	align-items: center;
+	padding-block: 0.9em;
+}
+
+.ad-settings-row + .ad-settings-row {
+	border-top: 1px solid color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+.ad-settings-row h4 {
+	margin: 0;
+	font-weight: 400;
+}
+
+dialog#desktop-settings .ad-settings-row p {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5em 2em;
+	margin: 0;
+}
+
+.ad-settings-row label {
+	white-space: nowrap;
+}
+
+.ad-settings-row input {
+	margin-inline-end: 0.5em;
+}
+
+/* One width, so a short list's select is not narrower than a long one's. */
+.ad-settings-row select {
+	min-width: 16em;
+}
+
+/* A section's title runs on as a hairline to the panel's edge. */
+#desktop-panel-themes > h4 {
+	display: flex;
+	align-items: center;
+	gap: 0.8em;
+	margin-block: calc(3 * var(--ad-panel-gap)) calc(1.5 * var(--ad-panel-gap));
+	font-weight: 400;
+}
+
+#desktop-panel-themes > h4::after {
+	content: "";
+	flex: 1;
+	border-top: 1px solid color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
 /* --- Tables ------------------------------------------------------------------- */
 
 /* Striping is Adminer's own .odds class, which dark.css overrides, so rows follow the
@@ -428,11 +495,11 @@ dialog#desktop-settings p.message {
    scrolling past do not show through it, and its 1px spread covers the table's side borders. */
 #desktop-panels thead {
 	z-index: 1;
-	top: var(--ad-dialog-padding);
+	top: var(--ad-dialog-padding-block);
 }
 
 #desktop-panels thead th {
-	box-shadow: 0 calc(-1 * var(--ad-dialog-padding)) 0 1px var(--bg);
+	box-shadow: 0 calc(-1 * var(--ad-dialog-padding-block)) 0 1px var(--bg);
 }
 
 #desktop-panels td {
@@ -443,8 +510,34 @@ dialog#desktop-settings p.message {
    target - clicking the name, the description or the preview all select it. */
 #desktop-panels td label {
 	display: block;
-	padding: 0.5em 0.75em;
+	padding: 0.5em var(--ad-settings-cell-px);
 	cursor: pointer;
+}
+
+#desktop-panels th {
+	padding-inline: var(--ad-settings-cell-px);
+}
+
+/* The radio or checkbox the row starts with sits outside any label, so nothing else holds it off
+   the table's edge. */
+#desktop-panels td:has(> input):first-child {
+	padding-inline-start: var(--ad-settings-cell-px);
+}
+
+/* The plugin list is read rather than scanned, so larger than a data table. The first cell
+   starts with the checkbox, outside any label, which would otherwise touch the table's edge. */
+#desktop-panel-plugins :is(th, td) {
+	font-size: 1.05em;
+}
+
+#desktop-panel-plugins th,
+#desktop-panel-plugins td label {
+	padding-block: 0.7em;
+}
+
+/* Its corners take the row's mass, so at the same height it reads as lower than the others. */
+#desktop-panel-plugins tbody tr:last-child td label {
+	padding-block: 0.95em;
 }
 
 #desktop-panels tbody tr:hover {

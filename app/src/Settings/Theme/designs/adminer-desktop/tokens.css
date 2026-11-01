@@ -167,6 +167,8 @@ html {
    corner cannot follow both; 20 sits between them and is the one that reads as parallel. */
 .os-mac {
 	--ad-window-radius: 20px;
+	/* What stands on a surface, a table or a card: as round as a message in Mail. */
+	--ad-card-radius: 12px;
 }
 
 /* Row density. These set variables only; padding and line-height read them from
