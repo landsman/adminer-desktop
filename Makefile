@@ -491,7 +491,7 @@ editor: build  ## Run in editor mode
 # docker skips it rather than refusing to debug.
 debug: build  ## Run with Safari's Web Inspector attached, and a seeded mysql (docker)
 	@os=$$(./cli/pick-os.sh); \
-	./cli/demo-mysql.sh $(DEMO_MYSQL) || echo "no mysql: docker is not running"; \
+	./cli/demo-mysql.sh $(DEMO_MYSQL) || true; \
 	ADMINER_DESKTOP_SIMULATE_OS=$$os ./build.noindex/adminer-desktop$(EXE) -debug
 
 # The app in dev mode against seeded demo data, for clicking around by hand. Brings up
