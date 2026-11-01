@@ -73,7 +73,9 @@ jobs:
       # the runner image has few of them: it carries Chrome, not a WebKit. A no-op when they all happen
       # to be there, which is why it is not worth guessing. Deliberately not in
       # `mise run install`: that runs on developer machines, and this installs with sudo apt.
+      # Takes under a minute. It has hung on apt, which otherwise bills the job's whole 30 minutes.
       - name: Playwright system libraries
+        timeout-minutes: 5
         working-directory: app/vendor/playwright-php/playwright/bin
         run: npx --no-install playwright install-deps webkit
 
