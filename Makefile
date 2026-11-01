@@ -83,14 +83,24 @@ app/editor.php: $(ADMINER_BUILD)
 
 # The release zip is the full source tree: adminer.php and editor.php are compiled from it, and
 # plugins/ and designs/ copied out of it. Same zip, same pinned tag — plugins can never drift from the core.
-.cache/adminer-src.zip:
+#
+# The version is in the filename, and that is the whole point: with a plain adminer-src.zip a
+# checkout that had downloaded one version kept it forever, because make saw the file and called
+# it up to date. Bumping ADMINER_VERSION then failed in the extract below ("cannot stat
+# .cache/src-tmp/adminer-<new>") on every machine with a warm cache, ours and a contributor's
+# alike, and only `rm` fixed it. Now a bump names a file that is not there yet.
+ADMINER_ZIP = .cache/adminer-src-$(ADMINER_VERSION).zip
+
+$(ADMINER_ZIP):
 	@mkdir -p .cache
 	curl -fsSL --retry 3 --retry-delay 2 -o $@ $(ADMINER_URL)/adminer-$(ADMINER_VERSION).zip
+	@# The zips of every version we have ever built are no use once this one is here.
+	@find .cache -maxdepth 1 -name 'adminer-src-*.zip' ! -name $(notdir $@) -delete
 
 # Extracted whole, once. Selecting with a pattern like 'designs/*' is not portable:
 # macOS and linux unzip let * match a slash and recurse, the windows one does not, so
 # only the file directly inside designs/ came out and every design silently vanished.
-.cache/adminer-src: .cache/adminer-src.zip
+.cache/adminer-src: $(ADMINER_ZIP)
 	rm -rf $@ .cache/src-tmp
 	unzip -qo $< -d .cache/src-tmp
 	mv .cache/src-tmp/adminer-$(ADMINER_VERSION) $@
