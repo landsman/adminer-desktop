@@ -27,7 +27,7 @@ The app's own default look. The gallery designs beside it are downloaded from up
 | `mac-os.css` | macOS | the system accent, neutral greys, corners, overlay scrollbars |
 | `windows-os.css` | Windows | Windows 11's tokens and controls, with values from WinUI's resources |
 
-Linux has no file of its own.
+Linux has no file of its own, but a flavour can: `omarchy-linux.css`, `ubuntu-linux.css`, `kubuntu-linux.css` or `mint-linux.css` loads as soon as it exists. `LinuxDistro` decides which one a machine is, from `os-release` and the desktop session.
 
 ## Light and dark
 
@@ -41,6 +41,7 @@ Linux has no file of its own.
 All of them come from `AdminerDesktop::bodyClass()`:
 
 - `mac-os`, `windows-os`, `linux-os`: the OS. `make debug` can simulate another one.
+- `omarchy-linux`, `ubuntu-linux`, `kubuntu-linux`, `mint-linux`: the Linux flavour, beside `linux-os`. Any other Linux has none.
 - `density-compact`, `density-cozy`, `density-comfortable`: row density.
 - `scale-100` to `scale-200`: the UI scale.
 - `theme-auto`, `theme-light`, `theme-dark`: the appearance preference.

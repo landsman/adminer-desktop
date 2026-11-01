@@ -1,0 +1,34 @@
+/* Kubuntu's Plasma: Breeze's colours, from KDE/breeze, colors/BreezeLight.colors and BreezeDark.colors:
+ * Colors:Window for the window, Colors:View for the panel, DecorationFocus for the accent and
+ * ForegroundLink for the links. Values only. Breeze defines no border colour, so that stays derived.
+ *
+ * Tokens sit on the body class, so what html derives from them is restated. */
+.kubuntu-linux {
+	--ad-menu-bg: light-dark(#eff0f1, #202326);
+	--bg: light-dark(#ffffff, #141618);
+	--ad-panel: light-dark(#ffffff, #141618);
+	--dim: light-dark(#eff0f1, #202326);
+	--fg: light-dark(#232629, #fcfcfc);
+	--ad-zebra: light-dark(#f7f7f7, #1d1f22);
+	--ad-border: color-mix(in srgb, var(--fg) 16%, transparent);
+	--ad-border-strong: color-mix(in srgb, var(--fg) 30%, transparent);
+
+	--ad-accent: #3daee9;
+	--ad-accent-fg: light-dark(#ffffff, #fcfcfc);
+	--ad-accent-text: light-dark(#2980b9, #1d99f3);
+	--ad-accent-quiet: color-mix(in srgb, var(--ad-accent) 18%, transparent);
+	--ad-button: var(--ad-accent);
+	--ad-button-fg: var(--ad-accent-fg);
+	--lit: color-mix(in srgb, var(--ad-accent) 18%, var(--bg));
+	accent-color: var(--ad-accent);
+
+	--ad-danger: #da4453;
+	--ad-ok: #27ae60;
+}
+
+/* The sidebar is a list to read: native ones keep the text's colour, and the accent on every name
+   was loud. */
+.kubuntu-linux #logins a,
+.kubuntu-linux #tables a {
+	color: var(--fg);
+}

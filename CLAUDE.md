@@ -23,7 +23,7 @@ log found in one line what two rounds of guessing had missed.
 
 Never enable the inspector outside `-debug`.
 
-`make debug` asks which OS to look like, so the Windows or Linux theme can be checked from a Mac. It sets `ADMINER_DESKTOP_SIMULATE_OS`, ignored without `-debug`. It changes the look and the window only (`Os::look()`): the engine stays WKWebView, and without Segoe the font falls back.
+`make debug` asks which OS to look like, so the Windows or Linux theme can be checked from a Mac. A Linux flavour can be picked too (`LinuxDistro`). It sets `ADMINER_DESKTOP_SIMULATE_OS`, ignored without `-debug`. It changes the look and the window only (`Os::look()`): the engine stays WKWebView, and without Segoe the font falls back.
 
 PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but only
 because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to

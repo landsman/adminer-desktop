@@ -14,8 +14,10 @@ enum Env: string {
 	case DataDir = 'ADMINER_DESKTOP_DATA';
 	/** Set under -debug: turns on Tracy and the web inspector's own affordances. */
 	case Debug = 'ADMINER_DESKTOP_DEBUG';
-	/** Which OS the UI dresses as under -debug, an Os case (Os::look). Ignored without -debug. */
+	/** Which OS the UI dresses as under -debug, an Os or LinuxDistro case. Ignored without -debug. */
 	case SimulateOs = 'ADMINER_DESKTOP_SIMULATE_OS';
+	/** The desktop session's own, not the launcher's: it only passes through (LinuxDistro::current). */
+	case CurrentDesktop = 'XDG_CURRENT_DESKTOP';
 	/** `make demo` only: the throwaway connection demo-login.js fills and submits. */
 	case Demo = 'ADMINER_DESKTOP_DEMO';
 	/** The launcher's own path (Go's os.Executable), so the MCP panel can print the exact

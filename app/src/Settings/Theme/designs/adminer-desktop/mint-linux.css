@@ -1,0 +1,33 @@
+/* Linux Mint: Mint-Y's colours, from linuxmint/mint-themes, src/Mint-Y/gtk-3.0/sass/_colors.scss and
+ * constants.py. Values only: the themes are GPL-3+, so none of their code is here. The window and the
+ * borders are that file's $header_bg lightened 5% and darkened from there, worked out by hand.
+ *
+ * Tokens sit on the body class, so what html derives from them is restated. */
+.mint-linux {
+	--ad-menu-bg: light-dark(#f8f8f9, #2f2f34);
+	--bg: light-dark(#ffffff, #333339);
+	--ad-panel: light-dark(#ffffff, #333339);
+	--dim: light-dark(#ebebed, #222226);
+	--fg: light-dark(#303030, #dadada);
+	--ad-border: light-dark(#c8c8cc, #202023);
+	--ad-border-strong: light-dark(#bababa, #202023);
+
+	--ad-accent: #35a854;
+	--ad-accent-fg: #ffffff;
+	--ad-accent-text: light-dark(
+		oklch(from var(--ad-accent) min(l, 0.52) c h),
+		oklch(from var(--ad-accent) max(l, 0.72) c h)
+	);
+	--ad-accent-quiet: color-mix(in srgb, var(--ad-accent) 15%, transparent);
+	--ad-button: var(--ad-accent);
+	--ad-button-fg: var(--ad-accent-fg);
+	--lit: color-mix(in srgb, var(--ad-accent) 15%, var(--bg));
+	accent-color: var(--ad-accent);
+}
+
+/* The sidebar is a list to read: native ones keep the text's colour, and the accent on every name
+   was loud. */
+.mint-linux #logins a,
+.mint-linux #tables a {
+	color: var(--fg);
+}

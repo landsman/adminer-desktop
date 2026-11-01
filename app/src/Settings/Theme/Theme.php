@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Desktop\Settings\Theme;
 
 use Desktop\Latte;
+use Desktop\LinuxDistro;
 use Desktop\Os;
 use Desktop\SettingKey;
 use Desktop\UserSettings;
@@ -69,7 +70,7 @@ class Theme {
 		$sheet = match (Os::look()) {
 			Os::Mac => self::MAC_SHEET,
 			Os::Windows => self::WINDOWS_SHEET,
-			Os::Linux => null,
+			Os::Linux => $this->linuxSheet(),
 		};
 		if ($sheet === null) {
 			return $map;
@@ -84,6 +85,14 @@ class Theme {
 			}
 		}
 		return $return;
+	}
+
+	/** This Linux flavour's stylesheet, once it has one: a new look needs only the file. */
+	private function linuxSheet(): ?string {
+		$class = LinuxDistro::look()?->bodyClass();
+		return $class !== null && is_file(__DIR__ . "/designs/adminer-desktop/$class.css")
+			? "src/Settings/Theme/designs/adminer-desktop/$class.css"
+			: null;
 	}
 
 	/** Which design each side uses, before anything per-OS is added to it.

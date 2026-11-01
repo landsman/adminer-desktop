@@ -21,6 +21,7 @@ use Desktop\I18n\Domain;
 use Desktop\I18n\Locale;
 use Desktop\Import;
 use Desktop\Latte;
+use Desktop\LinuxDistro;
 use Desktop\Mcp;
 use Desktop\Os;
 use Desktop\SettingKey;
@@ -311,6 +312,9 @@ class AdminerDesktop extends Adminer\Plugin {
 	*/
 	function bodyClass(): void {
 		echo " " . Os::look()->bodyClass();
+		if ($distro = LinuxDistro::look()) {
+			echo " " . $distro->bodyClass();
+		}
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
 		if (Env::Debug->get()) {
