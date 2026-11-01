@@ -339,6 +339,7 @@ qa: fetch app/vendor i18n mcp-bridge-data  ## Run every static check (php, go, j
 	./bin/frankenphp$(EXE) php-cli tests/cli/WindowsIcoTest.php
 	./bin/frankenphp$(EXE) php-cli tests/cli/I18nTest.php
 	./bin/frankenphp$(EXE) php-cli tests/cli/LinuxDistroTest.php
+	./bin/frankenphp$(EXE) php-cli tests/cli/OmarchyThemeTest.php
 	@sh tests/cli/pick-os-test.sh
 	@sh tests/cli/kill-orphans-test.sh
 	@sh tests/cli/dresscode-test.sh

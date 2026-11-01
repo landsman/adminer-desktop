@@ -87,6 +87,15 @@ class Theme {
 		return $return;
 	}
 
+	/** The appearance the page follows: the preference, except that Auto on Omarchy is its theme's. */
+	private function appearance(): mixed {
+		$stored = $this->settings->get(SettingKey::Appearance, "auto");
+		if ($stored === "auto" && LinuxDistro::look() === LinuxDistro::Omarchy) {
+			return OmarchyTheme::currentMode() ?? $stored;
+		}
+		return $stored;
+	}
+
 	/** This Linux flavour's stylesheet, once it has one: a new look needs only the file. */
 	private function linuxSheet(): ?string {
 		$class = LinuxDistro::look()?->bodyClass();
@@ -113,7 +122,7 @@ class Theme {
 		// adminer's own dark.css for the JUSH palette — so the choice themes everything
 		// without the OS. "auto" is not a Mode, so tryFrom() returns null and it falls through
 		// to the OS-driven map below.
-		$appearance = $this->settings->get(SettingKey::Appearance, "auto");
+		$appearance = $this->appearance();
 		$pinned = Mode::tryFrom(is_string($appearance) ? $appearance : "");
 		if ($pinned !== null) {
 			return [$sides[$pinned->value] => $pinned->value];
@@ -197,7 +206,7 @@ class Theme {
 	* AdminerDesktop. The appearance class is only read by the dark icon invert in base.css —
 	* the colours themselves ride on adminer's color-scheme meta (cssMap), not this class. */
 	function bodyClass(): void {
-		$appearance = $this->settings->get(SettingKey::Appearance, "auto");
+		$appearance = $this->appearance();
 		echo " theme-" . (in_array($appearance, self::APPEARANCES, true) ? $appearance : "auto");
 		$density = $this->settings->get(SettingKey::Density, "cozy");
 		echo " density-" . (in_array($density, self::DENSITIES, true) ? $density : "cozy");

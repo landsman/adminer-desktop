@@ -27,6 +27,7 @@ use Desktop\Os;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
 use Desktop\Settings\Plugins\PluginList;
+use Desktop\Settings\Theme\OmarchyTheme;
 use Desktop\Settings\Theme\Theme;
 use Desktop\Shortcuts\Shortcuts;
 use Desktop\UserSettings;
@@ -243,6 +244,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		// (connections.css). Whitelisted in Connections, so it is only ever a hex colour.
 		if ($color = $this->connections->current()?->color()) {
 			$css .= '--ad-conn:' . $color . ';';
+		}
+		if (LinuxDistro::look() === LinuxDistro::Omarchy) {
+			$appearance = $this->userSettings->get(SettingKey::Appearance, 'auto');
+			$css .= OmarchyTheme::current(is_string($appearance) ? $appearance : 'auto');
 		}
 		if ($css !== '') {
 			echo "<style>:root{" . $css . "}</style>\n";

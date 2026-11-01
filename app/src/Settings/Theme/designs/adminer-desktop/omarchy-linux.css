@@ -1,0 +1,9 @@
+/* Omarchy. The colours are the theme's and come from AdminerDesktop::head (OmarchyTheme), so what is
+ * here is only what a palette cannot say. */
+
+/* The sidebar is a list to read: native ones keep the text's colour, and the accent on every name
+   was loud. */
+.omarchy-linux #logins a,
+.omarchy-linux #tables a {
+	color: var(--fg);
+}

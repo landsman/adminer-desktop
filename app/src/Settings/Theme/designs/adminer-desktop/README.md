@@ -29,6 +29,8 @@ The app's own default look. The gallery designs beside it are downloaded from up
 
 Linux has no file of its own, but a flavour can: `omarchy-linux.css`, `ubuntu-linux.css`, `kubuntu-linux.css` or `mint-linux.css` loads as soon as it exists. `LinuxDistro` decides which one a machine is, from `os-release` and the desktop session.
 
+Omarchy's colours come from its current theme instead, read at each page load (`OmarchyTheme`), and Auto follows that theme's scheme rather than the system's.
+
 ## Light and dark
 
 - Every scheme difference is a `light-dark(light, dark)` token, and the used `color-scheme` picks the side.
