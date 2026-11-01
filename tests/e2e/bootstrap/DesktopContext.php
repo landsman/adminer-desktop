@@ -3444,6 +3444,21 @@ class DesktopContext implements Context
 		$this->page->mouse()->click((float) $box['x'], (float) $box['y']);
 	}
 
+	#[When('I drag the mouse along the backdrop in the toolbar\'s band')]
+	public function dragBackdropInBand(): void
+	{
+		$this->page->mouse()->move(100, 10);
+		$this->page->mouse()->down();
+		$this->page->mouse()->move(140, 10);
+		$this->page->mouse()->up();
+	}
+
+	#[When('I click the backdrop in the toolbar\'s band')]
+	public function clickBackdropInBand(): void
+	{
+		$this->page->mouse()->click(100, 10);
+	}
+
 	#[When('I open the toolbar\'s sort menu')]
 	public function openSortMenu(): void
 	{
