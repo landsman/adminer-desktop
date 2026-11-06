@@ -20,6 +20,10 @@ check "1 means this machine" "$("$script" answer 1)" ""
 check "2 means Windows" "$("$script" answer 2)" "windows"
 check "3 means Linux" "$("$script" answer 3)" "linux"
 check "4 means macOS" "$("$script" answer 4)" "mac"
+check "5 means Ubuntu" "$("$script" answer 5)" "ubuntu"
+check "6 means Kubuntu" "$("$script" answer 6)" "kubuntu"
+check "7 means Linux Mint" "$("$script" answer 7)" "mint"
+check "8 means Omarchy" "$("$script" answer 8)" "omarchy"
 check "no terminal asks nothing and answers this machine" "$("$script" </dev/null 2>&1)" ""
 
 if "$script" answer 9 >/dev/null 2>&1; then

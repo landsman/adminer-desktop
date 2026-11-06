@@ -18,12 +18,20 @@ this machine → Adminer Desktop — giving a real console, the DOM, network and
 breakpoints. It also logs diagnostics at startup (which UI delegate is attached, whether
 the inspector came up).
 
+On Linux it is **WebKitGTK's own inspector** (`inspector_linux.go`), which `-debug` makes
+available without opening — as on macOS, where the page only appears in Safari's Develop
+menu. **F12 or Ctrl+Shift+I** opens it, in a window of its own, and reopens it after a
+close; the key is taken on the GtkWindow, so it works with the caret in an SQL textarea
+too. Every `console.log` and JavaScript error goes to stdout and so into the log whether
+the inspector is open or not, which is what you have when the page dies before you get to
+it — and what makes `-debug` worth running when you only want the app dressed as another OS.
+
 Reach for it as soon as a symptom is visual or behavioural. `uiDelegate=(nil)` in that
 log found in one line what two rounds of guessing had missed.
 
 Never enable the inspector outside `-debug`.
 
-`make debug` asks which OS to look like, so the Windows or Linux theme can be checked from a Mac. It sets `ADMINER_DESKTOP_SIMULATE_OS`, ignored without `-debug`. It changes the look and the window only (`Os::look()`): the engine stays WKWebView, and without Segoe the font falls back.
+`make debug` asks which OS to look like, so the Windows or Linux theme can be checked from a Mac. A Linux flavour can be picked too (`LinuxDistro`). It sets `ADMINER_DESKTOP_SIMULATE_OS`, ignored without `-debug`. It changes the look and the window only (`Os::look()`): the engine stays WKWebView, and without Segoe the font falls back.
 
 PHP fatal errors reach `~/Library/Logs/Adminer Desktop/adminer-desktop.log`, but only
 because `app/php/desktop.ini` turns `log_errors` on — frankenphp's default sends them to
