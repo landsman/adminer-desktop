@@ -1048,24 +1048,26 @@
         },
         {
             "name": "nette/tester",
-            "version": "v2.6.2",
+            "version": "v2.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nette/tester.git",
-                "reference": "aa30c13835c8cd9c65d9ced6b475edab125b5557"
+                "reference": "66327711830b5696b091dc019ee2540dbd1cc2fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nette/tester/zipball/aa30c13835c8cd9c65d9ced6b475edab125b5557",
-                "reference": "aa30c13835c8cd9c65d9ced6b475edab125b5557",
+                "url": "https://api.github.com/repos/nette/tester/zipball/66327711830b5696b091dc019ee2540dbd1cc2fd",
+                "reference": "66327711830b5696b091dc019ee2540dbd1cc2fd",
                 "shasum": ""
             },
             "require": {
-                "php": "8.0 - 8.6"
+                "php": "8.1 - 8.6"
             },
             "require-dev": {
                 "ext-simplexml": "*",
-                "phpstan/phpstan": "^2.0@stable"
+                "nette/phpstan-rules": "^1.0",
+                "phpstan/extension-installer": "^1.4@stable",
+                "phpstan/phpstan": "^2.3@stable"
             },
             "bin": [
                 "src/tester"
@@ -1073,7 +1075,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.6-dev"
+                    "dev-master": "2.7-dev"
                 }
             },
             "autoload": {
@@ -1098,31 +1100,25 @@
                 {
                     "name": "Miloslav Hůla",
                     "homepage": "https://github.com/milo"
-                },
-                {
-                    "name": "Nette Community",
-                    "homepage": "https://nette.org/contributors"
                 }
             ],
-            "description": "Nette Tester: enjoyable unit testing in PHP with code coverage reporter. 🍏🍏🍎🍏",
+            "description": "🍏 Nette Tester: enjoyable unit testing in PHP. Tests are plain PHP scripts that run in parallel, with readable assertions and code coverage.",
             "homepage": "https://tester.nette.org",
             "keywords": [
-                "Xdebug",
                 "assertions",
-                "clover",
                 "code coverage",
                 "nette",
-                "pcov",
-                "phpdbg",
+                "parallel",
                 "phpunit",
+                "test framework",
                 "testing",
-                "unit"
+                "unit testing"
             ],
             "support": {
                 "issues": "https://github.com/nette/tester/issues",
-                "source": "https://github.com/nette/tester/tree/v2.6.2"
+                "source": "https://github.com/nette/tester/tree/v2.7.0"
             },
-            "time": "2026-09-13T00:11:01+00:00"
+            "time": "2026-10-26T22:11:38+00:00"
         },
         {
             "name": "nette/utils",
