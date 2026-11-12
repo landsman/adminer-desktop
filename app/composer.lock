@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f1bcf7ab2560d8e9a1d6b8cd3efa6cfe",
+    "content-hash": "4e12b2dc86dac74e7fb109ed4fd5c717",
     "packages": [
         {
             "name": "latte/latte",
@@ -757,16 +757,16 @@
         },
         {
             "name": "dresscode/dresscode",
-            "version": "v1.3.1",
+            "version": "v1.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dg/dresscode.git",
-                "reference": "032704e07f2698759c0f94746638e50f800cad31"
+                "reference": "03450e904bdd137fac05a3846faa8bd946769381"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dg/dresscode/zipball/032704e07f2698759c0f94746638e50f800cad31",
-                "reference": "032704e07f2698759c0f94746638e50f800cad31",
+                "url": "https://api.github.com/repos/dg/dresscode/zipball/03450e904bdd137fac05a3846faa8bd946769381",
+                "reference": "03450e904bdd137fac05a3846faa8bd946769381",
                 "shasum": ""
             },
             "require": {
@@ -836,9 +836,9 @@
             ],
             "support": {
                 "issues": "https://github.com/dg/dresscode/issues",
-                "source": "https://github.com/dg/dresscode/tree/v1.3.1"
+                "source": "https://github.com/dg/dresscode/tree/v1.3.3"
             },
-            "time": "2026-10-19T13:51:53+00:00"
+            "time": "2026-11-05T13:59:32+00:00"
         },
         {
             "name": "nette/command-line",
@@ -909,16 +909,16 @@
         },
         {
             "name": "nette/neon",
-            "version": "v4.0.0",
+            "version": "v4.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nette/neon.git",
-                "reference": "187c00a5c45d786a00ba08b3297f2ebb43d53c96"
+                "reference": "8fd6289466739c13f4b196936fa185bd933e1ddb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nette/neon/zipball/187c00a5c45d786a00ba08b3297f2ebb43d53c96",
-                "reference": "187c00a5c45d786a00ba08b3297f2ebb43d53c96",
+                "url": "https://api.github.com/repos/nette/neon/zipball/8fd6289466739c13f4b196936fa185bd933e1ddb",
+                "reference": "8fd6289466739c13f4b196936fa185bd933e1ddb",
                 "shasum": ""
             },
             "require": {
@@ -975,9 +975,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nette/neon/issues",
-                "source": "https://github.com/nette/neon/tree/v4.0.0"
+                "source": "https://github.com/nette/neon/tree/v4.0.1"
             },
-            "time": "2026-10-26T00:16:48+00:00"
+            "time": "2026-11-06T01:23:16+00:00"
         },
         {
             "name": "nette/schema",
@@ -1260,11 +1260,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.4",
+            "version": "2.3.5",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/f20ce6f3c82556cfcfc086b152445a12d1d64fff",
-                "reference": "f20ce6f3c82556cfcfc086b152445a12d1d64fff",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/645a1bd6bead15fc1b8474137467961d0fa30a79",
+                "reference": "645a1bd6bead15fc1b8474137467961d0fa30a79",
                 "shasum": ""
             },
             "require": {
@@ -1320,20 +1320,20 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-28T22:38:53+00:00"
+            "time": "2026-11-03T12:14:22+00:00"
         },
         {
             "name": "phpstan/phpstan-strict-rules",
-            "version": "2.1.0",
+            "version": "2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-strict-rules.git",
-                "reference": "24ec51589f896f048d0d36de373d993b5cf71786"
+                "reference": "fe4a0afae773eedf178fab17ed9361c0061d2804"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/24ec51589f896f048d0d36de373d993b5cf71786",
-                "reference": "24ec51589f896f048d0d36de373d993b5cf71786",
+                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/fe4a0afae773eedf178fab17ed9361c0061d2804",
+                "reference": "fe4a0afae773eedf178fab17ed9361c0061d2804",
                 "shasum": ""
             },
             "require": {
@@ -1370,9 +1370,9 @@
             ],
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-strict-rules/issues",
-                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.1.0"
+                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.1.1"
             },
-            "time": "2026-10-01T21:30:37+00:00"
+            "time": "2026-11-02T08:16:15+00:00"
         },
         {
             "name": "phpsyntax/phpsyntax",
