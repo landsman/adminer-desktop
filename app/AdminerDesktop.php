@@ -21,11 +21,13 @@ use Desktop\I18n\Domain;
 use Desktop\I18n\Locale;
 use Desktop\Import;
 use Desktop\Latte;
+use Desktop\LinuxDistro;
 use Desktop\Mcp;
 use Desktop\Os;
 use Desktop\SettingKey;
 use Desktop\Settings\Dialog;
 use Desktop\Settings\Plugins\PluginList;
+use Desktop\Settings\Theme\OmarchyTheme;
 use Desktop\Settings\Theme\Theme;
 use Desktop\Shortcuts\Shortcuts;
 use Desktop\UserSettings;
@@ -243,6 +245,10 @@ class AdminerDesktop extends Adminer\Plugin {
 		if ($color = $this->connections->current()?->color()) {
 			$css .= '--ad-conn:' . $color . ';';
 		}
+		if (LinuxDistro::look() === LinuxDistro::Omarchy) {
+			$appearance = $this->userSettings->get(SettingKey::Appearance, 'auto');
+			$css .= OmarchyTheme::current(is_string($appearance) ? $appearance : 'auto');
+		}
 		if ($css !== '') {
 			echo "<style>:root{" . $css . "}</style>\n";
 		}
@@ -311,6 +317,9 @@ class AdminerDesktop extends Adminer\Plugin {
 	*/
 	function bodyClass(): void {
 		echo " " . Os::look()->bodyClass();
+		if ($distro = LinuxDistro::look()) {
+			echo " " . $distro->bodyClass();
+		}
 		// The launcher sets this under -debug; the desktop scripts read it to stand down so
 		// the web inspector's own behaviour is unobstructed.
 		if (Env::Debug->get()) {

@@ -199,7 +199,12 @@ function e2e_boot(): array
 		null,
 		// The launcher's Caddyfile, with the cache policy of a build: what is tested is what ships.
 		// An agent statement stops after 3 s rather than 45, so a scenario can outlast the limit.
-		['ADMINER_DESKTOP_DATA' => $data, 'AD_PORT' => $port, 'AD_ROOT' => $app, 'AD_ASSET_CACHE' => 'max-age=31536000, immutable', 'ADMINER_DESKTOP_MCP_STATEMENT_SECONDS' => '3'],
+		// HOME into the throwaway data dir, as check.sh does and for the reason given there: Process
+		// inherits this one's environment, and a page that reads the developer's desktop makes the
+		// theme scenarios assert something different on each machine -- on Omarchy, Auto follows that
+		// machine's own theme and the light scenario cannot pass. No theme there, so every machine
+		// answers as CI does.
+		['ADMINER_DESKTOP_DATA' => $data, 'HOME' => $data, 'AD_PORT' => $port, 'AD_ROOT' => $app, 'AD_ASSET_CACHE' => 'max-age=31536000, immutable', 'ADMINER_DESKTOP_MCP_STATEMENT_SECONDS' => '3'],
 	);
 	// frankenphp logs every request it serves and nothing here ever reads that pipe, so it fills:
 	// sixty-four kilobytes in, the server blocks writing to it and stops answering. From the

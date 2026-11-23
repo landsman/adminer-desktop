@@ -30,9 +30,9 @@ func setWindowAppearance(window unsafe.Pointer, dark int) {}
 // installDownloads is per-platform: real on Linux (download_linux.c), a no-op on Windows
 // (download_other.go), and the macOS build has its own in menu_darwin.go.
 
-func enableInspector(window unsafe.Pointer) bool { return false }
-
-func describeUIDelegate(window unsafe.Pointer) string { return "(darwin only)" }
+// enableInspector and describeUIDelegate are per-platform: real on macOS and on Linux
+// (inspector_linux.go, where WebKitGTK has an inspector of its own to turn on), stubbed for
+// Windows in inspector_other.go.
 
 // The title bar stays: GTK and Windows draw their own, and the page lays out under it.
 func installFrameless(w webview.WebView) {}
