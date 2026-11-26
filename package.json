@@ -7,9 +7,9 @@
     "lint": "oxfmt --check --ignore-path=.gitignore 'app/src/Settings/Theme/designs/adminer-desktop/*.css' 'app/src/Assets/**/*.{css,js,ts}' && oxlint app/src/Assets/javascript"
   },
   "devDependencies": {
-    "axe-core": "4.14.0",
-    "oxfmt": "0.78.0",
-    "oxlint": "1.93.0",
+    "axe-core": "4.14.1",
+    "oxfmt": "0.79.0",
+    "oxlint": "1.94.0",
     "oxlint-tsgolint": "7.0.2007"
   }
 }
